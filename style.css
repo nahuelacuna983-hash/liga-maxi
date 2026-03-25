@@ -1,0 +1,408 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f6fb;
+  color: #111827;
+}
+
+.app {
+  max-width: 1280px;
+  margin: auto;
+  padding: 20px;
+}
+
+.hero {
+  background: linear-gradient(135deg, #0f172a, #1d4ed8);
+  color: white;
+  padding: 25px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.eyebrow {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.hero h1 {
+  margin: 0 0 8px 0;
+  font-size: 34px;
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.95;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #e5e7eb;
+  font-weight: bold;
+  transition: all 0.15s ease;
+}
+
+.tab:hover {
+  background: #d1d5db;
+}
+
+.tab.activo {
+  background: #1d4ed8;
+  color: white;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.card-head h3 {
+  margin: 0;
+}
+
+.mini-filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+button {
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.15s ease;
+}
+
+button:hover {
+  background: #1e40af;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.secundario {
+  background: #6b7280;
+}
+
+.secundario:hover {
+  background: #4b5563;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 15px;
+  box-sizing: border-box;
+  margin-bottom: 14px;
+  background: white;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid #93c5fd;
+  border-color: #60a5fa;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.planner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.planner-resultado {
+  margin-top: 18px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+}
+
+.badge-etapa {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.badge-secundaria {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.tabla-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+thead {
+  background: #dbe7f8;
+}
+
+th,
+td {
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+th:nth-child(2),
+td:nth-child(2) {
+  text-align: left;
+}
+
+#fixture-body h3 {
+  margin-top: 22px;
+  margin-bottom: 10px;
+  color: #111827;
+}
+
+.jornada-bloque {
+  margin-bottom: 20px;
+}
+
+.partido {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: 1fr 60px 1fr 120px;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.partido:nth-child(even) {
+  background: #eef2f7;
+}
+
+.partido.jugado {
+  background: #eefbf3;
+  border-color: #bbf7d0;
+}
+
+.partido.pendiente {
+  background: #fffdf2;
+  border-color: #fde68a;
+}
+
+.equipo {
+  font-weight: 700;
+}
+
+.equipo-local {
+  text-align: right;
+}
+
+.equipo-visitante {
+  text-align: left;
+}
+
+.marcador {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.estado-jugado {
+  color: #15803d;
+  font-weight: bold;
+}
+
+.estado-pendiente {
+  color: #6b7280;
+  font-style: italic;
+  font-weight: bold;
+}
+
+.ganador {
+  color: #15803d;
+}
+
+.ganador-linea {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  color: #166534;
+  font-weight: bold;
+  text-align: center;
+}
+
+#mensaje-estado,
+#mensaje-fixture {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.playoff-descripcion {
+  margin: 0 0 18px 0;
+  color: #374151;
+}
+
+.bracket {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.bracket.round-2 {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
+.bracket-columna {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.bracket-columna h4 {
+  margin: 0 0 12px 0;
+  color: #1d4ed8;
+}
+
+.llave {
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.llave-nombre {
+  font-size: 13px;
+  font-weight: bold;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+.llave-serie {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.llave-equipo {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #eff6ff;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.llave-equipo.placeholder {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.llave-separador {
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+  margin: 4px 0;
+}
+
+.alerta-suave {
+  padding: 12px;
+  border-radius: 10px;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+@media (max-width: 900px) {
+  .bracket,
+  .bracket.round-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .app {
+    padding: 16px;
+  }
+
+  .hero h1 {
+    font-size: 28px;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .partido {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .equipo-local,
+  .equipo-visitante {
+    text-align: center;
+  }
+
+  .marcador {
+    font-size: 16px;
+  }
+
+  table {
+    min-width: 640px;
+  }
+}

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liga Maxi Básquet La Plata</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="app">
+
+    <header class="hero">
+      <p class="eyebrow">Asociación Platense</p>
+      <h1>Liga Maxi Básquet La Plata</h1>
+      <p class="subtitulo">Fixture, resultados, tabla y herramientas de organización</p>
+    </header>
+
+    <div class="tabs">
+      <button id="tab-liga" class="tab activo">Liga</button>
+      <button id="tab-gestion" class="tab">Gestión</button>
+    </div>
+
+    <div id="vista-liga">
+
+      <section class="card">
+        <div class="card-head">
+          <h3>Categoría</h3>
+          <div class="mini-filtros">
+            <div>
+              <label for="categoria-select">Categoría</label>
+              <select id="categoria-select">
+                <option value="Maxi +35 A">Maxi +35 A</option>
+                <option value="Maxi +35 B">Maxi +35 B</option>
+                <option value="Maxi +48">Maxi +48</option>
+                <option value="Femenino">Femenino</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 id="tabla-titulo">Tabla de Posiciones</h3>
+        <div class="tabla-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Equipo</th>
+                <th>PJ</th>
+                <th>PG</th>
+                <th>PP</th>
+                <th>GF</th>
+                <th>GC</th>
+                <th>DF</th>
+                <th>PTS</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h3 id="fixture-titulo">Fixture</h3>
+          <span id="badge-etapa" class="badge-etapa">Fase regular</span>
+        </div>
+        <div id="fixture-body"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h3>Playoffs</h3>
+          <span id="playoff-estado" class="badge-etapa badge-secundaria">Proyección actual</span>
+        </div>
+        <div id="playoff-body"></div>
+      </section>
+
+      <section class="card">
+        <h3>Cargar / Editar Resultado</h3>
+
+        <select id="partido-select"></select>
+
+        <input id="puntos-local" type="number" placeholder="Puntos Local">
+        <input id="puntos-visitante" type="number" placeholder="Puntos Visitante">
+
+        <div class="acciones">
+          <button id="guardar-resultado">Guardar / Editar Resultado</button>
+          <button id="resetear-resultado" class="secundario" type="button">Volver a Pendiente</button>
+        </div>
+
+        <p id="mensaje-estado"></p>
+      </section>
+    </div>
+
+    <div id="vista-gestion" style="display:none;">
+
+      <section class="card">
+        <h3>Planificador de Torneos</h3>
+
+        <div class="planner-grid">
+          <div>
+            <label for="planner-equipos">Cantidad de equipos</label>
+            <input id="planner-equipos" type="number" value="10" min="2">
+          </div>
+
+          <div>
+            <label for="planner-formato">Competencia</label>
+            <select id="planner-formato">
+              <option value="apertura">Apertura - 1 rueda</option>
+              <option value="clausura">Clausura - 1 rueda</option>
+              <option value="anual">Anual - 2 ruedas</option>
+              <option value="eliminacion">Eliminación directa</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-playoffs">Playoffs</label>
+            <select id="planner-playoffs">
+              <option value="no">No</option>
+              <option value="si">Sí</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-clasificados">Clasificados</label>
+            <select id="planner-clasificados">
+              <option value="4">4 equipos</option>
+              <option value="8">8 equipos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="planner-grid">
+          <div>
+            <label for="planner-inicio">Inicio</label>
+            <input id="planner-inicio" type="date">
+          </div>
+
+          <div>
+            <label for="planner-fin">Fin</label>
+            <input id="planner-fin" type="date">
+          </div>
+
+          <div>
+            <label for="planner-frecuencia">Frecuencia</label>
+            <select id="planner-frecuencia">
+              <option value="1">Todos los domingos</option>
+              <option value="2">Domingo por medio</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="planner-calcular">Calcular formato</button>
+
+        <div id="planner-resultado" class="planner-resultado"></div>
+        <div id="planner-comparacion" class="planner-resultado"></div>
+      </section>
+
+      <section class="card">
+        <h3>Generar Fixture</h3>
+
+        <div class="planner-grid">
+          <div>
+            <label for="fixture-categoria-select">Categoría</label>
+            <select id="fixture-categoria-select">
+              <option value="Maxi +35 A">Maxi +35 A</option>
+              <option value="Maxi +35 B">Maxi +35 B</option>
+              <option value="Maxi +48">Maxi +48</option>
+              <option value="Femenino">Femenino</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="fixture-etapa-select">Competencia</label>
+            <select id="fixture-etapa-select">
+              <option value="Apertura">Apertura</option>
+              <option value="Clausura">Clausura</option>
+              <option value="Anual">Anual</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="fixture-ruedas-select">Ruedas</label>
+            <select id="fixture-ruedas-select">
+              <option value="1">1 rueda</option>
+              <option value="2">2 ruedas</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="fixture-playoff-select">Playoffs visuales</label>
+            <select id="fixture-playoff-select">
+              <option value="4">Top 4</option>
+              <option value="8">Top 8</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="planner-grid">
+          <div>
+            <label for="fixture-octavos-select">8vos</label>
+            <select id="fixture-octavos-select">
+              <option value="1">1 partido</option>
+              <option value="2">2 partidos</option>
+              <option value="3">3 partidos</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="fixture-cuartos-select">4tos</label>
+            <select id="fixture-cuartos-select">
+              <option value="1">1 partido</option>
+              <option value="2">2 partidos</option>
+              <option value="3">3 partidos</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="fixture-semis-select">Semi</label>
+            <select id="fixture-semis-select">
+              <option value="1">1 partido</option>
+              <option value="2">2 partidos</option>
+              <option value="3">3 partidos</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="fixture-final-select">Final</label>
+            <select id="fixture-final-select">
+              <option value="1">1 partido</option>
+              <option value="2">2 partidos</option>
+              <option value="3">3 partidos</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="generar-fixture">Generar fixture automático</button>
+
+        <p id="mensaje-fixture"></p>
+      </section>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
