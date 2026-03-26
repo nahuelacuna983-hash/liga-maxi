@@ -6,10 +6,8 @@
   <title>Liga Maxi Básquet La Plata</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
   <div class="app">
-
     <header class="hero">
       <p class="eyebrow">Asociación Platense</p>
       <h1>Liga Maxi Básquet La Plata</h1>
@@ -22,7 +20,6 @@
     </div>
 
     <div id="vista-liga">
-
       <section class="card">
         <div class="card-head">
           <h3>Categoría</h3>
@@ -96,26 +93,47 @@
     </div>
 
     <div id="vista-gestion" style="display:none;">
-
       <section class="card">
         <h3>Planificador de Torneos</h3>
 
         <div class="planner-grid">
           <div>
-            <label for="planner-equipos">Cantidad de equipos</label>
-            <input id="planner-equipos" type="number" value="10" min="2">
-          </div>
-
-          <div>
-            <label for="planner-formato">Competencia</label>
-            <select id="planner-formato">
-              <option value="apertura">Apertura - 1 rueda</option>
-              <option value="clausura">Clausura - 1 rueda</option>
-              <option value="anual">Anual - 2 ruedas</option>
-              <option value="eliminacion">Eliminación directa</option>
+            <label for="planner-categoria">Categoría</label>
+            <select id="planner-categoria">
+              <option value="Maxi +35 A">Maxi +35 A</option>
+              <option value="Maxi +35 B">Maxi +35 B</option>
+              <option value="Maxi +48">Maxi +48</option>
+              <option value="Femenino">Femenino</option>
             </select>
           </div>
 
+          <div>
+            <label for="planner-competencia">Competencia</label>
+            <select id="planner-competencia">
+              <option value="Apertura">Apertura</option>
+              <option value="Clausura">Clausura</option>
+              <option value="Anual">Anual</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-ruedas">Ruedas</label>
+            <select id="planner-ruedas">
+              <option value="1">1 rueda</option>
+              <option value="2">2 ruedas</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-dia-juego">Día de juego</label>
+            <select id="planner-dia-juego">
+              <option value="0">Domingo</option>
+              <option value="3">Miércoles</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="planner-grid">
           <div>
             <label for="planner-playoffs">Playoffs</label>
             <select id="planner-playoffs">
@@ -127,13 +145,49 @@
           <div>
             <label for="planner-clasificados">Clasificados</label>
             <select id="planner-clasificados">
-              <option value="4">4 equipos</option>
-              <option value="8">8 equipos</option>
+              <option value="4">Top 4</option>
+              <option value="8">Top 8</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-octavos">8vos</label>
+            <select id="planner-octavos">
+              <option value="1">1 partido</option>
+              <option value="2">2 partidos</option>
+              <option value="3">3 partidos</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-cuartos">4tos</label>
+            <select id="planner-cuartos">
+              <option value="1">1 partido</option>
+              <option value="2">2 partidos</option>
+              <option value="3">3 partidos</option>
             </select>
           </div>
         </div>
 
         <div class="planner-grid">
+          <div>
+            <label for="planner-semis">Semi</label>
+            <select id="planner-semis">
+              <option value="1">1 partido</option>
+              <option value="2">2 partidos</option>
+              <option value="3">3 partidos</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-final">Final</label>
+            <select id="planner-final">
+              <option value="1">1 partido</option>
+              <option value="2">2 partidos</option>
+              <option value="3">3 partidos</option>
+            </select>
+          </div>
+
           <div>
             <label for="planner-inicio">Inicio</label>
             <input id="planner-inicio" type="date">
@@ -143,29 +197,42 @@
             <label for="planner-fin">Fin</label>
             <input id="planner-fin" type="date">
           </div>
+        </div>
 
+        <div class="planner-grid">
           <div>
             <label for="planner-frecuencia">Frecuencia</label>
             <select id="planner-frecuencia">
-              <option value="1">Todos los domingos</option>
-              <option value="2">Domingo por medio</option>
+              <option value="1">Todas las semanas</option>
+              <option value="2">Semana por medio</option>
             </select>
+          </div>
+
+          <div style="grid-column: span 3;">
+            <label for="planner-bloqueadas">Fechas NO jugables (formato argentino, separadas por coma)</label>
+            <input
+              id="planner-bloqueadas"
+              type="text"
+              placeholder="3-5-2026, 25-5-2026, 20-6-2026"
+            >
           </div>
         </div>
 
-        <button id="planner-calcular">Calcular formato</button>
+        <div class="acciones">
+          <button id="planner-generar">Calcular y generar torneo completo</button>
+        </div>
 
         <div id="planner-resultado" class="planner-resultado"></div>
         <div id="planner-comparacion" class="planner-resultado"></div>
       </section>
 
       <section class="card">
-        <h3>Generar Fixture</h3>
+        <h3>Acomodar Fixture</h3>
 
         <div class="planner-grid">
           <div>
-            <label for="fixture-categoria-select">Categoría</label>
-            <select id="fixture-categoria-select">
+            <label for="acomodar-categoria">Categoría</label>
+            <select id="acomodar-categoria">
               <option value="Maxi +35 A">Maxi +35 A</option>
               <option value="Maxi +35 B">Maxi +35 B</option>
               <option value="Maxi +48">Maxi +48</option>
@@ -174,75 +241,21 @@
           </div>
 
           <div>
-            <label for="fixture-etapa-select">Competencia</label>
-            <select id="fixture-etapa-select">
-              <option value="Apertura">Apertura</option>
-              <option value="Clausura">Clausura</option>
-              <option value="Anual">Anual</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="fixture-ruedas-select">Ruedas</label>
-            <select id="fixture-ruedas-select">
-              <option value="1">1 rueda</option>
-              <option value="2">2 ruedas</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="fixture-playoff-select">Playoffs visuales</label>
-            <select id="fixture-playoff-select">
-              <option value="4">Top 4</option>
-              <option value="8">Top 8</option>
+            <label for="acomodar-modo">Acción</label>
+            <select id="acomodar-modo">
+              <option value="sortear">Sortear cruces de nuevo</option>
+              <option value="invertir">Invertir localías</option>
             </select>
           </div>
         </div>
 
-        <div class="planner-grid">
-          <div>
-            <label for="fixture-octavos-select">8vos</label>
-            <select id="fixture-octavos-select">
-              <option value="1">1 partido</option>
-              <option value="2">2 partidos</option>
-              <option value="3">3 partidos</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="fixture-cuartos-select">4tos</label>
-            <select id="fixture-cuartos-select">
-              <option value="1">1 partido</option>
-              <option value="2">2 partidos</option>
-              <option value="3">3 partidos</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="fixture-semis-select">Semi</label>
-            <select id="fixture-semis-select">
-              <option value="1">1 partido</option>
-              <option value="2">2 partidos</option>
-              <option value="3">3 partidos</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="fixture-final-select">Final</label>
-            <select id="fixture-final-select">
-              <option value="1">1 partido</option>
-              <option value="2">2 partidos</option>
-              <option value="3">3 partidos</option>
-            </select>
-          </div>
+        <div class="acciones">
+          <button id="acomodar-fixture">Reacomodar fixture</button>
         </div>
 
-        <button id="generar-fixture">Generar fixture automático</button>
-
-        <p id="mensaje-fixture"></p>
+        <p id="mensaje-acomodar"></p>
       </section>
     </div>
-
   </div>
 
   <script src="app.js"></script>

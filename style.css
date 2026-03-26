@@ -156,6 +156,10 @@ select:focus {
   margin-bottom: 8px;
 }
 
+.planner-grid-1 {
+  grid-template-columns: 1fr;
+}
+
 .planner-resultado {
   margin-top: 18px;
   padding: 16px;
@@ -206,14 +210,32 @@ td:nth-child(2) {
   text-align: left;
 }
 
-#fixture-body h3 {
-  margin-top: 22px;
-  margin-bottom: 10px;
-  color: #111827;
-}
-
 .jornada-bloque {
   margin-bottom: 20px;
+}
+
+.jornada-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.jornada-head h3 {
+  margin: 0;
+}
+
+.fecha-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: bold;
+  font-size: 13px;
 }
 
 .partido {
@@ -284,7 +306,7 @@ td:nth-child(2) {
 }
 
 #mensaje-estado,
-#mensaje-fixture {
+#mensaje-acomodar {
   margin-top: 10px;
   font-weight: bold;
 }
@@ -292,6 +314,29 @@ td:nth-child(2) {
 .playoff-descripcion {
   margin: 0 0 18px 0;
   color: #374151;
+}
+
+.playoff-fechas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.playoff-fecha-box {
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.playoff-fecha-box h4 {
+  margin: 0 0 10px 0;
+  color: #1d4ed8;
+}
+
+.playoff-fecha-box p {
+  margin: 6px 0;
 }
 
 .bracket {
@@ -365,6 +410,41 @@ td:nth-child(2) {
   background: #fef3c7;
   color: #92400e;
   border: 1px solid #fcd34d;
+}
+
+.calendario-fases {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.calendario-fase-box {
+  background: white;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.calendario-fase-box h4 {
+  margin: 0 0 10px 0;
+  color: #1d4ed8;
+}
+
+.calendario-fase-box p {
+  margin: 6px 0;
+}
+
+.bloqueadas-lista {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px dashed #f59e0b;
+  border-radius: 12px;
+  background: #fffbeb;
+}
+
+.bloqueadas-lista p {
+  margin: 6px 0;
 }
 
 @media (max-width: 900px) {

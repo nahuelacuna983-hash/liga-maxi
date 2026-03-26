@@ -11,7 +11,6 @@ const categorias = {
     "UNIVERSAL",
     "MERIDIANO V"
   ],
-
   "Maxi +35 B": [
     "UNIDOS",
     "ESTRELLA",
@@ -24,7 +23,6 @@ const categorias = {
     "LOS HORNOS",
     "ESTUDIANTES"
   ],
-
   "Maxi +48": [
     "HOGAR SOCIAL",
     "VILLA SAN CARLOS",
@@ -34,7 +32,6 @@ const categorias = {
     "MERIDIANO",
     "EDELP"
   ],
-
   "Femenino": [
     "C. F. GONNET",
     "UNIVERSAL",
@@ -55,8 +52,8 @@ const fixturesBase = {
   "Femenino": []
 };
 
-const STORAGE_KEY = "ligaMaxiFixturesV5";
-const SETTINGS_KEY = "ligaMaxiSettingsV5";
+const STORAGE_KEY = "ligaMaxiFixturesV7";
+const SETTINGS_KEY = "ligaMaxiSettingsV7";
 
 const settingsBase = {
   competenciaPorCategoria: {
@@ -71,35 +68,58 @@ const settingsBase = {
     "Maxi +48": 1,
     "Femenino": 1
   },
+  diaJuegoPorCategoria: {
+    "Maxi +35 A": 0,
+    "Maxi +35 B": 0,
+    "Maxi +48": 3,
+    "Femenino": 0
+  },
+  usaPlayoffsPorCategoria: {
+    "Maxi +35 A": true,
+    "Maxi +35 B": true,
+    "Maxi +48": true,
+    "Femenino": true
+  },
   playoffConfigPorCategoria: {
     "Maxi +35 A": { cantidad: 4, octavos: 1, cuartos: 1, semifinales: 1, final: 1 },
     "Maxi +35 B": { cantidad: 4, octavos: 1, cuartos: 1, semifinales: 1, final: 1 },
     "Maxi +48": { cantidad: 4, octavos: 1, cuartos: 1, semifinales: 1, final: 1 },
     "Femenino": { cantidad: 4, octavos: 1, cuartos: 1, semifinales: 1, final: 1 }
+  },
+  calendarioPorCategoria: {
+    "Maxi +35 A": { regular: [], playoffs: [] },
+    "Maxi +35 B": { regular: [], playoffs: [] },
+    "Maxi +48": { regular: [], playoffs: [] },
+    "Femenino": { regular: [], playoffs: [] }
+  },
+  fechasBloqueadasPorCategoria: {
+    "Maxi +35 A": [],
+    "Maxi +35 B": [],
+    "Maxi +48": [],
+    "Femenino": []
+  },
+  fechaInicioPorCategoria: {
+    "Maxi +35 A": "",
+    "Maxi +35 B": "",
+    "Maxi +48": "",
+    "Femenino": ""
+  },
+  fechaFinPorCategoria: {
+    "Maxi +35 A": "",
+    "Maxi +35 B": "",
+    "Maxi +48": "",
+    "Femenino": ""
+  },
+  frecuenciaPorCategoria: {
+    "Maxi +35 A": 1,
+    "Maxi +35 B": 1,
+    "Maxi +48": 1,
+    "Femenino": 1
   }
 };
 
 function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
-}
-
-function cargarFixtures() {
-  const datosGuardados = localStorage.getItem(STORAGE_KEY);
-
-  if (datosGuardados) {
-    try {
-      return JSON.parse(datosGuardados);
-    } catch (error) {
-      console.error("Error leyendo fixtures guardados. Se usará la base inicial.", error);
-      return deepClone(fixturesBase);
-    }
-  }
-
-  return deepClone(fixturesBase);
-}
-
-function guardarFixtures() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(fixtures));
 }
 
 function normalizarConfigPlayoff(configParcial = {}) {
@@ -112,32 +132,76 @@ function normalizarConfigPlayoff(configParcial = {}) {
   };
 }
 
+function normalizarCalendario(calParcial = {}) {
+  return {
+    regular: Array.isArray(calParcial.regular) ? calParcial.regular : [],
+    playoffs: Array.isArray(calParcial.playoffs) ? calParcial.playoffs : []
+  };
+}
+
+function cargarFixtures() {
+  const datosGuardados = localStorage.getItem(STORAGE_KEY);
+
+  if (datosGuardados) {
+    try {
+      return JSON.parse(datosGuardados);
+    } catch (error) {
+      console.error("Error leyendo fixtures guardados. Se usará la base inicial.", error);
+    }
+  }
+
+  return deepClone(fixturesBase);
+}
+
+function guardarFixtures() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(fixtures));
+}
+
 function cargarSettings() {
   const datosGuardados = localStorage.getItem(SETTINGS_KEY);
 
   if (datosGuardados) {
     try {
       const data = JSON.parse(datosGuardados);
-
-      const playoffConfigPorCategoria = deepClone(settingsBase.playoffConfigPorCategoria);
+      const base = deepClone(settingsBase);
 
       Object.keys(categorias).forEach((categoria) => {
-        playoffConfigPorCategoria[categoria] = normalizarConfigPlayoff(
-          (data.playoffConfigPorCategoria || {})[categoria]
+        base.competenciaPorCategoria[categoria] =
+          data.competenciaPorCategoria?.[categoria] || base.competenciaPorCategoria[categoria];
+
+        base.ruedasPorCategoria[categoria] =
+          Number(data.ruedasPorCategoria?.[categoria] ?? base.ruedasPorCategoria[categoria]);
+
+        base.diaJuegoPorCategoria[categoria] =
+          Number(data.diaJuegoPorCategoria?.[categoria] ?? base.diaJuegoPorCategoria[categoria]);
+
+        base.usaPlayoffsPorCategoria[categoria] =
+          Boolean(data.usaPlayoffsPorCategoria?.[categoria] ?? base.usaPlayoffsPorCategoria[categoria]);
+
+        base.playoffConfigPorCategoria[categoria] = normalizarConfigPlayoff(
+          data.playoffConfigPorCategoria?.[categoria]
         );
+
+        base.calendarioPorCategoria[categoria] = normalizarCalendario(
+          data.calendarioPorCategoria?.[categoria]
+        );
+
+        base.fechasBloqueadasPorCategoria[categoria] =
+          Array.isArray(data.fechasBloqueadasPorCategoria?.[categoria])
+            ? data.fechasBloqueadasPorCategoria[categoria]
+            : [];
+
+        base.fechaInicioPorCategoria[categoria] =
+          data.fechaInicioPorCategoria?.[categoria] || "";
+
+        base.fechaFinPorCategoria[categoria] =
+          data.fechaFinPorCategoria?.[categoria] || "";
+
+        base.frecuenciaPorCategoria[categoria] =
+          Number(data.frecuenciaPorCategoria?.[categoria] ?? base.frecuenciaPorCategoria[categoria]);
       });
 
-      return {
-        competenciaPorCategoria: {
-          ...settingsBase.competenciaPorCategoria,
-          ...(data.competenciaPorCategoria || {})
-        },
-        ruedasPorCategoria: {
-          ...settingsBase.ruedasPorCategoria,
-          ...(data.ruedasPorCategoria || {})
-        },
-        playoffConfigPorCategoria
-      };
+      return base;
     } catch (error) {
       console.error("Error leyendo configuración guardada. Se usará la base inicial.", error);
     }
@@ -157,13 +221,19 @@ Object.keys(categorias).forEach((categoria) => {
   if (!fixtures[categoria]) fixtures[categoria] = [];
   if (!settings.competenciaPorCategoria[categoria]) settings.competenciaPorCategoria[categoria] = "Apertura";
   if (!settings.ruedasPorCategoria[categoria]) settings.ruedasPorCategoria[categoria] = 1;
-  if (!settings.playoffConfigPorCategoria[categoria]) {
-    settings.playoffConfigPorCategoria[categoria] = normalizarConfigPlayoff();
-  } else {
-    settings.playoffConfigPorCategoria[categoria] = normalizarConfigPlayoff(
-      settings.playoffConfigPorCategoria[categoria]
-    );
+  if (settings.diaJuegoPorCategoria[categoria] === undefined || settings.diaJuegoPorCategoria[categoria] === null) {
+    settings.diaJuegoPorCategoria[categoria] = categoria === "Maxi +48" ? 3 : 0;
   }
+  settings.playoffConfigPorCategoria[categoria] = normalizarConfigPlayoff(
+    settings.playoffConfigPorCategoria[categoria]
+  );
+  settings.calendarioPorCategoria[categoria] = normalizarCalendario(
+    settings.calendarioPorCategoria[categoria]
+  );
+  if (!Array.isArray(settings.fechasBloqueadasPorCategoria[categoria])) {
+    settings.fechasBloqueadasPorCategoria[categoria] = [];
+  }
+  if (!settings.frecuenciaPorCategoria[categoria]) settings.frecuenciaPorCategoria[categoria] = 1;
 });
 
 const categoriaSelect = document.getElementById("categoria-select");
@@ -182,27 +252,28 @@ const botonGuardar = document.getElementById("guardar-resultado");
 const botonResetear = document.getElementById("resetear-resultado");
 const mensajeEstado = document.getElementById("mensaje-estado");
 
-const plannerEquipos = document.getElementById("planner-equipos");
-const plannerFormato = document.getElementById("planner-formato");
+const plannerCategoria = document.getElementById("planner-categoria");
+const plannerCompetencia = document.getElementById("planner-competencia");
+const plannerRuedas = document.getElementById("planner-ruedas");
+const plannerDiaJuego = document.getElementById("planner-dia-juego");
 const plannerPlayoffs = document.getElementById("planner-playoffs");
 const plannerClasificados = document.getElementById("planner-clasificados");
-const plannerBoton = document.getElementById("planner-calcular");
-const plannerResultado = document.getElementById("planner-resultado");
-const plannerComparacion = document.getElementById("planner-comparacion");
+const plannerOctavos = document.getElementById("planner-octavos");
+const plannerCuartos = document.getElementById("planner-cuartos");
+const plannerSemis = document.getElementById("planner-semis");
+const plannerFinal = document.getElementById("planner-final");
 const plannerInicio = document.getElementById("planner-inicio");
 const plannerFin = document.getElementById("planner-fin");
 const plannerFrecuencia = document.getElementById("planner-frecuencia");
+const plannerBloqueadas = document.getElementById("planner-bloqueadas");
+const plannerBotonGenerar = document.getElementById("planner-generar");
+const plannerResultado = document.getElementById("planner-resultado");
+const plannerComparacion = document.getElementById("planner-comparacion");
 
-const fixtureCategoriaSelect = document.getElementById("fixture-categoria-select");
-const fixtureEtapaSelect = document.getElementById("fixture-etapa-select");
-const fixtureRuedasSelect = document.getElementById("fixture-ruedas-select");
-const fixturePlayoffSelect = document.getElementById("fixture-playoff-select");
-const fixtureOctavosSelect = document.getElementById("fixture-octavos-select");
-const fixtureCuartosSelect = document.getElementById("fixture-cuartos-select");
-const fixtureSemisSelect = document.getElementById("fixture-semis-select");
-const fixtureFinalSelect = document.getElementById("fixture-final-select");
-const botonGenerarFixture = document.getElementById("generar-fixture");
-const mensajeFixture = document.getElementById("mensaje-fixture");
+const acomodarCategoria = document.getElementById("acomodar-categoria");
+const acomodarModo = document.getElementById("acomodar-modo");
+const botonAcomodar = document.getElementById("acomodar-fixture");
+const mensajeAcomodar = document.getElementById("mensaje-acomodar");
 
 const tabLiga = document.getElementById("tab-liga");
 const tabGestion = document.getElementById("tab-gestion");
@@ -225,6 +296,214 @@ function mostrarGestion() {
 
 tabLiga.addEventListener("click", mostrarLiga);
 tabGestion.addEventListener("click", mostrarGestion);
+
+function diaJuegoATexto(dia) {
+  if (Number(dia) === 3) return "Miércoles";
+  return "Domingo";
+}
+
+function formatearFechaISOaLocal(fechaISO) {
+  if (!fechaISO) return "";
+  const [anio, mes, dia] = fechaISO.split("-").map(Number);
+  const fecha = new Date(anio, mes - 1, dia);
+  return fecha.toLocaleDateString("es-AR");
+}
+
+function formatearFechaLargaISO(fechaISO) {
+  if (!fechaISO) return "";
+  const [anio, mes, dia] = fechaISO.split("-").map(Number);
+  const fecha = new Date(anio, mes - 1, dia);
+  return fecha.toLocaleDateString("es-AR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+}
+
+function formatearFechaDisplay(fechaISO) {
+  const texto = formatearFechaLargaISO(fechaISO);
+  if (!texto) return "";
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function convertirFechaArgentinaAISO(texto) {
+  const limpio = texto.trim();
+  const match = limpio.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+
+  if (!match) return null;
+
+  const dia = Number(match[1]);
+  const mes = Number(match[2]);
+  const anio = Number(match[3]);
+
+  if (dia < 1 || dia > 31 || mes < 1 || mes > 12) return null;
+
+  const fecha = new Date(anio, mes - 1, dia);
+
+  if (
+    fecha.getFullYear() !== anio ||
+    fecha.getMonth() !== mes - 1 ||
+    fecha.getDate() !== dia
+  ) {
+    return null;
+  }
+
+  const dd = String(dia).padStart(2, "0");
+  const mm = String(mes).padStart(2, "0");
+
+  return `${anio}-${mm}-${dd}`;
+}
+
+function parsearFechasBloqueadas(texto) {
+  if (!texto.trim()) return [];
+
+  const items = texto
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item !== "");
+
+  const fechasISO = [];
+  const invalidas = [];
+
+  items.forEach((item) => {
+    const iso = convertirFechaArgentinaAISO(item);
+    if (iso) fechasISO.push(iso);
+    else invalidas.push(item);
+  });
+
+  return {
+    fechasISO: [...new Set(fechasISO)],
+    invalidas
+  };
+}
+
+function fechasBloqueadasAInputArgentina(fechasISO) {
+  return (fechasISO || [])
+    .map((fechaISO) => {
+      const [anio, mes, dia] = fechaISO.split("-");
+      return `${Number(dia)}-${Number(mes)}-${anio}`;
+    })
+    .join(", ");
+}
+
+function obtenerConfigPlayoff(categoria) {
+  return normalizarConfigPlayoff(settings.playoffConfigPorCategoria[categoria]);
+}
+
+function obtenerCalendarioCategoria(categoria) {
+  return normalizarCalendario(settings.calendarioPorCategoria[categoria]);
+}
+
+function textoPartidos(cantidad) {
+  return `${cantidad} partido${cantidad > 1 ? "s" : ""}`;
+}
+
+function contarSeriesPorCantidad(cantidadClasificados) {
+  if (cantidadClasificados === 2) {
+    return { final: 1 };
+  }
+
+  if (cantidadClasificados === 4) {
+    return { semifinales: 2, final: 1 };
+  }
+
+  if (cantidadClasificados === 8) {
+    return { cuartos: 4, semifinales: 2, final: 1 };
+  }
+
+  if (cantidadClasificados === 16) {
+    return { octavos: 8, cuartos: 4, semifinales: 2, final: 1 };
+  }
+
+  return {};
+}
+
+function construirEntradasPlayoff(usaPlayoffs, config) {
+  if (!usaPlayoffs) return [];
+
+  const entradas = [];
+  const cantidad = Number(config.cantidad);
+  const series = contarSeriesPorCantidad(cantidad);
+
+  if (series.octavos) {
+    for (let i = 1; i <= config.octavos; i++) {
+      entradas.push({ fase: "Octavos", etiqueta: `Octavos - Juego ${i}` });
+    }
+  }
+
+  if (series.cuartos) {
+    for (let i = 1; i <= config.cuartos; i++) {
+      entradas.push({ fase: "Cuartos", etiqueta: `4tos - Juego ${i}` });
+    }
+  }
+
+  if (series.semifinales) {
+    for (let i = 1; i <= config.semifinales; i++) {
+      entradas.push({ fase: "Semifinales", etiqueta: `Semifinales - Juego ${i}` });
+    }
+  }
+
+  if (series.final) {
+    for (let i = 1; i <= config.final; i++) {
+      entradas.push({ fase: "Final", etiqueta: `Final - Juego ${i}` });
+    }
+  }
+
+  return entradas;
+}
+
+function calcularPartidosPlayoffReales(usaPlayoffs, config) {
+  if (!usaPlayoffs) {
+    return {
+      partidos: 0,
+      fechas: 0,
+      detalle: "Sin playoffs."
+    };
+  }
+
+  const cantidad = Number(config.cantidad);
+  const series = contarSeriesPorCantidad(cantidad);
+  let partidos = 0;
+  let fechas = 0;
+  const detalle = [];
+
+  if (series.octavos) {
+    partidos += series.octavos * Number(config.octavos);
+    fechas += Number(config.octavos);
+    detalle.push(`8vos a ${textoPartidos(Number(config.octavos))}`);
+  }
+
+  if (series.cuartos) {
+    partidos += series.cuartos * Number(config.cuartos);
+    fechas += Number(config.cuartos);
+    detalle.push(`4tos a ${textoPartidos(Number(config.cuartos))}`);
+  }
+
+  if (series.semifinales) {
+    partidos += series.semifinales * Number(config.semifinales);
+    fechas += Number(config.semifinales);
+    detalle.push(`semifinales a ${textoPartidos(Number(config.semifinales))}`);
+  }
+
+  if (series.final) {
+    partidos += series.final * Number(config.final);
+    fechas += Number(config.final);
+    detalle.push(`final a ${textoPartidos(Number(config.final))}`);
+  }
+
+  return {
+    partidos,
+    fechas,
+    detalle: detalle.join(" + ") || "Sin playoffs."
+  };
+}
+
+function contarFechasRegulares(equipos, ruedas) {
+  if (equipos < 2) return 0;
+  const unaRueda = equipos % 2 === 0 ? equipos - 1 : equipos;
+  return unaRueda * ruedas;
+}
 
 function calcularTabla(categoria) {
   const tabla = {};
@@ -290,190 +569,6 @@ function calcularTabla(categoria) {
 function obtenerGanador(partido) {
   if (partido.estado !== "Jugado") return null;
   return partido.puntosLocal > partido.puntosVisitante ? partido.local : partido.visitante;
-}
-
-function contarDomingos(inicio, fin) {
-  let fecha = new Date(inicio + "T00:00:00");
-  const fechaFin = new Date(fin + "T00:00:00");
-  let domingos = 0;
-
-  while (fecha <= fechaFin) {
-    if (fecha.getDay() === 0) domingos++;
-    fecha.setDate(fecha.getDate() + 1);
-  }
-
-  return domingos;
-}
-
-function esPotenciaDeDos(n) {
-  return n > 0 && (n & (n - 1)) === 0;
-}
-
-function calcularPlayoffsBasico(clasificados) {
-  if (!esPotenciaDeDos(clasificados) || clasificados < 2) {
-    return {
-      partidos: 0,
-      fechas: 0,
-      detalle: "Cantidad de clasificados no válida."
-    };
-  }
-
-  return {
-    partidos: clasificados - 1,
-    fechas: Math.log2(clasificados),
-    detalle:
-      clasificados === 4
-        ? "Semifinales + final."
-        : clasificados === 8
-        ? "Cuartos + semifinales + final."
-        : clasificados === 16
-        ? "Octavos + cuartos + semifinales + final."
-        : "Llaves eliminatorias."
-  };
-}
-
-function calcularFechasPlayoffSegunConfig(cantidadClasificados, config) {
-  if (!esPotenciaDeDos(cantidadClasificados) || cantidadClasificados < 2) {
-    return {
-      fechas: 0,
-      detalle: "Cantidad de clasificados no válida."
-    };
-  }
-
-  if (cantidadClasificados === 2) {
-    return {
-      fechas: Number(config.final || 1),
-      detalle: `Final a ${textoPartidos(Number(config.final || 1))}.`
-    };
-  }
-
-  if (cantidadClasificados === 4) {
-    return {
-      fechas: Number(config.semifinales || 1) + Number(config.final || 1),
-      detalle: `Semifinales a ${textoPartidos(Number(config.semifinales || 1))} + final a ${textoPartidos(Number(config.final || 1))}.`
-    };
-  }
-
-  if (cantidadClasificados === 8) {
-    return {
-      fechas: Number(config.cuartos || 1) + Number(config.semifinales || 1) + Number(config.final || 1),
-      detalle: `4tos a ${textoPartidos(Number(config.cuartos || 1))} + semifinales a ${textoPartidos(Number(config.semifinales || 1))} + final a ${textoPartidos(Number(config.final || 1))}.`
-    };
-  }
-
-  if (cantidadClasificados === 16) {
-    return {
-      fechas:
-        Number(config.octavos || 1) +
-        Number(config.cuartos || 1) +
-        Number(config.semifinales || 1) +
-        Number(config.final || 1),
-      detalle: `8vos a ${textoPartidos(Number(config.octavos || 1))} + 4tos a ${textoPartidos(Number(config.cuartos || 1))} + semifinales a ${textoPartidos(Number(config.semifinales || 1))} + final a ${textoPartidos(Number(config.final || 1))}.`
-    };
-  }
-
-  return {
-    fechas: Math.log2(cantidadClasificados),
-    detalle: "Llaves eliminatorias."
-  };
-}
-
-function formatearFecha(fecha) {
-  return fecha.toLocaleDateString("es-AR");
-}
-
-function generarCalendarioSugerido(inicio, frecuencia, totalFechas) {
-  const fechas = [];
-  let fecha = new Date(inicio + "T00:00:00");
-
-  while (fecha.getDay() !== 0) {
-    fecha.setDate(fecha.getDate() + 1);
-  }
-
-  for (let i = 0; i < totalFechas; i++) {
-    fechas.push(new Date(fecha));
-    fecha.setDate(fecha.getDate() + 7 * frecuencia);
-  }
-
-  return fechas;
-}
-
-function evaluarEstado(fechasNecesarias, domingosDisponibles) {
-  if (fechasNecesarias < domingosDisponibles) return "✅ Entra cómodo";
-  if (fechasNecesarias === domingosDisponibles) return "⚠️ Entra justo";
-  return "❌ No entra";
-}
-
-function compararFormatos(equipos, inicio, fin, frecuencia) {
-  if (!inicio || !fin) {
-    plannerComparacion.innerHTML = "";
-    return;
-  }
-
-  const domingos = Math.floor(contarDomingos(inicio, fin) / frecuencia);
-  const fechasUnaRueda = equipos % 2 === 0 ? equipos - 1 : equipos;
-  const fechasDosRuedas = fechasUnaRueda * 2;
-
-  const configActual = {
-    cantidad: Number(fixturePlayoffSelect.value),
-    octavos: Number(fixtureOctavosSelect.value),
-    cuartos: Number(fixtureCuartosSelect.value),
-    semifinales: Number(fixtureSemisSelect.value),
-    final: Number(fixtureFinalSelect.value)
-  };
-
-  const top4 = calcularFechasPlayoffSegunConfig(4, configActual);
-  const top8 = calcularFechasPlayoffSegunConfig(8, configActual);
-
-  const opciones = [
-    { nombre: "Apertura", fechas: fechasUnaRueda },
-    { nombre: "Clausura", fechas: fechasUnaRueda },
-    { nombre: "Apertura + Top 4", fechas: fechasUnaRueda + top4.fechas },
-    { nombre: "Apertura + Top 8", fechas: fechasUnaRueda + top8.fechas },
-    { nombre: "Anual", fechas: fechasDosRuedas },
-    { nombre: "Anual + Top 4", fechas: fechasDosRuedas + top4.fechas },
-    { nombre: "Anual + Top 8", fechas: fechasDosRuedas + top8.fechas }
-  ];
-
-  let html = `<h3>Comparación de formatos</h3>`;
-
-  opciones.forEach((op) => {
-    let valido = true;
-
-    if (op.nombre.includes("Top 4") && equipos < 4) valido = false;
-    if (op.nombre.includes("Top 8") && equipos < 8) valido = false;
-
-    if (!valido) {
-      html += `
-        <p>
-          <strong>${op.nombre}</strong><br>
-          No aplica para ${equipos} equipos.
-        </p>
-        <hr>
-      `;
-      return;
-    }
-
-    const diferencia = domingos - op.fechas;
-    let margenTexto = "";
-
-    if (diferencia > 0) margenTexto = `Sobran ${diferencia} domingos.`;
-    else if (diferencia === 0) margenTexto = "Sin margen.";
-    else margenTexto = `Faltan ${Math.abs(diferencia)} fechas.`;
-
-    html += `
-      <p>
-        <strong>${op.nombre}</strong><br>
-        Fechas necesarias: ${op.fechas}<br>
-        Domingos disponibles: ${domingos}<br>
-        Resultado: ${evaluarEstado(op.fechas, domingos)}<br>
-        Margen: ${margenTexto}
-      </p>
-      <hr>
-    `;
-  });
-
-  plannerComparacion.innerHTML = html;
 }
 
 function generarRoundRobin(equiposOriginales) {
@@ -561,44 +656,71 @@ function generarDosRuedas(equiposOriginales) {
   return [...ida, ...vuelta];
 }
 
-function cargarSelectorPartidos(categoria) {
-  partidoSelect.innerHTML = "";
-  const partidos = fixtures[categoria] || [];
+function obtenerPrimerDiaJuegoDesde(fechaInicioISO, diaJuego) {
+  const [anio, mes, dia] = fechaInicioISO.split("-").map(Number);
+  const fecha = new Date(anio, mes - 1, dia);
 
-  if (partidos.length === 0) {
-    partidoSelect.innerHTML = `<option value="">No hay partidos cargados</option>`;
-    return;
+  while (fecha.getDay() !== Number(diaJuego)) {
+    fecha.setDate(fecha.getDate() + 1);
   }
 
-  partidos.forEach((partido, index) => {
-    const textoResultado =
-      partido.estado === "Jugado"
-        ? ` (${partido.puntosLocal}-${partido.puntosVisitante})`
-        : partido.estado === "Libre"
-        ? " (Libre)"
-        : " (Pendiente)";
-
-    partidoSelect.innerHTML += `
-      <option value="${index}">
-        J${partido.jornada} - ${partido.local} vs ${partido.visitante}${textoResultado}
-      </option>
-    `;
-  });
+  return fecha;
 }
 
-function cargarDatosPartidoSeleccionado() {
-  const categoria = categoriaSelect.value;
-  const index = Number(partidoSelect.value);
-  const partido = (fixtures[categoria] || [])[index];
+function fechaAISO(fecha) {
+  const anio = fecha.getFullYear();
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+  const dia = String(fecha.getDate()).padStart(2, "0");
+  return `${anio}-${mes}-${dia}`;
+}
 
-  if (!partido || partido.estado === "Libre") {
-    puntosLocalInput.value = "";
-    puntosVisitanteInput.value = "";
-    return;
+function generarFechasDisponibles(fechaInicioISO, fechaFinISO, frecuencia, fechasBloqueadas, diaJuego) {
+  if (!fechaInicioISO || !fechaFinISO) return [];
+
+  const bloqueadas = new Set(fechasBloqueadas);
+  const fechas = [];
+  const fecha = obtenerPrimerDiaJuegoDesde(fechaInicioISO, diaJuego);
+  const [anioFin, mesFin, diaFin] = fechaFinISO.split("-").map(Number);
+  const fechaFin = new Date(anioFin, mesFin - 1, diaFin);
+
+  while (fecha <= fechaFin) {
+    const iso = fechaAISO(fecha);
+
+    if (!bloqueadas.has(iso)) {
+      fechas.push(iso);
+    }
+
+    fecha.setDate(fecha.getDate() + (7 * frecuencia));
   }
 
-  puntosLocalInput.value = partido.puntosLocal !== null ? partido.puntosLocal : "";
-  puntosVisitanteInput.value = partido.puntosVisitante !== null ? partido.puntosVisitante : "";
+  return fechas;
+}
+
+function construirCalendarioReal(fechaInicioISO, fechaFinISO, frecuencia, fechasBloqueadas, diaJuego, fechasRegulares, entradasPlayoff) {
+  const disponibles = generarFechasDisponibles(fechaInicioISO, fechaFinISO, frecuencia, fechasBloqueadas, diaJuego);
+  const fechasNecesarias = fechasRegulares + entradasPlayoff.length;
+  const alcanza = disponibles.length >= fechasNecesarias;
+
+  const regular = disponibles.slice(0, fechasRegulares);
+  const playoffs = disponibles
+    .slice(fechasRegulares, fechasRegulares + entradasPlayoff.length)
+    .map((fecha, index) => ({
+      ...entradasPlayoff[index],
+      fecha
+    }));
+
+  return {
+    disponibles,
+    regular,
+    playoffs,
+    fechasNecesarias,
+    alcanza
+  };
+}
+
+function crearEtiquetaEquipo(posicion, equipo) {
+  if (!equipo) return `${posicion}° puesto`;
+  return `${posicion}° ${equipo.equipo}`;
 }
 
 function faseRegularCompleta(categoria) {
@@ -612,17 +734,35 @@ function obtenerClasificados(categoria, cantidad) {
   return tabla.slice(0, cantidad);
 }
 
-function crearEtiquetaEquipo(posicion, equipo) {
-  if (!equipo) return `${posicion}° puesto`;
-  return `${posicion}° ${equipo.equipo}`;
+function agruparPlayoffFechasPorFase(categoria) {
+  const calendario = obtenerCalendarioCategoria(categoria);
+  const mapa = {};
+
+  calendario.playoffs.forEach((item) => {
+    if (!mapa[item.fase]) mapa[item.fase] = [];
+    mapa[item.fase].push(item);
+  });
+
+  return mapa;
 }
 
-function textoPartidos(cantidad) {
-  return `${cantidad} partido${cantidad > 1 ? "s" : ""}`;
-}
+function renderFechasPlayoff(categoria) {
+  const mapa = agruparPlayoffFechasPorFase(categoria);
+  const fases = ["Octavos", "Cuartos", "Semifinales", "Final"];
+  const disponibles = fases.filter((fase) => Array.isArray(mapa[fase]) && mapa[fase].length > 0);
 
-function obtenerConfigPlayoff(categoria) {
-  return normalizarConfigPlayoff(settings.playoffConfigPorCategoria[categoria]);
+  if (disponibles.length === 0) return "";
+
+  return `
+    <div class="playoff-fechas-grid">
+      ${disponibles.map((fase) => `
+        <div class="playoff-fecha-box">
+          <h4>${fase}</h4>
+          ${mapa[fase].map((item) => `<p><strong>${item.etiqueta}:</strong> ${formatearFechaDisplay(item.fecha)}</p>`).join("")}
+        </div>
+      `).join("")}
+    </div>
+  `;
 }
 
 function renderBracketTop4(clasificados, config) {
@@ -655,6 +795,7 @@ function renderBracketTop4(clasificados, config) {
 
       <div class="bracket-columna">
         <h4>Final</h4>
+
         <div class="llave">
           <div class="llave-nombre">Final</div>
           <div class="llave-serie">${textoPartidos(config.final)}</div>
@@ -683,19 +824,15 @@ function renderBracketTop8(clasificados, config) {
       <div class="bracket-columna">
         <h4>4tos</h4>
 
-        ${qf
-          .map(
-            (partido, index) => `
-            <div class="llave">
-              <div class="llave-nombre">Cuarto ${index + 1}</div>
-              <div class="llave-serie">${textoPartidos(config.cuartos)}</div>
-              <div class="llave-equipo">${partido[0]}</div>
-              <div class="llave-separador">vs</div>
-              <div class="llave-equipo">${partido[1]}</div>
-            </div>
-          `
-          )
-          .join("")}
+        ${qf.map((partido, index) => `
+          <div class="llave">
+            <div class="llave-nombre">Cuarto ${index + 1}</div>
+            <div class="llave-serie">${textoPartidos(config.cuartos)}</div>
+            <div class="llave-equipo">${partido[0]}</div>
+            <div class="llave-separador">vs</div>
+            <div class="llave-equipo">${partido[1]}</div>
+          </div>
+        `).join("")}
       </div>
 
       <div class="bracket-columna">
@@ -720,6 +857,7 @@ function renderBracketTop8(clasificados, config) {
 
       <div class="bracket-columna">
         <h4>Final</h4>
+
         <div class="llave">
           <div class="llave-nombre">Final</div>
           <div class="llave-serie">${textoPartidos(config.final)}</div>
@@ -732,30 +870,24 @@ function renderBracketTop8(clasificados, config) {
   `;
 }
 
-function renderResumenFormato(config) {
-  return `
-    <div class="planner-resultado" style="margin-top:12px;">
-      <p><strong>Formato configurado</strong></p>
-      <p>8vos: ${textoPartidos(config.octavos)}</p>
-      <p>4tos: ${textoPartidos(config.cuartos)}</p>
-      <p>Semi: ${textoPartidos(config.semifinales)}</p>
-      <p>Final: ${textoPartidos(config.final)}</p>
-    </div>
-  `;
-}
-
 function renderPlayoffs(categoria) {
+  const usaPlayoffs = settings.usaPlayoffsPorCategoria[categoria];
   const config = obtenerConfigPlayoff(categoria);
-  const cantidad = Number(config.cantidad);
   const equiposDisponibles = categorias[categoria]?.length || 0;
 
-  if (cantidad > equiposDisponibles) {
-    playoffBody.innerHTML = `<div class="alerta-suave">No alcanza la cantidad de equipos para un Top ${cantidad} en ${categoria}.</div>`;
-    playoffEstado.textContent = "No aplica";
+  if (!usaPlayoffs) {
+    playoffEstado.textContent = "Sin playoffs";
+    playoffBody.innerHTML = `<div class="alerta-suave">Para esta categoría el torneo está configurado sin playoffs.</div>`;
     return;
   }
 
-  const clasificados = obtenerClasificados(categoria, cantidad);
+  if (config.cantidad > equiposDisponibles) {
+    playoffEstado.textContent = "No aplica";
+    playoffBody.innerHTML = `<div class="alerta-suave">No alcanza la cantidad de equipos para un Top ${config.cantidad} en ${categoria}.</div>`;
+    return;
+  }
+
+  const clasificados = obtenerClasificados(categoria, config.cantidad);
   const completa = faseRegularCompleta(categoria);
 
   playoffEstado.textContent = completa ? "Llaves confirmadas" : "Proyección actual";
@@ -766,9 +898,49 @@ function renderPlayoffs(categoria) {
 
   playoffBody.innerHTML = `
     <p class="playoff-descripcion">${descripcion}</p>
-    ${renderResumenFormato(config)}
-    ${cantidad === 4 ? renderBracketTop4(clasificados, config) : renderBracketTop8(clasificados, config)}
+    ${renderFechasPlayoff(categoria)}
+    ${config.cantidad === 4 ? renderBracketTop4(clasificados, config) : renderBracketTop8(clasificados, config)}
   `;
+}
+
+function cargarSelectorPartidos(categoria) {
+  partidoSelect.innerHTML = "";
+  const partidos = fixtures[categoria] || [];
+
+  if (partidos.length === 0) {
+    partidoSelect.innerHTML = `<option value="">No hay partidos cargados</option>`;
+    return;
+  }
+
+  partidos.forEach((partido, index) => {
+    const textoResultado =
+      partido.estado === "Jugado"
+        ? ` (${partido.puntosLocal}-${partido.puntosVisitante})`
+        : partido.estado === "Libre"
+          ? " (Libre)"
+          : " (Pendiente)";
+
+    partidoSelect.innerHTML += `
+      <option value="${index}">
+        J${partido.jornada} - ${partido.local} vs ${partido.visitante}${textoResultado}
+      </option>
+    `;
+  });
+}
+
+function cargarDatosPartidoSeleccionado() {
+  const categoria = categoriaSelect.value;
+  const index = Number(partidoSelect.value);
+  const partido = (fixtures[categoria] || [])[index];
+
+  if (!partido || partido.estado === "Libre") {
+    puntosLocalInput.value = "";
+    puntosVisitanteInput.value = "";
+    return;
+  }
+
+  puntosLocalInput.value = partido.puntosLocal !== null ? partido.puntosLocal : "";
+  puntosVisitanteInput.value = partido.puntosVisitante !== null ? partido.puntosVisitante : "";
 }
 
 function renderCategoria() {
@@ -777,10 +949,13 @@ function renderCategoria() {
   const tabla = calcularTabla(categoria);
   const partidos = fixtures[categoria] || [];
   const config = obtenerConfigPlayoff(categoria);
+  const usaPlayoffs = settings.usaPlayoffsPorCategoria[categoria];
+  const calendario = obtenerCalendarioCategoria(categoria);
+  const diaJuego = settings.diaJuegoPorCategoria[categoria];
 
   tablaTitulo.textContent = `Tabla de Posiciones - ${categoria}`;
   fixtureTitulo.textContent = `Fixture - ${categoria}`;
-  badgeEtapa.textContent = `${settings.competenciaPorCategoria[categoria]} · ${settings.ruedasPorCategoria[categoria]} rueda${settings.ruedasPorCategoria[categoria] > 1 ? "s" : ""} · Top ${config.cantidad}`;
+  badgeEtapa.textContent = `${settings.competenciaPorCategoria[categoria]} · ${settings.ruedasPorCategoria[categoria]} rueda${settings.ruedasPorCategoria[categoria] > 1 ? "s" : ""} · ${diaJuegoATexto(diaJuego)}${usaPlayoffs ? ` · Top ${config.cantidad}` : " · Sin playoffs"}`;
 
   tablaBody.innerHTML = "";
   fixtureBody.innerHTML = "";
@@ -833,7 +1008,16 @@ function renderCategoria() {
       if (bloqueAbierto) fixtureBody.innerHTML += `</div>`;
       jornadaActual = partido.jornada;
       bloqueAbierto = true;
-      fixtureBody.innerHTML += `<div class="jornada-bloque"><h3>Jornada ${jornadaActual}</h3>`;
+
+      const fechaJornada = calendario.regular[jornadaActual - 1] || "";
+
+      fixtureBody.innerHTML += `
+        <div class="jornada-bloque">
+          <div class="jornada-head">
+            <h3>Fecha ${jornadaActual}</h3>
+            <span class="fecha-chip">${fechaJornada ? formatearFechaDisplay(fechaJornada) : "Sin fecha asignada"}</span>
+          </div>
+      `;
     }
 
     if (partido.estado === "Libre") {
@@ -875,147 +1059,340 @@ function renderCategoria() {
   renderPlayoffs(categoria);
 }
 
-function calcularPlanificador() {
-  const equipos = Number(plannerEquipos.value);
-  const formato = plannerFormato.value;
-  const tienePlayoffs = plannerPlayoffs.value === "si";
-  const clasificados = Number(plannerClasificados.value);
-  const inicio = plannerInicio.value;
-  const fin = plannerFin.value;
-  const frecuencia = Number(plannerFrecuencia.value);
+function renderComparacionFormatos(categoria, fechaInicioISO, fechaFinISO, frecuencia, bloqueadas, diaJuego) {
+  const equipos = categorias[categoria]?.length || 0;
 
-  const configActual = {
-    cantidad: Number(fixturePlayoffSelect.value),
-    octavos: Number(fixtureOctavosSelect.value),
-    cuartos: Number(fixtureCuartosSelect.value),
-    semifinales: Number(fixtureSemisSelect.value),
-    final: Number(fixtureFinalSelect.value)
-  };
-
-  if (Number.isNaN(equipos) || equipos < 2) {
-    plannerResultado.innerHTML = `<p>Ingresá una cantidad válida de equipos.</p>`;
+  if (!fechaInicioISO || !fechaFinISO || equipos < 2) {
     plannerComparacion.innerHTML = "";
     return;
   }
 
-  let partidosRegular = 0;
-  let fechasRegular = 0;
-  let descripcionFormato = "";
+  const configActual = {
+    cantidad: Number(plannerClasificados.value),
+    octavos: Number(plannerOctavos.value),
+    cuartos: Number(plannerCuartos.value),
+    semifinales: Number(plannerSemis.value),
+    final: Number(plannerFinal.value)
+  };
 
-  if (formato === "apertura") {
-    partidosRegular = (equipos * (equipos - 1)) / 2;
-    fechasRegular = equipos % 2 === 0 ? equipos - 1 : equipos;
-    descripcionFormato = "Apertura (1 rueda)";
-  }
+  const fechasDisponibles = generarFechasDisponibles(
+    fechaInicioISO,
+    fechaFinISO,
+    frecuencia,
+    bloqueadas,
+    diaJuego
+  ).length;
 
-  if (formato === "clausura") {
-    partidosRegular = (equipos * (equipos - 1)) / 2;
-    fechasRegular = equipos % 2 === 0 ? equipos - 1 : equipos;
-    descripcionFormato = "Clausura (1 rueda)";
-  }
+  const regular1 = contarFechasRegulares(equipos, 1);
+  const regular2 = contarFechasRegulares(equipos, 2);
+  const top4 = calcularPartidosPlayoffReales(true, { ...configActual, cantidad: 4 });
+  const top8 = calcularPartidosPlayoffReales(true, { ...configActual, cantidad: 8 });
 
-  if (formato === "anual") {
-    partidosRegular = equipos * (equipos - 1);
-    fechasRegular = (equipos % 2 === 0 ? equipos - 1 : equipos) * 2;
-    descripcionFormato = "Anual (2 ruedas)";
-  }
+  const opciones = [
+    { nombre: "1 rueda sin playoffs", fechas: regular1 },
+    { nombre: "1 rueda + Top 4", fechas: regular1 + top4.fechas, valido: equipos >= 4 },
+    { nombre: "1 rueda + Top 8", fechas: regular1 + top8.fechas, valido: equipos >= 8 },
+    { nombre: "2 ruedas sin playoffs", fechas: regular2 },
+    { nombre: "2 ruedas + Top 4", fechas: regular2 + top4.fechas, valido: equipos >= 4 },
+    { nombre: "2 ruedas + Top 8", fechas: regular2 + top8.fechas, valido: equipos >= 8 }
+  ];
 
-  if (formato === "eliminacion") {
-    partidosRegular = 0;
-    fechasRegular = 0;
-    descripcionFormato = "Eliminación directa";
-  }
+  let html = `<h3>Comparación de formatos</h3>`;
 
-  let partidosPlayoff = 0;
-  let fechasPlayoff = 0;
-  let detallePlayoff = "Sin playoffs.";
+  opciones.forEach((op) => {
+    const valido = op.valido !== false;
 
-  if (formato === "eliminacion") {
-    const directo = calcularPlayoffsBasico(equipos);
-    partidosPlayoff = directo.partidos;
-    fechasPlayoff = directo.fechas;
-    detallePlayoff = directo.detalle;
-  } else if (tienePlayoffs) {
-    if (clasificados > equipos) {
-      plannerResultado.innerHTML = `<p>Los clasificados a playoffs no pueden superar la cantidad de equipos.</p>`;
-      plannerComparacion.innerHTML = "";
+    if (!valido) {
+      html += `
+        <p>
+          <strong>${op.nombre}</strong><br>
+          No aplica para ${equipos} equipos.
+        </p>
+        <hr>
+      `;
       return;
     }
 
-    const playoffBasico = calcularPlayoffsBasico(clasificados);
-    const playoffReal = calcularFechasPlayoffSegunConfig(clasificados, configActual);
-
-    partidosPlayoff = playoffBasico.partidos;
-    fechasPlayoff = playoffReal.fechas;
-    detallePlayoff = playoffReal.detalle;
-  }
-
-  const totalPartidos = partidosRegular + partidosPlayoff;
-  const totalFechas = fechasRegular + fechasPlayoff;
-
-  let domingosDisponibles = 0;
-
-  if (inicio && fin) {
-    domingosDisponibles = contarDomingos(inicio, fin);
-    domingosDisponibles = Math.floor(domingosDisponibles / frecuencia);
-  }
-
-  let diagnostico = "Sin calendario definido.";
-  let recomendacion = "";
-
-  if (domingosDisponibles > 0) {
-    const diferencia = domingosDisponibles - totalFechas;
+    const diferencia = fechasDisponibles - op.fechas;
+    let estado = "⚠️ Entra justo";
+    let margen = "Sin margen.";
 
     if (diferencia > 0) {
-      diagnostico = `El formato entra. Sobran ${diferencia} domingos.`;
-      recomendacion = "Se puede absorber una suspensión o dejar libre una fecha sensible.";
-    } else if (diferencia === 0) {
-      diagnostico = "El formato entra justo en el calendario.";
-      recomendacion = "Conviene evitar suspensiones o prever reprogramación.";
-    } else {
-      diagnostico = `No entra. Faltan ${Math.abs(diferencia)} fechas.`;
-      recomendacion = "Haría falta adelantar una fecha entresemana o cambiar el formato.";
+      estado = "✅ Entra cómodo";
+      margen = `Sobran ${diferencia} fechas.`;
+    } else if (diferencia < 0) {
+      estado = "❌ No entra";
+      margen = `Faltan ${Math.abs(diferencia)} fechas.`;
     }
-  }
 
-  let calendarioHTML = "";
-
-  if (inicio) {
-    const calendario = generarCalendarioSugerido(inicio, frecuencia, totalFechas);
-    calendarioHTML = `
+    html += `
+      <p>
+        <strong>${op.nombre}</strong><br>
+        Fechas necesarias: ${op.fechas}<br>
+        Fechas disponibles: ${fechasDisponibles}<br>
+        Resultado: ${estado}<br>
+        Margen: ${margen}
+      </p>
       <hr>
-      <h3>Calendario sugerido</h3>
-      ${calendario.map((fecha, index) => `<p><strong>Fecha ${index + 1}:</strong> ${formatearFecha(fecha)}</p>`).join("")}
     `;
+  });
+
+  plannerComparacion.innerHTML = html;
+}
+
+function generarTorneoCompleto() {
+  const categoria = plannerCategoria.value;
+  const equipos = categorias[categoria] || [];
+  const competencia = plannerCompetencia.value;
+  const ruedas = Number(plannerRuedas.value);
+  const diaJuego = Number(plannerDiaJuego.value);
+  const usaPlayoffs = plannerPlayoffs.value === "si";
+  const clasificados = Number(plannerClasificados.value);
+  const configPlayoff = {
+    cantidad: clasificados,
+    octavos: Number(plannerOctavos.value),
+    cuartos: Number(plannerCuartos.value),
+    semifinales: Number(plannerSemis.value),
+    final: Number(plannerFinal.value)
+  };
+  const fechaInicioISO = plannerInicio.value;
+  const fechaFinISO = plannerFin.value;
+  const frecuencia = Number(plannerFrecuencia.value);
+  const parseoBloqueadas = parsearFechasBloqueadas(plannerBloqueadas.value);
+
+  mensajeAcomodar.textContent = "";
+
+  if (parseoBloqueadas.invalidas.length > 0) {
+    plannerResultado.innerHTML = `
+      <p>Estas fechas bloqueadas no tienen formato válido:</p>
+      <p><strong>${parseoBloqueadas.invalidas.join(", ")}</strong></p>
+      <p>Usá formato argentino: <strong>3-5-2026, 25-9-2026</strong></p>
+    `;
+    return;
   }
+
+  const fechasBloqueadas = parseoBloqueadas.fechasISO;
+
+  if (equipos.length < 2) {
+    plannerResultado.innerHTML = `<p>La categoría no tiene equipos suficientes.</p>`;
+    return;
+  }
+
+  if (!fechaInicioISO || !fechaFinISO) {
+    plannerResultado.innerHTML = `<p>Completá fecha de inicio y fecha de fin.</p>`;
+    return;
+  }
+
+  if (fechaInicioISO > fechaFinISO) {
+    plannerResultado.innerHTML = `<p>La fecha de inicio no puede ser posterior a la fecha de fin.</p>`;
+    return;
+  }
+
+  if (usaPlayoffs && clasificados > equipos.length) {
+    plannerResultado.innerHTML = `<p>Los clasificados a playoffs no pueden superar la cantidad de equipos de la categoría.</p>`;
+    return;
+  }
+
+  const hayDatosPrevios = (fixtures[categoria] || []).length > 0;
+
+  if (hayDatosPrevios) {
+    const confirmar = window.confirm(
+      `Ya existe un torneo cargado para ${categoria}. Si continuás, se va a regenerar y se perderán los resultados actuales. ¿Querés seguir?`
+    );
+
+    if (!confirmar) return;
+  }
+
+  const fixtureGenerado = ruedas === 2 ? generarDosRuedas(equipos) : generarRoundRobin(equipos);
+  const fechasRegulares = contarFechasRegulares(equipos.length, ruedas);
+  const entradasPlayoff = construirEntradasPlayoff(usaPlayoffs, configPlayoff);
+  const infoPlayoff = calcularPartidosPlayoffReales(usaPlayoffs, configPlayoff);
+  const calendario = construirCalendarioReal(
+    fechaInicioISO,
+    fechaFinISO,
+    frecuencia,
+    fechasBloqueadas,
+    diaJuego,
+    fechasRegulares,
+    entradasPlayoff
+  );
+
+  const partidosRegulares = fixtureGenerado.filter((p) => p.visitante !== "LIBRE").length;
+  const totalPartidos = partidosRegulares + infoPlayoff.partidos;
+  const totalFechas = fechasRegulares + infoPlayoff.fechas;
+
+  if (!calendario.alcanza) {
+    plannerResultado.innerHTML = `
+      <h3>Resultado del formato</h3>
+      <p><strong>Categoría:</strong> ${categoria}</p>
+      <p><strong>Equipos:</strong> ${equipos.length}</p>
+      <p><strong>Competencia:</strong> ${competencia}</p>
+      <p><strong>Día de juego:</strong> ${diaJuegoATexto(diaJuego)}</p>
+      <p><strong>Fase regular:</strong> ${partidosRegulares} partidos / ${fechasRegulares} fechas</p>
+      <p><strong>Playoffs:</strong> ${infoPlayoff.partidos} partidos / ${infoPlayoff.fechas} fechas</p>
+      <p><strong>Total necesario:</strong> ${totalPartidos} partidos / ${totalFechas} fechas</p>
+      <hr>
+      <p><strong>Fechas disponibles:</strong> ${calendario.disponibles.length}</p>
+      <p><strong>Diagnóstico:</strong> ❌ No entra en el calendario.</p>
+      <p><strong>Faltan:</strong> ${totalFechas - calendario.disponibles.length} fechas</p>
+      <p><strong>Detalle de playoffs:</strong> ${infoPlayoff.detalle}</p>
+    `;
+    renderComparacionFormatos(categoria, fechaInicioISO, fechaFinISO, frecuencia, fechasBloqueadas, diaJuego);
+    return;
+  }
+
+  fixtures[categoria] = fixtureGenerado;
+
+  settings.competenciaPorCategoria[categoria] = competencia;
+  settings.ruedasPorCategoria[categoria] = ruedas;
+  settings.diaJuegoPorCategoria[categoria] = diaJuego;
+  settings.usaPlayoffsPorCategoria[categoria] = usaPlayoffs;
+  settings.playoffConfigPorCategoria[categoria] = configPlayoff;
+  settings.calendarioPorCategoria[categoria] = {
+    regular: calendario.regular,
+    playoffs: calendario.playoffs
+  };
+  settings.fechasBloqueadasPorCategoria[categoria] = fechasBloqueadas;
+  settings.fechaInicioPorCategoria[categoria] = fechaInicioISO;
+  settings.fechaFinPorCategoria[categoria] = fechaFinISO;
+  settings.frecuenciaPorCategoria[categoria] = frecuencia;
+
+  guardarFixtures();
+  guardarSettings();
+
+  categoriaSelect.value = categoria;
+  acomodarCategoria.value = categoria;
+
+  const calendarioRegularHTML = calendario.regular
+    .map((fecha, index) => `<p><strong>Fecha ${index + 1}:</strong> ${formatearFechaDisplay(fecha)}</p>`)
+    .join("");
+
+  const calendarioPlayoffHTML = calendario.playoffs.length > 0
+    ? calendario.playoffs
+        .map((item) => `<p><strong>${item.etiqueta}:</strong> ${formatearFechaDisplay(item.fecha)}</p>`)
+        .join("")
+    : `<p>Sin playoffs.</p>`;
+
+  const bloqueadasHTML = fechasBloqueadas.length > 0
+    ? `
+      <div class="bloqueadas-lista">
+        <p><strong>Fechas bloqueadas</strong></p>
+        ${fechasBloqueadas.map((fecha) => `<p>${formatearFechaDisplay(fecha)}</p>`).join("")}
+      </div>
+    `
+    : "";
 
   plannerResultado.innerHTML = `
     <h3>Resultado del formato</h3>
-    <p><strong>Equipos:</strong> ${equipos}</p>
-    <p><strong>Competencia:</strong> ${descripcionFormato}</p>
-    <p><strong>Fase regular:</strong> ${partidosRegular} partidos / ${fechasRegular} fechas</p>
-    <p><strong>Playoffs:</strong> ${partidosPlayoff} partidos / ${fechasPlayoff} fechas</p>
+    <p><strong>Categoría:</strong> ${categoria}</p>
+    <p><strong>Equipos:</strong> ${equipos.length}</p>
+    <p><strong>Competencia:</strong> ${competencia}</p>
+    <p><strong>Ruedas:</strong> ${ruedas}</p>
+    <p><strong>Día de juego:</strong> ${diaJuegoATexto(diaJuego)}</p>
+    <p><strong>Fase regular:</strong> ${partidosRegulares} partidos / ${fechasRegulares} fechas</p>
+    <p><strong>Playoffs:</strong> ${infoPlayoff.partidos} partidos / ${infoPlayoff.fechas} fechas</p>
     <p><strong>Total necesario:</strong> ${totalPartidos} partidos / ${totalFechas} fechas</p>
-    <p><strong>Detalle de playoffs:</strong> ${detallePlayoff}</p>
+    <p><strong>Detalle de playoffs:</strong> ${infoPlayoff.detalle}</p>
     <hr>
-    <p><strong>Domingos disponibles:</strong> ${domingosDisponibles}</p>
-    <p><strong>Diagnóstico:</strong> ${diagnostico}</p>
-    <p><strong>Recomendación:</strong> ${recomendacion}</p>
-    ${calendarioHTML}
+    <p><strong>Fechas disponibles:</strong> ${calendario.disponibles.length}</p>
+    <p><strong>Diagnóstico:</strong> ✅ Entra en el calendario</p>
+
+    <div class="calendario-fases">
+      <div class="calendario-fase-box">
+        <h4>Fase regular</h4>
+        ${calendarioRegularHTML}
+      </div>
+
+      <div class="calendario-fase-box">
+        <h4>Playoffs</h4>
+        ${calendarioPlayoffHTML}
+      </div>
+    </div>
+
+    ${bloqueadasHTML}
   `;
 
-  compararFormatos(equipos, inicio, fin, frecuencia);
+  renderComparacionFormatos(categoria, fechaInicioISO, fechaFinISO, frecuencia, fechasBloqueadas, diaJuego);
+  renderCategoria();
+  mostrarLiga();
 }
 
-function cargarConfigGestion(categoria) {
+function mezclarArray(array) {
+  const copia = [...array];
+
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+
+  return copia;
+}
+
+function invertirLocalias(partidos) {
+  return partidos.map((partido) => {
+    if (partido.estado === "Libre" || partido.visitante === "LIBRE") {
+      return { ...partido };
+    }
+
+    return {
+      ...partido,
+      local: partido.visitante,
+      visitante: partido.local
+    };
+  });
+}
+
+function acomodarFixtureCategoria() {
+  const categoria = acomodarCategoria.value;
+  const modo = acomodarModo.value;
+  const equipos = categorias[categoria] || [];
+  const ruedas = Number(settings.ruedasPorCategoria[categoria] || 1);
+
+  if ((fixtures[categoria] || []).length === 0) {
+    mensajeAcomodar.textContent = "Primero generá el torneo completo en el planificador.";
+    return;
+  }
+
+  const confirmar = window.confirm(
+    `Se va a reacomodar el fixture de ${categoria}. Esto reiniciará los resultados cargados. ¿Querés continuar?`
+  );
+
+  if (!confirmar) return;
+
+  if (modo === "sortear") {
+    const equiposMezclados = mezclarArray(equipos);
+    fixtures[categoria] = ruedas === 2 ? generarDosRuedas(equiposMezclados) : generarRoundRobin(equiposMezclados);
+    mensajeAcomodar.textContent = `Fixture reordenado para ${categoria}.`;
+  }
+
+  if (modo === "invertir") {
+    fixtures[categoria] = invertirLocalias(fixtures[categoria]);
+    mensajeAcomodar.textContent = `Localías invertidas para ${categoria}.`;
+  }
+
+  guardarFixtures();
+  categoriaSelect.value = categoria;
+  renderCategoria();
+}
+
+function cargarPlanificadorDesdeCategoria(categoria) {
+  plannerCategoria.value = categoria;
+  plannerCompetencia.value = settings.competenciaPorCategoria[categoria];
+  plannerRuedas.value = String(settings.ruedasPorCategoria[categoria]);
+  plannerDiaJuego.value = String(settings.diaJuegoPorCategoria[categoria] ?? (categoria === "Maxi +48" ? 3 : 0));
+  plannerPlayoffs.value = settings.usaPlayoffsPorCategoria[categoria] ? "si" : "no";
+
   const config = obtenerConfigPlayoff(categoria);
-  fixtureEtapaSelect.value = settings.competenciaPorCategoria[categoria];
-  fixtureRuedasSelect.value = String(settings.ruedasPorCategoria[categoria]);
-  fixturePlayoffSelect.value = String(config.cantidad);
-  fixtureOctavosSelect.value = String(config.octavos);
-  fixtureCuartosSelect.value = String(config.cuartos);
-  fixtureSemisSelect.value = String(config.semifinales);
-  fixtureFinalSelect.value = String(config.final);
+  plannerClasificados.value = String(config.cantidad);
+  plannerOctavos.value = String(config.octavos);
+  plannerCuartos.value = String(config.cuartos);
+  plannerSemis.value = String(config.semifinales);
+  plannerFinal.value = String(config.final);
+
+  plannerInicio.value = settings.fechaInicioPorCategoria[categoria] || "";
+  plannerFin.value = settings.fechaFinPorCategoria[categoria] || "";
+  plannerFrecuencia.value = String(settings.frecuenciaPorCategoria[categoria] || 1);
+  plannerBloqueadas.value = fechasBloqueadasAInputArgentina(settings.fechasBloqueadasPorCategoria[categoria] || []);
 }
 
 botonGuardar.addEventListener("click", () => {
@@ -1072,88 +1449,35 @@ botonResetear.addEventListener("click", () => {
   mensajeEstado.textContent = "El partido volvió a estado Pendiente.";
 });
 
-botonGenerarFixture.addEventListener("click", () => {
-  const textoOriginal = botonGenerarFixture.textContent;
-  botonGenerarFixture.textContent = "Generando...";
+plannerBotonGenerar.addEventListener("click", generarTorneoCompleto);
+botonAcomodar.addEventListener("click", acomodarFixtureCategoria);
 
-  const categoria = fixtureCategoriaSelect.value;
-  const equipos = categorias[categoria];
-  const ruedas = Number(fixtureRuedasSelect.value);
-  const etapa = fixtureEtapaSelect.value;
-
-  const playoffConfig = {
-    cantidad: Number(fixturePlayoffSelect.value),
-    octavos: Number(fixtureOctavosSelect.value),
-    cuartos: Number(fixtureCuartosSelect.value),
-    semifinales: Number(fixtureSemisSelect.value),
-    final: Number(fixtureFinalSelect.value)
-  };
-
-  if (!equipos || equipos.length < 2) {
-    mensajeFixture.textContent = `La categoría ${categoria} todavía no tiene equipos suficientes para generar fixture.`;
-    botonGenerarFixture.textContent = textoOriginal;
-    return;
-  }
-
-  const hayDatosPrevios = (fixtures[categoria] || []).some(
-    (partido) => partido.estado === "Jugado" || partido.estado === "Pendiente" || partido.estado === "Libre"
-  );
-
-  if (hayDatosPrevios) {
-    const confirmar = window.confirm(`Ya existe un fixture para ${categoria}. Si lo regenerás, vas a perder los resultados cargados. ¿Querés continuar?`);
-    if (!confirmar) {
-      botonGenerarFixture.textContent = textoOriginal;
-      return;
-    }
-  }
-
-  fixtures[categoria] = ruedas === 2 ? generarDosRuedas(equipos) : generarRoundRobin(equipos);
-
-  settings.competenciaPorCategoria[categoria] = etapa;
-  settings.ruedasPorCategoria[categoria] = ruedas;
-  settings.playoffConfigPorCategoria[categoria] = playoffConfig;
-
-  guardarFixtures();
-  guardarSettings();
-
-  mensajeFixture.textContent = `${etapa} generado correctamente para ${categoria} (${ruedas} rueda${ruedas > 1 ? "s" : ""}).`;
-  categoriaSelect.value = categoria;
-
+categoriaSelect.addEventListener("change", () => {
+  const categoria = categoriaSelect.value;
+  acomodarCategoria.value = categoria;
+  cargarPlanificadorDesdeCategoria(categoria);
   renderCategoria();
-  mostrarLiga();
-
-  botonGenerarFixture.textContent = textoOriginal;
 });
 
-categoriaSelect.addEventListener("change", renderCategoria);
-
-fixtureCategoriaSelect.addEventListener("change", () => {
-  cargarConfigGestion(fixtureCategoriaSelect.value);
-  calcularPlanificador();
+plannerCategoria.addEventListener("change", () => {
+  const categoria = plannerCategoria.value;
+  acomodarCategoria.value = categoria;
+  categoriaSelect.value = categoria;
+  cargarPlanificadorDesdeCategoria(categoria);
+  renderCategoria();
 });
 
-[
-  plannerEquipos,
-  plannerFormato,
-  plannerPlayoffs,
-  plannerClasificados,
-  plannerInicio,
-  plannerFin,
-  plannerFrecuencia,
-  fixturePlayoffSelect,
-  fixtureOctavosSelect,
-  fixtureCuartosSelect,
-  fixtureSemisSelect,
-  fixtureFinalSelect
-].forEach((elemento) => {
-  elemento.addEventListener("change", calcularPlanificador);
+acomodarCategoria.addEventListener("change", () => {
+  const categoria = acomodarCategoria.value;
+  categoriaSelect.value = categoria;
+  plannerCategoria.value = categoria;
+  cargarPlanificadorDesdeCategoria(categoria);
+  renderCategoria();
 });
 
 partidoSelect.addEventListener("change", cargarDatosPartidoSeleccionado);
-plannerBoton.addEventListener("click", calcularPlanificador);
 
 mostrarLiga();
-
-cargarConfigGestion(fixtureCategoriaSelect.value);
+cargarPlanificadorDesdeCategoria(categoriaSelect.value);
+acomodarCategoria.value = categoriaSelect.value;
 renderCategoria();
-calcularPlanificador();
