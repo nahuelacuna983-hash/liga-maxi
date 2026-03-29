@@ -52,8 +52,14 @@ const fixturesBase = {
   "Femenino": []
 };
 
-const STORAGE_KEY = "ligaMaxiFixturesV8";
-const SETTINGS_KEY = "ligaMaxiSettingsV8";
+const STORAGE_KEY = "ligaMaxiFixturesV10";
+const SETTINGS_KEY = "ligaMaxiSettingsV10";
+
+const ADMIN_PASSWORD = "admin123";
+const RESULTADOS_PASSWORD = "resultados123";
+
+const SESSION_GESTION_KEY = "ligaMaxiGestionOpen";
+const SESSION_RESULTADOS_KEY = "ligaMaxiResultadosOpen";
 
 const settingsBase = {
   competenciaPorCategoria: {
@@ -251,6 +257,10 @@ const puntosVisitanteInput = document.getElementById("puntos-visitante");
 const botonGuardar = document.getElementById("guardar-resultado");
 const botonResetear = document.getElementById("resetear-resultado");
 const mensajeEstado = document.getElementById("mensaje-estado");
+const resultadosBloqueado = document.getElementById("resultados-bloqueado");
+const resultadosPanel = document.getElementById("resultados-panel");
+const abrirResultadosBtn = document.getElementById("abrir-resultados-btn");
+const cerrarResultadosBtn = document.getElementById("cerrar-resultados-btn");
 
 const plannerCategoria = document.getElementById("planner-categoria");
 const plannerCompetencia = document.getElementById("planner-competencia");
@@ -276,11 +286,67 @@ const botonAcomodar = document.getElementById("acomodar-fixture");
 const mensajeAcomodar = document.getElementById("mensaje-acomodar");
 
 const botonExportarPDF = document.getElementById("exportar-pdf");
+const botonExportarRespaldo = document.getElementById("exportar-respaldo");
+const botonImportarRespaldo = document.getElementById("importar-respaldo-btn");
+const inputImportarRespaldo = document.getElementById("importar-respaldo-input");
+const mensajeRespaldo = document.getElementById("mensaje-respaldo");
 
 const tabLiga = document.getElementById("tab-liga");
 const tabGestion = document.getElementById("tab-gestion");
 const vistaLiga = document.getElementById("vista-liga");
 const vistaGestion = document.getElementById("vista-gestion");
+const gestionBloqueadaCard = document.getElementById("gestion-bloqueada-card");
+const gestionContenido = document.getElementById("gestion-contenido");
+const abrirGestionBtn = document.getElementById("abrir-gestion-btn");
+const cerrarGestionBtn = document.getElementById("cerrar-gestion-btn");
+const mensajeGestion = document.getElementById("mensaje-gestion");
+
+function gestionAbierta() {
+  return sessionStorage.getItem(SESSION_GESTION_KEY) === "1";
+}
+
+function resultadosAbiertos() {
+  return sessionStorage.getItem(SESSION_RESULTADOS_KEY) === "1";
+}
+
+function abrirGestionSesion() {
+  sessionStorage.setItem(SESSION_GESTION_KEY, "1");
+  actualizarEstadoAccesos();
+}
+
+function cerrarGestionSesion() {
+  sessionStorage.removeItem(SESSION_GESTION_KEY);
+  actualizarEstadoAccesos();
+}
+
+function abrirResultadosSesion() {
+  sessionStorage.setItem(SESSION_RESULTADOS_KEY, "1");
+  actualizarEstadoAccesos();
+}
+
+function cerrarResultadosSesion() {
+  sessionStorage.removeItem(SESSION_RESULTADOS_KEY);
+  actualizarEstadoAccesos();
+}
+
+function actualizarEstadoAccesos() {
+  if (gestionAbierta()) {
+    gestionBloqueadaCard.style.display = "none";
+    gestionContenido.style.display = "block";
+    mensajeGestion.textContent = "";
+  } else {
+    gestionBloqueadaCard.style.display = "block";
+    gestionContenido.style.display = "none";
+  }
+
+  if (resultadosAbiertos()) {
+    resultadosBloqueado.style.display = "none";
+    resultadosPanel.style.display = "block";
+  } else {
+    resultadosBloqueado.style.display = "block";
+    resultadosPanel.style.display = "none";
+  }
+}
 
 function mostrarLiga() {
   tabLiga.classList.add("activo");
@@ -294,6 +360,7 @@ function mostrarGestion() {
   tabLiga.classList.remove("activo");
   vistaGestion.style.display = "block";
   vistaLiga.style.display = "none";
+  actualizarEstadoAccesos();
 }
 
 tabLiga.addEventListener("click", mostrarLiga);
@@ -1109,6 +1176,11 @@ function renderComparacionFormatos(categoria, fechaInicioISO, fechaFinISO, frecu
 }
 
 function generarTorneoCompleto() {
+  if (!gestionAbierta()) {
+    mensajeGestion.textContent = "Necesitás abrir Gestión con clave de administrador.";
+    return;
+  }
+
   const categoria = plannerCategoria.value;
   const equipos = categorias[categoria] || [];
   const competencia = plannerCompetencia.value;
@@ -1311,6 +1383,11 @@ function invertirLocalias(partidos) {
 }
 
 function acomodarFixtureCategoria() {
+  if (!gestionAbierta()) {
+    mensajeGestion.textContent = "Necesitás abrir Gestión con clave de administrador.";
+    return;
+  }
+
   const categoria = acomodarCategoria.value;
   const modo = acomodarModo.value;
   const equipos = categorias[categoria] || [];
@@ -1460,9 +1537,7 @@ function exportarFixturePDF() {
 
   const jornadasMap = new Map();
   partidos.forEach((partido) => {
-    if (!jornadasMap.has(partido.jornada)) {
-      jornadasMap.set(partido.jornada, []);
-    }
+    if (!jornadasMap.has(partido.jornada)) jornadasMap.set(partido.jornada, []);
     jornadasMap.get(partido.jornada).push(partido);
   });
 
@@ -1505,7 +1580,153 @@ function exportarFixturePDF() {
   doc.save(nombreArchivo);
 }
 
+function exportarRespaldo() {
+  try {
+    const respaldo = {
+      version: 1,
+      fecha_exportacion: new Date().toISOString(),
+      storage_key_fixtures: STORAGE_KEY,
+      storage_key_settings: SETTINGS_KEY,
+      fixtures,
+      settings
+    };
+
+    const blob = new Blob([JSON.stringify(respaldo, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    const fecha = new Date();
+    const nombre = `respaldo-liga-maxi-${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}_${String(fecha.getHours()).padStart(2, "0")}-${String(fecha.getMinutes()).padStart(2, "0")}.json`;
+
+    a.href = url;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    mensajeRespaldo.textContent = "Respaldo exportado correctamente.";
+  } catch (error) {
+    console.error(error);
+    mensajeRespaldo.textContent = "No se pudo exportar el respaldo.";
+  }
+}
+
+function validarRespaldo(data) {
+  if (!data || typeof data !== "object") return false;
+  if (!data.fixtures || typeof data.fixtures !== "object") return false;
+  if (!data.settings || typeof data.settings !== "object") return false;
+  return true;
+}
+
+function importarRespaldoDesdeArchivo(file) {
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+
+      if (!validarRespaldo(data)) {
+        mensajeRespaldo.textContent = "El archivo no tiene un formato de respaldo válido.";
+        return;
+      }
+
+      const confirmar = window.confirm(
+        "Se va a reemplazar toda la información actual por la del respaldo importado. ¿Querés continuar?"
+      );
+
+      if (!confirmar) return;
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data.fixtures));
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings));
+
+      fixtures = cargarFixtures();
+      settings = cargarSettings();
+
+      Object.keys(categorias).forEach((categoria) => {
+        if (!fixtures[categoria]) fixtures[categoria] = [];
+        if (!settings.competenciaPorCategoria[categoria]) settings.competenciaPorCategoria[categoria] = "Apertura";
+        if (!settings.ruedasPorCategoria[categoria]) settings.ruedasPorCategoria[categoria] = 1;
+        if (settings.diaJuegoPorCategoria[categoria] === undefined || settings.diaJuegoPorCategoria[categoria] === null) {
+          settings.diaJuegoPorCategoria[categoria] = categoria === "Maxi +48" ? 3 : 0;
+        }
+        settings.playoffConfigPorCategoria[categoria] = normalizarConfigPlayoff(
+          settings.playoffConfigPorCategoria[categoria]
+        );
+        settings.calendarioPorCategoria[categoria] = normalizarCalendario(
+          settings.calendarioPorCategoria[categoria]
+        );
+        if (!Array.isArray(settings.fechasBloqueadasPorCategoria[categoria])) {
+          settings.fechasBloqueadasPorCategoria[categoria] = [];
+        }
+        if (!settings.frecuenciaPorCategoria[categoria]) settings.frecuenciaPorCategoria[categoria] = 1;
+      });
+
+      guardarFixtures();
+      guardarSettings();
+
+      cargarPlanificadorDesdeCategoria(categoriaSelect.value);
+      acomodarCategoria.value = categoriaSelect.value;
+      renderCategoria();
+
+      mensajeRespaldo.textContent = "Respaldo importado correctamente.";
+    } catch (error) {
+      console.error(error);
+      mensajeRespaldo.textContent = "No se pudo importar el respaldo. Revisá que sea un JSON válido.";
+    }
+  };
+
+  reader.onerror = () => {
+    mensajeRespaldo.textContent = "No se pudo leer el archivo.";
+  };
+
+  reader.readAsText(file);
+}
+
+abrirGestionBtn.addEventListener("click", () => {
+  const clave = window.prompt("Ingresá la clave de administrador:");
+
+  if (clave === null) return;
+
+  if (clave === ADMIN_PASSWORD) {
+    abrirGestionSesion();
+    mensajeGestion.textContent = "Gestión habilitada.";
+  } else {
+    mensajeGestion.textContent = "Clave incorrecta.";
+  }
+});
+
+cerrarGestionBtn.addEventListener("click", () => {
+  cerrarGestionSesion();
+  mensajeGestion.textContent = "Gestión cerrada.";
+});
+
+abrirResultadosBtn.addEventListener("click", () => {
+  const clave = window.prompt("Ingresá la clave para carga de resultados:");
+
+  if (clave === null) return;
+
+  if (clave === RESULTADOS_PASSWORD) {
+    abrirResultadosSesion();
+    mensajeEstado.textContent = "Carga de resultados habilitada.";
+  } else {
+    mensajeEstado.textContent = "Clave incorrecta.";
+  }
+});
+
+cerrarResultadosBtn.addEventListener("click", () => {
+  cerrarResultadosSesion();
+  mensajeEstado.textContent = "Carga de resultados cerrada.";
+});
+
 botonGuardar.addEventListener("click", () => {
+  if (!resultadosAbiertos()) {
+    mensajeEstado.textContent = "Primero habilitá la carga de resultados con clave.";
+    return;
+  }
+
   const categoria = categoriaSelect.value;
   const index = Number(partidoSelect.value);
   const partido = (fixtures[categoria] || [])[index];
@@ -1542,6 +1763,11 @@ botonGuardar.addEventListener("click", () => {
 });
 
 botonResetear.addEventListener("click", () => {
+  if (!resultadosAbiertos()) {
+    mensajeEstado.textContent = "Primero habilitá la carga de resultados con clave.";
+    return;
+  }
+
   const categoria = categoriaSelect.value;
   const index = Number(partidoSelect.value);
   const partido = (fixtures[categoria] || [])[index];
@@ -1562,6 +1788,13 @@ botonResetear.addEventListener("click", () => {
 plannerBotonGenerar.addEventListener("click", generarTorneoCompleto);
 botonAcomodar.addEventListener("click", acomodarFixtureCategoria);
 botonExportarPDF.addEventListener("click", exportarFixturePDF);
+botonExportarRespaldo.addEventListener("click", exportarRespaldo);
+botonImportarRespaldo.addEventListener("click", () => inputImportarRespaldo.click());
+inputImportarRespaldo.addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  importarRespaldoDesdeArchivo(file);
+  event.target.value = "";
+});
 
 categoriaSelect.addEventListener("change", () => {
   const categoria = categoriaSelect.value;
@@ -1591,4 +1824,5 @@ partidoSelect.addEventListener("change", cargarDatosPartidoSeleccionado);
 mostrarLiga();
 cargarPlanificadorDesdeCategoria(categoriaSelect.value);
 acomodarCategoria.value = categoriaSelect.value;
+actualizarEstadoAccesos();
 renderCategoria();
