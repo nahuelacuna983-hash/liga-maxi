@@ -52,8 +52,8 @@ const fixturesBase = {
   "Femenino": []
 };
 
-const STORAGE_KEY = "ligaMaxiFixturesV7";
-const SETTINGS_KEY = "ligaMaxiSettingsV7";
+const STORAGE_KEY = "ligaMaxiFixturesV8";
+const SETTINGS_KEY = "ligaMaxiSettingsV8";
 
 const settingsBase = {
   competenciaPorCategoria: {
@@ -275,6 +275,8 @@ const acomodarModo = document.getElementById("acomodar-modo");
 const botonAcomodar = document.getElementById("acomodar-fixture");
 const mensajeAcomodar = document.getElementById("mensaje-acomodar");
 
+const botonExportarPDF = document.getElementById("exportar-pdf");
+
 const tabLiga = document.getElementById("tab-liga");
 const tabGestion = document.getElementById("tab-gestion");
 const vistaLiga = document.getElementById("vista-liga");
@@ -300,13 +302,6 @@ tabGestion.addEventListener("click", mostrarGestion);
 function diaJuegoATexto(dia) {
   if (Number(dia) === 3) return "Miércoles";
   return "Domingo";
-}
-
-function formatearFechaISOaLocal(fechaISO) {
-  if (!fechaISO) return "";
-  const [anio, mes, dia] = fechaISO.split("-").map(Number);
-  const fecha = new Date(anio, mes - 1, dia);
-  return fecha.toLocaleDateString("es-AR");
 }
 
 function formatearFechaLargaISO(fechaISO) {
@@ -356,7 +351,7 @@ function convertirFechaArgentinaAISO(texto) {
 }
 
 function parsearFechasBloqueadas(texto) {
-  if (!texto.trim()) return [];
+  if (!texto.trim()) return { fechasISO: [], invalidas: [] };
 
   const items = texto
     .split(",")
@@ -400,22 +395,10 @@ function textoPartidos(cantidad) {
 }
 
 function contarSeriesPorCantidad(cantidadClasificados) {
-  if (cantidadClasificados === 2) {
-    return { final: 1 };
-  }
-
-  if (cantidadClasificados === 4) {
-    return { semifinales: 2, final: 1 };
-  }
-
-  if (cantidadClasificados === 8) {
-    return { cuartos: 4, semifinales: 2, final: 1 };
-  }
-
-  if (cantidadClasificados === 16) {
-    return { octavos: 8, cuartos: 4, semifinales: 2, final: 1 };
-  }
-
+  if (cantidadClasificados === 2) return { final: 1 };
+  if (cantidadClasificados === 4) return { semifinales: 2, final: 1 };
+  if (cantidadClasificados === 8) return { cuartos: 4, semifinales: 2, final: 1 };
+  if (cantidadClasificados === 16) return { octavos: 8, cuartos: 4, semifinales: 2, final: 1 };
   return {};
 }
 
@@ -427,27 +410,16 @@ function construirEntradasPlayoff(usaPlayoffs, config) {
   const series = contarSeriesPorCantidad(cantidad);
 
   if (series.octavos) {
-    for (let i = 1; i <= config.octavos; i++) {
-      entradas.push({ fase: "Octavos", etiqueta: `Octavos - Juego ${i}` });
-    }
+    for (let i = 1; i <= config.octavos; i++) entradas.push({ fase: "Octavos", etiqueta: `Octavos - Juego ${i}` });
   }
-
   if (series.cuartos) {
-    for (let i = 1; i <= config.cuartos; i++) {
-      entradas.push({ fase: "Cuartos", etiqueta: `4tos - Juego ${i}` });
-    }
+    for (let i = 1; i <= config.cuartos; i++) entradas.push({ fase: "Cuartos", etiqueta: `4tos - Juego ${i}` });
   }
-
   if (series.semifinales) {
-    for (let i = 1; i <= config.semifinales; i++) {
-      entradas.push({ fase: "Semifinales", etiqueta: `Semifinales - Juego ${i}` });
-    }
+    for (let i = 1; i <= config.semifinales; i++) entradas.push({ fase: "Semifinales", etiqueta: `Semifinales - Juego ${i}` });
   }
-
   if (series.final) {
-    for (let i = 1; i <= config.final; i++) {
-      entradas.push({ fase: "Final", etiqueta: `Final - Juego ${i}` });
-    }
+    for (let i = 1; i <= config.final; i++) entradas.push({ fase: "Final", etiqueta: `Final - Juego ${i}` });
   }
 
   return entradas;
@@ -455,11 +427,7 @@ function construirEntradasPlayoff(usaPlayoffs, config) {
 
 function calcularPartidosPlayoffReales(usaPlayoffs, config) {
   if (!usaPlayoffs) {
-    return {
-      partidos: 0,
-      fechas: 0,
-      detalle: "Sin playoffs."
-    };
+    return { partidos: 0, fechas: 0, detalle: "Sin playoffs." };
   }
 
   const cantidad = Number(config.cantidad);
@@ -1395,6 +1363,148 @@ function cargarPlanificadorDesdeCategoria(categoria) {
   plannerBloqueadas.value = fechasBloqueadasAInputArgentina(settings.fechasBloqueadasPorCategoria[categoria] || []);
 }
 
+function construirCrucesPosiblesTexto(categoria) {
+  const usaPlayoffs = settings.usaPlayoffsPorCategoria[categoria];
+  const config = obtenerConfigPlayoff(categoria);
+
+  if (!usaPlayoffs) {
+    return ["Sin playoffs."];
+  }
+
+  if (config.cantidad === 4) {
+    return [
+      `Semifinal 1: 1° vs 4° (${textoPartidos(config.semifinales)})`,
+      `Semifinal 2: 2° vs 3° (${textoPartidos(config.semifinales)})`,
+      `Final: Ganador SF1 vs Ganador SF2 (${textoPartidos(config.final)})`
+    ];
+  }
+
+  if (config.cantidad === 8) {
+    return [
+      `Cuarto 1: 1° vs 8° (${textoPartidos(config.cuartos)})`,
+      `Cuarto 2: 4° vs 5° (${textoPartidos(config.cuartos)})`,
+      `Cuarto 3: 2° vs 7° (${textoPartidos(config.cuartos)})`,
+      `Cuarto 4: 3° vs 6° (${textoPartidos(config.cuartos)})`,
+      `Semifinal 1: Ganador QF1 vs Ganador QF2 (${textoPartidos(config.semifinales)})`,
+      `Semifinal 2: Ganador QF3 vs Ganador QF4 (${textoPartidos(config.semifinales)})`,
+      `Final: Ganador SF1 vs Ganador SF2 (${textoPartidos(config.final)})`
+    ];
+  }
+
+  return ["Cruces no definidos para este formato."];
+}
+
+function exportarFixturePDF() {
+  const categoria = categoriaSelect.value;
+  const partidos = fixtures[categoria] || [];
+  const calendario = obtenerCalendarioCategoria(categoria);
+  const usaPlayoffs = settings.usaPlayoffsPorCategoria[categoria];
+  const config = obtenerConfigPlayoff(categoria);
+  const diaJuego = settings.diaJuegoPorCategoria[categoria];
+  const competencia = settings.competenciaPorCategoria[categoria];
+  const ruedas = settings.ruedasPorCategoria[categoria];
+  const bloqueadas = settings.fechasBloqueadasPorCategoria[categoria] || [];
+
+  if (partidos.length === 0) {
+    alert("Primero generá el torneo para esta categoría.");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+  const margenIzq = 15;
+  const margenDer = 195;
+  let y = 15;
+
+  const agregarLinea = (texto, tamaño = 11, negrita = false, salto = 7) => {
+    doc.setFont("helvetica", negrita ? "bold" : "normal");
+    doc.setFontSize(tamaño);
+
+    const lineas = doc.splitTextToSize(texto, margenDer - margenIzq);
+    lineas.forEach((linea) => {
+      if (y > 280) {
+        doc.addPage();
+        y = 15;
+      }
+      doc.text(linea, margenIzq, y);
+      y += salto;
+    });
+  };
+
+  const agregarSeparador = () => {
+    if (y > 280) {
+      doc.addPage();
+      y = 15;
+    }
+    doc.line(margenIzq, y, margenDer, y);
+    y += 6;
+  };
+
+  agregarLinea("LIGA MAXI BASQUET LA PLATA", 18, true, 8);
+  agregarLinea(`Fixture oficial - ${categoria}`, 15, true, 8);
+
+  agregarSeparador();
+
+  agregarLinea(`Competencia: ${competencia}`, 11, false);
+  agregarLinea(`Ruedas: ${ruedas}`, 11, false);
+  agregarLinea(`Día de juego: ${diaJuegoATexto(diaJuego)}`, 11, false);
+  agregarLinea(`Playoffs: ${usaPlayoffs ? `Sí (Top ${config.cantidad})` : "No"}`, 11, false);
+
+  if (bloqueadas.length > 0) {
+    agregarLinea(`Fechas no jugables: ${bloqueadas.map(formatearFechaDisplay).join(" | ")}`, 10, false);
+  }
+
+  agregarSeparador();
+  agregarLinea("FASE REGULAR", 14, true, 8);
+
+  const jornadasMap = new Map();
+  partidos.forEach((partido) => {
+    if (!jornadasMap.has(partido.jornada)) {
+      jornadasMap.set(partido.jornada, []);
+    }
+    jornadasMap.get(partido.jornada).push(partido);
+  });
+
+  Array.from(jornadasMap.keys()).sort((a, b) => a - b).forEach((jornada) => {
+    const fecha = calendario.regular[jornada - 1] || "";
+    agregarLinea(`Fecha ${jornada} - ${fecha ? formatearFechaDisplay(fecha) : "Sin fecha asignada"}`, 12, true, 7);
+
+    jornadasMap.get(jornada).forEach((partido) => {
+      if (partido.estado === "Libre" || partido.visitante === "LIBRE") {
+        agregarLinea(`• ${partido.local} - LIBRE`, 10, false, 6);
+      } else {
+        agregarLinea(`• ${partido.local} vs ${partido.visitante}`, 10, false, 6);
+      }
+    });
+
+    y += 2;
+  });
+
+  agregarSeparador();
+  agregarLinea("PLAYOFFS", 14, true, 8);
+
+  if (!usaPlayoffs) {
+    agregarLinea("Sin playoffs.", 11, false, 7);
+  } else {
+    if (calendario.playoffs.length > 0) {
+      agregarLinea("Fechas de playoffs", 12, true, 7);
+      calendario.playoffs.forEach((item) => {
+        agregarLinea(`• ${item.etiqueta}: ${formatearFechaDisplay(item.fecha)}`, 10, false, 6);
+      });
+      y += 2;
+    }
+
+    agregarLinea("Cruces posibles", 12, true, 7);
+    construirCrucesPosiblesTexto(categoria).forEach((linea) => {
+      agregarLinea(`• ${linea}`, 10, false, 6);
+    });
+  }
+
+  const nombreArchivo = `fixture-${categoria.toLowerCase().replace(/\s+/g, "-").replace(/\+/g, "")}.pdf`;
+  doc.save(nombreArchivo);
+}
+
 botonGuardar.addEventListener("click", () => {
   const categoria = categoriaSelect.value;
   const index = Number(partidoSelect.value);
@@ -1451,6 +1561,7 @@ botonResetear.addEventListener("click", () => {
 
 plannerBotonGenerar.addEventListener("click", generarTorneoCompleto);
 botonAcomodar.addEventListener("click", acomodarFixtureCategoria);
+botonExportarPDF.addEventListener("click", exportarFixturePDF);
 
 categoriaSelect.addEventListener("change", () => {
   const categoria = categoriaSelect.value;

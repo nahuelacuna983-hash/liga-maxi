@@ -38,7 +38,13 @@
       </section>
 
       <section class="card">
-        <h3 id="tabla-titulo">Tabla de Posiciones</h3>
+        <div class="card-head">
+          <h3 id="tabla-titulo">Tabla de Posiciones</h3>
+          <div class="acciones">
+            <button id="exportar-pdf" type="button">Exportar fixture a PDF</button>
+          </div>
+        </div>
+
         <div class="tabla-wrap">
           <table>
             <thead>
@@ -258,6 +264,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
