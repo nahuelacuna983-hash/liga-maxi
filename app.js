@@ -1,6 +1,18 @@
 const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
-const SUPABASE_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = "sb_publishable_HtooEUIqEorzX3ODP0wLXQ_iulhXEdL";
+
+let supabase = null;
+
+try {
+  if (window.supabase && typeof window.supabase.createClient === "function") {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log("Supabase inicializado correctamente");
+  } else {
+    console.warn("Supabase no cargó. La app seguirá en modo local.");
+  }
+} catch (error) {
+  console.error("Error inicializando Supabase:", error);
+}
 
 const categorias = {
   "Maxi +35 A": [
@@ -1285,6 +1297,11 @@ async function guardarFixturesYCloud(categoria) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(fixtures));
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 
+  if (!supabase) {
+    console.warn("Supabase no disponible. Se guardó solo en local.");
+    return;
+  }
+
   const payload = {
     fixtures: fixtures[categoria] || [],
     settings
@@ -1307,6 +1324,11 @@ async function guardarFixturesYCloud(categoria) {
 }
 
 async function cargarDesdeSupabase(categoria) {
+  if (!supabase) {
+    console.warn("Supabase no disponible. Se usará solo almacenamiento local.");
+    return;
+  }
+
   const { data, error } = await supabase
     .from("torneos")
     .select("*")
