@@ -1352,7 +1352,7 @@ async function cargarDesdeSupabase(categoria) {
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(fixtures));
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-}
+} 
 
 async function cargarCategoriaConFuenteRemota(categoria) {
   try {
