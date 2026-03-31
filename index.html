@@ -1,308 +1,113 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Liga Maxi Básquet La Plata</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Liga Maxi</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .wrap {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      margin-bottom: 16px;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+    }
+
+    .ok {
+      color: #0f766e;
+      font-weight: 700;
+    }
+
+    .warn {
+      color: #b45309;
+      font-weight: 700;
+    }
+
+    .err {
+      color: #b91c1c;
+      font-weight: 700;
+    }
+
+    .muted {
+      color: #6b7280;
+    }
+
+    .mono {
+      font-family: Consolas, Monaco, monospace;
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    .debug-line {
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+
+    .debug-line:last-child {
+      border-bottom: none;
+    }
+
+    button {
+      border: 0;
+      background: #2563eb;
+      color: white;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    pre {
+      background: #111827;
+      color: #f9fafb;
+      padding: 16px;
+      border-radius: 10px;
+      overflow: auto;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+  </style>
 </head>
 <body>
-  <div class="app">
-    <header class="hero">
-      <p class="eyebrow">Asociación Platense</p>
-      <h1>Liga Maxi Básquet La Plata</h1>
-      <p class="subtitulo">Fixture, resultados, tabla y herramientas de organización</p>
-    </header>
-
-    <div class="tabs">
-      <button id="tab-liga" class="tab activo">Liga</button>
-      <button id="tab-gestion" class="tab">Gestión</button>
-    </div>
-
-    <div id="vista-liga">
-      <section class="card">
-        <div class="card-head">
-          <h3>Categoría</h3>
-          <div class="mini-filtros">
-            <div>
-              <label for="categoria-select">Categoría</label>
-              <select id="categoria-select">
-                <option value="Maxi +35 A">Maxi +35 A</option>
-                <option value="Maxi +35 B">Maxi +35 B</option>
-                <option value="Maxi +48">Maxi +48</option>
-                <option value="Femenino">Femenino</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <h3 id="tabla-titulo">Tabla de Posiciones</h3>
-          <div class="acciones">
-            <button id="exportar-pdf" type="button">Exportar fixture a PDF</button>
-          </div>
-        </div>
-
-        <div class="tabla-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Equipo</th>
-                <th>PJ</th>
-                <th>PG</th>
-                <th>PP</th>
-                <th>GF</th>
-                <th>GC</th>
-                <th>DF</th>
-                <th>PTS</th>
-              </tr>
-            </thead>
-            <tbody id="tabla-body"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <h3 id="fixture-titulo">Fixture</h3>
-          <span id="badge-etapa" class="badge-etapa">Fase regular</span>
-        </div>
-        <div id="fixture-body"></div>
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <h3>Playoffs</h3>
-          <span id="playoff-estado" class="badge-etapa badge-secundaria">Proyección actual</span>
-        </div>
-        <div id="playoff-body"></div>
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <h3>Cargar / Editar Resultado</h3>
-          <div class="acciones">
-            <button id="abrir-resultados-btn" type="button">Habilitar carga</button>
-            <button id="cerrar-resultados-btn" type="button" class="secundario">Cerrar carga</button>
-          </div>
-        </div>
-
-        <div id="resultados-bloqueado" class="alerta-suave">
-          La carga de resultados está protegida. Tocá “Habilitar carga” e ingresá la clave.
-        </div>
-
-        <div id="resultados-panel">
-          <select id="partido-select"></select>
-
-          <input id="puntos-local" type="number" placeholder="Puntos Local">
-          <input id="puntos-visitante" type="number" placeholder="Puntos Visitante">
-
-          <div class="acciones">
-            <button id="guardar-resultado">Guardar / Editar Resultado</button>
-            <button id="resetear-resultado" class="secundario" type="button">Volver a Pendiente</button>
-          </div>
-        </div>
-
-        <p id="mensaje-estado"></p>
-      </section>
-    </div>
-
-    <div id="vista-gestion" style="display:none;">
-      <section id="gestion-bloqueada-card" class="card">
-        <h3>Gestión protegida</h3>
-        <p>Para entrar a esta sección necesitás clave de administrador.</p>
-        <div class="acciones">
-          <button id="abrir-gestion-btn" type="button">Ingresar a Gestión</button>
-          <button id="cerrar-gestion-btn" type="button" class="secundario">Cerrar gestión</button>
-        </div>
-        <p id="mensaje-gestion"></p>
-      </section>
-
-      <div id="gestion-contenido">
-        <section class="card">
-          <h3>Planificador de Torneos</h3>
-
-          <div class="planner-grid">
-            <div>
-              <label for="planner-categoria">Categoría</label>
-              <select id="planner-categoria">
-                <option value="Maxi +35 A">Maxi +35 A</option>
-                <option value="Maxi +35 B">Maxi +35 B</option>
-                <option value="Maxi +48">Maxi +48</option>
-                <option value="Femenino">Femenino</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="planner-competencia">Competencia</label>
-              <select id="planner-competencia">
-                <option value="Apertura">Apertura</option>
-                <option value="Clausura">Clausura</option>
-                <option value="Anual">Anual</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="planner-ruedas">Ruedas</label>
-              <select id="planner-ruedas">
-                <option value="1">1 rueda</option>
-                <option value="2">2 ruedas</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="planner-dia-juego">Día de juego</label>
-              <select id="planner-dia-juego">
-                <option value="0">Domingo</option>
-                <option value="3">Miércoles</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="planner-grid">
-            <div>
-              <label for="planner-playoffs">Playoffs</label>
-              <select id="planner-playoffs">
-                <option value="no">No</option>
-                <option value="si">Sí</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="planner-clasificados">Clasificados</label>
-              <select id="planner-clasificados">
-                <option value="4">Top 4</option>
-                <option value="6">Top 6</option>
-                <option value="8">Top 8</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="planner-octavos">8vos</label>
-              <select id="planner-octavos">
-                <option value="1">1 partido</option>
-                <option value="2">2 partidos</option>
-                <option value="3">3 partidos</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="planner-cuartos">4tos / Reclasificación</label>
-              <select id="planner-cuartos">
-                <option value="1">1 partido</option>
-                <option value="2">2 partidos</option>
-                <option value="3">3 partidos</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="planner-grid">
-            <div>
-              <label for="planner-semis">Semi</label>
-              <select id="planner-semis">
-                <option value="1">1 partido</option>
-                <option value="2">2 partidos</option>
-                <option value="3">3 partidos</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="planner-final">Final</label>
-              <select id="planner-final">
-                <option value="1">1 partido</option>
-                <option value="2">2 partidos</option>
-                <option value="3">3 partidos</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="planner-inicio">Inicio</label>
-              <input id="planner-inicio" type="date">
-            </div>
-
-            <div>
-              <label for="planner-fin">Fin</label>
-              <input id="planner-fin" type="date">
-            </div>
-          </div>
-
-          <div class="planner-grid">
-            <div>
-              <label for="planner-frecuencia">Frecuencia</label>
-              <select id="planner-frecuencia">
-                <option value="1">Todas las semanas</option>
-                <option value="2">Semana por medio</option>
-              </select>
-            </div>
-
-            <div style="grid-column: span 3;">
-              <label for="planner-bloqueadas">Fechas NO jugables (formato argentino, separadas por coma)</label>
-              <input
-                id="planner-bloqueadas"
-                type="text"
-                placeholder="3-5-2026, 25-5-2026, 20-6-2026"
-              >
-            </div>
-          </div>
-
-          <div class="acciones">
-            <button id="planner-generar">Calcular y generar torneo completo</button>
-          </div>
-
-          <div id="planner-resultado" class="planner-resultado"></div>
-          <div id="planner-comparacion" class="planner-resultado"></div>
-        </section>
-
-        <section class="card">
-          <h3>Acomodar Fixture</h3>
-
-          <div class="planner-grid">
-            <div>
-              <label for="acomodar-categoria">Categoría</label>
-              <select id="acomodar-categoria">
-                <option value="Maxi +35 A">Maxi +35 A</option>
-                <option value="Maxi +35 B">Maxi +35 B</option>
-                <option value="Maxi +48">Maxi +48</option>
-                <option value="Femenino">Femenino</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="acomodar-modo">Acción</label>
-              <select id="acomodar-modo">
-                <option value="sortear">Sortear cruces de nuevo</option>
-                <option value="invertir">Invertir localías</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="acciones">
-            <button id="acomodar-fixture">Reacomodar fixture</button>
-          </div>
-
-          <p id="mensaje-acomodar"></p>
-        </section>
-
-        <section class="card">
-          <h3>Respaldo</h3>
-
-          <div class="acciones">
-            <button id="exportar-respaldo" type="button">Exportar respaldo</button>
-            <button id="importar-respaldo-btn" type="button">Importar respaldo</button>
-            <input id="importar-respaldo-input" type="file" accept=".json,application/json" style="display:none;">
-          </div>
-
-          <p id="mensaje-respaldo"></p>
-        </section>
-      </div>
+  <div id="app" class="wrap">
+    <div class="card">
+      <h1>Liga Maxi</h1>
+      <p class="muted">Cargando aplicación...</p>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
+  <!-- SOLO UNA VEZ -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <!-- SOLO UNA VEZ -->
+  <script src="./app.js?v=20260331-1" defer></script>
 </body>
 </html>
