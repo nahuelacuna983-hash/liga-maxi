@@ -1,113 +1,71 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Liga Maxi</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f5f7fb;
-      color: #1f2937;
-    }
-
-    .wrap {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-
-    .card {
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-      margin-bottom: 16px;
-    }
-
-    h1, h2, h3 {
-      margin-top: 0;
-    }
-
-    .ok {
-      color: #0f766e;
-      font-weight: 700;
-    }
-
-    .warn {
-      color: #b45309;
-      font-weight: 700;
-    }
-
-    .err {
-      color: #b91c1c;
-      font-weight: 700;
-    }
-
-    .muted {
-      color: #6b7280;
-    }
-
-    .mono {
-      font-family: Consolas, Monaco, monospace;
-      background: #f3f4f6;
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-
-    .debug-line {
-      padding: 8px 0;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 14px;
-    }
-
-    .debug-line:last-child {
-      border-bottom: none;
-    }
-
-    button {
-      border: 0;
-      background: #2563eb;
-      color: white;
-      padding: 10px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    button:hover {
-      background: #1d4ed8;
-    }
-
-    pre {
-      background: #111827;
-      color: #f9fafb;
-      padding: 16px;
-      border-radius: 10px;
-      overflow: auto;
-      font-size: 13px;
-      line-height: 1.45;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liga Maxi Básquet La Plata</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="app" class="wrap">
-    <div class="card">
-      <h1>Liga Maxi</h1>
-      <p class="muted">Cargando aplicación...</p>
+  <div class="app">
+    <header class="hero">
+      <p class="eyebrow">Asociación Platense</p>
+      <h1>Liga Maxi Básquet La Plata</h1>
+      <p class="subtitulo">Fixture, resultados, tabla y herramientas de organización</p>
+    </header>
+
+    <div class="tabs">
+      <button id="tab-liga" class="tab activo">Liga</button>
+      <button id="tab-gestion" class="tab">Gestión</button>
+    </div>
+
+    <div id="vista-liga">
+      <section class="card">
+        <h3>Categoría</h3>
+        <select id="categoria-select">
+          <option value="Maxi +35 A">Maxi +35 A</option>
+          <option value="Maxi +35 B">Maxi +35 B</option>
+          <option value="Maxi +48">Maxi +48</option>
+          <option value="Femenino">Femenino</option>
+        </select>
+      </section>
+
+      <section class="card">
+        <h3 id="tabla-titulo">Tabla de Posiciones</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Equipo</th>
+              <th>PJ</th>
+              <th>PG</th>
+              <th>PP</th>
+              <th>GF</th>
+              <th>GC</th>
+              <th>DF</th>
+              <th>PTS</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body"></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h3 id="fixture-titulo">Fixture</h3>
+        <div id="fixture-body"></div>
+      </section>
+
+      <section class="card">
+        <h3>Playoffs</h3>
+        <div id="playoff-body"></div>
+      </section>
     </div>
   </div>
 
-  <!-- SOLO UNA VEZ -->
+  <!-- LIBRERÍA -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-  <!-- SOLO UNA VEZ -->
-<script src="./liga-maxi/liga-maxi/app.js?v=20260331-3" defer></script>
+  <!-- APP -->
+  <script src="app.js?v=final-1" defer></script>
 </body>
 </html>
