@@ -138,11 +138,7 @@ function renderCategoriaInicial() {
   // =========================
   // DATOS
   // =========================
-  const categorias = {
-    "Maxi +35 A": ["Equipo 1", "Equipo 2", "Equipo 3", "Equipo 4"]
-  };
-
-  // =========================
+   // =========================
   // RENDER
   // =========================
   function render() {
