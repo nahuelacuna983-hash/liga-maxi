@@ -1,115 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Liga Maxi</title>
+  <meta charset="UTF-8">
+  <title>Liga Maxi Básquet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f5f7fb;
-      color: #1f2937;
-    }
-
-    .wrap {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-
-    .card {
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-      margin-bottom: 16px;
-    }
-
-    h1, h2, h3 {
-      margin-top: 0;
-    }
-
-    .ok {
-      color: #0f766e;
-      font-weight: 700;
-    }
-
-    .warn {
-      color: #b45309;
-      font-weight: 700;
-    }
-
-    .err {
-      color: #b91c1c;
-      font-weight: 700;
-    }
-
-    .muted {
-      color: #6b7280;
-    }
-
-    .mono {
-      font-family: Consolas, Monaco, monospace;
-      background: #f3f4f6;
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-
-    .debug-line {
-      padding: 8px 0;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 14px;
-    }
-
-    .debug-line:last-child {
-      border-bottom: none;
-    }
-
-    button {
-      border: 0;
-      background: #2563eb;
-      color: white;
-      padding: 10px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    button:hover {
-      background: #1d4ed8;
-    }
-
-    pre {
-      background: #111827;
-      color: #f9fafb;
-      padding: 16px;
-      border-radius: 10px;
-      overflow: auto;
-      font-size: 13px;
-      line-height: 1.45;
-    }
-  </style>
+  <!-- Estilos -->
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="app">
-    <header class="hero">
-      <p class="eyebrow">Asociación Platense</p>
-      <h1>Liga Maxi Básquet La Plata</h1>
-      <p class="subtitulo">Fixture, resultados, tabla y herramientas de organización</p>
-    </header>
 
+    <h1>Liga Maxi Básquet La Plata</h1>
+    <p>Fixture, resultados, tabla y herramientas de organización</p>
+
+    <!-- Tabs -->
     <div class="tabs">
       <button id="tab-liga" class="tab activo">Liga</button>
       <button id="tab-gestion" class="tab">Gestión</button>
     </div>
 
+    <!-- ========================= -->
+    <!-- VISTA LIGA -->
+    <!-- ========================= -->
     <div id="vista-liga">
+
       <section class="card">
         <h3>Categoría</h3>
         <select id="categoria-select">
@@ -121,7 +37,7 @@
       </section>
 
       <section class="card">
-        <h3 id="tabla-titulo">Tabla de Posiciones</h3>
+        <h3>Tabla de Posiciones</h3>
         <table>
           <thead>
             <tr>
@@ -141,7 +57,7 @@
       </section>
 
       <section class="card">
-        <h3 id="fixture-titulo">Fixture</h3>
+        <h3>Fixture</h3>
         <div id="fixture-body"></div>
       </section>
 
@@ -149,52 +65,55 @@
         <h3>Playoffs</h3>
         <div id="playoff-body"></div>
       </section>
+
     </div>
+
+    <!-- ========================= -->
+    <!-- VISTA GESTIÓN -->
+    <!-- ========================= -->
     <div id="vista-gestion" style="display:none;">
 
-  <section class="card">
-    <h3>Gestión</h3>
+      <section class="card">
+        <h3>Gestión</h3>
 
-    <button id="abrir-gestion-btn">🔓 Abrir gestión</button>
-    <button id="cerrar-gestion-btn">🔒 Cerrar gestión</button>
-    <p id="mensaje-gestion"></p>
+        <button id="abrir-gestion-btn">🔓 Abrir gestión</button>
+        <button id="cerrar-gestion-btn">🔒 Cerrar gestión</button>
+        <p id="mensaje-gestion"></p>
 
-    <div id="gestion-bloqueada-card">
-      🔒 Gestión bloqueada
+        <div id="gestion-bloqueada-card">
+          🔒 Gestión bloqueada
+        </div>
+
+        <div id="gestion-contenido" style="display:none;">
+          <p>Contenido de gestión activo</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Resultados</h3>
+
+        <button id="abrir-resultados-btn">Habilitar carga</button>
+        <button id="cerrar-resultados-btn">Cerrar carga</button>
+        <p id="mensaje-estado"></p>
+
+        <div id="resultados-bloqueado">
+          🔒 Carga bloqueada
+        </div>
+
+        <div id="resultados-panel" style="display:none;">
+          <p>Panel de carga de resultados activo</p>
+        </div>
+      </section>
+
     </div>
 
-    <div id="gestion-contenido" style="display:none;">
-      <p>Contenido de gestión activo</p>
-    </div>
-  </section>
-
-  <section class="card">
-    <h3>Resultados</h3>
-
-    <button id="abrir-resultados-btn">Habilitar carga</button>
-    <button id="cerrar-resultados-btn">Cerrar carga</button>
-    <p id="mensaje-estado"></p>
-
-    <div id="resultados-bloqueado">
-      🔒 Carga bloqueada
-    </div>
-
-    <div id="resultados-panel" style="display:none;">
-      <p>Panel de carga de resultados activo</p>
-    </div>
-  </section>
-
-</div>
   </div>
 
- <!-- LIBRERÍA -->
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <!-- Librerías -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-<!-- PDF -->
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
-<!-- APP -->
-<script src="app.js?v=estable-1" defer></script>
+  <!-- App -->
+  <script src="app.js?v=estable-1" defer></script>
 
 </body>
 </html>

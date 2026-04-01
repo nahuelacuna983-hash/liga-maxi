@@ -63,17 +63,19 @@ const categorias = {
 };
 
 function mostrarLiga() {
-  if (tabLiga) tabLiga.classList.add("activo");
-  if (tabGestion) tabGestion.classList.remove("activo");
   if (vistaLiga) vistaLiga.style.display = "block";
   if (vistaGestion) vistaGestion.style.display = "none";
+
+  if (tabLiga) tabLiga.classList.add("activo");
+  if (tabGestion) tabGestion.classList.remove("activo");
 }
 
 function mostrarGestion() {
-  if (tabGestion) tabGestion.classList.add("activo");
-  if (tabLiga) tabLiga.classList.remove("activo");
-  if (vistaGestion) vistaGestion.style.display = "block";
   if (vistaLiga) vistaLiga.style.display = "none";
+  if (vistaGestion) vistaGestion.style.display = "block";
+
+  if (tabLiga) tabLiga.classList.remove("activo");
+  if (tabGestion) tabGestion.classList.add("activo");
 }
 
 function renderTablaInicial(categoria) {
