@@ -123,8 +123,8 @@ function renderCategoriaInicial() {
   // =========================
   // SUPABASE
   // =========================
-  const SUPABASE_URL = "TU_URL";
-  const SUPABASE_KEY = "TU_KEY";
+  const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
 
   let supabase = null;
 
