@@ -166,7 +166,84 @@ function renderCategoriaInicial() {
   // =========================
   // INICIO
   // =========================
-  document.addEventListener("DOMContentLoaded", () => {
+   // =========================
+// RESULTADOS Y GESTIÓN
+// =========================
+const abrirResultadosBtn = document.getElementById("abrir-resultados-btn");
+const cerrarResultadosBtn = document.getElementById("cerrar-resultados-btn");
+const resultadosBloqueado = document.getElementById("resultados-bloqueado");
+const resultadosPanel = document.getElementById("resultados-panel");
+const partidoSelect = document.getElementById("partido-select");
+const botonGuardar = document.getElementById("guardar-resultado");
+const botonResetear = document.getElementById("resetear-resultado");
+const mensajeEstado = document.getElementById("mensaje-estado");
+
+const gestionBloqueadaCard = document.getElementById("gestion-bloqueada-card");
+const gestionContenido = document.getElementById("gestion-contenido");
+const abrirGestionBtn = document.getElementById("abrir-gestion-btn");
+const cerrarGestionBtn = document.getElementById("cerrar-gestion-btn");
+const mensajeGestion = document.getElementById("mensaje-gestion");
+
+const SESSION_GESTION_KEY = "ligaMaxiGestionOpen";
+const SESSION_RESULTADOS_KEY = "ligaMaxiResultadosOpen";
+const ADMIN_PASSWORD = "admin123";
+const RESULTADOS_PASSWORD = "resultados123";
+
+function gestionAbierta() {
+  return sessionStorage.getItem(SESSION_GESTION_KEY) === "1";
+}
+
+function resultadosAbiertos() {
+  return sessionStorage.getItem(SESSION_RESULTADOS_KEY) === "1";
+}
+
+function abrirGestionSesion() {
+  sessionStorage.setItem(SESSION_GESTION_KEY, "1");
+  actualizarEstadoAccesos();
+}
+
+function cerrarGestionSesion() {
+  sessionStorage.removeItem(SESSION_GESTION_KEY);
+  actualizarEstadoAccesos();
+}
+
+function abrirResultadosSesion() {
+  sessionStorage.setItem(SESSION_RESULTADOS_KEY, "1");
+  actualizarEstadoAccesos();
+}
+
+function cerrarResultadosSesion() {
+  sessionStorage.removeItem(SESSION_RESULTADOS_KEY);
+  actualizarEstadoAccesos();
+}
+
+function actualizarEstadoAccesos() {
+  if (gestionBloqueadaCard && gestionContenido) {
+    if (gestionAbierta()) {
+      gestionBloqueadaCard.style.display = "none";
+      gestionContenido.style.display = "block";
+      if (mensajeGestion) mensajeGestion.textContent = "";
+    } else {
+      gestionBloqueadaCard.style.display = "block";
+      gestionContenido.style.display = "none";
+    }
+  }
+
+  if (resultadosBloqueado && resultadosPanel) {
+    if (resultadosAbiertos()) {
+      resultadosBloqueado.style.display = "none";
+      resultadosPanel.style.display = "block";
+    } else {
+      resultadosBloqueado.style.display = "block";
+      resultadosPanel.style.display = "none";
+    }
+  }
+}
+
+// =========================
+// INIT
+// =========================
+document.addEventListener("DOMContentLoaded", () => {
 
   if (tabLiga) tabLiga.addEventListener("click", mostrarLiga);
   if (tabGestion) tabGestion.addEventListener("click", mostrarGestion);
@@ -175,10 +252,49 @@ function renderCategoriaInicial() {
     categoriaSelect.addEventListener("change", renderCategoriaInicial);
   }
 
+  if (abrirGestionBtn) {
+    abrirGestionBtn.addEventListener("click", () => {
+      const clave = window.prompt("Ingresá la clave de administrador:");
+      if (clave === ADMIN_PASSWORD) {
+        abrirGestionSesion();
+        if (mensajeGestion) mensajeGestion.textContent = "Gestión habilitada.";
+      } else if (clave !== null) {
+        if (mensajeGestion) mensajeGestion.textContent = "Clave incorrecta.";
+      }
+    });
+  }
+
+  if (cerrarGestionBtn) {
+    cerrarGestionBtn.addEventListener("click", () => {
+      cerrarGestionSesion();
+      if (mensajeGestion) mensajeGestion.textContent = "Gestión cerrada.";
+    });
+  }
+
+  if (abrirResultadosBtn) {
+    abrirResultadosBtn.addEventListener("click", () => {
+      const clave = window.prompt("Ingresá la clave para habilitar carga de resultados:");
+      if (clave === RESULTADOS_PASSWORD) {
+        abrirResultadosSesion();
+        if (mensajeEstado) mensajeEstado.textContent = "Carga habilitada.";
+      } else if (clave !== null) {
+        if (mensajeEstado) mensajeEstado.textContent = "Clave incorrecta.";
+      }
+    });
+  }
+
+  if (cerrarResultadosBtn) {
+    cerrarResultadosBtn.addEventListener("click", () => {
+      cerrarResultadosSesion();
+      if (mensajeEstado) mensajeEstado.textContent = "Carga cerrada.";
+    });
+  }
+
   renderCategoriaInicial();
   mostrarLiga();
+  actualizarEstadoAccesos();
 
-    console.log("[Liga Maxi] DOM listo");
+  console.log("[Liga Maxi] DOM listo");
 
 });
 }
