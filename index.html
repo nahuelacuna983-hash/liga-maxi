@@ -53,19 +53,97 @@
 
     <div id="gestion-contenido" style="display:none;">
 
-      <h3>Generar torneo</h3>
-      <button id="generar-fixture">Generar Fixture</button>
+      <<h3>Planificador de Torneos</h3>
 
-      <h3>Resultados</h3>
-      <select id="partido-select"></select>
-      <input id="puntos-local" type="number">
-      <input id="puntos-visitante" type="number">
-      <button id="guardar-resultado">Guardar</button>
-
-    </div>
-
+<div class="planner-grid">
+  <div>
+    <label for="planner-categoria">Categoría</label>
+    <select id="planner-categoria">
+      <option value="Maxi +35 A">Maxi +35 A</option>
+      <option value="Maxi +35 B">Maxi +35 B</option>
+      <option value="Maxi +48">Maxi +48</option>
+      <option value="Femenino">Femenino</option>
+    </select>
   </div>
 
+  <div>
+    <label for="planner-equipos">Cantidad de equipos</label>
+    <input id="planner-equipos" type="number" value="10" min="2">
+  </div>
+
+  <div>
+    <label for="planner-formato">Competencia</label>
+    <select id="planner-formato">
+      <option value="apertura">Apertura - 1 rueda</option>
+      <option value="clausura">Clausura - 1 rueda</option>
+      <option value="anual">Anual - 2 ruedas</option>
+      <option value="eliminacion">Eliminación directa</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="planner-playoffs">Playoffs</label>
+    <select id="planner-playoffs">
+      <option value="no">No</option>
+      <option value="si">Sí</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="planner-clasificados">Clasificados</label>
+    <select id="planner-clasificados">
+      <option value="4">4 equipos</option>
+      <option value="6">6 equipos</option>
+      <option value="8">8 equipos</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="planner-dia-juego">Día de juego</label>
+    <select id="planner-dia-juego">
+      <option value="0">Domingo</option>
+      <option value="3">Miércoles</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="planner-inicio">Inicio</label>
+    <input id="planner-inicio" type="date">
+  </div>
+
+  <div>
+    <label for="planner-fin">Fin</label>
+    <input id="planner-fin" type="date">
+  </div>
+
+  <div>
+    <label for="planner-frecuencia">Frecuencia</label>
+    <select id="planner-frecuencia">
+      <option value="1">Cada semana</option>
+      <option value="2">Semana por medio</option>
+    </select>
+  </div>
+
+  <div style="grid-column: 1 / -1;">
+    <label for="planner-bloqueadas">Fechas bloqueadas (YYYY-MM-DD, separadas por coma)</label>
+    <input id="planner-bloqueadas" type="text" placeholder="2026-05-03, 2026-05-25">
+  </div>
+</div>
+
+<div class="acciones">
+  <button id="planner-calcular">Calcular formato</button>
+  <button id="generar-fixture">Generar Fixture</button>
+</div>
+
+<div id="planner-resultado" class="planner-resultado"></div>
+<div id="planner-comparacion" class="planner-resultado"></div>
+
+<h3>Resultados</h3>
+<select id="partido-select"></select>
+<input id="puntos-local" type="number" placeholder="Puntos Local">
+<input id="puntos-visitante" type="number" placeholder="Puntos Visitante">
+<div class="acciones">
+  <button id="guardar-resultado">Guardar</button>
 </div>
 
 <script src="app.js"></script>
