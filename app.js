@@ -166,6 +166,26 @@ function calcularTabla(cat) {
 
   return Object.values(tabla).sort((a,b)=>b.pts-a.pts);
 }
+
+  (fixtures[cat] || []).forEach(p => {
+    if (p.pl == null) return;
+
+    tabla[p.local].pj++;
+    tabla[p.visitante].pj++;
+
+    if (p.pl > p.pv) {
+      tabla[p.local].pg++;
+      tabla[p.visitante].pp++;
+      tabla[p.local].pts += 2;
+    } else {
+      tabla[p.visitante].pg++;
+      tabla[p.local].pp++;
+      tabla[p.visitante].pts += 2;
+    }
+  });
+
+  return Object.values(tabla).sort((a,b)=>b.pts-a.pts);
+}
 }
 
 // ===== RENDER =====
