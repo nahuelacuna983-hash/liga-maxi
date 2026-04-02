@@ -138,17 +138,34 @@ function calcularTabla(cat) {
   let tabla = {};
 
   categorias[cat].forEach(e => {
-    tabla[e] = { equipo: e, pts: 0 };
+    tabla[e] = {
+      equipo: e,
+      pj: 0,
+      pg: 0,
+      pp: 0,
+      pts: 0
+    };
   });
 
   (fixtures[cat] || []).forEach(p => {
     if (p.pl == null) return;
 
-    if (p.pl > p.pv) tabla[p.local].pts += 2;
-    else tabla[p.visitante].pts += 2;
+    tabla[p.local].pj++;
+    tabla[p.visitante].pj++;
+
+    if (p.pl > p.pv) {
+      tabla[p.local].pg++;
+      tabla[p.visitante].pp++;
+      tabla[p.local].pts += 2;
+    } else {
+      tabla[p.visitante].pg++;
+      tabla[p.local].pp++;
+      tabla[p.visitante].pts += 2;
+    }
   });
 
   return Object.values(tabla).sort((a,b)=>b.pts-a.pts);
+}
 }
 
 // ===== RENDER =====
