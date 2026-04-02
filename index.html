@@ -4,116 +4,70 @@
   <meta charset="UTF-8">
   <title>Liga Maxi Básquet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Estilos -->
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <div class="app">
+<div class="app">
 
-    <h1>Liga Maxi Básquet La Plata</h1>
-    <p>Fixture, resultados, tabla y herramientas de organización</p>
+  <h1>Liga Maxi Básquet</h1>
 
-    <!-- Tabs -->
-    <div class="tabs">
-      <button id="tab-liga" class="tab activo">Liga</button>
-      <button id="tab-gestion" class="tab">Gestión</button>
-    </div>
+  <div class="tabs">
+    <button id="tab-liga" class="tab activo">Liga</button>
+    <button id="tab-gestion" class="tab">Gestión</button>
+  </div>
 
-    <!-- ========================= -->
-    <!-- VISTA LIGA -->
-    <!-- ========================= -->
-    <div id="vista-liga">
+  <!-- LIGA -->
+  <div id="vista-liga">
 
-      <section class="card">
-        <h3>Categoría</h3>
-        <select id="categoria-select">
-          <option value="Maxi +35 A">Maxi +35 A</option>
-          <option value="Maxi +35 B">Maxi +35 B</option>
-          <option value="Maxi +48">Maxi +48</option>
-          <option value="Femenino">Femenino</option>
-        </select>
-      </section>
+    <select id="categoria-select">
+      <option value="Maxi +35 A">Maxi +35 A</option>
+      <option value="Maxi +35 B">Maxi +35 B</option>
+      <option value="Maxi +48">Maxi +48</option>
+      <option value="Femenino">Femenino</option>
+    </select>
 
-      <section class="card">
-        <h3>Tabla de Posiciones</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Equipo</th>
-              <th>PJ</th>
-              <th>PG</th>
-              <th>PP</th>
-              <th>GF</th>
-              <th>GC</th>
-              <th>DF</th>
-              <th>PTS</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-body"></tbody>
-        </table>
-      </section>
+    <h3>Tabla</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PP</th><th>PTS</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-body"></tbody>
+    </table>
 
-      <section class="card">
-        <h3>Fixture</h3>
-        <div id="fixture-body"></div>
-      </section>
+    <h3>Fixture</h3>
+    <div id="fixture-body"></div>
 
-      <section class="card">
-        <h3>Playoffs</h3>
-        <div id="playoff-body"></div>
-      </section>
+    <h3>Playoffs</h3>
+    <div id="playoff-body"></div>
 
-    </div>
+  </div>
 
-    <!-- ========================= -->
-    <!-- VISTA GESTIÓN -->
-    <!-- ========================= -->
-    <div id="vista-gestion" style="display:none;">
+  <!-- GESTION -->
+  <div id="vista-gestion" style="display:none;">
 
-      <section class="card">
-        <h3>Gestión</h3>
+    <button id="abrir-gestion-btn">Abrir gestión</button>
+    <button id="cerrar-gestion-btn">Cerrar gestión</button>
 
-        <button id="abrir-gestion-btn">🔓 Abrir gestión</button>
-        <button id="cerrar-gestion-btn">🔒 Cerrar gestión</button>
-        <p id="mensaje-gestion"></p>
+    <div id="gestion-contenido" style="display:none;">
 
-        <div id="gestion-bloqueada-card">
-          🔒 Gestión bloqueada
-        </div>
+      <h3>Generar torneo</h3>
+      <button id="generar-fixture">Generar Fixture</button>
 
-        <div id="gestion-contenido" style="display:none;">
-          <p>Contenido de gestión activo</p>
-        </div>
-      </section>
-
-      <section class="card">
-        <h3>Resultados</h3>
-
-        <button id="abrir-resultados-btn">Habilitar carga</button>
-        <button id="cerrar-resultados-btn">Cerrar carga</button>
-        <p id="mensaje-estado"></p>
-
-        <div id="resultados-bloqueado">
-          🔒 Carga bloqueada
-        </div>
-
-        <div id="resultados-panel" style="display:none;">
-          <p>Panel de carga de resultados activo</p>
-        </div>
-      </section>
+      <h3>Resultados</h3>
+      <select id="partido-select"></select>
+      <input id="puntos-local" type="number">
+      <input id="puntos-visitante" type="number">
+      <button id="guardar-resultado">Guardar</button>
 
     </div>
 
   </div>
 
-  <!-- Librerías -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</div>
 
-  <!-- App -->
-  <script src="app.js?v=estable-1" defer></script>
-
+<script src="app.js"></script>
 </body>
 </html>
