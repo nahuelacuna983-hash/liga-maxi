@@ -175,8 +175,15 @@ function render() {
   // tabla
   const tabla = calcularTabla(cat);
   tablaBody.innerHTML = tabla.map((e,i)=>`
-    <tr><td>${i+1}</td><td>${e.equipo}</td><td>${e.pts}</td></tr>
-  `).join("");
+  <tr>
+    <td>${i+1}</td>
+    <td>${e.equipo}</td>
+    <td>${e.pj}</td>
+    <td>${e.pg}</td>
+    <td>${e.pp}</td>
+    <td>${e.pts}</td>
+  </tr>
+`).join("");
 
   // fixture
   const f = fixtures[cat] || [];
