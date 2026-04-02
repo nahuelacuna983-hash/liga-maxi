@@ -25,10 +25,50 @@ const guardarBtn = document.getElementById("guardar-resultado");
 
 // ===== DATA =====
 const categorias = {
-  "Maxi +35 A": ["A","B","C","D","E","F","G","H"],
-  "Maxi +35 B": ["I","J","K","L","M","N","O","P"],
-  "Maxi +48": ["Q","R","S","T","U","V"],
-  "Femenino": ["W","X","Y","Z"]
+  "Maxi +35 A": [
+    "HOGAR SOCIAL",
+    "SUD AMERICA",
+    "UNION VECINAL",
+    "VILLA SAN CARLOS",
+    "U.N.L.P.",
+    "BANCO PROVINCIA",
+    "TOLOSANO",
+    "MAYO",
+    "UNIVERSAL",
+    "MERIDIANO V"
+  ],
+  "Maxi +35 B": [
+    "UNIDOS",
+    "ESTRELLA",
+    "MAX NORDAU",
+    "RECONQUISTA",
+    "GONNET",
+    "VILLA ELISA",
+    "JUVENTUD",
+    "MACABI",
+    "LOS HORNOS",
+    "ESTUDIANTES"
+  ],
+  "Maxi +48": [
+    "HOGAR SOCIAL",
+    "VILLA SAN CARLOS",
+    "VILLA ELISA",
+    "PLATENSE",
+    "JUVENTUD",
+    "MERIDIANO",
+    "EDELP"
+  ],
+  "Femenino": [
+    "C. F. GONNET",
+    "UNIVERSAL",
+    "HOGAR SOCIAL",
+    "PLATENSE",
+    "MACABI",
+    "ESTRELLA",
+    "ASTILLERO",
+    "DEP. SAN VICENTE",
+    "MAX NORDAU"
+  ]
 };
 
 let fixtures = {};
