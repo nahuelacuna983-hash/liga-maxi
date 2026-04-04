@@ -52,6 +52,7 @@ const categorias = {
 let fixturesPorCategoria = {};
 
 document.addEventListener("DOMContentLoaded", () => {
+  // ===== DOM =====
   const tabLiga = document.getElementById("tab-liga");
   const tabGestion = document.getElementById("tab-gestion");
   const vistaLiga = document.getElementById("vista-liga");
@@ -86,8 +87,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const puntosVisitante = document.getElementById("puntos-visitante");
   const guardarBtn = document.getElementById("guardar-resultado");
 
+  // ===== BOTON IMPRIMIR =====
   let imprimirFixtureBtn = document.getElementById("imprimir-fixture-btn");
-
   if (!imprimirFixtureBtn && fixtureBody) {
     imprimirFixtureBtn = document.createElement("button");
     imprimirFixtureBtn.id = "imprimir-fixture-btn";
@@ -104,12 +105,164 @@ document.addEventListener("DOMContentLoaded", () => {
     fixtureBody.parentNode.insertBefore(imprimirFixtureBtn, fixtureBody);
   }
 
-  function inyectarEstilosPlayoffDibujo() {
-    if (document.getElementById("playoff-dibujo-styles")) return;
+  // ===== ESTILOS INYECTADOS =====
+  function inyectarEstilosInternos() {
+    if (document.getElementById("liga-maxi-inline-styles")) return;
 
     const style = document.createElement("style");
-    style.id = "playoff-dibujo-styles";
+    style.id = "liga-maxi-inline-styles";
     style.textContent = `
+      .playoff-config-box {
+        margin-top: 14px;
+        padding: 14px;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 10px;
+        background: rgba(255,255,255,0.04);
+      }
+
+      .playoff-config-box h4 {
+        margin: 0 0 12px 0;
+      }
+
+      .playoff-config-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+
+      .playoff-config-grid label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .playoff-config-grid select {
+        width: 100%;
+      }
+
+      .fixture-tabla-wrap {
+        width: 100%;
+        overflow-x: auto;
+        margin-top: 12px;
+      }
+
+      .fixture-tabla-pro {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 8px 10px;
+        min-width: 900px;
+      }
+
+      .fixture-fecha-col {
+        min-width: 150px;
+        background: linear-gradient(180deg, #1b4f8a, #0e2a57);
+        color: white;
+        border-radius: 10px;
+        padding: 14px 12px;
+        text-align: center;
+        vertical-align: middle;
+      }
+
+      .fixture-fecha-titulo {
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+      }
+
+      .fixture-fecha-subtitulo {
+        font-size: 18px;
+        font-weight: 700;
+        margin-top: 6px;
+      }
+
+      .fixture-partido-col,
+      .fixture-libre-col {
+        min-width: 185px;
+        vertical-align: top;
+      }
+
+      .fixture-partido-card {
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 10px;
+        padding: 10px 8px;
+        min-height: 118px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .fixture-equipo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        font-size: 13px;
+        line-height: 1.2;
+      }
+
+      .escudo-equipo {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+        flex: 0 0 28px;
+      }
+
+      .fixture-vs {
+        text-align: center;
+        font-size: 12px;
+        font-weight: 800;
+        opacity: 0.8;
+        margin: 6px 0;
+      }
+
+      .fixture-resultado-mini {
+        text-align: center;
+        font-weight: 800;
+        font-size: 14px;
+        margin-top: 8px;
+      }
+
+      .fixture-libre-card {
+        background: linear-gradient(180deg, #6f8397, #4f6274);
+        color: white;
+        border-radius: 10px;
+        min-height: 118px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px;
+        text-align: center;
+      }
+
+      .fixture-libre-titulo {
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: 1px;
+      }
+
+      .fixture-libre-equipo {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+
+      .fixture-libre-equipo .escudo-equipo {
+        width: 30px;
+        height: 30px;
+        object-fit: contain;
+      }
+
+      .fixture-partido-col.vacio {
+        background: transparent;
+      }
+
       .playoff-bracket-dibujo {
         margin-top: 16px;
         overflow-x: auto;
@@ -171,7 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
         background: rgba(255,255,255,0.12);
         border: 1px solid rgba(255,255,255,0.14);
         border-radius: 10px;
-        overflow: visible;
+        overflow: hidden;
       }
 
       .playoff-match-label {
@@ -179,6 +332,12 @@ document.addEventListener("DOMContentLoaded", () => {
         font-weight: 900;
         opacity: 0.75;
         padding: 8px 10px 0 10px;
+      }
+
+      .playoff-match-fechas {
+        font-size: 11px;
+        opacity: 0.75;
+        padding: 2px 10px 8px 10px;
       }
 
       .playoff-team-box {
@@ -252,21 +411,9 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     document.head.appendChild(style);
   }
+  inyectarEstilosInternos();
 
-  function mostrarLiga() {
-    vistaLiga.style.display = "block";
-    vistaGestion.style.display = "none";
-    tabLiga.classList.add("activo");
-    tabGestion.classList.remove("activo");
-  }
-
-  function mostrarGestion() {
-    vistaLiga.style.display = "none";
-    vistaGestion.style.display = "block";
-    tabLiga.classList.remove("activo");
-    tabGestion.classList.add("activo");
-  }
-
+  // ===== HELPERS FECHAS =====
   const nombresDias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const nombresMeses = [
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -387,6 +534,109 @@ document.addEventListener("DOMContentLoaded", () => {
     return ultima;
   }
 
+  // ===== HELPERS UI =====
+  function mostrarLiga() {
+    vistaLiga.style.display = "block";
+    vistaGestion.style.display = "none";
+    tabLiga.classList.add("activo");
+    tabGestion.classList.remove("activo");
+  }
+
+  function mostrarGestion() {
+    vistaLiga.style.display = "none";
+    vistaGestion.style.display = "block";
+    tabLiga.classList.remove("activo");
+    tabGestion.classList.add("activo");
+  }
+
+  // ===== CONFIG PLAYOFFS DINAMICA =====
+  function asegurarUIPlayoffConfig() {
+    if (document.getElementById("playoff-config-box")) return;
+
+    const box = document.createElement("div");
+    box.id = "playoff-config-box";
+    box.className = "playoff-config-box";
+    box.innerHTML = `
+      <h4>Series de playoffs</h4>
+      <div class="playoff-config-grid">
+        <div id="bloque-reclasificacion">
+          <label for="series-reclasificacion">Reclasificación</label>
+          <select id="series-reclasificacion">
+            <option value="1">1 partido</option>
+            <option value="2">2 partidos</option>
+            <option value="3">3 partidos</option>
+          </select>
+        </div>
+
+        <div id="bloque-cuartos">
+          <label for="series-cuartos">Cuartos</label>
+          <select id="series-cuartos">
+            <option value="1">1 partido</option>
+            <option value="2">2 partidos</option>
+            <option value="3">3 partidos</option>
+          </select>
+        </div>
+
+        <div id="bloque-semis">
+          <label for="series-semis">Semifinales</label>
+          <select id="series-semis">
+            <option value="1">1 partido</option>
+            <option value="2">2 partidos</option>
+            <option value="3">3 partidos</option>
+          </select>
+        </div>
+
+        <div id="bloque-final">
+          <label for="series-final">Final</label>
+          <select id="series-final">
+            <option value="1">1 partido</option>
+            <option value="2">2 partidos</option>
+            <option value="3" selected>3 partidos</option>
+          </select>
+        </div>
+      </div>
+    `;
+
+    plannerComparacion.parentNode.insertBefore(box, plannerComparacion.nextSibling);
+  }
+  asegurarUIPlayoffConfig();
+
+  const seriesReclasificacion = document.getElementById("series-reclasificacion");
+  const seriesCuartos = document.getElementById("series-cuartos");
+  const seriesSemis = document.getElementById("series-semis");
+  const seriesFinal = document.getElementById("series-final");
+  const bloqueReclasificacion = document.getElementById("bloque-reclasificacion");
+  const bloqueCuartos = document.getElementById("bloque-cuartos");
+  const bloqueSemis = document.getElementById("bloque-semis");
+  const bloqueFinal = document.getElementById("bloque-final");
+
+  function actualizarVisibilidadSeries() {
+    const playoffsActivos = plannerPlayoffs.value === "si";
+    const clasificados = Number(plannerClasificados.value);
+
+    document.getElementById("playoff-config-box").style.display = playoffsActivos ? "block" : "none";
+
+    bloqueReclasificacion.style.display = playoffsActivos && clasificados === 6 ? "block" : "none";
+    bloqueCuartos.style.display = playoffsActivos && clasificados === 8 ? "block" : "none";
+    bloqueSemis.style.display = playoffsActivos && (clasificados === 4 || clasificados === 6 || clasificados === 8) ? "block" : "none";
+    bloqueFinal.style.display = playoffsActivos ? "block" : "none";
+  }
+  actualizarVisibilidadSeries();
+
+  function leerSeriesPlayoff() {
+    return {
+      reclasificacion: Number(seriesReclasificacion.value),
+      cuartos: Number(seriesCuartos.value),
+      semifinales: Number(seriesSemis.value),
+      final: Number(seriesFinal.value)
+    };
+  }
+
+  function textoSeries(n) {
+    return `${n} ${n === 1 ? "partido" : "partidos"}`;
+  }
+
+  // ===== EQUIPOS =====
   function obtenerEquiposCategoria(categoria, cantidadSolicitada) {
     const base = categorias[categoria] ? [...categorias[categoria]] : [];
     const cantidad = Number(cantidadSolicitada);
@@ -406,6 +656,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return equipos;
   }
 
+  // ===== FIXTURE REGULAR =====
   function generarRondaSimple(equiposOriginales) {
     const equipos = [...equiposOriginales];
     const usarLibre = equipos.length % 2 !== 0;
@@ -561,6 +812,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return fechasConEstado;
   }
 
+  // ===== PLAYOFFS =====
   function contarJornadasBase(cantidadEquipos, formato) {
     if (formato === "eliminacion") {
       return Math.max(1, Math.ceil(Math.log2(cantidadEquipos)));
@@ -570,13 +822,61 @@ document.addEventListener("DOMContentLoaded", () => {
     return formato === "anual" ? porRueda * 2 : porRueda;
   }
 
-  function contarJornadasPlayoff(clasificados) {
-    if (clasificados <= 2) return 1;
-    if (clasificados === 4) return 2;
-    if (clasificados === 6) return 3;
-    if (clasificados === 8) return 3;
+  function contarJornadasPlayoffDetalladas(clasificados, series) {
+    if (clasificados === 4) {
+      return {
+        cuartos: 0,
+        reclasificacion: 0,
+        semifinales: series.semifinales,
+        final: series.final,
+        total: series.semifinales + series.final
+      };
+    }
 
-    return Math.ceil(Math.log2(clasificados));
+    if (clasificados === 6) {
+      return {
+        cuartos: 0,
+        reclasificacion: series.reclasificacion,
+        semifinales: series.semifinales,
+        final: series.final,
+        total: series.reclasificacion + series.semifinales + series.final
+      };
+    }
+
+    if (clasificados === 8) {
+      return {
+        cuartos: series.cuartos,
+        reclasificacion: 0,
+        semifinales: series.semifinales,
+        final: series.final,
+        total: series.cuartos + series.semifinales + series.final
+      };
+    }
+
+    return {
+      cuartos: 0,
+      reclasificacion: 0,
+      semifinales: series.semifinales,
+      final: series.final,
+      total: series.semifinales + series.final
+    };
+  }
+
+  function cortarFechasPlayoff(fechasDisponibles, jornadasBase, detalle) {
+    let cursor = jornadasBase;
+
+    const tomar = (cantidad) => {
+      const bloque = fechasDisponibles.slice(cursor, cursor + cantidad);
+      cursor += cantidad;
+      return bloque;
+    };
+
+    return {
+      cuartos: tomar(detalle.cuartos),
+      reclasificacion: tomar(detalle.reclasificacion),
+      semifinales: tomar(detalle.semifinales),
+      final: tomar(detalle.final)
+    };
   }
 
   function detectarSugerencias({
@@ -596,45 +896,23 @@ document.addEventListener("DOMContentLoaded", () => {
       return sugerencias;
     }
 
-    const fechasSemanales = obtenerFechasDisponibles(
-      inicio,
-      fin,
-      diaJuego,
-      1,
-      bloqueadas
-    );
+    const fechasSemanales = obtenerFechasDisponibles(inicio, fin, diaJuego, 1, bloqueadas);
 
     if (frecuencia === 2 && fechasSemanales.length >= jornadasNecesarias) {
       sugerencias.push("Sugerencia: jugando todas las semanas, el torneo sí entra en el rango.");
     }
 
     const diaAlternativo = diaJuego === 0 ? 3 : 0;
-    const fechasAlternativas = obtenerFechasDisponibles(
-      inicio,
-      fin,
-      diaAlternativo,
-      frecuencia,
-      bloqueadas
-    );
+    const fechasAlternativas = obtenerFechasDisponibles(inicio, fin, diaAlternativo, frecuencia, bloqueadas);
 
     if (fechasAlternativas.length >= jornadasNecesarias) {
-      sugerencias.push(
-        `Sugerencia: cambiando el día de juego a ${nombresDias[diaAlternativo]}, el torneo sí entra.`
-      );
+      sugerencias.push(`Sugerencia: cambiando el día de juego a ${nombresDias[diaAlternativo]}, el torneo sí entra.`);
     }
 
-    const fechaFinSugerida = calcularFechaFinSugerida(
-      inicio,
-      diaJuego,
-      frecuencia,
-      jornadasNecesarias,
-      bloqueadas
-    );
+    const fechaFinSugerida = calcularFechaFinSugerida(inicio, diaJuego, frecuencia, jornadasNecesarias, bloqueadas);
 
     if (fechaFinSugerida) {
-      sugerencias.push(
-        `Sugerencia: manteniendo este formato, necesitás llegar al menos hasta ${formatFechaBonita(fechaFinSugerida)}.`
-      );
+      sugerencias.push(`Sugerencia: manteniendo este formato, necesitás llegar al menos hasta ${formatFechaBonita(fechaFinSugerida)}.`);
     }
 
     if (!sugerencias.length && fechasDisponiblesActuales < jornadasNecesarias) {
@@ -645,28 +923,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function leerPlanner() {
-    const categoria = plannerCategoria.value;
-    const equipos = Number(plannerEquipos.value);
-    const formato = plannerFormato.value;
-    const playoffs = plannerPlayoffs.value;
-    const clasificados = Number(plannerClasificados.value);
-    const diaJuego = Number(plannerDiaJuego.value);
-    const inicio = plannerInicio.value;
-    const fin = plannerFin.value;
-    const frecuencia = Number(plannerFrecuencia.value);
-    const bloqueadas = normalizarBloqueadas(plannerBloqueadas.value);
-
     return {
-      categoria,
-      equipos,
-      formato,
-      playoffs,
-      clasificados,
-      diaJuego,
-      inicio,
-      fin,
-      frecuencia,
-      bloqueadas
+      categoria: plannerCategoria.value,
+      equipos: Number(plannerEquipos.value),
+      formato: plannerFormato.value,
+      playoffs: plannerPlayoffs.value,
+      clasificados: Number(plannerClasificados.value),
+      diaJuego: Number(plannerDiaJuego.value),
+      inicio: plannerInicio.value,
+      fin: plannerFin.value,
+      frecuencia: Number(plannerFrecuencia.value),
+      bloqueadas: normalizarBloqueadas(plannerBloqueadas.value),
+      series: leerSeriesPlayoff()
     };
   }
 
@@ -686,8 +954,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const jornadasBase = contarJornadasBase(data.equipos, data.formato);
-    const jornadasPlayoff = data.playoffs === "si" ? contarJornadasPlayoff(data.clasificados) : 0;
-    const jornadasTotales = jornadasBase + jornadasPlayoff;
+    const detallePlayoff = data.playoffs === "si"
+      ? contarJornadasPlayoffDetalladas(data.clasificados, data.series)
+      : { cuartos: 0, reclasificacion: 0, semifinales: 0, final: 0, total: 0 };
+
+    const jornadasTotales = jornadasBase + detallePlayoff.total;
 
     const calendarioCompleto = obtenerFechasCalendarioConBloqueadas(
       data.inicio,
@@ -702,6 +973,8 @@ document.addEventListener("DOMContentLoaded", () => {
       .map((f) => f.fechaISO);
 
     const entra = fechasDisponibles.length >= jornadasTotales;
+
+    const calendarioPlayoff = cortarFechasPlayoff(fechasDisponibles, jornadasBase, detallePlayoff);
 
     const sugerencias = detectarSugerencias({
       entra,
@@ -722,7 +995,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <p><strong>Día de juego:</strong> ${nombresDias[data.diaJuego]}</p>
       <p><strong>Frecuencia:</strong> ${data.frecuencia === 1 ? "Cada semana" : "Semana por medio"}</p>
       <p><strong>Fechas base necesarias:</strong> ${jornadasBase}</p>
-      <p><strong>Fechas extra por playoffs:</strong> ${jornadasPlayoff}</p>
+      <p><strong>Fechas playoffs:</strong> ${detallePlayoff.total}</p>
       <p><strong>Total de jornadas necesarias:</strong> ${jornadasTotales}</p>
       <p><strong>Fechas del calendario:</strong> ${calendarioCompleto.length}</p>
       <p><strong>Fechas bloqueadas:</strong> ${calendarioCompleto.filter(f => f.bloqueada).length}</p>
@@ -730,28 +1003,45 @@ document.addEventListener("DOMContentLoaded", () => {
       <p><strong>Estado:</strong> ${entra ? "Entra en el rango elegido." : "No entra en el rango elegido."}</p>
     `;
 
-    plannerComparacion.innerHTML = `
-      <h4>${entra ? "Calendario generado" : "Sugerencias de ajuste"}</h4>
-      ${
-        entra
-          ? calendarioCompleto.map((f, i) => `
-              <p>
-                <strong>Fecha ${i + 1}:</strong>
-                ${formatFechaBonita(f.fechaISO)}
-                ${f.bloqueada ? " — BLOQUEADA / DESCANSO" : ""}
-              </p>
-            `).join("")
-          : sugerencias.map((s) => `<p>${s}</p>`).join("")
+    if (entra) {
+      const lineas = [];
+
+      lineas.push(`<p><strong>Fase regular:</strong> ${jornadasBase} fechas</p>`);
+
+      if (data.playoffs === "si") {
+        if (detallePlayoff.cuartos) {
+          lineas.push(`<p><strong>Cuartos:</strong> ${textoSeries(detallePlayoff.cuartos)} — ${calendarioPlayoff.cuartos.map(formatFechaBonita).join(" / ")}</p>`);
+        }
+        if (detallePlayoff.reclasificacion) {
+          lineas.push(`<p><strong>Reclasificación:</strong> ${textoSeries(detallePlayoff.reclasificacion)} — ${calendarioPlayoff.reclasificacion.map(formatFechaBonita).join(" / ")}</p>`);
+        }
+        if (detallePlayoff.semifinales) {
+          lineas.push(`<p><strong>Semifinales:</strong> ${textoSeries(detallePlayoff.semifinales)} — ${calendarioPlayoff.semifinales.map(formatFechaBonita).join(" / ")}</p>`);
+        }
+        if (detallePlayoff.final) {
+          lineas.push(`<p><strong>Final:</strong> ${textoSeries(detallePlayoff.final)} — ${calendarioPlayoff.final.map(formatFechaBonita).join(" / ")}</p>`);
+        }
       }
-    `;
+
+      plannerComparacion.innerHTML = `
+        <h4>Calendario generado</h4>
+        ${lineas.join("")}
+      `;
+    } else {
+      plannerComparacion.innerHTML = `
+        <h4>Sugerencias de ajuste</h4>
+        ${sugerencias.map((s) => `<p>${s}</p>`).join("")}
+      `;
+    }
 
     return {
       ...data,
       jornadasBase,
-      jornadasPlayoff,
+      detallePlayoff,
       jornadasTotales,
       calendarioCompleto,
       fechasDisponibles,
+      calendarioPlayoff,
       entra
     };
   }
@@ -763,10 +1053,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const equipos = obtenerEquiposCategoria(plan.categoria, plan.equipos);
     const rondas = generarRondasPorFormato(equipos, plan.formato);
 
-    const fixtureConFechas = asignarFechasARondas(
-      rondas,
-      plan.calendarioCompleto
-    );
+    const fixtureConFechas = asignarFechasARondas(rondas, plan.calendarioCompleto);
 
     fixturesPorCategoria[plan.categoria] = {
       meta: {
@@ -781,8 +1068,10 @@ document.addEventListener("DOMContentLoaded", () => {
         frecuencia: plan.frecuencia,
         bloqueadas: plan.bloqueadas,
         jornadasBase: plan.jornadasBase,
-        jornadasPlayoff: plan.jornadasPlayoff,
-        jornadasTotales: plan.jornadasTotales
+        detallePlayoff: plan.detallePlayoff,
+        jornadasTotales: plan.jornadasTotales,
+        seriesPlayoff: plan.series,
+        calendarioPlayoff: plan.calendarioPlayoff
       },
       fechas: fixtureConFechas
     };
@@ -792,6 +1081,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mostrarLiga();
   }
 
+  // ===== TABLA =====
   function obtenerPartidosPlanos(cat) {
     const data = fixturesPorCategoria[cat];
     if (!data || !data.fechas) return [];
@@ -883,6 +1173,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `).join("");
   }
 
+  // ===== ESCUDOS =====
   function slugEquipo(nombre) {
     return nombre
       .normalize("NFD")
@@ -938,6 +1229,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
+  // ===== FIXTURE RENDER =====
   function renderFixture(cat) {
     const data = fixturesPorCategoria[cat];
 
@@ -1045,6 +1337,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `).join("");
   }
 
+  // ===== PLAYOFF DATA / RENDER =====
   function construirPlayoffData(cat) {
     const data = fixturesPorCategoria[cat];
     const meta = data?.meta;
@@ -1055,17 +1348,18 @@ document.addEventListener("DOMContentLoaded", () => {
       seed: i + 1,
       equipo: e.equipo
     }));
+    const fechas = meta.calendarioPlayoff || { cuartos: [], reclasificacion: [], semifinales: [], final: [] };
 
     if (meta.clasificados === 4) {
       return {
         tipo: "4",
         titulo: "Playoffs - Top 4",
         semifinales: [
-          { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: clasificados[3]?.equipo || "4°" },
-          { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: clasificados[2]?.equipo || "3°" }
+          { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: clasificados[3]?.equipo || "4°", fechas: fechas.semifinales },
+          { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: clasificados[2]?.equipo || "3°", fechas: fechas.semifinales }
         ],
         final: [
-          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
+          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2", fechas: fechas.final }
         ]
       };
     }
@@ -1075,15 +1369,15 @@ document.addEventListener("DOMContentLoaded", () => {
         tipo: "6",
         titulo: "Playoffs Maxi +48 - Top 6",
         reclasificacion: [
-          { etiqueta: "R1", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" },
-          { etiqueta: "R2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" }
+          { etiqueta: "R1", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°", fechas: fechas.reclasificacion },
+          { etiqueta: "R2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°", fechas: fechas.reclasificacion }
         ],
         semifinales: [
-          { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: "Ganador R2" },
-          { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: "Ganador R1" }
+          { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: "Ganador R2", fechas: fechas.semifinales },
+          { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: "Ganador R1", fechas: fechas.semifinales }
         ],
         final: [
-          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
+          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2", fechas: fechas.final }
         ]
       };
     }
@@ -1093,15 +1387,15 @@ document.addEventListener("DOMContentLoaded", () => {
         tipo: "6",
         titulo: "Playoffs - Top 6",
         reclasificacion: [
-          { etiqueta: "R1", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" },
-          { etiqueta: "R2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" }
+          { etiqueta: "R1", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°", fechas: fechas.reclasificacion },
+          { etiqueta: "R2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°", fechas: fechas.reclasificacion }
         ],
         semifinales: [
-          { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: "Ganador R2" },
-          { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: "Ganador R1" }
+          { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: "Ganador R2", fechas: fechas.semifinales },
+          { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: "Ganador R1", fechas: fechas.semifinales }
         ],
         final: [
-          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
+          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2", fechas: fechas.final }
         ]
       };
     }
@@ -1111,17 +1405,17 @@ document.addEventListener("DOMContentLoaded", () => {
         tipo: "8",
         titulo: "Playoffs - Top 8",
         cuartos: [
-          { etiqueta: "C1", a: clasificados[0]?.equipo || "1°", b: clasificados[7]?.equipo || "8°" },
-          { etiqueta: "C2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" },
-          { etiqueta: "C3", a: clasificados[1]?.equipo || "2°", b: clasificados[6]?.equipo || "7°" },
-          { etiqueta: "C4", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" }
+          { etiqueta: "C1", a: clasificados[0]?.equipo || "1°", b: clasificados[7]?.equipo || "8°", fechas: fechas.cuartos },
+          { etiqueta: "C2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°", fechas: fechas.cuartos },
+          { etiqueta: "C3", a: clasificados[1]?.equipo || "2°", b: clasificados[6]?.equipo || "7°", fechas: fechas.cuartos },
+          { etiqueta: "C4", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°", fechas: fechas.cuartos }
         ],
         semifinales: [
-          { etiqueta: "SF1", a: "Ganador C1", b: "Ganador C2" },
-          { etiqueta: "SF2", a: "Ganador C3", b: "Ganador C4" }
+          { etiqueta: "SF1", a: "Ganador C1", b: "Ganador C2", fechas: fechas.semifinales },
+          { etiqueta: "SF2", a: "Ganador C3", b: "Ganador C4", fechas: fechas.semifinales }
         ],
         final: [
-          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
+          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2", fechas: fechas.final }
         ]
       };
     }
@@ -1130,24 +1424,30 @@ document.addEventListener("DOMContentLoaded", () => {
       tipo: "simple",
       titulo: `Playoffs - Top ${meta.clasificados}`,
       partidos: [
-        { etiqueta: "P1", a: "Por definir", b: "Por definir" }
+        { etiqueta: "P1", a: "Por definir", b: "Por definir", fechas: [] }
       ]
     };
+  }
+
+  function fechasSerieTexto(fechas) {
+    if (!fechas || !fechas.length) return "Sin fecha";
+    return fechas.map((f, i) => `J${i + 1}: ${formatFechaCortaArgentina(f)}`).join(" · ");
   }
 
   function cardPlayoff(partido) {
     return `
       <div class="playoff-match-card">
         <div class="playoff-match-label">${partido.etiqueta}</div>
+        <div class="playoff-match-fechas">${fechasSerieTexto(partido.fechas)}</div>
         <div class="playoff-team-box">${partido.a}</div>
         <div class="playoff-team-box">${partido.b}</div>
       </div>
     `;
   }
 
-  function connectorHtml(tipo = "short") {
+  function connectorHtml() {
     return `
-      <div class="playoff-connector ${tipo}">
+      <div class="playoff-connector tall">
         <div class="line-vertical"></div>
       </div>
     `;
@@ -1161,8 +1461,6 @@ document.addEventListener("DOMContentLoaded", () => {
       playoffBody.innerHTML = "<p>Sin playoffs configurados.</p>";
       return;
     }
-
-    inyectarEstilosPlayoffDibujo();
 
     const playoffData = construirPlayoffData(cat);
     if (!playoffData) {
@@ -1182,16 +1480,13 @@ document.addEventListener("DOMContentLoaded", () => {
                   ${playoffData.semifinales.map(cardPlayoff).join("")}
                 </div>
               </div>
-
-              ${connectorHtml("tall")}
-
+              ${connectorHtml()}
               <div class="playoff-stage final-stage">
                 <div class="playoff-stage-title">Final</div>
                 <div class="playoff-stage-list">
                   ${playoffData.final.map(cardPlayoff).join("")}
                 </div>
               </div>
-
               <div class="playoff-connector empty"><div class="line-vertical"></div></div>
               <div></div>
             </div>
@@ -1213,18 +1508,14 @@ document.addEventListener("DOMContentLoaded", () => {
                   ${playoffData.reclasificacion.map(cardPlayoff).join("")}
                 </div>
               </div>
-
-              ${connectorHtml("tall")}
-
+              ${connectorHtml()}
               <div class="playoff-stage top6-semis">
                 <div class="playoff-stage-title">Semifinales</div>
                 <div class="playoff-stage-list">
                   ${playoffData.semifinales.map(cardPlayoff).join("")}
                 </div>
               </div>
-
-              ${connectorHtml("tall")}
-
+              ${connectorHtml()}
               <div class="playoff-stage final-stage">
                 <div class="playoff-stage-title">Final</div>
                 <div class="playoff-stage-list">
@@ -1251,18 +1542,14 @@ document.addEventListener("DOMContentLoaded", () => {
                   ${playoffData.cuartos.map(cardPlayoff).join("")}
                 </div>
               </div>
-
-              ${connectorHtml("tall")}
-
+              ${connectorHtml()}
               <div class="playoff-stage top8-semis">
                 <div class="playoff-stage-title">Semifinales</div>
                 <div class="playoff-stage-list">
                   ${playoffData.semifinales.map(cardPlayoff).join("")}
                 </div>
               </div>
-
-              ${connectorHtml("tall")}
-
+              ${connectorHtml()}
               <div class="playoff-stage final-stage">
                 <div class="playoff-stage-title">Final</div>
                 <div class="playoff-stage-list">
@@ -1286,6 +1573,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
+  // ===== PDF / IMPRESION =====
   function escapeHtml(texto) {
     return String(texto)
       .replace(/&/g, "&amp;")
@@ -1302,61 +1590,56 @@ document.addEventListener("DOMContentLoaded", () => {
       return "Sin playoffs";
     }
 
-    const playoffData = construirPlayoffData(cat);
-    if (!playoffData) return "Sin playoffs";
+    const series = meta.seriesPlayoff || { cuartos: 1, reclasificacion: 1, semifinales: 1, final: 3 };
+    const fechas = meta.calendarioPlayoff || { cuartos: [], reclasificacion: [], semifinales: [], final: [] };
 
-    if (playoffData.tipo === "8") {
+    const linesFechas = [];
+    if (fechas.cuartos?.length) fechas.cuartos.forEach((f, i) => linesFechas.push(`• Cuartos - Juego ${i + 1}: ${formatFechaBonita(f)}`));
+    if (fechas.reclasificacion?.length) fechas.reclasificacion.forEach((f, i) => linesFechas.push(`• Reclasificación - Juego ${i + 1}: ${formatFechaBonita(f)}`));
+    if (fechas.semifinales?.length) fechas.semifinales.forEach((f, i) => linesFechas.push(`• Semifinales - Juego ${i + 1}: ${formatFechaBonita(f)}`));
+    if (fechas.final?.length) fechas.final.forEach((f, i) => linesFechas.push(`• Final - Juego ${i + 1}: ${formatFechaBonita(f)}`));
+
+    if (meta.clasificados === 8) {
       return `Fechas de playoffs
-• 4tos - Juego 1: [COMPLETAR]
-• Semifinales - Juego 1: [COMPLETAR]
-• Final - Juego 1: [COMPLETAR]
-• Final - Juego 2: [COMPLETAR]
-• Final - Juego 3: [COMPLETAR]
+${linesFechas.join("\n")}
 
 Cruces posibles
-• Cuarto 1: 1° vs 8° (1 partido)
-• Cuarto 2: 4° vs 5° (1 partido)
-• Cuarto 3: 2° vs 7° (1 partido)
-• Cuarto 4: 3° vs 6° (1 partido)
-• Semifinal 1: Ganador QF1 vs Ganador QF2 (1 partido)
-• Semifinal 2: Ganador QF3 vs Ganador QF4 (1 partido)
-• Final: Ganador SF1 vs Ganador SF2 (3 partidos)`;
+• Cuarto 1: 1° vs 8° (${textoSeries(series.cuartos)})
+• Cuarto 2: 4° vs 5° (${textoSeries(series.cuartos)})
+• Cuarto 3: 2° vs 7° (${textoSeries(series.cuartos)})
+• Cuarto 4: 3° vs 6° (${textoSeries(series.cuartos)})
+• Semifinal 1: Ganador QF1 vs Ganador QF2 (${textoSeries(series.semifinales)})
+• Semifinal 2: Ganador QF3 vs Ganador QF4 (${textoSeries(series.semifinales)})
+• Final: Ganador SF1 vs Ganador SF2 (${textoSeries(series.final)})`;
     }
 
-    if (playoffData.tipo === "6") {
+    if (meta.clasificados === 6) {
       return `Fechas de playoffs
-• Reclasificación: [COMPLETAR]
-• Semifinales: [COMPLETAR]
-• Final - Juego 1: [COMPLETAR]
-• Final - Juego 2: [COMPLETAR]
-• Final - Juego 3: [COMPLETAR]
+${linesFechas.join("\n")}
 
 Formato (Top 6)
 • 1° y 2° clasifican directamente a semifinales
 
 Reclasificación
-• Partido 1: 3° vs 6° (1 partido)
-• Partido 2: 4° vs 5° (1 partido)
+• Partido 1: 3° vs 6° (${textoSeries(series.reclasificacion)})
+• Partido 2: 4° vs 5° (${textoSeries(series.reclasificacion)})
 
 Semifinales
-• SF1: 1° vs Ganador Partido 2 (1 partido)
-• SF2: 2° vs Ganador Partido 1 (1 partido)
+• SF1: 1° vs Ganador Partido 2 (${textoSeries(series.semifinales)})
+• SF2: 2° vs Ganador Partido 1 (${textoSeries(series.semifinales)})
 
 Final
-• Ganador SF1 vs Ganador SF2 (3 partidos)`;
+• Ganador SF1 vs Ganador SF2 (${textoSeries(series.final)})`;
     }
 
-    if (playoffData.tipo === "4") {
+    if (meta.clasificados === 4) {
       return `Fechas de playoffs
-• Semifinales: [COMPLETAR]
-• Final - Juego 1: [COMPLETAR]
-• Final - Juego 2: [COMPLETAR]
-• Final - Juego 3: [COMPLETAR]
+${linesFechas.join("\n")}
 
 Cruces posibles
-• Semifinal 1: 1° vs 4° (1 partido)
-• Semifinal 2: 2° vs 3° (1 partido)
-• Final: Ganador SF1 vs Ganador SF2 (3 partidos)`;
+• Semifinal 1: 1° vs 4° (${textoSeries(series.semifinales)})
+• Semifinal 2: 2° vs 3° (${textoSeries(series.semifinales)})
+• Final: Ganador SF1 vs Ganador SF2 (${textoSeries(series.final)})`;
     }
 
     return "Formato a definir";
@@ -1412,61 +1695,51 @@ Cruces posibles
         <title>Fixture ${escapeHtml(cat)}</title>
         <style>
           * { box-sizing: border-box; }
-
           body {
             font-family: Arial, Helvetica, sans-serif;
             margin: 28px;
             color: #111827;
             line-height: 1.45;
           }
-
           .titulo-principal {
             font-size: 24px;
             font-weight: 800;
             margin-bottom: 6px;
           }
-
           .subtitulo {
             font-size: 20px;
             font-weight: 700;
             margin-bottom: 18px;
           }
-
           .meta p {
             margin: 4px 0;
             font-size: 14px;
           }
-
           .seccion-titulo {
             margin-top: 24px;
             margin-bottom: 12px;
             font-size: 18px;
             font-weight: 800;
           }
-
           .fecha-bloque {
             margin-bottom: 14px;
             page-break-inside: avoid;
           }
-
           .fecha-titulo {
             font-weight: 700;
             margin-bottom: 6px;
             font-size: 14px;
           }
-
           .fecha-lista .item,
           .fecha-bloqueada,
           .playoffs-texto-linea {
             font-size: 14px;
             margin: 2px 0;
           }
-
           .playoffs-box {
             margin-top: 8px;
             page-break-inside: avoid;
           }
-
           @media print {
             body { margin: 12mm; }
           }
@@ -1517,13 +1790,7 @@ Cruces posibles
     }, 400);
   }
 
-  function render() {
-    const cat = categoriaSelect.value;
-    renderTabla(cat);
-    renderFixture(cat);
-    renderPlayoffs(cat);
-  }
-
+  // ===== RESULTADOS =====
   function guardarResultado() {
     const cat = categoriaSelect.value;
     const index = Number(partidoSelect.value);
@@ -1540,6 +1807,18 @@ Cruces posibles
 
     render();
   }
+
+  // ===== RENDER GENERAL =====
+  function render() {
+    const cat = categoriaSelect.value;
+    renderTabla(cat);
+    renderFixture(cat);
+    renderPlayoffs(cat);
+  }
+
+  // ===== EVENTOS =====
+  plannerPlayoffs.addEventListener("change", actualizarVisibilidadSeries);
+  plannerClasificados.addEventListener("change", actualizarVisibilidadSeries);
 
   plannerCategoria.addEventListener("change", () => {
     categoriaSelect.value = plannerCategoria.value;
@@ -1578,6 +1857,7 @@ Cruces posibles
     imprimirFixtureBtn.onclick = imprimirFixtureActual;
   }
 
+  // ===== INICIO =====
   Object.keys(categorias).forEach((cat) => {
     const equipos = categorias[cat];
     const rondas = generarRondasPorFormato(equipos, "apertura");
@@ -1596,8 +1876,10 @@ Cruces posibles
         frecuencia: 1,
         bloqueadas: [],
         jornadasBase: rondas.length,
-        jornadasPlayoff: 0,
-        jornadasTotales: rondas.length
+        detallePlayoff: { cuartos: 0, reclasificacion: 0, semifinales: 0, final: 0, total: 0 },
+        jornadasTotales: rondas.length,
+        seriesPlayoff: { cuartos: 1, reclasificacion: 1, semifinales: 1, final: 3 },
+        calendarioPlayoff: { cuartos: [], reclasificacion: [], semifinales: [], final: [] }
       },
       fechas
     };
@@ -1605,6 +1887,7 @@ Cruces posibles
 
   plannerCategoria.value = categoriaSelect.value;
   plannerEquipos.value = categorias[categoriaSelect.value]?.length || 10;
+  actualizarVisibilidadSeries();
   render();
   mostrarLiga();
 });
