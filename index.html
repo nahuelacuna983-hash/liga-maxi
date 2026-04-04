@@ -6,146 +6,149 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-<div class="app">
+  <div class="app">
+    <h1>Liga Maxi Básquet</h1>
 
-  <h1>Liga Maxi Básquet</h1>
+    <div class="tabs">
+      <button id="tab-liga" class="tab activo" type="button">Liga</button>
+      <button id="tab-gestion" class="tab" type="button">Gestión</button>
+    </div>
 
-  <div class="tabs">
-    <button id="tab-liga" class="tab activo">Liga</button>
-    <button id="tab-gestion" class="tab">Gestión</button>
+    <!-- LIGA -->
+    <div id="vista-liga">
+      <select id="categoria-select">
+        <option value="Maxi +35 A">Maxi +35 A</option>
+        <option value="Maxi +35 B">Maxi +35 B</option>
+        <option value="Maxi +48">Maxi +48</option>
+        <option value="Femenino">Femenino</option>
+      </select>
+
+      <h3>Tabla</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Equipo</th>
+            <th>PJ</th>
+            <th>PG</th>
+            <th>PP</th>
+            <th>PTS</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body"></tbody>
+      </table>
+
+      <h3>Fixture</h3>
+      <div id="fixture-body"></div>
+
+      <h3>Playoffs</h3>
+      <div id="playoff-body"></div>
+    </div>
+
+    <!-- GESTION -->
+    <div id="vista-gestion" style="display:none;">
+      <button id="abrir-gestion-btn" type="button">Abrir gestión</button>
+      <button id="cerrar-gestion-btn" type="button">Cerrar gestión</button>
+
+      <div id="gestion-contenido" style="display:none;">
+        <h3>Planificador de Torneos</h3>
+
+        <div class="planner-grid">
+          <div>
+            <label for="planner-categoria">Categoría</label>
+            <select id="planner-categoria">
+              <option value="Maxi +35 A">Maxi +35 A</option>
+              <option value="Maxi +35 B">Maxi +35 B</option>
+              <option value="Maxi +48">Maxi +48</option>
+              <option value="Femenino">Femenino</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-equipos">Cantidad de equipos</label>
+            <input id="planner-equipos" type="number" value="10" min="2">
+          </div>
+
+          <div>
+            <label for="planner-formato">Competencia</label>
+            <select id="planner-formato">
+              <option value="apertura">Apertura - 1 rueda</option>
+              <option value="clausura">Clausura - 1 rueda</option>
+              <option value="anual">Anual - 2 ruedas</option>
+              <option value="eliminacion">Eliminación directa</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-playoffs">Playoffs</label>
+            <select id="planner-playoffs">
+              <option value="no">No</option>
+              <option value="si">Sí</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-clasificados">Clasificados</label>
+            <select id="planner-clasificados">
+              <option value="4">4 equipos</option>
+              <option value="6">6 equipos</option>
+              <option value="8">8 equipos</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-dia-juego">Día de juego</label>
+            <select id="planner-dia-juego">
+              <option value="0">Domingo</option>
+              <option value="3">Miércoles</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="planner-inicio">Inicio</label>
+            <input id="planner-inicio" type="date">
+          </div>
+
+          <div>
+            <label for="planner-fin">Fin</label>
+            <input id="planner-fin" type="date">
+          </div>
+
+          <div>
+            <label for="planner-frecuencia">Frecuencia</label>
+            <select id="planner-frecuencia">
+              <option value="1">Cada semana</option>
+              <option value="2">Semana por medio</option>
+            </select>
+          </div>
+
+          <div style="grid-column: 1 / -1;">
+            <label for="planner-bloqueadas">Fechas bloqueadas (YYYY-MM-DD, separadas por coma)</label>
+            <input id="planner-bloqueadas" type="text" placeholder="2026-05-03, 2026-05-25">
+          </div>
+        </div>
+
+        <div class="acciones">
+          <button id="planner-calcular" type="button">Calcular formato</button>
+          <button id="generar-fixture" type="button">Generar Fixture</button>
+        </div>
+
+        <div id="planner-resultado" class="planner-resultado"></div>
+        <div id="planner-comparacion" class="planner-resultado"></div>
+
+        <h3>Resultados</h3>
+        <select id="partido-select"></select>
+        <input id="puntos-local" type="number" placeholder="Puntos Local">
+        <input id="puntos-visitante" type="number" placeholder="Puntos Visitante">
+
+        <div class="acciones">
+          <button id="guardar-resultado" type="button">Guardar</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- LIGA -->
-  <div id="vista-liga">
-
-    <select id="categoria-select">
-      <option value="Maxi +35 A">Maxi +35 A</option>
-      <option value="Maxi +35 B">Maxi +35 B</option>
-      <option value="Maxi +48">Maxi +48</option>
-      <option value="Femenino">Femenino</option>
-    </select>
-
-    <h3>Tabla</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PP</th><th>PTS</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-body"></tbody>
-    </table>
-
-    <h3>Fixture</h3>
-    <div id="fixture-body"></div>
-
-    <h3>Playoffs</h3>
-    <div id="playoff-body"></div>
-
-  </div>
-
-  <!-- GESTION -->
-  <div id="vista-gestion" style="display:none;">
-
-    <button id="abrir-gestion-btn">Abrir gestión</button>
-    <button id="cerrar-gestion-btn">Cerrar gestión</button>
-
-    <div id="gestion-contenido" style="display:none;">
-
-      <<h3>Planificador de Torneos</h3>
-
-<div class="planner-grid">
-  <div>
-    <label for="planner-categoria">Categoría</label>
-    <select id="planner-categoria">
-      <option value="Maxi +35 A">Maxi +35 A</option>
-      <option value="Maxi +35 B">Maxi +35 B</option>
-      <option value="Maxi +48">Maxi +48</option>
-      <option value="Femenino">Femenino</option>
-    </select>
-  </div>
-
-  <div>
-    <label for="planner-equipos">Cantidad de equipos</label>
-    <input id="planner-equipos" type="number" value="10" min="2">
-  </div>
-
-  <div>
-    <label for="planner-formato">Competencia</label>
-    <select id="planner-formato">
-      <option value="apertura">Apertura - 1 rueda</option>
-      <option value="clausura">Clausura - 1 rueda</option>
-      <option value="anual">Anual - 2 ruedas</option>
-      <option value="eliminacion">Eliminación directa</option>
-    </select>
-  </div>
-
-  <div>
-    <label for="planner-playoffs">Playoffs</label>
-    <select id="planner-playoffs">
-      <option value="no">No</option>
-      <option value="si">Sí</option>
-    </select>
-  </div>
-
-  <div>
-    <label for="planner-clasificados">Clasificados</label>
-    <select id="planner-clasificados">
-      <option value="4">4 equipos</option>
-      <option value="6">6 equipos</option>
-      <option value="8">8 equipos</option>
-    </select>
-  </div>
-
-  <div>
-    <label for="planner-dia-juego">Día de juego</label>
-    <select id="planner-dia-juego">
-      <option value="0">Domingo</option>
-      <option value="3">Miércoles</option>
-    </select>
-  </div>
-
-  <div>
-    <label for="planner-inicio">Inicio</label>
-    <input id="planner-inicio" type="date">
-  </div>
-
-  <div>
-    <label for="planner-fin">Fin</label>
-    <input id="planner-fin" type="date">
-  </div>
-
-  <div>
-    <label for="planner-frecuencia">Frecuencia</label>
-    <select id="planner-frecuencia">
-      <option value="1">Cada semana</option>
-      <option value="2">Semana por medio</option>
-    </select>
-  </div>
-
-  <div style="grid-column: 1 / -1;">
-    <label for="planner-bloqueadas">Fechas bloqueadas (YYYY-MM-DD, separadas por coma)</label>
-    <input id="planner-bloqueadas" type="text" placeholder="2026-05-03, 2026-05-25">
-  </div>
-</div>
-
-<div class="acciones">
-  <button id="planner-calcular">Calcular formato</button>
-  <button id="generar-fixture">Generar Fixture</button>
-</div>
-
-<div id="planner-resultado" class="planner-resultado"></div>
-<div id="planner-comparacion" class="planner-resultado"></div>
-
-<h3>Resultados</h3>
-<select id="partido-select"></select>
-<input id="puntos-local" type="number" placeholder="Puntos Local">
-<input id="puntos-visitante" type="number" placeholder="Puntos Visitante">
-<div class="acciones">
-  <button id="guardar-resultado">Guardar</button>
-</div>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
