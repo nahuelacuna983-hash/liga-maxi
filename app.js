@@ -631,33 +631,58 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderFixture(cat) {
-    const data = fixturesPorCategoria[cat];
+  const data = fixturesPorCategoria[cat];
 
-    if (!data || !data.fechas || !data.fechas.length) {
-      fixtureBody.innerHTML = "<p>No hay fixture generado.</p>";
-      partidoSelect.innerHTML = "";
-      return;
-    }
-
-    fixtureBody.innerHTML = data.fechas.map((fechaObj) => `
-      <div class="fixture-fecha">
-        <h4>Fecha ${fechaObj.numero} - ${fechaObj.label}</h4>
-        ${fechaObj.partidos.map((p) => `
-          <p>
-            ${p.local} vs ${p.visitante}
-            (${p.pl ?? "-"} - ${p.pv ?? "-"})
-          </p>
-        `).join("")}
-      </div>
-    `).join("");
-
-    const partidos = obtenerPartidosPlanos(cat);
-    partidoSelect.innerHTML = partidos.map((p, i) => `
-      <option value="${i}">
-        Fecha ${p.fechaNumero} - ${p.fechaISO ? formatFechaLarga(p.fechaISO) : "Sin fecha"} - ${p.local} vs ${p.visitante}
-      </option>
-    `).join("");
+  if (!data || !data.fechas || !data.fechas.length) {
+    fixtureBody.innerHTML = "<p>No hay fixture generado.</p>";
+    partidoSelect.innerHTML = "";
+    return;
   }
+
+  const maxPartidos = Math.max(...data.fechas.map(f => f.partidos.length));
+
+  let html = `
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          ${Array.from({length: maxPartidos}).map((_, i) => `
+            <th>Partido ${i + 1}</th>
+          `).join("")}
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  data.fechas.forEach((fechaObj) => {
+    html += `
+      <tr>
+        <td><strong>F${fechaObj.numero}</strong><br>${fechaObj.label}</td>
+        ${fechaObj.partidos.map(p => `
+          <td>
+            ${p.local} <br>
+            vs <br>
+            ${p.visitante}<br>
+            (${p.pl ?? "-"} - ${p.pv ?? "-"})
+          </td>
+        `).join("")}
+        ${Array.from({length: maxPartidos - fechaObj.partidos.length}).map(() => `<td></td>`).join("")}
+      </tr>
+    `;
+  });
+
+  html += "</tbody></table>";
+
+  fixtureBody.innerHTML = html;
+
+  // selector resultados (no lo tocamos)
+  const partidos = obtenerPartidosPlanos(cat);
+  partidoSelect.innerHTML = partidos.map((p, i) => `
+    <option value="${i}">
+      Fecha ${p.fechaNumero} - ${p.local} vs ${p.visitante}
+    </option>
+  `).join("");
+}
 
   function renderPlayoffs(cat) {
     const data = fixturesPorCategoria[cat];
