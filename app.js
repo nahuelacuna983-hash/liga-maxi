@@ -629,7 +629,60 @@ document.addEventListener("DOMContentLoaded", () => {
       </tr>
     `).join("");
   }
+function slugEquipo(nombre) {
+  return nombre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\./g, "")
+    .replace(/\+/g, "")
+    .replace(/\s+/g, "-")
+    .toLowerCase();
+}
 
+const escudosMap = {
+  "HOGAR SOCIAL": "hogar-social",
+  "SUD AMERICA": "sud-america",
+  "UNION VECINAL": "union-vecinal",
+  "VILLA SAN CARLOS": "villa-san-carlos",
+  "U.N.L.P.": "unlp",
+  "BANCO PROVINCIA": "banco-provincia",
+  "TOLOSANO": "tolosano",
+  "MAYO": "mayo",
+  "UNIVERSAL": "universal",
+  "MERIDIANO V": "meridiano-v",
+  "UNIDOS": "unidos",
+  "ESTRELLA": "estrella",
+  "MAX NORDAU": "max-nordau",
+  "RECONQUISTA": "reconquista",
+  "GONNET": "gonnet",
+  "VILLA ELISA": "villa-elisa",
+  "JUVENTUD": "juventud",
+  "MACABI": "macabi",
+  "LOS HORNOS": "los-hornos",
+  "ESTUDIANTES": "estudiantes",
+  "PLATENSE": "platense",
+  "MERIDIANO": "meridiano",
+  "EDELP": "edelp",
+  "C. F. GONNET": "cf-gonnet",
+  "ASTILLERO": "astillero",
+  "DEP. SAN VICENTE": "dep-san-vicente"
+};
+
+function nombreArchivoEscudo(nombre) {
+  return escudosMap[nombre] || slugEquipo(nombre);
+}
+
+function imgEscudoHTML(nombre) {
+  const archivo = nombreArchivoEscudo(nombre);
+  return `
+    <img
+      src="escudos/${archivo}.png"
+      alt="${nombre}"
+      class="escudo-equipo"
+      onerror="this.style.display='none'"
+    >
+  `;
+}
   function renderFixture(cat) {
   const data = fixturesPorCategoria[cat];
 
