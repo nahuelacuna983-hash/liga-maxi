@@ -907,12 +907,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     tablaBody.innerHTML = tabla.map((e, i) => `
       <tr>
-        <td>${i + 1}</td>
-        <td>${e.equipo}</td>
         <td>${e.pj}</td>
-        <td>${e.pg}</td>
-        <td>${e.pp}</td>
-        <td>${e.pts}</td>
+<td>${e.pg}</td>
+<td>${e.pp}</td>
+<td>${e.pf}</td>
+<td>${e.pc}</td>
+<td>${e.dif}</td>
+<td>${e.pts}</td>
       </tr>
     `).join("");
   }
