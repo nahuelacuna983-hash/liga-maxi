@@ -49,21 +49,9 @@ const categorias = {
   ]
 };
 
-// fixturesPorCategoria[cat] = {
-//   meta: {...},
-//   fechas: [
-//     {
-//       numero: 1,
-//       fechaISO: "2026-04-12",
-//       label: "Domingo 12/04/2026",
-//       partidos: [{...}]
-//     }
-//   ]
-// }
 let fixturesPorCategoria = {};
 
 document.addEventListener("DOMContentLoaded", () => {
-  // ===== DOM =====
   const tabLiga = document.getElementById("tab-liga");
   const tabGestion = document.getElementById("tab-gestion");
   const vistaLiga = document.getElementById("vista-liga");
@@ -98,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const puntosVisitante = document.getElementById("puntos-visitante");
   const guardarBtn = document.getElementById("guardar-resultado");
 
-  // ===== HELPERS UI =====
   function mostrarLiga() {
     vistaLiga.style.display = "block";
     vistaGestion.style.display = "none";
@@ -113,7 +100,6 @@ document.addEventListener("DOMContentLoaded", () => {
     tabGestion.classList.add("activo");
   }
 
-  // ===== HELPERS FECHAS =====
   const nombresDias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const nombresMeses = [
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -192,7 +178,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return ultima;
   }
 
-  // ===== HELPERS EQUIPOS =====
   function obtenerEquiposCategoria(categoria, cantidadSolicitada) {
     const base = categorias[categoria] ? [...categorias[categoria]] : [];
     const cantidad = Number(cantidadSolicitada);
@@ -212,7 +197,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return equipos;
   }
 
-  // ===== FIXTURE =====
   function generarRondaSimple(equiposOriginales) {
     const equipos = [...equiposOriginales];
     const usarLibre = equipos.length % 2 !== 0;
@@ -326,14 +310,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clasificados === 8) return 3;
 
     return Math.ceil(Math.log2(clasificados));
-  }
-
-  function calcularCantidadTotalJornadas({ equipos, formato, playoffs, clasificados }) {
-    const base = contarJornadasBase(equipos, formato);
-
-    if (playoffs !== "si") return base;
-
-    return base + contarJornadasPlayoff(clasificados);
   }
 
   function detectarSugerencias({
@@ -540,7 +516,6 @@ document.addEventListener("DOMContentLoaded", () => {
     mostrarLiga();
   }
 
-  // ===== TABLA =====
   function obtenerPartidosPlanos(cat) {
     const data = fixturesPorCategoria[cat];
     if (!data || !data.fechas) return [];
@@ -614,7 +589,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ===== RENDER =====
   function renderTabla(cat) {
     const tabla = calcularTabla(cat);
 
@@ -629,113 +603,145 @@ document.addEventListener("DOMContentLoaded", () => {
       </tr>
     `).join("");
   }
-function slugEquipo(nombre) {
-  return nombre
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\./g, "")
-    .replace(/\+/g, "")
-    .replace(/\s+/g, "-")
-    .toLowerCase();
-}
 
-const escudosMap = {
-  "HOGAR SOCIAL": "hogar-social",
-  "SUD AMERICA": "sud-america",
-  "UNION VECINAL": "union-vecinal",
-  "VILLA SAN CARLOS": "villa-san-carlos",
-  "U.N.L.P.": "unlp",
-  "BANCO PROVINCIA": "banco-provincia",
-  "TOLOSANO": "tolosano",
-  "MAYO": "mayo",
-  "UNIVERSAL": "universal",
-  "MERIDIANO V": "meridiano-v",
-  "UNIDOS": "unidos",
-  "ESTRELLA": "estrella",
-  "MAX NORDAU": "max-nordau",
-  "RECONQUISTA": "reconquista",
-  "GONNET": "gonnet",
-  "VILLA ELISA": "villa-elisa",
-  "JUVENTUD": "juventud",
-  "MACABI": "macabi",
-  "LOS HORNOS": "los-hornos",
-  "ESTUDIANTES": "estudiantes",
-  "PLATENSE": "platense",
-  "MERIDIANO": "meridiano",
-  "EDELP": "edelp",
-  "C. F. GONNET": "cf-gonnet",
-  "ASTILLERO": "astillero",
-  "DEP. SAN VICENTE": "dep-san-vicente"
-};
-
-function nombreArchivoEscudo(nombre) {
-  return escudosMap[nombre] || slugEquipo(nombre);
-}
-
-function imgEscudoHTML(nombre) {
-  const archivo = nombreArchivoEscudo(nombre);
-  return `
-    <img
-      src="escudos/${archivo}.png"
-      alt="${nombre}"
-      class="escudo-equipo"
-      onerror="this.style.display='none'"
-    >
-  `;
-}
-  function renderFixture(cat) {
-  const data = fixturesPorCategoria[cat];
-
-  if (!data || !data.fechas || !data.fechas.length) {
-    fixtureBody.innerHTML = "<p>No hay fixture generado.</p>";
-    partidoSelect.innerHTML = "";
-    return;
+  function slugEquipo(nombre) {
+    return nombre
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\./g, "")
+      .replace(/\+/g, "")
+      .replace(/\s+/g, "-")
+      .toLowerCase();
   }
 
-  const maxPartidos = Math.max(...data.fechas.map(f => f.partidos.length));
+  const escudosMap = {
+    "HOGAR SOCIAL": "hogar-social",
+    "SUD AMERICA": "sud-america",
+    "UNION VECINAL": "union-vecinal",
+    "VILLA SAN CARLOS": "villa-san-carlos",
+    "U.N.L.P.": "unlp",
+    "BANCO PROVINCIA": "banco-provincia",
+    "TOLOSANO": "tolosano",
+    "MAYO": "mayo",
+    "UNIVERSAL": "universal",
+    "MERIDIANO V": "meridiano-v",
+    "UNIDOS": "unidos",
+    "ESTRELLA": "estrella",
+    "MAX NORDAU": "max-nordau",
+    "RECONQUISTA": "reconquista",
+    "GONNET": "gonnet",
+    "VILLA ELISA": "villa-elisa",
+    "JUVENTUD": "juventud",
+    "MACABI": "macabi",
+    "LOS HORNOS": "los-hornos",
+    "ESTUDIANTES": "estudiantes",
+    "PLATENSE": "platense",
+    "MERIDIANO": "meridiano",
+    "EDELP": "edelp",
+    "C. F. GONNET": "cf-gonnet",
+    "ASTILLERO": "astillero",
+    "DEP. SAN VICENTE": "dep-san-vicente"
+  };
 
-  let html = `
-    <table style="width:100%; border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          ${Array.from({length: maxPartidos}).map((_, i) => `
-            <th>Partido ${i + 1}</th>
-          `).join("")}
-        </tr>
-      </thead>
-      <tbody>
-  `;
+  function nombreArchivoEscudo(nombre) {
+    return escudosMap[nombre] || slugEquipo(nombre);
+  }
 
-  data.fechas.forEach((fechaObj) => {
-    html += `
-      <tr>
-        <td><strong>F${fechaObj.numero}</strong><br>${fechaObj.label}</td>
-        ${fechaObj.partidos.map(p => `
-          <td>
-            ${p.local} <br>
-            vs <br>
-            ${p.visitante}<br>
-            (${p.pl ?? "-"} - ${p.pv ?? "-"})
-          </td>
-        `).join("")}
-        ${Array.from({length: maxPartidos - fechaObj.partidos.length}).map(() => `<td></td>`).join("")}
-      </tr>
+  function imgEscudoHTML(nombre) {
+    const archivo = nombreArchivoEscudo(nombre);
+    return `
+      <img
+        src="escudos/${archivo}.png"
+        alt="${nombre}"
+        class="escudo-equipo"
+        onerror="this.style.display='none'"
+      >
     `;
-  });
+  }
 
-  html += "</tbody></table>";
+  function renderFixture(cat) {
+    const data = fixturesPorCategoria[cat];
 
-  fixtureBody.innerHTML = html;
+    if (!data || !data.fechas || !data.fechas.length) {
+      fixtureBody.innerHTML = "<p>No hay fixture generado.</p>";
+      partidoSelect.innerHTML = "";
+      return;
+    }
 
-  // selector resultados (no lo tocamos)
-  const partidos = obtenerPartidosPlanos(cat);
-  partidoSelect.innerHTML = partidos.map((p, i) => `
-    <option value="${i}">
-      Fecha ${p.fechaNumero} - ${p.local} vs ${p.visitante}
-    </option>
-  `).join("");
-}
+    const maxPartidos = Math.max(...data.fechas.map(f => f.partidos.length));
+    const cantidadEquipos = obtenerEquiposActivos(cat).length;
+    const hayLibre = cantidadEquipos % 2 !== 0;
+
+    let html = `
+      <div class="fixture-tabla-wrap">
+        <table class="fixture-tabla-pro">
+          <tbody>
+    `;
+
+    data.fechas.forEach((fechaObj) => {
+      html += `
+        <tr>
+          <td class="fixture-fecha-col">
+            <div class="fixture-fecha-titulo">FECHA ${fechaObj.numero}</div>
+            <div class="fixture-fecha-subtitulo">${fechaObj.fechaISO ? fechaObj.fechaISO.split("-").reverse().slice(0, 2).join("/") : "Sin fecha"}</div>
+          </td>
+      `;
+
+      fechaObj.partidos.forEach((p) => {
+        html += `
+          <td class="fixture-partido-col">
+            <div class="fixture-partido-card">
+              <div class="fixture-equipo">
+                ${imgEscudoHTML(p.local)}
+                <span>${p.local}</span>
+              </div>
+
+              <div class="fixture-vs">vs</div>
+
+              <div class="fixture-equipo">
+                ${imgEscudoHTML(p.visitante)}
+                <span>${p.visitante}</span>
+              </div>
+
+              <div class="fixture-resultado-mini">
+                ${p.pl ?? "-"} - ${p.pv ?? "-"}
+              </div>
+            </div>
+          </td>
+        `;
+      });
+
+      const celdasVacias = maxPartidos - fechaObj.partidos.length;
+      for (let i = 0; i < celdasVacias; i++) {
+        html += `<td class="fixture-partido-col vacio"></td>`;
+      }
+
+      if (hayLibre) {
+        html += `
+          <td class="fixture-libre-col">
+            <div class="fixture-libre-card">LIBRE</div>
+          </td>
+        `;
+      }
+
+      html += `</tr>`;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    fixtureBody.innerHTML = html;
+
+    const partidos = obtenerPartidosPlanos(cat);
+    partidoSelect.innerHTML = partidos.map((p, i) => `
+      <option value="${i}">
+        Fecha ${p.fechaNumero} - ${p.local} vs ${p.visitante}
+      </option>
+    `).join("");
+  }
 
   function renderPlayoffs(cat) {
     const data = fixturesPorCategoria[cat];
@@ -802,7 +808,6 @@ function imgEscudoHTML(nombre) {
     renderPlayoffs(cat);
   }
 
-  // ===== RESULTADOS =====
   function guardarResultado() {
     const cat = categoriaSelect.value;
     const index = Number(partidoSelect.value);
@@ -820,7 +825,6 @@ function imgEscudoHTML(nombre) {
     render();
   }
 
-  // ===== SINCRONIZACION ENTRE SELECTORES =====
   plannerCategoria.addEventListener("change", () => {
     categoriaSelect.value = plannerCategoria.value;
     plannerEquipos.value = categorias[plannerCategoria.value]?.length || 10;
@@ -834,7 +838,6 @@ function imgEscudoHTML(nombre) {
     render();
   });
 
-  // ===== EVENTOS =====
   tabLiga.onclick = mostrarLiga;
   tabGestion.onclick = mostrarGestion;
 
@@ -855,7 +858,6 @@ function imgEscudoHTML(nombre) {
   generarBtn.onclick = generarDesdePlanner;
   guardarBtn.onclick = guardarResultado;
 
-  // ===== INICIO =====
   Object.keys(categorias).forEach((cat) => {
     const equipos = categorias[cat];
     const rondas = generarRondasPorFormato(equipos, "apertura");
