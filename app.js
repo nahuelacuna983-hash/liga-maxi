@@ -1330,309 +1330,50 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/'/g, "&#039;");
   }
 
-  function construirHTMLImprimible(cat) {
-    const data = fixturesPorCategoria[cat];
-    if (!data || !data.fechas || !data.fechas.length) {
-      return `
-        <html>
-          <body>
-            <h1>Sin fixture generado</h1>
-          </body>
-        </html>
-      `;
+ function construirHTMLImprimible(cat) {
+  const data = fixturesPorCategoria[cat];
+
+  if (!data || !data.fechas) return "";
+
+  const meta = data.meta || {};
+
+  let texto = `LIGA MAXI BASQUET LA PLATA\n`;
+  texto += `Fixture oficial - ${cat}\n\n`;
+
+  texto += `Competencia: ${meta.formato || "-"}\n`;
+  texto += `Ruedas: ${meta.formato === "anual" ? "2" : "1"}\n`;
+  texto += `Día de juego: Domingo\n`;
+  texto += `Playoffs: ${meta.playoffs === "si" ? "Sí" : "No"}\n\n`;
+
+  texto += `FASE REGULAR\n\n`;
+
+  data.fechas.forEach(f => {
+    texto += `Fecha ${f.numero}\n`;
+
+    if (f.bloqueada) {
+      texto += `• BLOQUEADA / DESCANSO\n\n`;
+      return;
     }
 
-    const meta = data.meta || {};
-    const playoffData = meta.playoffs === "si" ? construirPlayoffData(cat) : null;
+    f.partidos.forEach(p => {
+      texto += `• ${p.local} vs ${p.visitante}\n`;
+    });
 
-    const fechasHTML = data.fechas.map((fechaObj) => `
-      <div class="fecha-bloque">
-        <div class="fecha-header">
-          <div class="fecha-numero">Fecha ${fechaObj.numero}</div>
-          <div class="fecha-dia">${escapeHtml(fechaObj.fechaISO ? formatFechaCortaArgentina(fechaObj.fechaISO) : "Sin fecha")}</div>
-        </div>
-
-        ${
-          fechaObj.bloqueada
-            ? `
-              <div class="fecha-bloqueada-print">BLOQUEADA / DESCANSO</div>
-            `
-            : `
-              <table class="tabla-fecha">
-                <thead>
-                  <tr>
-                    <th>Local</th>
-                    <th>Visitante</th>
-                    <th>Resultado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${fechaObj.partidos.map((p) => `
-                    <tr>
-                      <td>${escapeHtml(p.local)}</td>
-                      <td>${escapeHtml(p.visitante)}</td>
-                      <td>${p.pl ?? "-"} - ${p.pv ?? "-"}</td>
-                    </tr>
-                  `).join("")}
-                  ${
-                    fechaObj.equipoLibre
-                      ? `
-                        <tr>
-                          <td colspan="3" class="libre-row">
-                            Libre: ${escapeHtml(fechaObj.equipoLibre)}
-                          </td>
-                        </tr>
-                      `
-                      : ""
-                  }
-                </tbody>
-              </table>
-            `
-        }
-      </div>
-    `).join("");
-
-    let playoffHTML = "";
-    if (playoffData) {
-      if (playoffData.tipo === "4") {
-        playoffHTML = `
-          <div class="seccion-playoffs">
-            <h2>${escapeHtml(playoffData.titulo)}</h2>
-            <div class="playoff-print-grid">
-              <div class="playoff-print-col">
-                <div class="playoff-print-col-title">Semifinales</div>
-                ${playoffData.semifinales.map((p) => `
-                  <div class="playoff-print-match">
-                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
-                    <div>${escapeHtml(p.a)}</div>
-                    <div>${escapeHtml(p.b)}</div>
-                  </div>
-                `).join("")}
-              </div>
-              <div class="playoff-print-col">
-                <div class="playoff-print-col-title">Final</div>
-                ${playoffData.final.map((p) => `
-                  <div class="playoff-print-match">
-                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
-                    <div>${escapeHtml(p.a)}</div>
-                    <div>${escapeHtml(p.b)}</div>
-                  </div>
-                `).join("")}
-              </div>
-            </div>
-          </div>
-        `;
-      } else if (playoffData.tipo === "6") {
-        playoffHTML = `
-          <div class="seccion-playoffs">
-            <h2>${escapeHtml(playoffData.titulo)}</h2>
-            <div class="playoff-print-grid">
-              <div class="playoff-print-col">
-                <div class="playoff-print-col-title">Reclasificación</div>
-                ${playoffData.reclasificacion.map((p) => `
-                  <div class="playoff-print-match">
-                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
-                    <div>${escapeHtml(p.a)}</div>
-                    <div>${escapeHtml(p.b)}</div>
-                  </div>
-                `).join("")}
-              </div>
-              <div class="playoff-print-col">
-                <div class="playoff-print-col-title">Semifinales</div>
-                ${playoffData.semifinales.map((p) => `
-                  <div class="playoff-print-match">
-                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
-                    <div>${escapeHtml(p.a)}</div>
-                    <div>${escapeHtml(p.b)}</div>
-                  </div>
-                `).join("")}
-              </div>
-              <div class="playoff-print-col">
-                <div class="playoff-print-col-title">Final</div>
-                ${playoffData.final.map((p) => `
-                  <div class="playoff-print-match">
-                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
-                    <div>${escapeHtml(p.a)}</div>
-                    <div>${escapeHtml(p.b)}</div>
-                  </div>
-                `).join("")}
-              </div>
-            </div>
-          </div>
-        `;
-      } else if (playoffData.tipo === "8") {
-        playoffHTML = `
-          <div class="seccion-playoffs">
-            <h2>${escapeHtml(playoffData.titulo)}</h2>
-            <div class="playoff-print-grid">
-              <div class="playoff-print-col">
-                <div class="playoff-print-col-title">Cuartos</div>
-                ${playoffData.cuartos.map((p) => `
-                  <div class="playoff-print-match">
-                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
-                    <div>${escapeHtml(p.a)}</div>
-                    <div>${escapeHtml(p.b)}</div>
-                  </div>
-                `).join("")}
-              </div>
-              <div class="playoff-print-col">
-                <div class="playoff-print-col-title">Semifinales</div>
-                ${playoffData.semifinales.map((p) => `
-                  <div class="playoff-print-match">
-                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
-                    <div>${escapeHtml(p.a)}</div>
-                    <div>${escapeHtml(p.b)}</div>
-                  </div>
-                `).join("")}
-              </div>
-              <div class="playoff-print-col">
-                <div class="playoff-print-col-title">Final</div>
-                ${playoffData.final.map((p) => `
-                  <div class="playoff-print-match">
-                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
-                    <div>${escapeHtml(p.a)}</div>
-                    <div>${escapeHtml(p.b)}</div>
-                  </div>
-                `).join("")}
-              </div>
-            </div>
-          </div>
-        `;
-      }
+    if (f.equipoLibre) {
+      texto += `• Libre: ${f.equipoLibre}\n`;
     }
 
-    return `
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <title>Fixture ${escapeHtml(cat)}</title>
-        <style>
-          * { box-sizing: border-box; }
-          body {
-            font-family: Arial, Helvetica, sans-serif;
-            margin: 24px;
-            color: #111827;
-          }
-          h1 { margin: 0 0 8px 0; font-size: 28px; }
-          h2 { margin: 24px 0 12px 0; font-size: 20px; }
-          .subtitulo {
-            margin-bottom: 16px;
-            color: #374151;
-            font-size: 14px;
-          }
-          .meta-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(220px, 1fr));
-            gap: 8px 18px;
-            margin-bottom: 24px;
-            font-size: 14px;
-          }
-          .fecha-bloque {
-            margin-bottom: 22px;
-            page-break-inside: avoid;
-          }
-          .fecha-header {
-            background: #123d8d;
-            color: white;
-            padding: 10px 14px;
-            border-radius: 8px 8px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-          }
-          .fecha-numero {
-            font-weight: 800;
-            font-size: 18px;
-          }
-          .fecha-dia {
-            font-size: 14px;
-            font-weight: 600;
-          }
-          .tabla-fecha {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 8px;
-          }
-          .tabla-fecha th,
-          .tabla-fecha td {
-            border: 1px solid #d1d5db;
-            padding: 10px 12px;
-            text-align: left;
-            font-size: 14px;
-          }
-          .tabla-fecha th {
-            background: #eff6ff;
-          }
-          .libre-row {
-            background: #f3f4f6;
-            font-weight: 700;
-            text-align: center !important;
-          }
-          .fecha-bloqueada-print {
-            border: 1px solid #d1d5db;
-            border-top: none;
-            padding: 18px 12px;
-            font-weight: 800;
-            text-align: center;
-            background: #f3f4f6;
-          }
-          .seccion-playoffs {
-            margin-top: 32px;
-            page-break-inside: avoid;
-          }
-          .playoff-print-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 16px;
-          }
-          .playoff-print-col-title {
-            background: #123d8d;
-            color: white;
-            padding: 10px 12px;
-            border-radius: 8px;
-            font-weight: 800;
-            margin-bottom: 10px;
-          }
-          .playoff-print-match {
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            padding: 10px 12px;
-            margin-bottom: 10px;
-            page-break-inside: avoid;
-          }
-          .playoff-print-etiqueta {
-            font-size: 12px;
-            color: #6b7280;
-            font-weight: 800;
-            margin-bottom: 6px;
-          }
-          @media print {
-            body { margin: 12mm; }
-            button { display: none !important; }
-          }
-        </style>
-      </head>
-      <body>
-        <h1>Liga Maxi Básquet</h1>
-        <div class="subtitulo">Fixture oficial imprimible</div>
+    texto += `\n`;
+  });
 
-        <div class="meta-grid">
-          <div><strong>Categoría:</strong> ${escapeHtml(cat)}</div>
-          <div><strong>Formato:</strong> ${escapeHtml(meta.formato || "-")}</div>
-          <div><strong>Equipos:</strong> ${escapeHtml(meta.equipos || "-")}</div>
-          <div><strong>Playoffs:</strong> ${meta.playoffs === "si" ? `Sí (${escapeHtml(meta.clasificados)})` : "No"}</div>
-          <div><strong>Inicio:</strong> ${escapeHtml(meta.inicio || "-")}</div>
-          <div><strong>Fin:</strong> ${escapeHtml(meta.fin || "-")}</div>
-        </div>
-
-        ${fechasHTML}
-        ${playoffHTML}
-      </body>
-      </html>
-    `;
-  }
+  return `
+    <html>
+    <body style="font-family: Arial; white-space: pre-wrap; padding: 30px;">
+    ${texto}
+    </body>
+    </html>
+  `;
+}
 
   function imprimirFixtureActual() {
     const cat = categoriaSelect.value;
