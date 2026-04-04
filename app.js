@@ -49,7 +49,18 @@ const categorias = {
   ]
 };
 
-let fixtures = {};
+// fixturesPorCategoria[cat] = {
+//   meta: {...},
+//   fechas: [
+//     {
+//       numero: 1,
+//       fechaISO: "2026-04-12",
+//       label: "Domingo 12/04/2026",
+//       partidos: [{...}]
+//     }
+//   ]
+// }
+let fixturesPorCategoria = {};
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== DOM =====
@@ -80,7 +91,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const plannerCalcular = document.getElementById("planner-calcular");
   const plannerResultado = document.getElementById("planner-resultado");
   const plannerComparacion = document.getElementById("planner-comparacion");
-
   const generarBtn = document.getElementById("generar-fixture");
 
   const partidoSelect = document.getElementById("partido-select");
@@ -88,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const puntosVisitante = document.getElementById("puntos-visitante");
   const guardarBtn = document.getElementById("guardar-resultado");
 
-  // ===== HELPERS =====
+  // ===== HELPERS UI =====
   function mostrarLiga() {
     vistaLiga.style.display = "block";
     vistaGestion.style.display = "none";
@@ -103,88 +113,508 @@ document.addEventListener("DOMContentLoaded", () => {
     tabGestion.classList.add("activo");
   }
 
-  function generarFixtureTodosContraTodos(equipos) {
-    const lista = [...equipos];
+  // ===== HELPERS FECHAS =====
+  const nombresDias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const nombresMeses = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+  ];
 
-    if (lista.length % 2 !== 0) {
-      lista.push("LIBRE");
+  function parseISODate(iso) {
+    return new Date(`${iso}T12:00:00`);
+  }
+
+  function formatISO(date) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  function formatFechaLarga(iso) {
+    if (!iso) return "Sin fecha";
+    const d = parseISODate(iso);
+    return `${nombresDias[d.getDay()]} ${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  }
+
+  function formatFechaBonita(iso) {
+    if (!iso) return "Sin fecha";
+    const d = parseISODate(iso);
+    return `${nombresDias[d.getDay()]} ${d.getDate()} de ${nombresMeses[d.getMonth()]} de ${d.getFullYear()}`;
+  }
+
+  function moverAlDiaSemana(fecha, diaSemana) {
+    const d = new Date(fecha.getTime());
+    while (d.getDay() !== diaSemana) {
+      d.setDate(d.getDate() + 1);
+    }
+    return d;
+  }
+
+  function obtenerFechasDisponibles(inicioISO, finISO, diaSemana, frecuencia, bloqueadas) {
+    if (!inicioISO || !finISO) return [];
+
+    const inicio = moverAlDiaSemana(parseISODate(inicioISO), diaSemana);
+    const fin = parseISODate(finISO);
+    const bloqueadasSet = new Set(bloqueadas);
+
+    const disponibles = [];
+    const cursor = new Date(inicio.getTime());
+
+    while (cursor <= fin) {
+      const iso = formatISO(cursor);
+      if (!bloqueadasSet.has(iso)) {
+        disponibles.push(iso);
+      }
+      cursor.setDate(cursor.getDate() + (7 * frecuencia));
     }
 
-    const totalFechas = lista.length - 1;
-    const mitad = lista.length / 2;
-    const fechas = [];
+    return disponibles;
+  }
 
-    for (let fecha = 0; fecha < totalFechas; fecha++) {
-      const partidosFecha = [];
+  function calcularFechaFinSugerida(inicioISO, diaSemana, frecuencia, cantidadJornadas, bloqueadas) {
+    if (!inicioISO || cantidadJornadas <= 0) return null;
 
-      for (let i = 0; i < mitad; i++) {
-        const local = lista[i];
-        const visitante = lista[lista.length - 1 - i];
+    const bloqueadasSet = new Set(bloqueadas);
+    let cursor = moverAlDiaSemana(parseISODate(inicioISO), diaSemana);
+    let agregadas = 0;
+    let ultima = null;
 
-        if (local !== "LIBRE" && visitante !== "LIBRE") {
-          partidosFecha.push({
-            fecha: fecha + 1,
-            local: fecha % 2 === 0 ? local : visitante,
-            visitante: fecha % 2 === 0 ? visitante : local,
+    while (agregadas < cantidadJornadas) {
+      const iso = formatISO(cursor);
+      if (!bloqueadasSet.has(iso)) {
+        agregadas += 1;
+        ultima = iso;
+      }
+      cursor.setDate(cursor.getDate() + (7 * frecuencia));
+    }
+
+    return ultima;
+  }
+
+  // ===== HELPERS EQUIPOS =====
+  function obtenerEquiposCategoria(categoria, cantidadSolicitada) {
+    const base = categorias[categoria] ? [...categorias[categoria]] : [];
+    const cantidad = Number(cantidadSolicitada);
+
+    if (!Number.isFinite(cantidad) || cantidad < 2) {
+      return base.length >= 2 ? base : ["Equipo 1", "Equipo 2"];
+    }
+
+    if (base.length >= cantidad) {
+      return base.slice(0, cantidad);
+    }
+
+    const equipos = [...base];
+    for (let i = base.length + 1; i <= cantidad; i++) {
+      equipos.push(`Equipo ${i}`);
+    }
+    return equipos;
+  }
+
+  // ===== FIXTURE =====
+  function generarRondaSimple(equiposOriginales) {
+    const equipos = [...equiposOriginales];
+    const usarLibre = equipos.length % 2 !== 0;
+
+    if (usarLibre) {
+      equipos.push("LIBRE");
+    }
+
+    const n = equipos.length;
+    const rondas = [];
+    let rotacion = [...equipos];
+
+    for (let fecha = 0; fecha < n - 1; fecha++) {
+      const partidos = [];
+
+      for (let i = 0; i < n / 2; i++) {
+        const a = rotacion[i];
+        const b = rotacion[n - 1 - i];
+
+        if (a !== "LIBRE" && b !== "LIBRE") {
+          const local = fecha % 2 === 0 ? a : b;
+          const visitante = fecha % 2 === 0 ? b : a;
+
+          partidos.push({
+            local,
+            visitante,
             pl: null,
             pv: null
           });
         }
       }
 
-      fechas.push(partidosFecha);
+      rondas.push(partidos);
 
-      const fijo = lista[0];
-      const rotan = lista.slice(1);
-      rotan.unshift(rotan.pop());
-      lista.splice(0, lista.length, fijo, ...rotan);
+      const fijo = rotacion[0];
+      const resto = rotacion.slice(1);
+      resto.unshift(resto.pop());
+      rotacion = [fijo, ...resto];
     }
 
-    return fechas;
+    return rondas;
   }
 
-  function aplanarFixture(fechas) {
-    return fechas.flat();
+  function invertirRonda(partidos) {
+    return partidos.map((p) => ({
+      local: p.visitante,
+      visitante: p.local,
+      pl: null,
+      pv: null
+    }));
+  }
+
+  function generarRondasPorFormato(equipos, formato) {
+    const ida = generarRondaSimple(equipos);
+
+    if (formato === "anual") {
+      const vuelta = ida.map(invertirRonda);
+      return [...ida, ...vuelta];
+    }
+
+    if (formato === "apertura" || formato === "clausura") {
+      return ida;
+    }
+
+    if (formato === "eliminacion") {
+      return [
+        [
+          {
+            local: "A definir",
+            visitante: "A definir",
+            pl: null,
+            pv: null
+          }
+        ]
+      ];
+    }
+
+    return ida;
+  }
+
+  function asignarFechasARondas(rondas, fechasDisponibles) {
+    return rondas.map((partidos, index) => {
+      const fechaISO = fechasDisponibles[index] || null;
+
+      return {
+        numero: index + 1,
+        fechaISO,
+        label: fechaISO ? formatFechaLarga(fechaISO) : `Fecha ${index + 1} sin programar`,
+        partidos: partidos.map((p) => ({
+          ...p,
+          fechaNumero: index + 1,
+          fechaISO
+        }))
+      };
+    });
+  }
+
+  function contarJornadasBase(cantidadEquipos, formato) {
+    if (formato === "eliminacion") {
+      return Math.max(1, Math.ceil(Math.log2(cantidadEquipos)));
+    }
+
+    const porRueda = cantidadEquipos % 2 === 0 ? cantidadEquipos - 1 : cantidadEquipos;
+    return formato === "anual" ? porRueda * 2 : porRueda;
+  }
+
+  function contarJornadasPlayoff(clasificados) {
+    if (clasificados <= 2) return 1;
+    if (clasificados === 4) return 2;
+    if (clasificados === 6) return 3;
+    if (clasificados === 8) return 3;
+
+    return Math.ceil(Math.log2(clasificados));
+  }
+
+  function calcularCantidadTotalJornadas({ equipos, formato, playoffs, clasificados }) {
+    const base = contarJornadasBase(equipos, formato);
+
+    if (playoffs !== "si") return base;
+
+    return base + contarJornadasPlayoff(clasificados);
+  }
+
+  function detectarSugerencias({
+    entra,
+    inicio,
+    fin,
+    diaJuego,
+    frecuencia,
+    bloqueadas,
+    jornadasNecesarias,
+    fechasDisponiblesActuales
+  }) {
+    const sugerencias = [];
+
+    if (entra) {
+      sugerencias.push("El calendario actual alcanza para el formato elegido.");
+      return sugerencias;
+    }
+
+    const fechasSemanales = obtenerFechasDisponibles(
+      inicio,
+      fin,
+      diaJuego,
+      1,
+      bloqueadas
+    );
+
+    if (frecuencia === 2 && fechasSemanales.length >= jornadasNecesarias) {
+      sugerencias.push("Sugerencia: jugando todas las semanas, el torneo sí entra en el rango.");
+    }
+
+    const diaAlternativo = diaJuego === 0 ? 3 : 0;
+    const fechasAlternativas = obtenerFechasDisponibles(
+      inicio,
+      fin,
+      diaAlternativo,
+      frecuencia,
+      bloqueadas
+    );
+
+    if (fechasAlternativas.length >= jornadasNecesarias) {
+      sugerencias.push(
+        `Sugerencia: cambiando el día de juego a ${nombresDias[diaAlternativo]}, el torneo sí entra.`
+      );
+    }
+
+    const fechaFinSugerida = calcularFechaFinSugerida(
+      inicio,
+      diaJuego,
+      frecuencia,
+      jornadasNecesarias,
+      bloqueadas
+    );
+
+    if (fechaFinSugerida) {
+      sugerencias.push(
+        `Sugerencia: manteniendo este formato, necesitás llegar al menos hasta ${formatFechaBonita(fechaFinSugerida)}.`
+      );
+    }
+
+    if (!sugerencias.length && fechasDisponiblesActuales < jornadasNecesarias) {
+      sugerencias.push("No entra con la configuración actual. Hay que ampliar el rango, cambiar frecuencia o reducir etapas.");
+    }
+
+    return sugerencias;
+  }
+
+  function leerPlanner() {
+    const categoria = plannerCategoria.value;
+    const equipos = Number(plannerEquipos.value);
+    const formato = plannerFormato.value;
+    const playoffs = plannerPlayoffs.value;
+    const clasificados = Number(plannerClasificados.value);
+    const diaJuego = Number(plannerDiaJuego.value);
+    const inicio = plannerInicio.value;
+    const fin = plannerFin.value;
+    const frecuencia = Number(plannerFrecuencia.value);
+    const bloqueadas = plannerBloqueadas.value
+      .split(",")
+      .map((f) => f.trim())
+      .filter(Boolean);
+
+    return {
+      categoria,
+      equipos,
+      formato,
+      playoffs,
+      clasificados,
+      diaJuego,
+      inicio,
+      fin,
+      frecuencia,
+      bloqueadas
+    };
+  }
+
+  function calcularPlanificacion() {
+    const data = leerPlanner();
+
+    if (!data.inicio || !data.fin) {
+      plannerResultado.innerHTML = "<p>Completá fecha de inicio y fin.</p>";
+      plannerComparacion.innerHTML = "";
+      return null;
+    }
+
+    if (data.equipos < 2) {
+      plannerResultado.innerHTML = "<p>La cantidad de equipos debe ser mayor o igual a 2.</p>";
+      plannerComparacion.innerHTML = "";
+      return null;
+    }
+
+    const jornadasBase = contarJornadasBase(data.equipos, data.formato);
+    const jornadasPlayoff = data.playoffs === "si" ? contarJornadasPlayoff(data.clasificados) : 0;
+    const jornadasTotales = jornadasBase + jornadasPlayoff;
+
+    const fechasDisponibles = obtenerFechasDisponibles(
+      data.inicio,
+      data.fin,
+      data.diaJuego,
+      data.frecuencia,
+      data.bloqueadas
+    );
+
+    const entra = fechasDisponibles.length >= jornadasTotales;
+
+    const sugerencias = detectarSugerencias({
+      entra,
+      inicio: data.inicio,
+      fin: data.fin,
+      diaJuego: data.diaJuego,
+      frecuencia: data.frecuencia,
+      bloqueadas: data.bloqueadas,
+      jornadasNecesarias: jornadasTotales,
+      fechasDisponiblesActuales: fechasDisponibles.length
+    });
+
+    plannerResultado.innerHTML = `
+      <h4>Resultado del análisis</h4>
+      <p><strong>Categoría:</strong> ${data.categoria}</p>
+      <p><strong>Equipos:</strong> ${data.equipos}</p>
+      <p><strong>Formato:</strong> ${data.formato}</p>
+      <p><strong>Día de juego:</strong> ${nombresDias[data.diaJuego]}</p>
+      <p><strong>Frecuencia:</strong> ${data.frecuencia === 1 ? "Cada semana" : "Semana por medio"}</p>
+      <p><strong>Fechas base necesarias:</strong> ${jornadasBase}</p>
+      <p><strong>Fechas extra por playoffs:</strong> ${jornadasPlayoff}</p>
+      <p><strong>Total de jornadas necesarias:</strong> ${jornadasTotales}</p>
+      <p><strong>Fechas disponibles:</strong> ${fechasDisponibles.length}</p>
+      <p><strong>Estado:</strong> ${entra ? "Entra en el rango elegido." : "No entra en el rango elegido."}</p>
+    `;
+
+    const preview = fechasDisponibles.slice(0, jornadasTotales);
+    plannerComparacion.innerHTML = `
+      <h4>${entra ? "Fechas sugeridas para programar" : "Sugerencias de ajuste"}</h4>
+      ${
+        entra
+          ? preview.map((f, i) => `<p><strong>Fecha ${i + 1}:</strong> ${formatFechaBonita(f)}</p>`).join("")
+          : sugerencias.map((s) => `<p>${s}</p>`).join("")
+      }
+    `;
+
+    return {
+      ...data,
+      jornadasBase,
+      jornadasPlayoff,
+      jornadasTotales,
+      fechasDisponibles,
+      entra
+    };
+  }
+
+  function generarDesdePlanner() {
+    const plan = calcularPlanificacion();
+    if (!plan) return;
+
+    const equipos = obtenerEquiposCategoria(plan.categoria, plan.equipos);
+    const rondas = generarRondasPorFormato(equipos, plan.formato);
+
+    const fixtureConFechas = asignarFechasARondas(
+      rondas,
+      plan.fechasDisponibles
+    );
+
+    fixturesPorCategoria[plan.categoria] = {
+      meta: {
+        categoria: plan.categoria,
+        equipos: plan.equipos,
+        formato: plan.formato,
+        playoffs: plan.playoffs,
+        clasificados: plan.clasificados,
+        diaJuego: plan.diaJuego,
+        inicio: plan.inicio,
+        fin: plan.fin,
+        frecuencia: plan.frecuencia,
+        bloqueadas: plan.bloqueadas,
+        jornadasBase: plan.jornadasBase,
+        jornadasPlayoff: plan.jornadasPlayoff,
+        jornadasTotales: plan.jornadasTotales
+      },
+      fechas: fixtureConFechas
+    };
+
+    categoriaSelect.value = plan.categoria;
+    render();
+    mostrarLiga();
+  }
+
+  // ===== TABLA =====
+  function obtenerPartidosPlanos(cat) {
+    const data = fixturesPorCategoria[cat];
+    if (!data || !data.fechas) return [];
+    return data.fechas.flatMap((f) => f.partidos);
+  }
+
+  function obtenerEquiposActivos(cat) {
+    const data = fixturesPorCategoria[cat];
+    if (data?.meta?.equipos) {
+      return obtenerEquiposCategoria(cat, data.meta.equipos);
+    }
+    return categorias[cat] ? [...categorias[cat]] : [];
   }
 
   function calcularTabla(cat) {
+    const equipos = obtenerEquiposActivos(cat);
     const tabla = {};
 
-    (categorias[cat] || []).forEach((equipo) => {
+    equipos.forEach((equipo) => {
       tabla[equipo] = {
         equipo,
         pj: 0,
         pg: 0,
         pp: 0,
-        pts: 0
+        pts: 0,
+        pf: 0,
+        pc: 0,
+        dif: 0
       };
     });
 
-    const partidos = aplanarFixture(fixtures[cat] || []);
+    const partidos = obtenerPartidosPlanos(cat);
 
     partidos.forEach((p) => {
       if (p.pl == null || p.pv == null) return;
+      if (!tabla[p.local] || !tabla[p.visitante]) return;
 
       tabla[p.local].pj += 1;
       tabla[p.visitante].pj += 1;
+
+      tabla[p.local].pf += p.pl;
+      tabla[p.local].pc += p.pv;
+      tabla[p.visitante].pf += p.pv;
+      tabla[p.visitante].pc += p.pl;
 
       if (p.pl > p.pv) {
         tabla[p.local].pg += 1;
         tabla[p.visitante].pp += 1;
         tabla[p.local].pts += 2;
+        tabla[p.visitante].pts += 1;
       } else if (p.pv > p.pl) {
         tabla[p.visitante].pg += 1;
         tabla[p.local].pp += 1;
         tabla[p.visitante].pts += 2;
+        tabla[p.local].pts += 1;
+      } else {
+        tabla[p.local].pts += 1;
+        tabla[p.visitante].pts += 1;
       }
+    });
+
+    Object.values(tabla).forEach((e) => {
+      e.dif = e.pf - e.pc;
     });
 
     return Object.values(tabla).sort((a, b) => {
       if (b.pts !== a.pts) return b.pts - a.pts;
+      if (b.dif !== a.dif) return b.dif - a.dif;
+      if (b.pf !== a.pf) return b.pf - a.pf;
       return a.equipo.localeCompare(b.equipo);
     });
   }
 
+  // ===== RENDER =====
   function renderTabla(cat) {
     const tabla = calcularTabla(cat);
 
@@ -201,48 +631,90 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderFixture(cat) {
-    const fechas = fixtures[cat] || [];
+    const data = fixturesPorCategoria[cat];
 
-    if (!fechas.length) {
+    if (!data || !data.fechas || !data.fechas.length) {
       fixtureBody.innerHTML = "<p>No hay fixture generado.</p>";
       partidoSelect.innerHTML = "";
       return;
     }
 
-    fixtureBody.innerHTML = fechas.map((partidos, idx) => `
+    fixtureBody.innerHTML = data.fechas.map((fechaObj) => `
       <div class="fixture-fecha">
-        <h4>Fecha ${idx + 1}</h4>
-        ${partidos.map((p) => `
-          <p>${p.local} vs ${p.visitante} (${p.pl ?? "-"} - ${p.pv ?? "-"})</p>
+        <h4>Fecha ${fechaObj.numero} - ${fechaObj.label}</h4>
+        ${fechaObj.partidos.map((p) => `
+          <p>
+            ${p.local} vs ${p.visitante}
+            (${p.pl ?? "-"} - ${p.pv ?? "-"})
+          </p>
         `).join("")}
       </div>
     `).join("");
 
-    const partidosPlanos = aplanarFixture(fechas);
-    partidoSelect.innerHTML = partidosPlanos.map((p, i) => `
+    const partidos = obtenerPartidosPlanos(cat);
+    partidoSelect.innerHTML = partidos.map((p, i) => `
       <option value="${i}">
-        Fecha ${p.fecha} - ${p.local} vs ${p.visitante}
+        Fecha ${p.fechaNumero} - ${p.fechaISO ? formatFechaLarga(p.fechaISO) : "Sin fecha"} - ${p.local} vs ${p.visitante}
       </option>
     `).join("");
   }
 
   function renderPlayoffs(cat) {
-    if (cat === "Maxi +48") {
+    const data = fixturesPorCategoria[cat];
+    const meta = data?.meta;
+
+    if (!meta || meta.playoffs !== "si") {
+      playoffBody.innerHTML = "<p>Sin playoffs configurados.</p>";
+      return;
+    }
+
+    const clasificados = meta.clasificados;
+
+    if (cat === "Maxi +48" && clasificados === 6) {
       playoffBody.innerHTML = `
-        <strong>Top 6</strong><br>
+        <strong>Playoffs Maxi +48 - Top 6</strong><br>
+        1° y 2° avanzan directo a semifinales<br>
+        3° vs 6°<br>
+        4° vs 5°
+      `;
+      return;
+    }
+
+    if (clasificados === 4) {
+      playoffBody.innerHTML = `
+        <strong>Playoffs - Top 4</strong><br>
+        1° vs 4°<br>
+        2° vs 3°<br>
+        Ganadores a la final
+      `;
+      return;
+    }
+
+    if (clasificados === 6) {
+      playoffBody.innerHTML = `
+        <strong>Playoffs - Top 6</strong><br>
         1° y 2° pasan directo a semifinales<br>
         3° vs 6°<br>
         4° vs 5°
       `;
-    } else {
+      return;
+    }
+
+    if (clasificados === 8) {
       playoffBody.innerHTML = `
-        <strong>Top 8</strong><br>
+        <strong>Playoffs - Top 8</strong><br>
         1° vs 8°<br>
         4° vs 5°<br>
         2° vs 7°<br>
         3° vs 6°
       `;
+      return;
     }
+
+    playoffBody.innerHTML = `
+      <strong>Playoffs - Top ${clasificados}</strong><br>
+      Configuración preparada. En el próximo paso armamos los cruces automáticos para cualquier cantidad.
+    `;
   }
 
   function render() {
@@ -252,124 +724,11 @@ document.addEventListener("DOMContentLoaded", () => {
     renderPlayoffs(cat);
   }
 
-  function contarFechasSegunFormato(cantidadEquipos, formato) {
-    if (formato === "eliminacion") {
-      return Math.max(1, Math.ceil(Math.log2(cantidadEquipos)));
-    }
-
-    const ruedas = formato === "anual" ? 2 : 1;
-    const fechasPorRueda = cantidadEquipos % 2 === 0
-      ? cantidadEquipos - 1
-      : cantidadEquipos;
-
-    return fechasPorRueda * ruedas;
-  }
-
-  function obtenerFechasJuego(inicio, fin, diaSemana, frecuencia, bloqueadas) {
-    const fechas = [];
-    const actual = new Date(`${inicio}T12:00:00`);
-    const fechaFin = new Date(`${fin}T12:00:00`);
-    const bloqueadasSet = new Set(bloqueadas);
-
-    while (actual.getDay() !== diaSemana) {
-      actual.setDate(actual.getDate() + 1);
-    }
-
-    while (actual <= fechaFin) {
-      const yyyy = actual.getFullYear();
-      const mm = String(actual.getMonth() + 1).padStart(2, "0");
-      const dd = String(actual.getDate()).padStart(2, "0");
-      const iso = `${yyyy}-${mm}-${dd}`;
-
-      if (!bloqueadasSet.has(iso)) {
-        fechas.push(iso);
-      }
-
-      actual.setDate(actual.getDate() + (7 * frecuencia));
-    }
-
-    return fechas;
-  }
-
-  function calcularPlanificacion() {
-    const categoria = plannerCategoria.value;
-    const equipos = Number(plannerEquipos.value);
-    const formato = plannerFormato.value;
-    const playoffs = plannerPlayoffs.value;
-    const clasificados = Number(plannerClasificados.value);
-    const diaJuego = Number(plannerDiaJuego.value);
-    const inicio = plannerInicio.value;
-    const fin = plannerFin.value;
-    const frecuencia = Number(plannerFrecuencia.value);
-    const bloqueadas = plannerBloqueadas.value
-      .split(",")
-      .map(f => f.trim())
-      .filter(Boolean);
-
-    if (!inicio || !fin) {
-      plannerResultado.innerHTML = "<p>Completá fecha de inicio y fin.</p>";
-      plannerComparacion.innerHTML = "";
-      return;
-    }
-
-    const fechasBase = contarFechasSegunFormato(equipos, formato);
-    let fechasTotales = fechasBase;
-
-    if (playoffs === "si") {
-      if (clasificados === 4) fechasTotales += 2;
-      if (clasificados === 6) fechasTotales += 3;
-      if (clasificados === 8) fechasTotales += 3;
-    }
-
-    const disponibles = obtenerFechasJuego(
-      inicio,
-      fin,
-      diaJuego,
-      frecuencia,
-      bloqueadas
-    );
-
-    const entra = disponibles.length >= fechasTotales;
-
-    plannerResultado.innerHTML = `
-      <h4>Resultado del análisis</h4>
-      <p><strong>Categoría:</strong> ${categoria}</p>
-      <p><strong>Equipos:</strong> ${equipos}</p>
-      <p><strong>Formato:</strong> ${formato}</p>
-      <p><strong>Playoffs:</strong> ${playoffs === "si" ? `Sí, ${clasificados} clasificados` : "No"}</p>
-      <p><strong>Fechas necesarias:</strong> ${fechasTotales}</p>
-      <p><strong>Fechas disponibles:</strong> ${disponibles.length}</p>
-      <p><strong>Estado:</strong> ${entra ? "El torneo entra en el calendario seleccionado." : "No entra en el calendario seleccionado."}</p>
-    `;
-
-    if (entra) {
-      plannerComparacion.innerHTML = `
-        <h4>Fechas sugeridas</h4>
-        ${disponibles.slice(0, fechasTotales).map((f, i) => `<p>Fecha ${i + 1}: ${f}</p>`).join("")}
-      `;
-    } else {
-      plannerComparacion.innerHTML = `
-        <h4>Sugerencia</h4>
-        <p>Probá ampliar la fecha de fin, reducir playoffs o usar semana por medio / día alternativo.</p>
-      `;
-    }
-  }
-
-  function generarDesdePlanner() {
-    const categoria = plannerCategoria.value;
-    categoriaSelect.value = categoria;
-
-    const equiposCategoria = categorias[categoria];
-    fixtures[categoria] = generarFixtureTodosContraTodos(equiposCategoria);
-
-    render();
-    mostrarLiga();
-  }
-
+  // ===== RESULTADOS =====
   function guardarResultado() {
     const cat = categoriaSelect.value;
     const index = Number(partidoSelect.value);
-    const partidos = aplanarFixture(fixtures[cat] || []);
+    const partidos = obtenerPartidosPlanos(cat);
     const partido = partidos[index];
 
     if (!partido) return;
@@ -377,8 +736,25 @@ document.addEventListener("DOMContentLoaded", () => {
     partido.pl = puntosLocal.value === "" ? null : Number(puntosLocal.value);
     partido.pv = puntosVisitante.value === "" ? null : Number(puntosVisitante.value);
 
+    puntosLocal.value = "";
+    puntosVisitante.value = "";
+
     render();
   }
+
+  // ===== SINCRONIZACION ENTRE SELECTORES =====
+  plannerCategoria.addEventListener("change", () => {
+    categoriaSelect.value = plannerCategoria.value;
+    plannerEquipos.value = categorias[plannerCategoria.value]?.length || 10;
+  });
+
+  categoriaSelect.addEventListener("change", () => {
+    plannerCategoria.value = categoriaSelect.value;
+    if (!plannerEquipos.value || Number(plannerEquipos.value) < 2) {
+      plannerEquipos.value = categorias[categoriaSelect.value]?.length || 10;
+    }
+    render();
+  });
 
   // ===== EVENTOS =====
   tabLiga.onclick = mostrarLiga;
@@ -397,17 +773,38 @@ document.addEventListener("DOMContentLoaded", () => {
     gestionContenido.style.display = "none";
   };
 
-  categoriaSelect.onchange = render;
   plannerCalcular.onclick = calcularPlanificacion;
   generarBtn.onclick = generarDesdePlanner;
   guardarBtn.onclick = guardarResultado;
 
   // ===== INICIO =====
   Object.keys(categorias).forEach((cat) => {
-    fixtures[cat] = generarFixtureTodosContraTodos(categorias[cat]);
+    const equipos = categorias[cat];
+    const rondas = generarRondasPorFormato(equipos, "apertura");
+    const fechas = asignarFechasARondas(rondas, []);
+
+    fixturesPorCategoria[cat] = {
+      meta: {
+        categoria: cat,
+        equipos: equipos.length,
+        formato: "apertura",
+        playoffs: "no",
+        clasificados: 4,
+        diaJuego: 0,
+        inicio: "",
+        fin: "",
+        frecuencia: 1,
+        bloqueadas: [],
+        jornadasBase: rondas.length,
+        jornadasPlayoff: 0,
+        jornadasTotales: rondas.length
+      },
+      fechas
+    };
   });
 
   plannerCategoria.value = categoriaSelect.value;
+  plannerEquipos.value = categorias[categoriaSelect.value]?.length || 10;
   render();
   mostrarLiga();
 });
