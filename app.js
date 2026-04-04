@@ -211,10 +211,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     for (let fecha = 0; fecha < n - 1; fecha++) {
       const partidos = [];
+      let equipoLibre = null;
 
       for (let i = 0; i < n / 2; i++) {
         const a = rotacion[i];
         const b = rotacion[n - 1 - i];
+
+        if (a === "LIBRE" && b !== "LIBRE") {
+          equipoLibre = b;
+          continue;
+        }
+
+        if (b === "LIBRE" && a !== "LIBRE") {
+          equipoLibre = a;
+          continue;
+        }
 
         if (a !== "LIBRE" && b !== "LIBRE") {
           const local = fecha % 2 === 0 ? a : b;
@@ -229,7 +240,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      rondas.push(partidos);
+      rondas.push({
+        partidos,
+        equipoLibre
+      });
 
       const fijo = rotacion[0];
       const resto = rotacion.slice(1);
@@ -240,13 +254,16 @@ document.addEventListener("DOMContentLoaded", () => {
     return rondas;
   }
 
-  function invertirRonda(partidos) {
-    return partidos.map((p) => ({
-      local: p.visitante,
-      visitante: p.local,
-      pl: null,
-      pv: null
-    }));
+  function invertirRonda(ronda) {
+    return {
+      partidos: ronda.partidos.map((p) => ({
+        local: p.visitante,
+        visitante: p.local,
+        pl: null,
+        pv: null
+      })),
+      equipoLibre: ronda.equipoLibre || null
+    };
   }
 
   function generarRondasPorFormato(equipos, formato) {
@@ -263,14 +280,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (formato === "eliminacion") {
       return [
-        [
-          {
-            local: "A definir",
-            visitante: "A definir",
-            pl: null,
-            pv: null
-          }
-        ]
+        {
+          partidos: [
+            {
+              local: "A definir",
+              visitante: "A definir",
+              pl: null,
+              pv: null
+            }
+          ],
+          equipoLibre: null
+        }
       ];
     }
 
@@ -278,14 +298,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function asignarFechasARondas(rondas, fechasDisponibles) {
-    return rondas.map((partidos, index) => {
+    return rondas.map((ronda, index) => {
       const fechaISO = fechasDisponibles[index] || null;
 
       return {
         numero: index + 1,
         fechaISO,
         label: fechaISO ? formatFechaLarga(fechaISO) : `Fecha ${index + 1} sin programar`,
-        partidos: partidos.map((p) => ({
+        equipoLibre: ronda.equipoLibre || null,
+        partidos: ronda.partidos.map((p) => ({
           ...p,
           fechaNumero: index + 1,
           fechaISO
@@ -669,8 +690,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const maxPartidos = Math.max(...data.fechas.map(f => f.partidos.length));
-    const cantidadEquipos = obtenerEquiposActivos(cat).length;
-    const hayLibre = cantidadEquipos % 2 !== 0;
+    const hayLibre = data.fechas.some(f => !!f.equipoLibre);
 
     let html = `
       <div class="fixture-tabla-wrap">
@@ -719,7 +739,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (hayLibre) {
         html += `
           <td class="fixture-libre-col">
-            <div class="fixture-libre-card">LIBRE</div>
+            <div class="fixture-libre-card">
+              <div class="fixture-libre-titulo">LIBRE</div>
+              <div class="fixture-libre-equipo">
+                ${fechaObj.equipoLibre ? imgEscudoHTML(fechaObj.equipoLibre) : ""}
+                <span>${fechaObj.equipoLibre || "-"}</span>
+              </div>
+            </div>
           </td>
         `;
       }
