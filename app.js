@@ -86,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const puntosVisitante = document.getElementById("puntos-visitante");
   const guardarBtn = document.getElementById("guardar-resultado");
 
-  // ===== BOTON IMPRIMIR =====
   let imprimirFixtureBtn = document.getElementById("imprimir-fixture-btn");
 
   if (!imprimirFixtureBtn && fixtureBody) {
@@ -102,8 +101,193 @@ document.addEventListener("DOMContentLoaded", () => {
     imprimirFixtureBtn.style.color = "#fff";
     imprimirFixtureBtn.style.fontWeight = "700";
     imprimirFixtureBtn.style.cursor = "pointer";
-
     fixtureBody.parentNode.insertBefore(imprimirFixtureBtn, fixtureBody);
+  }
+
+  function inyectarEstilosPlayoffDibujo() {
+    if (document.getElementById("playoff-dibujo-styles")) return;
+
+    const style = document.createElement("style");
+    style.id = "playoff-dibujo-styles";
+    style.textContent = `
+      .playoff-bracket-dibujo {
+        margin-top: 16px;
+        overflow-x: auto;
+      }
+
+      .playoff-bracket-dibujo h4 {
+        margin: 0 0 14px 0;
+        font-size: 20px;
+        font-weight: 800;
+      }
+
+      .playoff-bracket-scroll {
+        min-width: 880px;
+        padding: 8px 0 16px 0;
+      }
+
+      .playoff-grid {
+        display: grid;
+        grid-template-columns: 240px 90px 240px 90px 240px;
+        align-items: center;
+      }
+
+      .playoff-stage-title {
+        background: linear-gradient(180deg, #1b4f8a, #0e2a57);
+        color: white;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-weight: 800;
+        text-align: center;
+        margin-bottom: 12px;
+      }
+
+      .playoff-stage {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .playoff-stage.top4 .playoff-stage-list {
+        display: grid;
+        gap: 26px;
+      }
+
+      .playoff-stage.top6-recla .playoff-stage-list {
+        display: grid;
+        gap: 26px;
+      }
+
+      .playoff-stage.top8-cuartos .playoff-stage-list {
+        display: grid;
+        gap: 18px;
+      }
+
+      .playoff-stage.top6-semis .playoff-stage-list,
+      .playoff-stage.top8-semis .playoff-stage-list,
+      .playoff-stage.top4-semis .playoff-stage-list {
+        display: grid;
+        gap: 84px;
+        padding-top: 48px;
+      }
+
+      .playoff-stage.final-stage .playoff-stage-list {
+        display: grid;
+        gap: 0;
+        padding-top: 118px;
+      }
+
+      .playoff-match-card {
+        position: relative;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 10px;
+        overflow: visible;
+      }
+
+      .playoff-match-label {
+        font-size: 12px;
+        font-weight: 900;
+        opacity: 0.75;
+        padding: 8px 10px 0 10px;
+      }
+
+      .playoff-team-box {
+        padding: 10px 12px;
+        font-weight: 700;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+      }
+
+      .playoff-team-box + .playoff-team-box {
+        border-top: 1px solid rgba(255,255,255,0.1);
+      }
+
+      .playoff-connector {
+        position: relative;
+        height: 100%;
+      }
+
+      .playoff-connector.short::before,
+      .playoff-connector.short::after,
+      .playoff-connector.tall::before,
+      .playoff-connector.tall::after {
+        content: "";
+        position: absolute;
+        background: rgba(255,255,255,0.65);
+      }
+
+      .playoff-connector.short::before {
+        left: 0;
+        top: 50%;
+        width: 46px;
+        height: 2px;
+        transform: translateY(-1px);
+      }
+
+      .playoff-connector.short::after {
+        right: 0;
+        top: 50%;
+        width: 44px;
+        height: 2px;
+        transform: translateY(-1px);
+      }
+
+      .playoff-connector.short .line-vertical,
+      .playoff-connector.tall .line-vertical {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 2px;
+        background: rgba(255,255,255,0.65);
+      }
+
+      .playoff-connector.short .line-vertical {
+        top: 25%;
+        height: 50%;
+      }
+
+      .playoff-connector.tall::before {
+        left: 0;
+        top: 50%;
+        width: 46px;
+        height: 2px;
+        transform: translateY(-1px);
+      }
+
+      .playoff-connector.tall::after {
+        right: 0;
+        top: 50%;
+        width: 44px;
+        height: 2px;
+        transform: translateY(-1px);
+      }
+
+      .playoff-connector.tall .line-vertical {
+        top: 12%;
+        height: 76%;
+      }
+
+      .playoff-connector.empty::before,
+      .playoff-connector.empty::after,
+      .playoff-connector.empty .line-vertical {
+        display: none;
+      }
+
+      .playoff-note {
+        margin-top: 10px;
+        font-size: 13px;
+        opacity: 0.85;
+      }
+
+      .playoff-simple-box {
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 10px;
+        padding: 12px;
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   function mostrarLiga() {
@@ -137,6 +321,32 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${yyyy}-${mm}-${dd}`;
   }
 
+  function parseFechaArgentinaATecnica(texto) {
+    const limpio = String(texto || "").trim();
+    if (!limpio) return null;
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(limpio)) {
+      return limpio;
+    }
+
+    const m = limpio.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m) return null;
+
+    const dia = Number(m[1]);
+    const mes = Number(m[2]);
+    const anio = Number(m[3]);
+
+    if (dia < 1 || dia > 31 || mes < 1 || mes > 12 || anio < 2000) return null;
+
+    return `${anio}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+  }
+
+  function formatFechaCortaArgentina(iso) {
+    if (!iso) return "Sin fecha";
+    const d = parseISODate(iso);
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  }
+
   function formatFechaLarga(iso) {
     if (!iso) return "Sin fecha";
     const d = parseISODate(iso);
@@ -157,25 +367,41 @@ document.addEventListener("DOMContentLoaded", () => {
     return d;
   }
 
-  function obtenerFechasDisponibles(inicioISO, finISO, diaSemana, frecuencia, bloqueadas) {
+  function normalizarBloqueadas(textoBloqueadas) {
+    return String(textoBloqueadas || "")
+      .split(",")
+      .map((f) => f.trim())
+      .filter(Boolean)
+      .map(parseFechaArgentinaATecnica)
+      .filter(Boolean);
+  }
+
+  function obtenerFechasCalendarioConBloqueadas(inicioISO, finISO, diaSemana, frecuencia, bloqueadas) {
     if (!inicioISO || !finISO) return [];
 
     const inicio = moverAlDiaSemana(parseISODate(inicioISO), diaSemana);
     const fin = parseISODate(finISO);
     const bloqueadasSet = new Set(bloqueadas);
 
-    const disponibles = [];
+    const calendario = [];
     const cursor = new Date(inicio.getTime());
 
     while (cursor <= fin) {
       const iso = formatISO(cursor);
-      if (!bloqueadasSet.has(iso)) {
-        disponibles.push(iso);
-      }
+      calendario.push({
+        fechaISO: iso,
+        bloqueada: bloqueadasSet.has(iso)
+      });
       cursor.setDate(cursor.getDate() + (7 * frecuencia));
     }
 
-    return disponibles;
+    return calendario;
+  }
+
+  function obtenerFechasDisponibles(inicioISO, finISO, diaSemana, frecuencia, bloqueadas) {
+    return obtenerFechasCalendarioConBloqueadas(inicioISO, finISO, diaSemana, frecuencia, bloqueadas)
+      .filter((f) => !f.bloqueada)
+      .map((f) => f.fechaISO);
   }
 
   function calcularFechaFinSugerida(inicioISO, diaSemana, frecuencia, cantidadJornadas, bloqueadas) {
@@ -317,22 +543,59 @@ document.addEventListener("DOMContentLoaded", () => {
     return ida;
   }
 
-  function asignarFechasARondas(rondas, fechasDisponibles) {
-    return rondas.map((ronda, index) => {
-      const fechaISO = fechasDisponibles[index] || null;
+  function asignarFechasARondas(rondas, calendarioCompleto) {
+    const fechasConEstado = [];
+    let indiceRonda = 0;
 
-      return {
-        numero: index + 1,
-        fechaISO,
-        label: fechaISO ? formatFechaLarga(fechaISO) : `Fecha ${index + 1} sin programar`,
+    calendarioCompleto.forEach((slot) => {
+      if (slot.bloqueada) {
+        fechasConEstado.push({
+          numero: fechasConEstado.length + 1,
+          fechaISO: slot.fechaISO,
+          label: `${formatFechaLarga(slot.fechaISO)} - BLOQUEADA / DESCANSO`,
+          equipoLibre: null,
+          bloqueada: true,
+          partidos: []
+        });
+      } else {
+        const ronda = rondas[indiceRonda];
+        if (!ronda) return;
+
+        fechasConEstado.push({
+          numero: fechasConEstado.length + 1,
+          fechaISO: slot.fechaISO,
+          label: formatFechaLarga(slot.fechaISO),
+          equipoLibre: ronda.equipoLibre || null,
+          bloqueada: false,
+          partidos: ronda.partidos.map((p) => ({
+            ...p,
+            fechaNumero: fechasConEstado.length + 1,
+            fechaISO: slot.fechaISO
+          }))
+        });
+
+        indiceRonda += 1;
+      }
+    });
+
+    while (indiceRonda < rondas.length) {
+      const ronda = rondas[indiceRonda];
+      fechasConEstado.push({
+        numero: fechasConEstado.length + 1,
+        fechaISO: null,
+        label: `Fecha ${fechasConEstado.length + 1} sin programar`,
         equipoLibre: ronda.equipoLibre || null,
+        bloqueada: false,
         partidos: ronda.partidos.map((p) => ({
           ...p,
-          fechaNumero: index + 1,
-          fechaISO
+          fechaNumero: fechasConEstado.length + 1,
+          fechaISO: null
         }))
-      };
-    });
+      });
+      indiceRonda += 1;
+    }
+
+    return fechasConEstado;
   }
 
   function contarJornadasBase(cantidadEquipos, formato) {
@@ -428,10 +691,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inicio = plannerInicio.value;
     const fin = plannerFin.value;
     const frecuencia = Number(plannerFrecuencia.value);
-    const bloqueadas = plannerBloqueadas.value
-      .split(",")
-      .map((f) => f.trim())
-      .filter(Boolean);
+    const bloqueadas = normalizarBloqueadas(plannerBloqueadas.value);
 
     return {
       categoria,
@@ -466,13 +726,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const jornadasPlayoff = data.playoffs === "si" ? contarJornadasPlayoff(data.clasificados) : 0;
     const jornadasTotales = jornadasBase + jornadasPlayoff;
 
-    const fechasDisponibles = obtenerFechasDisponibles(
+    const calendarioCompleto = obtenerFechasCalendarioConBloqueadas(
       data.inicio,
       data.fin,
       data.diaJuego,
       data.frecuencia,
       data.bloqueadas
     );
+
+    const fechasDisponibles = calendarioCompleto
+      .filter((f) => !f.bloqueada)
+      .map((f) => f.fechaISO);
 
     const entra = fechasDisponibles.length >= jornadasTotales;
 
@@ -497,16 +761,23 @@ document.addEventListener("DOMContentLoaded", () => {
       <p><strong>Fechas base necesarias:</strong> ${jornadasBase}</p>
       <p><strong>Fechas extra por playoffs:</strong> ${jornadasPlayoff}</p>
       <p><strong>Total de jornadas necesarias:</strong> ${jornadasTotales}</p>
-      <p><strong>Fechas disponibles:</strong> ${fechasDisponibles.length}</p>
+      <p><strong>Fechas del calendario:</strong> ${calendarioCompleto.length}</p>
+      <p><strong>Fechas bloqueadas:</strong> ${calendarioCompleto.filter(f => f.bloqueada).length}</p>
+      <p><strong>Fechas disponibles para jugar:</strong> ${fechasDisponibles.length}</p>
       <p><strong>Estado:</strong> ${entra ? "Entra en el rango elegido." : "No entra en el rango elegido."}</p>
     `;
 
-    const preview = fechasDisponibles.slice(0, jornadasTotales);
     plannerComparacion.innerHTML = `
-      <h4>${entra ? "Fechas sugeridas para programar" : "Sugerencias de ajuste"}</h4>
+      <h4>${entra ? "Calendario generado" : "Sugerencias de ajuste"}</h4>
       ${
         entra
-          ? preview.map((f, i) => `<p><strong>Fecha ${i + 1}:</strong> ${formatFechaBonita(f)}</p>`).join("")
+          ? calendarioCompleto.map((f, i) => `
+              <p>
+                <strong>Fecha ${i + 1}:</strong>
+                ${formatFechaBonita(f.fechaISO)}
+                ${f.bloqueada ? " — BLOQUEADA / DESCANSO" : ""}
+              </p>
+            `).join("")
           : sugerencias.map((s) => `<p>${s}</p>`).join("")
       }
     `;
@@ -516,6 +787,7 @@ document.addEventListener("DOMContentLoaded", () => {
       jornadasBase,
       jornadasPlayoff,
       jornadasTotales,
+      calendarioCompleto,
       fechasDisponibles,
       entra
     };
@@ -530,7 +802,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const fixtureConFechas = asignarFechasARondas(
       rondas,
-      plan.fechasDisponibles
+      plan.calendarioCompleto
     );
 
     fixturesPorCategoria[plan.categoria] = {
@@ -709,8 +981,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const maxPartidos = Math.max(...data.fechas.map(f => f.partidos.length));
-    const hayLibre = data.fechas.some(f => !!f.equipoLibre);
+    const maxPartidos = Math.max(...data.fechas.map((f) => f.partidos.length));
+    const hayLibre = data.fechas.some((f) => !!f.equipoLibre);
 
     let html = `
       <div class="fixture-tabla-wrap">
@@ -719,11 +991,29 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     data.fechas.forEach((fechaObj) => {
+      if (fechaObj.bloqueada) {
+        html += `
+          <tr>
+            <td class="fixture-fecha-col">
+              <div class="fixture-fecha-titulo">FECHA ${fechaObj.numero}</div>
+              <div class="fixture-fecha-subtitulo">${fechaObj.fechaISO ? formatFechaCortaArgentina(fechaObj.fechaISO) : "Sin fecha"}</div>
+            </td>
+
+            <td class="fixture-partido-col" colspan="${Math.max(1, maxPartidos + (hayLibre ? 1 : 0))}">
+              <div class="fixture-partido-card" style="min-height:118px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px;">
+                BLOQUEADA / DESCANSO
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
       html += `
         <tr>
           <td class="fixture-fecha-col">
             <div class="fixture-fecha-titulo">FECHA ${fechaObj.numero}</div>
-            <div class="fixture-fecha-subtitulo">${fechaObj.fechaISO ? fechaObj.fechaISO.split("-").reverse().slice(0, 2).join("/") : "Sin fecha"}</div>
+            <div class="fixture-fecha-subtitulo">${fechaObj.fechaISO ? formatFechaCortaArgentina(fechaObj.fechaISO) : "Sin fecha"}</div>
           </td>
       `;
 
@@ -802,122 +1092,99 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (meta.clasificados === 4) {
       return {
+        tipo: "4",
         titulo: "Playoffs - Top 4",
-        columnas: [
-          {
-            titulo: "Semifinales",
-            partidos: [
-              { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: clasificados[3]?.equipo || "4°" },
-              { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: clasificados[2]?.equipo || "3°" }
-            ]
-          },
-          {
-            titulo: "Final",
-            partidos: [
-              { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
-            ]
-          }
+        semifinales: [
+          { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: clasificados[3]?.equipo || "4°" },
+          { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: clasificados[2]?.equipo || "3°" }
+        ],
+        final: [
+          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
         ]
       };
     }
 
     if (meta.clasificados === 6 && cat === "Maxi +48") {
       return {
+        tipo: "6",
         titulo: "Playoffs Maxi +48 - Top 6",
-        columnas: [
-          {
-            titulo: "Reclasificación",
-            partidos: [
-              { etiqueta: "R1", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" },
-              { etiqueta: "R2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" }
-            ]
-          },
-          {
-            titulo: "Semifinales",
-            partidos: [
-              { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: "Ganador R2" },
-              { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: "Ganador R1" }
-            ]
-          },
-          {
-            titulo: "Final",
-            partidos: [
-              { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
-            ]
-          }
+        reclasificacion: [
+          { etiqueta: "R1", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" },
+          { etiqueta: "R2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" }
+        ],
+        semifinales: [
+          { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: "Ganador R2" },
+          { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: "Ganador R1" }
+        ],
+        final: [
+          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
         ]
       };
     }
 
     if (meta.clasificados === 6) {
       return {
+        tipo: "6",
         titulo: "Playoffs - Top 6",
-        columnas: [
-          {
-            titulo: "Reclasificación",
-            partidos: [
-              { etiqueta: "R1", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" },
-              { etiqueta: "R2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" }
-            ]
-          },
-          {
-            titulo: "Semifinales",
-            partidos: [
-              { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: "Ganador R2" },
-              { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: "Ganador R1" }
-            ]
-          },
-          {
-            titulo: "Final",
-            partidos: [
-              { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
-            ]
-          }
+        reclasificacion: [
+          { etiqueta: "R1", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" },
+          { etiqueta: "R2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" }
+        ],
+        semifinales: [
+          { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: "Ganador R2" },
+          { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: "Ganador R1" }
+        ],
+        final: [
+          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
         ]
       };
     }
 
     if (meta.clasificados === 8) {
       return {
+        tipo: "8",
         titulo: "Playoffs - Top 8",
-        columnas: [
-          {
-            titulo: "Cuartos",
-            partidos: [
-              { etiqueta: "C1", a: clasificados[0]?.equipo || "1°", b: clasificados[7]?.equipo || "8°" },
-              { etiqueta: "C2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" },
-              { etiqueta: "C3", a: clasificados[1]?.equipo || "2°", b: clasificados[6]?.equipo || "7°" },
-              { etiqueta: "C4", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" }
-            ]
-          },
-          {
-            titulo: "Semifinales",
-            partidos: [
-              { etiqueta: "SF1", a: "Ganador C1", b: "Ganador C2" },
-              { etiqueta: "SF2", a: "Ganador C3", b: "Ganador C4" }
-            ]
-          },
-          {
-            titulo: "Final",
-            partidos: [
-              { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
-            ]
-          }
+        cuartos: [
+          { etiqueta: "C1", a: clasificados[0]?.equipo || "1°", b: clasificados[7]?.equipo || "8°" },
+          { etiqueta: "C2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" },
+          { etiqueta: "C3", a: clasificados[1]?.equipo || "2°", b: clasificados[6]?.equipo || "7°" },
+          { etiqueta: "C4", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" }
+        ],
+        semifinales: [
+          { etiqueta: "SF1", a: "Ganador C1", b: "Ganador C2" },
+          { etiqueta: "SF2", a: "Ganador C3", b: "Ganador C4" }
+        ],
+        final: [
+          { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
         ]
       };
     }
 
     return {
+      tipo: "simple",
       titulo: `Playoffs - Top ${meta.clasificados}`,
-      columnas: [
-        {
-          titulo: "Playoffs",
-          partidos: [
-            { etiqueta: "P1", a: "Por definir", b: "Por definir" }
-          ]
-        }
+      partidos: [
+        { etiqueta: "P1", a: "Por definir", b: "Por definir" }
       ]
     };
+  }
+
+  function cardPlayoff(partido) {
+    return `
+      <div class="playoff-match-card">
+        <div class="playoff-match-label">${partido.etiqueta}</div>
+        <div class="playoff-team-box">${partido.a}</div>
+        <div class="playoff-team-box">${partido.b}</div>
+      </div>
+    `;
+  }
+
+  function connectorHtml(tipo = "short") {
+    return `
+      <div class="playoff-connector ${tipo}">
+        <div class="line-vertical"></div>
+      </div>
+    `;
   }
 
   function renderPlayoffs(cat) {
@@ -929,42 +1196,130 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    inyectarEstilosPlayoffDibujo();
+
     const playoffData = construirPlayoffData(cat);
     if (!playoffData) {
       playoffBody.innerHTML = "<p>Sin playoffs configurados.</p>";
       return;
     }
 
-    let html = `
-      <div class="playoff-bracket">
-        <h4 class="playoff-titulo">${playoffData.titulo}</h4>
-        <div class="playoff-columnas">
-    `;
+    if (playoffData.tipo === "4") {
+      playoffBody.innerHTML = `
+        <div class="playoff-bracket-dibujo">
+          <h4>${playoffData.titulo}</h4>
+          <div class="playoff-bracket-scroll">
+            <div class="playoff-grid">
+              <div class="playoff-stage top4-semis">
+                <div class="playoff-stage-title">Semifinales</div>
+                <div class="playoff-stage-list">
+                  ${playoffData.semifinales.map(cardPlayoff).join("")}
+                </div>
+              </div>
 
-    playoffData.columnas.forEach((columna) => {
-      html += `
-        <div class="playoff-columna">
-          <div class="playoff-columna-titulo">${columna.titulo}</div>
-          ${columna.partidos.map((partido) => `
-            <div class="playoff-match">
-              <div class="playoff-match-etiqueta">${partido.etiqueta}</div>
-              <div class="playoff-equipo-linea">${partido.a}</div>
-              <div class="playoff-equipo-linea">${partido.b}</div>
+              ${connectorHtml("tall")}
+
+              <div class="playoff-stage final-stage">
+                <div class="playoff-stage-title">Final</div>
+                <div class="playoff-stage-list">
+                  ${playoffData.final.map(cardPlayoff).join("")}
+                </div>
+              </div>
+
+              <div class="playoff-connector empty"><div class="line-vertical"></div></div>
+              <div></div>
             </div>
-          `).join("")}
+          </div>
         </div>
       `;
-    });
+      return;
+    }
 
-    html += `
+    if (playoffData.tipo === "6") {
+      playoffBody.innerHTML = `
+        <div class="playoff-bracket-dibujo">
+          <h4>${playoffData.titulo}</h4>
+          <div class="playoff-bracket-scroll">
+            <div class="playoff-grid">
+              <div class="playoff-stage top6-recla">
+                <div class="playoff-stage-title">Reclasificación</div>
+                <div class="playoff-stage-list">
+                  ${playoffData.reclasificacion.map(cardPlayoff).join("")}
+                </div>
+              </div>
+
+              ${connectorHtml("tall")}
+
+              <div class="playoff-stage top6-semis">
+                <div class="playoff-stage-title">Semifinales</div>
+                <div class="playoff-stage-list">
+                  ${playoffData.semifinales.map(cardPlayoff).join("")}
+                </div>
+              </div>
+
+              ${connectorHtml("tall")}
+
+              <div class="playoff-stage final-stage">
+                <div class="playoff-stage-title">Final</div>
+                <div class="playoff-stage-list">
+                  ${playoffData.final.map(cardPlayoff).join("")}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="playoff-note">1° y 2° avanzan directo a semifinales.</div>
+        </div>
+      `;
+      return;
+    }
+
+    if (playoffData.tipo === "8") {
+      playoffBody.innerHTML = `
+        <div class="playoff-bracket-dibujo">
+          <h4>${playoffData.titulo}</h4>
+          <div class="playoff-bracket-scroll">
+            <div class="playoff-grid">
+              <div class="playoff-stage top8-cuartos">
+                <div class="playoff-stage-title">Cuartos</div>
+                <div class="playoff-stage-list">
+                  ${playoffData.cuartos.map(cardPlayoff).join("")}
+                </div>
+              </div>
+
+              ${connectorHtml("tall")}
+
+              <div class="playoff-stage top8-semis">
+                <div class="playoff-stage-title">Semifinales</div>
+                <div class="playoff-stage-list">
+                  ${playoffData.semifinales.map(cardPlayoff).join("")}
+                </div>
+              </div>
+
+              ${connectorHtml("tall")}
+
+              <div class="playoff-stage final-stage">
+                <div class="playoff-stage-title">Final</div>
+                <div class="playoff-stage-list">
+                  ${playoffData.final.map(cardPlayoff).join("")}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    playoffBody.innerHTML = `
+      <div class="playoff-bracket-dibujo">
+        <h4>${playoffData.titulo}</h4>
+        <div class="playoff-simple-box">
+          ${playoffData.partidos.map(cardPlayoff).join("")}
         </div>
       </div>
     `;
-
-    playoffBody.innerHTML = html;
   }
 
-  // ===== DOCUMENTO IMPRIMIBLE =====
   function escapeHtml(texto) {
     return String(texto)
       .replace(/&/g, "&amp;")
@@ -993,60 +1348,157 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="fecha-bloque">
         <div class="fecha-header">
           <div class="fecha-numero">Fecha ${fechaObj.numero}</div>
-          <div class="fecha-dia">${escapeHtml(fechaObj.label || "Sin fecha")}</div>
+          <div class="fecha-dia">${escapeHtml(fechaObj.fechaISO ? formatFechaCortaArgentina(fechaObj.fechaISO) : "Sin fecha")}</div>
         </div>
 
-        <table class="tabla-fecha">
-          <thead>
-            <tr>
-              <th>Local</th>
-              <th>Visitante</th>
-              <th>Resultado</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${fechaObj.partidos.map((p) => `
-              <tr>
-                <td>${escapeHtml(p.local)}</td>
-                <td>${escapeHtml(p.visitante)}</td>
-                <td>${p.pl ?? "-"} - ${p.pv ?? "-"}</td>
-              </tr>
-            `).join("")}
-            ${
-              fechaObj.equipoLibre
-                ? `
+        ${
+          fechaObj.bloqueada
+            ? `
+              <div class="fecha-bloqueada-print">BLOQUEADA / DESCANSO</div>
+            `
+            : `
+              <table class="tabla-fecha">
+                <thead>
                   <tr>
-                    <td colspan="3" class="libre-row">
-                      Libre: ${escapeHtml(fechaObj.equipoLibre)}
-                    </td>
+                    <th>Local</th>
+                    <th>Visitante</th>
+                    <th>Resultado</th>
                   </tr>
-                `
-                : ""
-            }
-          </tbody>
-        </table>
+                </thead>
+                <tbody>
+                  ${fechaObj.partidos.map((p) => `
+                    <tr>
+                      <td>${escapeHtml(p.local)}</td>
+                      <td>${escapeHtml(p.visitante)}</td>
+                      <td>${p.pl ?? "-"} - ${p.pv ?? "-"}</td>
+                    </tr>
+                  `).join("")}
+                  ${
+                    fechaObj.equipoLibre
+                      ? `
+                        <tr>
+                          <td colspan="3" class="libre-row">
+                            Libre: ${escapeHtml(fechaObj.equipoLibre)}
+                          </td>
+                        </tr>
+                      `
+                      : ""
+                  }
+                </tbody>
+              </table>
+            `
+        }
       </div>
     `).join("");
 
-    const playoffHTML = playoffData ? `
-      <div class="seccion-playoffs">
-        <h2>${escapeHtml(playoffData.titulo)}</h2>
-        <div class="playoff-print-grid">
-          ${playoffData.columnas.map((columna) => `
-            <div class="playoff-print-col">
-              <div class="playoff-print-col-title">${escapeHtml(columna.titulo)}</div>
-              ${columna.partidos.map((partido) => `
-                <div class="playoff-print-match">
-                  <div class="playoff-print-etiqueta">${escapeHtml(partido.etiqueta)}</div>
-                  <div>${escapeHtml(partido.a)}</div>
-                  <div>${escapeHtml(partido.b)}</div>
-                </div>
-              `).join("")}
+    let playoffHTML = "";
+    if (playoffData) {
+      if (playoffData.tipo === "4") {
+        playoffHTML = `
+          <div class="seccion-playoffs">
+            <h2>${escapeHtml(playoffData.titulo)}</h2>
+            <div class="playoff-print-grid">
+              <div class="playoff-print-col">
+                <div class="playoff-print-col-title">Semifinales</div>
+                ${playoffData.semifinales.map((p) => `
+                  <div class="playoff-print-match">
+                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
+                    <div>${escapeHtml(p.a)}</div>
+                    <div>${escapeHtml(p.b)}</div>
+                  </div>
+                `).join("")}
+              </div>
+              <div class="playoff-print-col">
+                <div class="playoff-print-col-title">Final</div>
+                ${playoffData.final.map((p) => `
+                  <div class="playoff-print-match">
+                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
+                    <div>${escapeHtml(p.a)}</div>
+                    <div>${escapeHtml(p.b)}</div>
+                  </div>
+                `).join("")}
+              </div>
             </div>
-          `).join("")}
-        </div>
-      </div>
-    ` : "";
+          </div>
+        `;
+      } else if (playoffData.tipo === "6") {
+        playoffHTML = `
+          <div class="seccion-playoffs">
+            <h2>${escapeHtml(playoffData.titulo)}</h2>
+            <div class="playoff-print-grid">
+              <div class="playoff-print-col">
+                <div class="playoff-print-col-title">Reclasificación</div>
+                ${playoffData.reclasificacion.map((p) => `
+                  <div class="playoff-print-match">
+                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
+                    <div>${escapeHtml(p.a)}</div>
+                    <div>${escapeHtml(p.b)}</div>
+                  </div>
+                `).join("")}
+              </div>
+              <div class="playoff-print-col">
+                <div class="playoff-print-col-title">Semifinales</div>
+                ${playoffData.semifinales.map((p) => `
+                  <div class="playoff-print-match">
+                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
+                    <div>${escapeHtml(p.a)}</div>
+                    <div>${escapeHtml(p.b)}</div>
+                  </div>
+                `).join("")}
+              </div>
+              <div class="playoff-print-col">
+                <div class="playoff-print-col-title">Final</div>
+                ${playoffData.final.map((p) => `
+                  <div class="playoff-print-match">
+                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
+                    <div>${escapeHtml(p.a)}</div>
+                    <div>${escapeHtml(p.b)}</div>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (playoffData.tipo === "8") {
+        playoffHTML = `
+          <div class="seccion-playoffs">
+            <h2>${escapeHtml(playoffData.titulo)}</h2>
+            <div class="playoff-print-grid">
+              <div class="playoff-print-col">
+                <div class="playoff-print-col-title">Cuartos</div>
+                ${playoffData.cuartos.map((p) => `
+                  <div class="playoff-print-match">
+                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
+                    <div>${escapeHtml(p.a)}</div>
+                    <div>${escapeHtml(p.b)}</div>
+                  </div>
+                `).join("")}
+              </div>
+              <div class="playoff-print-col">
+                <div class="playoff-print-col-title">Semifinales</div>
+                ${playoffData.semifinales.map((p) => `
+                  <div class="playoff-print-match">
+                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
+                    <div>${escapeHtml(p.a)}</div>
+                    <div>${escapeHtml(p.b)}</div>
+                  </div>
+                `).join("")}
+              </div>
+              <div class="playoff-print-col">
+                <div class="playoff-print-col-title">Final</div>
+                ${playoffData.final.map((p) => `
+                  <div class="playoff-print-match">
+                    <div class="playoff-print-etiqueta">${escapeHtml(p.etiqueta)}</div>
+                    <div>${escapeHtml(p.a)}</div>
+                    <div>${escapeHtml(p.b)}</div>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
 
     return `
       <!DOCTYPE html>
@@ -1055,32 +1507,19 @@ document.addEventListener("DOMContentLoaded", () => {
         <meta charset="UTF-8">
         <title>Fixture ${escapeHtml(cat)}</title>
         <style>
-          * {
-            box-sizing: border-box;
-          }
-
+          * { box-sizing: border-box; }
           body {
             font-family: Arial, Helvetica, sans-serif;
             margin: 24px;
             color: #111827;
           }
-
-          h1 {
-            margin: 0 0 8px 0;
-            font-size: 28px;
-          }
-
-          h2 {
-            margin: 24px 0 12px 0;
-            font-size: 20px;
-          }
-
+          h1 { margin: 0 0 8px 0; font-size: 28px; }
+          h2 { margin: 24px 0 12px 0; font-size: 20px; }
           .subtitulo {
             margin-bottom: 16px;
             color: #374151;
             font-size: 14px;
           }
-
           .meta-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(220px, 1fr));
@@ -1088,12 +1527,10 @@ document.addEventListener("DOMContentLoaded", () => {
             margin-bottom: 24px;
             font-size: 14px;
           }
-
           .fecha-bloque {
             margin-bottom: 22px;
             page-break-inside: avoid;
           }
-
           .fecha-header {
             background: #123d8d;
             color: white;
@@ -1104,23 +1541,19 @@ document.addEventListener("DOMContentLoaded", () => {
             align-items: center;
             gap: 16px;
           }
-
           .fecha-numero {
             font-weight: 800;
             font-size: 18px;
           }
-
           .fecha-dia {
             font-size: 14px;
             font-weight: 600;
           }
-
           .tabla-fecha {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 8px;
           }
-
           .tabla-fecha th,
           .tabla-fecha td {
             border: 1px solid #d1d5db;
@@ -1128,28 +1561,31 @@ document.addEventListener("DOMContentLoaded", () => {
             text-align: left;
             font-size: 14px;
           }
-
           .tabla-fecha th {
             background: #eff6ff;
           }
-
           .libre-row {
             background: #f3f4f6;
             font-weight: 700;
             text-align: center !important;
           }
-
+          .fecha-bloqueada-print {
+            border: 1px solid #d1d5db;
+            border-top: none;
+            padding: 18px 12px;
+            font-weight: 800;
+            text-align: center;
+            background: #f3f4f6;
+          }
           .seccion-playoffs {
             margin-top: 32px;
             page-break-inside: avoid;
           }
-
           .playoff-print-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 16px;
           }
-
           .playoff-print-col-title {
             background: #123d8d;
             color: white;
@@ -1158,7 +1594,6 @@ document.addEventListener("DOMContentLoaded", () => {
             font-weight: 800;
             margin-bottom: 10px;
           }
-
           .playoff-print-match {
             border: 1px solid #d1d5db;
             border-radius: 8px;
@@ -1166,30 +1601,21 @@ document.addEventListener("DOMContentLoaded", () => {
             margin-bottom: 10px;
             page-break-inside: avoid;
           }
-
           .playoff-print-etiqueta {
             font-size: 12px;
             color: #6b7280;
             font-weight: 800;
             margin-bottom: 6px;
           }
-
           @media print {
-            body {
-              margin: 12mm;
-            }
-
-            button {
-              display: none !important;
-            }
+            body { margin: 12mm; }
+            button { display: none !important; }
           }
         </style>
       </head>
       <body>
         <h1>Liga Maxi Básquet</h1>
-        <div class="subtitulo">
-          Fixture oficial imprimible
-        </div>
+        <div class="subtitulo">Fixture oficial imprimible</div>
 
         <div class="meta-grid">
           <div><strong>Categoría:</strong> ${escapeHtml(cat)}</div>
