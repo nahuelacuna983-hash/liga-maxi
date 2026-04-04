@@ -769,6 +769,137 @@ document.addEventListener("DOMContentLoaded", () => {
     `).join("");
   }
 
+  function construirPlayoffData(cat) {
+    const data = fixturesPorCategoria[cat];
+    const meta = data?.meta;
+    if (!meta || meta.playoffs !== "si") return null;
+
+    const tabla = calcularTabla(cat);
+    const clasificados = tabla.slice(0, meta.clasificados).map((e, i) => ({
+      seed: i + 1,
+      equipo: e.equipo
+    }));
+
+    if (meta.clasificados === 4) {
+      return {
+        titulo: "Playoffs - Top 4",
+        columnas: [
+          {
+            titulo: "Semifinales",
+            partidos: [
+              { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: clasificados[3]?.equipo || "4°" },
+              { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: clasificados[2]?.equipo || "3°" }
+            ]
+          },
+          {
+            titulo: "Final",
+            partidos: [
+              { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
+            ]
+          }
+        ]
+      };
+    }
+
+    if (meta.clasificados === 6 && cat === "Maxi +48") {
+      return {
+        titulo: "Playoffs Maxi +48 - Top 6",
+        columnas: [
+          {
+            titulo: "Reclasificación",
+            partidos: [
+              { etiqueta: "R1", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" },
+              { etiqueta: "R2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" }
+            ]
+          },
+          {
+            titulo: "Semifinales",
+            partidos: [
+              { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: "Ganador R2" },
+              { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: "Ganador R1" }
+            ]
+          },
+          {
+            titulo: "Final",
+            partidos: [
+              { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
+            ]
+          }
+        ]
+      };
+    }
+
+    if (meta.clasificados === 6) {
+      return {
+        titulo: "Playoffs - Top 6",
+        columnas: [
+          {
+            titulo: "Reclasificación",
+            partidos: [
+              { etiqueta: "R1", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" },
+              { etiqueta: "R2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" }
+            ]
+          },
+          {
+            titulo: "Semifinales",
+            partidos: [
+              { etiqueta: "SF1", a: clasificados[0]?.equipo || "1°", b: "Ganador R2" },
+              { etiqueta: "SF2", a: clasificados[1]?.equipo || "2°", b: "Ganador R1" }
+            ]
+          },
+          {
+            titulo: "Final",
+            partidos: [
+              { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
+            ]
+          }
+        ]
+      };
+    }
+
+    if (meta.clasificados === 8) {
+      return {
+        titulo: "Playoffs - Top 8",
+        columnas: [
+          {
+            titulo: "Cuartos",
+            partidos: [
+              { etiqueta: "C1", a: clasificados[0]?.equipo || "1°", b: clasificados[7]?.equipo || "8°" },
+              { etiqueta: "C2", a: clasificados[3]?.equipo || "4°", b: clasificados[4]?.equipo || "5°" },
+              { etiqueta: "C3", a: clasificados[1]?.equipo || "2°", b: clasificados[6]?.equipo || "7°" },
+              { etiqueta: "C4", a: clasificados[2]?.equipo || "3°", b: clasificados[5]?.equipo || "6°" }
+            ]
+          },
+          {
+            titulo: "Semifinales",
+            partidos: [
+              { etiqueta: "SF1", a: "Ganador C1", b: "Ganador C2" },
+              { etiqueta: "SF2", a: "Ganador C3", b: "Ganador C4" }
+            ]
+          },
+          {
+            titulo: "Final",
+            partidos: [
+              { etiqueta: "FINAL", a: "Ganador SF1", b: "Ganador SF2" }
+            ]
+          }
+        ]
+      };
+    }
+
+    return {
+      titulo: `Playoffs - Top ${meta.clasificados}`,
+      columnas: [
+        {
+          titulo: "Playoffs",
+          partidos: [
+            { etiqueta: "P1", a: "Por definir", b: "Por definir" }
+          ]
+        }
+      ]
+    };
+  }
+
   function renderPlayoffs(cat) {
     const data = fixturesPorCategoria[cat];
     const meta = data?.meta;
@@ -778,53 +909,39 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const clasificados = meta.clasificados;
-
-    if (cat === "Maxi +48" && clasificados === 6) {
-      playoffBody.innerHTML = `
-        <strong>Playoffs Maxi +48 - Top 6</strong><br>
-        1° y 2° avanzan directo a semifinales<br>
-        3° vs 6°<br>
-        4° vs 5°
-      `;
+    const playoffData = construirPlayoffData(cat);
+    if (!playoffData) {
+      playoffBody.innerHTML = "<p>Sin playoffs configurados.</p>";
       return;
     }
 
-    if (clasificados === 4) {
-      playoffBody.innerHTML = `
-        <strong>Playoffs - Top 4</strong><br>
-        1° vs 4°<br>
-        2° vs 3°<br>
-        Ganadores a la final
-      `;
-      return;
-    }
-
-    if (clasificados === 6) {
-      playoffBody.innerHTML = `
-        <strong>Playoffs - Top 6</strong><br>
-        1° y 2° pasan directo a semifinales<br>
-        3° vs 6°<br>
-        4° vs 5°
-      `;
-      return;
-    }
-
-    if (clasificados === 8) {
-      playoffBody.innerHTML = `
-        <strong>Playoffs - Top 8</strong><br>
-        1° vs 8°<br>
-        4° vs 5°<br>
-        2° vs 7°<br>
-        3° vs 6°
-      `;
-      return;
-    }
-
-    playoffBody.innerHTML = `
-      <strong>Playoffs - Top ${clasificados}</strong><br>
-      Configuración preparada. En el próximo paso armamos los cruces automáticos para cualquier cantidad.
+    let html = `
+      <div class="playoff-bracket">
+        <h4 class="playoff-titulo">${playoffData.titulo}</h4>
+        <div class="playoff-columnas">
     `;
+
+    playoffData.columnas.forEach((columna) => {
+      html += `
+        <div class="playoff-columna">
+          <div class="playoff-columna-titulo">${columna.titulo}</div>
+          ${columna.partidos.map((partido) => `
+            <div class="playoff-match">
+              <div class="playoff-match-etiqueta">${partido.etiqueta}</div>
+              <div class="playoff-equipo-linea">${partido.a}</div>
+              <div class="playoff-equipo-linea">${partido.b}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+
+    playoffBody.innerHTML = html;
   }
 
   function render() {

@@ -625,3 +625,60 @@ td:nth-child(2) {
   height: 30px;
   object-fit: contain;
 }
+.playoff-bracket {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.playoff-titulo {
+  margin-bottom: 14px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.playoff-columnas {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  min-width: 700px;
+}
+
+.playoff-columna {
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.playoff-columna-titulo {
+  background: linear-gradient(180deg, #1b4f8a, #0e2a57);
+  color: white;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.playoff-match {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.playoff-match-etiqueta {
+  font-size: 12px;
+  font-weight: 900;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.playoff-equipo-linea {
+  padding: 8px 0;
+  font-weight: 700;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.playoff-equipo-linea:first-of-type {
+  border-top: none;
+}
