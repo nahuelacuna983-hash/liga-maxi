@@ -86,6 +86,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const puntosVisitante = document.getElementById("puntos-visitante");
   const guardarBtn = document.getElementById("guardar-resultado");
 
+  // ===== BOTON IMPRIMIR =====
+  let imprimirFixtureBtn = document.getElementById("imprimir-fixture-btn");
+
+  if (!imprimirFixtureBtn && fixtureBody) {
+    imprimirFixtureBtn = document.createElement("button");
+    imprimirFixtureBtn.id = "imprimir-fixture-btn";
+    imprimirFixtureBtn.type = "button";
+    imprimirFixtureBtn.textContent = "Imprimir fixture";
+    imprimirFixtureBtn.style.margin = "10px 0 14px 0";
+    imprimirFixtureBtn.style.padding = "10px 16px";
+    imprimirFixtureBtn.style.border = "none";
+    imprimirFixtureBtn.style.borderRadius = "10px";
+    imprimirFixtureBtn.style.background = "#2453d4";
+    imprimirFixtureBtn.style.color = "#fff";
+    imprimirFixtureBtn.style.fontWeight = "700";
+    imprimirFixtureBtn.style.cursor = "pointer";
+
+    fixtureBody.parentNode.insertBefore(imprimirFixtureBtn, fixtureBody);
+  }
+
   function mostrarLiga() {
     vistaLiga.style.display = "block";
     vistaGestion.style.display = "none";
@@ -944,6 +964,270 @@ document.addEventListener("DOMContentLoaded", () => {
     playoffBody.innerHTML = html;
   }
 
+  // ===== DOCUMENTO IMPRIMIBLE =====
+  function escapeHtml(texto) {
+    return String(texto)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function construirHTMLImprimible(cat) {
+    const data = fixturesPorCategoria[cat];
+    if (!data || !data.fechas || !data.fechas.length) {
+      return `
+        <html>
+          <body>
+            <h1>Sin fixture generado</h1>
+          </body>
+        </html>
+      `;
+    }
+
+    const meta = data.meta || {};
+    const playoffData = meta.playoffs === "si" ? construirPlayoffData(cat) : null;
+
+    const fechasHTML = data.fechas.map((fechaObj) => `
+      <div class="fecha-bloque">
+        <div class="fecha-header">
+          <div class="fecha-numero">Fecha ${fechaObj.numero}</div>
+          <div class="fecha-dia">${escapeHtml(fechaObj.label || "Sin fecha")}</div>
+        </div>
+
+        <table class="tabla-fecha">
+          <thead>
+            <tr>
+              <th>Local</th>
+              <th>Visitante</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${fechaObj.partidos.map((p) => `
+              <tr>
+                <td>${escapeHtml(p.local)}</td>
+                <td>${escapeHtml(p.visitante)}</td>
+                <td>${p.pl ?? "-"} - ${p.pv ?? "-"}</td>
+              </tr>
+            `).join("")}
+            ${
+              fechaObj.equipoLibre
+                ? `
+                  <tr>
+                    <td colspan="3" class="libre-row">
+                      Libre: ${escapeHtml(fechaObj.equipoLibre)}
+                    </td>
+                  </tr>
+                `
+                : ""
+            }
+          </tbody>
+        </table>
+      </div>
+    `).join("");
+
+    const playoffHTML = playoffData ? `
+      <div class="seccion-playoffs">
+        <h2>${escapeHtml(playoffData.titulo)}</h2>
+        <div class="playoff-print-grid">
+          ${playoffData.columnas.map((columna) => `
+            <div class="playoff-print-col">
+              <div class="playoff-print-col-title">${escapeHtml(columna.titulo)}</div>
+              ${columna.partidos.map((partido) => `
+                <div class="playoff-print-match">
+                  <div class="playoff-print-etiqueta">${escapeHtml(partido.etiqueta)}</div>
+                  <div>${escapeHtml(partido.a)}</div>
+                  <div>${escapeHtml(partido.b)}</div>
+                </div>
+              `).join("")}
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    ` : "";
+
+    return `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <title>Fixture ${escapeHtml(cat)}</title>
+        <style>
+          * {
+            box-sizing: border-box;
+          }
+
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 24px;
+            color: #111827;
+          }
+
+          h1 {
+            margin: 0 0 8px 0;
+            font-size: 28px;
+          }
+
+          h2 {
+            margin: 24px 0 12px 0;
+            font-size: 20px;
+          }
+
+          .subtitulo {
+            margin-bottom: 16px;
+            color: #374151;
+            font-size: 14px;
+          }
+
+          .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(220px, 1fr));
+            gap: 8px 18px;
+            margin-bottom: 24px;
+            font-size: 14px;
+          }
+
+          .fecha-bloque {
+            margin-bottom: 22px;
+            page-break-inside: avoid;
+          }
+
+          .fecha-header {
+            background: #123d8d;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+          }
+
+          .fecha-numero {
+            font-weight: 800;
+            font-size: 18px;
+          }
+
+          .fecha-dia {
+            font-size: 14px;
+            font-weight: 600;
+          }
+
+          .tabla-fecha {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+          }
+
+          .tabla-fecha th,
+          .tabla-fecha td {
+            border: 1px solid #d1d5db;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 14px;
+          }
+
+          .tabla-fecha th {
+            background: #eff6ff;
+          }
+
+          .libre-row {
+            background: #f3f4f6;
+            font-weight: 700;
+            text-align: center !important;
+          }
+
+          .seccion-playoffs {
+            margin-top: 32px;
+            page-break-inside: avoid;
+          }
+
+          .playoff-print-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+          }
+
+          .playoff-print-col-title {
+            background: #123d8d;
+            color: white;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-weight: 800;
+            margin-bottom: 10px;
+          }
+
+          .playoff-print-match {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            page-break-inside: avoid;
+          }
+
+          .playoff-print-etiqueta {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 800;
+            margin-bottom: 6px;
+          }
+
+          @media print {
+            body {
+              margin: 12mm;
+            }
+
+            button {
+              display: none !important;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Liga Maxi Básquet</h1>
+        <div class="subtitulo">
+          Fixture oficial imprimible
+        </div>
+
+        <div class="meta-grid">
+          <div><strong>Categoría:</strong> ${escapeHtml(cat)}</div>
+          <div><strong>Formato:</strong> ${escapeHtml(meta.formato || "-")}</div>
+          <div><strong>Equipos:</strong> ${escapeHtml(meta.equipos || "-")}</div>
+          <div><strong>Playoffs:</strong> ${meta.playoffs === "si" ? `Sí (${escapeHtml(meta.clasificados)})` : "No"}</div>
+          <div><strong>Inicio:</strong> ${escapeHtml(meta.inicio || "-")}</div>
+          <div><strong>Fin:</strong> ${escapeHtml(meta.fin || "-")}</div>
+        </div>
+
+        ${fechasHTML}
+        ${playoffHTML}
+      </body>
+      </html>
+    `;
+  }
+
+  function imprimirFixtureActual() {
+    const cat = categoriaSelect.value;
+    const html = construirHTMLImprimible(cat);
+    const ventana = window.open("", "_blank", "width=1100,height=800");
+
+    if (!ventana) {
+      alert("El navegador bloqueó la ventana emergente. Permití pop-ups para imprimir.");
+      return;
+    }
+
+    ventana.document.open();
+    ventana.document.write(html);
+    ventana.document.close();
+
+    ventana.focus();
+
+    setTimeout(() => {
+      ventana.print();
+    }, 400);
+  }
+
   function render() {
     const cat = categoriaSelect.value;
     renderTabla(cat);
@@ -1000,6 +1284,10 @@ document.addEventListener("DOMContentLoaded", () => {
   plannerCalcular.onclick = calcularPlanificacion;
   generarBtn.onclick = generarDesdePlanner;
   guardarBtn.onclick = guardarResultado;
+
+  if (imprimirFixtureBtn) {
+    imprimirFixtureBtn.onclick = imprimirFixtureActual;
+  }
 
   Object.keys(categorias).forEach((cat) => {
     const equipos = categorias[cat];
