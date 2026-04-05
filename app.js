@@ -52,7 +52,6 @@ const categorias = {
 };
 
 let fixturesPorCategoria = {};
-let fixturesPorCategoria = {};
 
 function crearTorneoBase(cat) {
   const equipos = categorias[cat];
