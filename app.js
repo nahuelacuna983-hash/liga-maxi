@@ -1,5 +1,7 @@
 // ===== CONFIG =====
 const ADMIN_PASSWORD = "admin123";
+const STORAGE_KEY = "ligaMaxiTorneos";
+const STORAGE_VERSION = 1;
 
 // ===== DATA =====
 const categorias = {
@@ -50,6 +52,157 @@ const categorias = {
 };
 
 let fixturesPorCategoria = {};
+let fixturesPorCategoria = {};
+
+function crearTorneoBase(cat) {
+  const equipos = categorias[cat];
+  const rondas = generarRondasPorFormato(equipos, "apertura");
+  const fechas = asignarFechasARondas(rondas, []);
+
+  return {
+    meta: {
+      categoria: cat,
+      equipos: equipos.length,
+      formato: "apertura",
+      playoffs: "no",
+      clasificados: cat === "Maxi +48" ? 6 : 4,
+      diaJuego: 0,
+      inicio: "",
+      fin: "",
+      frecuencia: 1,
+      bloqueadas: [],
+      jornadasBase: rondas.length,
+      detallePlayoff: { cuartos: 0, reclasificacion: 0, semifinales: 0, final: 0, total: 0 },
+      jornadasTotales: rondas.length,
+      seriesPlayoff: { cuartos: 1, reclasificacion: 1, semifinales: 1, final: 3 },
+      calendarioPlayoff: { cuartos: [], reclasificacion: [], semifinales: [], final: [] }
+    },
+    fechas
+  };
+}
+
+function crearEstadoInicial() {
+  const base = {};
+
+  Object.keys(categorias).forEach((cat) => {
+    base[cat] = crearTorneoBase(cat);
+  });
+
+  return base;
+}
+
+function mergeProfundo(base, extra) {
+  if (Array.isArray(base) || Array.isArray(extra)) {
+    return extra ?? base;
+  }
+
+  if (
+    base &&
+    typeof base === "object" &&
+    extra &&
+    typeof extra === "object"
+  ) {
+    const out = { ...base };
+    Object.keys(extra).forEach((key) => {
+      if (key in base) {
+        out[key] = mergeProfundo(base[key], extra[key]);
+      } else {
+        out[key] = extra[key];
+      }
+    });
+    return out;
+  }
+
+  return extra ?? base;
+}
+
+function normalizarTorneo(cat, torneo) {
+  const base = crearTorneoBase(cat);
+
+  if (!torneo || typeof torneo !== "object") {
+    return base;
+  }
+
+  const normalizado = mergeProfundo(base, torneo);
+
+  if (!Array.isArray(normalizado.fechas)) {
+    normalizado.fechas = base.fechas;
+  }
+
+  normalizado.fechas = normalizado.fechas.map((fecha, index) => ({
+    numero: Number.isFinite(Number(fecha?.numero)) ? Number(fecha.numero) : index + 1,
+    fechaISO: fecha?.fechaISO ?? null,
+    label: fecha?.label ?? `Fecha ${index + 1}`,
+    equipoLibre: fecha?.equipoLibre ?? null,
+    bloqueada: Boolean(fecha?.bloqueada),
+    partidos: Array.isArray(fecha?.partidos)
+      ? fecha.partidos.map((p) => ({
+          local: p?.local ?? "A definir",
+          visitante: p?.visitante ?? "A definir",
+          pl: p?.pl ?? null,
+          pv: p?.pv ?? null,
+          fechaNumero: Number.isFinite(Number(p?.fechaNumero)) ? Number(p.fechaNumero) : index + 1,
+          fechaISO: p?.fechaISO ?? fecha?.fechaISO ?? null
+        }))
+      : []
+  }));
+
+  return normalizado;
+}
+
+function guardarEnStorage() {
+  try {
+    const payload = {
+      version: STORAGE_VERSION,
+      actualizadoEn: new Date().toISOString(),
+      torneos: fixturesPorCategoria
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch (error) {
+    console.error("No se pudo guardar en localStorage:", error);
+  }
+}
+
+function cargarDesdeStorage() {
+  const base = crearEstadoInicial();
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+
+    if (!raw) {
+      fixturesPorCategoria = base;
+      guardarEnStorage();
+      return;
+    }
+
+    const parsed = JSON.parse(raw);
+    const guardado = parsed?.torneos;
+
+    if (!guardado || typeof guardado !== "object") {
+      fixturesPorCategoria = base;
+      guardarEnStorage();
+      return;
+    }
+
+    const combinado = {};
+
+    Object.keys(categorias).forEach((cat) => {
+      combinado[cat] = normalizarTorneo(cat, guardado[cat]);
+    });
+
+    fixturesPorCategoria = combinado;
+  } catch (error) {
+    console.error("No se pudo leer localStorage, se recrea el estado base:", error);
+    fixturesPorCategoria = base;
+    guardarEnStorage();
+  }
+}
+
+function resetearStorageTorneos() {
+  fixturesPorCategoria = crearEstadoInicial();
+  guardarEnStorage();
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== DOM =====
@@ -1055,7 +1208,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const fixtureConFechas = asignarFechasARondas(rondas, plan.calendarioCompleto);
 
-    fixturesPorCategoria[plan.categoria] = {
+        fixturesPorCategoria[plan.categoria] = {
       meta: {
         categoria: plan.categoria,
         equipos: plan.equipos,
@@ -1076,7 +1229,10 @@ document.addEventListener("DOMContentLoaded", () => {
       fechas: fixtureConFechas
     };
 
+    guardarEnStorage();
+
     categoriaSelect.value = plan.categoria;
+    plannerCategoria.value = plan.categoria;
     render();
     mostrarLiga();
   }
@@ -1791,7 +1947,7 @@ Cruces posibles
   }
 
   // ===== RESULTADOS =====
-  function guardarResultado() {
+    function guardarResultado() {
     const cat = categoriaSelect.value;
     const index = Number(partidoSelect.value);
     const partidos = obtenerPartidosPlanos(cat);
@@ -1801,6 +1957,8 @@ Cruces posibles
 
     partido.pl = puntosLocal.value === "" ? null : Number(puntosLocal.value);
     partido.pv = puntosVisitante.value === "" ? null : Number(puntosVisitante.value);
+
+    guardarEnStorage();
 
     puntosLocal.value = "";
     puntosVisitante.value = "";
@@ -1857,36 +2015,11 @@ Cruces posibles
     imprimirFixtureBtn.onclick = imprimirFixtureActual;
   }
 
-  // ===== INICIO =====
-  Object.keys(categorias).forEach((cat) => {
-    const equipos = categorias[cat];
-    const rondas = generarRondasPorFormato(equipos, "apertura");
-    const fechas = asignarFechasARondas(rondas, []);
-
-    fixturesPorCategoria[cat] = {
-      meta: {
-        categoria: cat,
-        equipos: equipos.length,
-        formato: "apertura",
-        playoffs: "no",
-        clasificados: 4,
-        diaJuego: 0,
-        inicio: "",
-        fin: "",
-        frecuencia: 1,
-        bloqueadas: [],
-        jornadasBase: rondas.length,
-        detallePlayoff: { cuartos: 0, reclasificacion: 0, semifinales: 0, final: 0, total: 0 },
-        jornadasTotales: rondas.length,
-        seriesPlayoff: { cuartos: 1, reclasificacion: 1, semifinales: 1, final: 3 },
-        calendarioPlayoff: { cuartos: [], reclasificacion: [], semifinales: [], final: [] }
-      },
-      fechas
-    };
-  });
+   // ===== INICIO =====
+  cargarDesdeStorage();
 
   plannerCategoria.value = categoriaSelect.value;
-  plannerEquipos.value = categorias[categoriaSelect.value]?.length || 10;
+  plannerEquipos.value = fixturesPorCategoria[categoriaSelect.value]?.meta?.equipos || categorias[categoriaSelect.value]?.length || 10;
   actualizarVisibilidadSeries();
   render();
   mostrarLiga();
