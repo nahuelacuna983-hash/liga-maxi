@@ -1753,19 +1753,25 @@ document.addEventListener("DOMContentLoaded", () => {
     if (fechas.reclasificacion?.length) fechas.reclasificacion.forEach((f, i) => linesFechas.push(`• Reclasificación - Juego ${i + 1}: ${formatFechaBonita(f)}`));
     if (fechas.semifinales?.length) fechas.semifinales.forEach((f, i) => linesFechas.push(`• Semifinales - Juego ${i + 1}: ${formatFechaBonita(f)}`));
     if (fechas.final?.length) fechas.final.forEach((f, i) => linesFechas.push(`• Final - Juego ${i + 1}: ${formatFechaBonita(f)}`));
-
     if (meta.clasificados === 8) {
       return `Fechas de playoffs
 ${linesFechas.join("\n")}
 
-Cruces posibles
-• Cuarto 1: 1° vs 8° (${textoSeries(series.cuartos)})
-• Cuarto 2: 4° vs 5° (${textoSeries(series.cuartos)})
-• Cuarto 3: 2° vs 7° (${textoSeries(series.cuartos)})
-• Cuarto 4: 3° vs 6° (${textoSeries(series.cuartos)})
-• Semifinal 1: Ganador QF1 vs Ganador QF2 (${textoSeries(series.semifinales)})
-• Semifinal 2: Ganador QF3 vs Ganador QF4 (${textoSeries(series.semifinales)})
-• Final: Ganador SF1 vs Ganador SF2 (${textoSeries(series.final)})`;
+Formato (Top 8)
+• Los cruces se definirán según las posiciones finales de la fase regular
+
+Cuartos de final
+• 1° vs 8° (${textoSeries(series.cuartos)})
+• 4° vs 5° (${textoSeries(series.cuartos)})
+• 2° vs 7° (${textoSeries(series.cuartos)})
+• 3° vs 6° (${textoSeries(series.cuartos)})
+
+Semifinales
+• Ganador 1°/8° vs Ganador 4°/5° (${textoSeries(series.semifinales)})
+• Ganador 2°/7° vs Ganador 3°/6° (${textoSeries(series.semifinales)})
+
+Final
+• Ganador SF1 vs Ganador SF2 (${textoSeries(series.final)})`;
     }
 
     if (meta.clasificados === 6) {
@@ -1787,14 +1793,19 @@ Final
 • Ganador SF1 vs Ganador SF2 (${textoSeries(series.final)})`;
     }
 
-    if (meta.clasificados === 4) {
+        if (meta.clasificados === 4) {
       return `Fechas de playoffs
 ${linesFechas.join("\n")}
 
-Cruces posibles
-• Semifinal 1: 1° vs 4° (${textoSeries(series.semifinales)})
-• Semifinal 2: 2° vs 3° (${textoSeries(series.semifinales)})
-• Final: Ganador SF1 vs Ganador SF2 (${textoSeries(series.final)})`;
+Formato (Top 4)
+• Los cruces se definirán según las posiciones finales de la fase regular
+
+Semifinales
+• 1° vs 4° (${textoSeries(series.semifinales)})
+• 2° vs 3° (${textoSeries(series.semifinales)})
+
+Final
+• Ganador SF1 vs Ganador SF2 (${textoSeries(series.final)})`;
     }
 
     return "Formato a definir";
