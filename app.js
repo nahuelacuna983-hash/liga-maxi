@@ -242,6 +242,11 @@ const delegadoPartidoSelect = document.getElementById("delegado-partido-select")
 const delegadoPuntosLocal = document.getElementById("delegado-puntos-local");
 const delegadoPuntosVisitante = document.getElementById("delegado-puntos-visitante");
 const delegadoGuardarBtn = document.getElementById("delegado-guardar-resultado");
+function sincronizarCategoriaEnVistas(cat) {
+  if (categoriaSelect) categoriaSelect.value = cat;
+  if (delegadoCategoria) delegadoCategoria.value = cat;
+  if (plannerCategoria) plannerCategoria.value = cat;
+} 
 function cargarPartidosDelegado() {
   const cat = delegadoCategoria.value;
   const partidos = obtenerPartidosPlanos(cat);
@@ -256,7 +261,17 @@ function cargarPartidosDelegado() {
   });
 }
 
-delegadoCategoria.onchange = cargarPartidosDelegado;
+function sincronizarCategoriaEnVistas(cat) {
+  if (categoriaSelect) categoriaSelect.value = cat;
+  if (delegadoCategoria) delegadoCategoria.value = cat;
+  if (plannerCategoria) plannerCategoria.value = cat;
+}
+
+delegadoCategoria.onchange = () => {
+  sincronizarCategoriaEnVistas(delegadoCategoria.value);
+  cargarPartidosDelegado();
+  render();
+};
 
 delegadoGuardarBtn.onclick = () => {
   const cat = delegadoCategoria.value;
@@ -274,6 +289,8 @@ delegadoGuardarBtn.onclick = () => {
   delegadoPuntosLocal.value = "";
   delegadoPuntosVisitante.value = "";
 
+  sincronizarCategoriaEnVistas(cat);
+  cargarPartidosDelegado();
   render();
 };
 
@@ -2083,9 +2100,14 @@ tabAsociacion.onclick = mostrarAsociacion;
    // ===== INICIO =====
   cargarDesdeStorage();
 
-  plannerCategoria.value = categoriaSelect.value;
-  plannerEquipos.value = fixturesPorCategoria[categoriaSelect.value]?.meta?.equipos || categorias[categoriaSelect.value]?.length || 10;
-  actualizarVisibilidadSeries();
-  render();
-  mostrarPublico();
+plannerCategoria.value = categoriaSelect.value;
+plannerEquipos.value = fixturesPorCategoria[categoriaSelect.value]?.meta?.equipos || categorias[categoriaSelect.value]?.length || 10;
+actualizarVisibilidadSeries();
+
+// 🔥 ESTA LÍNEA FALTABA
+sincronizarCategoriaEnVistas(categoriaSelect.value);
+cargarPartidosDelegado();
+
+render();
+mostrarPublico();
 });
