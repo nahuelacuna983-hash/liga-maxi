@@ -237,16 +237,18 @@ const vistaAsociacion = document.getElementById("vista-gestion");
   const plannerComparacion = document.getElementById("planner-comparacion");
   const generarBtn = document.getElementById("generar-fixture");
 
-  const delegadoCategoria = document.getElementById("delegado-categoria-select");
+    const delegadoCategoria = document.getElementById("delegado-categoria-select");
 const delegadoPartidoSelect = document.getElementById("delegado-partido-select");
 const delegadoPuntosLocal = document.getElementById("delegado-puntos-local");
 const delegadoPuntosVisitante = document.getElementById("delegado-puntos-visitante");
 const delegadoGuardarBtn = document.getElementById("delegado-guardar-resultado");
+
 function sincronizarCategoriaEnVistas(cat) {
   if (categoriaSelect) categoriaSelect.value = cat;
   if (delegadoCategoria) delegadoCategoria.value = cat;
   if (plannerCategoria) plannerCategoria.value = cat;
-} 
+}
+
 function cargarPartidosDelegado() {
   const cat = delegadoCategoria.value;
   const partidos = obtenerPartidosPlanos(cat);
@@ -259,12 +261,6 @@ function cargarPartidosDelegado() {
     option.textContent = `Fecha ${p.fechaNumero} - ${p.local} vs ${p.visitante}`;
     delegadoPartidoSelect.appendChild(option);
   });
-}
-
-function sincronizarCategoriaEnVistas(cat) {
-  if (categoriaSelect) categoriaSelect.value = cat;
-  if (delegadoCategoria) delegadoCategoria.value = cat;
-  if (plannerCategoria) plannerCategoria.value = cat;
 }
 
 delegadoCategoria.onchange = () => {
@@ -293,7 +289,6 @@ delegadoGuardarBtn.onclick = () => {
   cargarPartidosDelegado();
   render();
 };
-
   // ===== BOTON IMPRIMIR =====
   let imprimirFixtureBtn = document.getElementById("imprimir-fixture-btn");
   if (!imprimirFixtureBtn && fixtureBody) {
@@ -1555,13 +1550,7 @@ function mostrarAsociacion() {
 
     fixtureBody.innerHTML = html;
 
-    const partidos = obtenerPartidosPlanos(cat);
-    partidoSelect.innerHTML = partidos.map((p, i) => `
-      <option value="${i}">
-        Fecha ${p.fechaNumero} - ${p.local} vs ${p.visitante}
-      </option>
-    `).join("");
-  }
+      }
 
   // ===== PLAYOFF DATA / RENDER =====
   function construirPlayoffData(cat) {
@@ -2028,25 +2017,7 @@ Final
   }
 
   // ===== RESULTADOS =====
-    function guardarResultado() {
-    const cat = categoriaSelect.value;
-    const index = Number(partidoSelect.value);
-    const partidos = obtenerPartidosPlanos(cat);
-    const partido = partidos[index];
-
-    if (!partido) return;
-
-    partido.pl = puntosLocal.value === "" ? null : Number(puntosLocal.value);
-    partido.pv = puntosVisitante.value === "" ? null : Number(puntosVisitante.value);
-
-    guardarEnStorage();
-
-    puntosLocal.value = "";
-    puntosVisitante.value = "";
-
-    render();
-  }
-
+   
   // ===== RENDER GENERAL =====
   function render() {
     const cat = categoriaSelect.value;
