@@ -11,11 +11,12 @@
     <h1>Liga Maxi Básquet</h1>
 
     <div class="tabs">
-      <button id="tab-liga" class="tab activo" type="button">Liga</button>
-      <button id="tab-gestion" class="tab" type="button">Gestión</button>
+      <button id="tab-publico" class="tab activo" type="button">Público</button>
+      <button id="tab-delegados" class="tab" type="button">Delegados</button>
+      <button id="tab-asociacion" class="tab" type="button">Asociación</button>
     </div>
 
-    <!-- LIGA -->
+    <!-- PUBLICO -->
     <div id="vista-liga">
       <select id="categoria-select">
         <option value="Maxi +35 A">Maxi +35 A</option>
@@ -29,14 +30,14 @@
         <thead>
           <tr>
             <th>#</th>
-<th>Equipo</th>
-<th>PJ</th>
-<th>PG</th>
-<th>PP</th>
-<th>PF</th>
-<th>PC</th>
-<th>DIF</th>
-<th>PTS</th>
+            <th>Equipo</th>
+            <th>PJ</th>
+            <th>PG</th>
+            <th>PP</th>
+            <th>PF</th>
+            <th>PC</th>
+            <th>DIF</th>
+            <th>PTS</th>
           </tr>
         </thead>
         <tbody id="tabla-body"></tbody>
@@ -49,7 +50,43 @@
       <div id="playoff-body"></div>
     </div>
 
-    <!-- GESTION -->
+    <!-- DELEGADOS -->
+    <div id="vista-delegados" style="display:none;">
+      <h3>Carga de resultados</h3>
+
+      <div class="planner-grid">
+        <div>
+          <label for="delegado-categoria-select">Categoría</label>
+          <select id="delegado-categoria-select">
+            <option value="Maxi +35 A">Maxi +35 A</option>
+            <option value="Maxi +35 B">Maxi +35 B</option>
+            <option value="Maxi +48">Maxi +48</option>
+            <option value="Femenino">Femenino</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="delegado-partido-select">Partido</label>
+          <select id="delegado-partido-select"></select>
+        </div>
+
+        <div>
+          <label for="delegado-puntos-local">Puntos Local</label>
+          <input id="delegado-puntos-local" type="number" placeholder="Puntos Local">
+        </div>
+
+        <div>
+          <label for="delegado-puntos-visitante">Puntos Visitante</label>
+          <input id="delegado-puntos-visitante" type="number" placeholder="Puntos Visitante">
+        </div>
+      </div>
+
+      <div class="acciones">
+        <button id="delegado-guardar-resultado" type="button">Guardar resultado</button>
+      </div>
+    </div>
+
+    <!-- ASOCIACION -->
     <div id="vista-gestion" style="display:none;">
       <button id="abrir-gestion-btn" type="button">Abrir gestión</button>
       <button id="cerrar-gestion-btn" type="button">Cerrar gestión</button>
@@ -139,15 +176,6 @@
 
         <div id="planner-resultado" class="planner-resultado"></div>
         <div id="planner-comparacion" class="planner-resultado"></div>
-
-        <h3>Resultados</h3>
-        <select id="partido-select"></select>
-        <input id="puntos-local" type="number" placeholder="Puntos Local">
-        <input id="puntos-visitante" type="number" placeholder="Puntos Visitante">
-
-        <div class="acciones">
-          <button id="guardar-resultado" type="button">Guardar</button>
-        </div>
       </div>
     </div>
   </div>
