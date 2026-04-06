@@ -66,6 +66,7 @@ function crearTorneoBase(cat) {
       playoffs: "no",
       clasificados: cat === "Maxi +48" ? 6 : 4,
       diaJuego: 0,
+      estado: "borrador",
       inicio: "",
       fin: "",
       frecuencia: 1,
@@ -77,6 +78,7 @@ function crearTorneoBase(cat) {
       calendarioPlayoff: { cuartos: [], reclasificacion: [], semifinales: [], final: [] }
     },
     fechas
+    
   };
 }
 
@@ -236,6 +238,9 @@ const vistaAsociacion = document.getElementById("vista-gestion");
   const plannerResultado = document.getElementById("planner-resultado");
   const plannerComparacion = document.getElementById("planner-comparacion");
   const generarBtn = document.getElementById("generar-fixture");
+  const bloquearCategoriaBtn = document.getElementById("bloquear-categoria-btn");
+const desbloquearCategoriaBtn = document.getElementById("desbloquear-categoria-btn");
+const estadoCategoriaBadge = document.getElementById("estado-categoria-badge");
 
     const delegadoCategoria = document.getElementById("delegado-categoria-select");
 const delegadoPartidoSelect = document.getElementById("delegado-partido-select");
@@ -1266,6 +1271,10 @@ function mostrarAsociacion() {
   }
 
   function generarDesdePlanner() {
+    if (categoriaEstaOficial(plannerCategoria.value)) {
+  alert("La categoría está oficializada y no se puede regenerar el fixture.");
+  return;
+}
     const plan = calcularPlanificacion();
     if (!plan) return;
 
@@ -1281,6 +1290,7 @@ function mostrarAsociacion() {
         formato: plan.formato,
         playoffs: plan.playoffs,
         clasificados: plan.clasificados,
+        estado: fixturesPorCategoria[plan.categoria]?.meta?.estado || "borrador",
         diaJuego: plan.diaJuego,
         inicio: plan.inicio,
         fin: plan.fin,
@@ -2019,6 +2029,57 @@ Final
   // ===== RESULTADOS =====
    
   // ===== RENDER GENERAL =====
+  function categoriaEstaOficial(cat) {
+  return fixturesPorCategoria?.[cat]?.meta?.estado === "oficial";
+}
+
+function actualizarEstadoCategoriaUI() {
+  const cat = plannerCategoria.value;
+  const esOficial = categoriaEstaOficial(cat);
+
+  estadoCategoriaBadge.textContent = esOficial ? "Estado: OFICIAL" : "Estado: BORRADOR";
+  estadoCategoriaBadge.style.color = esOficial ? "#c62828" : "#2e7d32";
+
+  bloquearCategoriaBtn.style.display = esOficial ? "none" : "inline-block";
+  desbloquearCategoriaBtn.style.display = esOficial ? "inline-block" : "none";
+
+  plannerEquipos.disabled = esOficial;
+  plannerFormato.disabled = esOficial;
+  plannerPlayoffs.disabled = esOficial;
+  plannerClasificados.disabled = esOficial;
+  plannerDiaJuego.disabled = esOficial;
+  plannerInicio.disabled = esOficial;
+  plannerFin.disabled = esOficial;
+  plannerFrecuencia.disabled = esOficial;
+  plannerBloqueadas.disabled = esOficial;
+  plannerCalcular.disabled = esOficial;
+  generarBtn.disabled = esOficial;
+
+  if (seriesReclasificacion) seriesReclasificacion.disabled = esOficial;
+  if (seriesCuartos) seriesCuartos.disabled = esOficial;
+  if (seriesSemis) seriesSemis.disabled = esOficial;
+  if (seriesFinal) seriesFinal.disabled = esOficial;
+}
+
+function bloquearCategoriaActual() {
+  const cat = plannerCategoria.value;
+  if (!fixturesPorCategoria[cat]) return;
+
+  fixturesPorCategoria[cat].meta.estado = "oficial";
+  guardarEnStorage();
+  actualizarEstadoCategoriaUI();
+  render();
+}
+
+function desbloquearCategoriaActual() {
+  const cat = plannerCategoria.value;
+  if (!fixturesPorCategoria[cat]) return;
+
+  fixturesPorCategoria[cat].meta.estado = "borrador";
+  guardarEnStorage();
+  actualizarEstadoCategoriaUI();
+  render();
+}
   function render() {
     const cat = categoriaSelect.value;
     renderTabla(cat);
@@ -2046,6 +2107,8 @@ Final
   tabPublico.onclick = mostrarPublico;
 tabDelegados.onclick = mostrarDelegados;
 tabAsociacion.onclick = mostrarAsociacion;
+bloquearCategoriaBtn.onclick = bloquearCategoriaActual;
+desbloquearCategoriaBtn.onclick = desbloquearCategoriaActual;
 
   abrirGestionBtn.onclick = () => {
     const clave = prompt("Clave:");
@@ -2074,11 +2137,17 @@ tabAsociacion.onclick = mostrarAsociacion;
 plannerCategoria.value = categoriaSelect.value;
 plannerEquipos.value = fixturesPorCategoria[categoriaSelect.value]?.meta?.equipos || categorias[categoriaSelect.value]?.length || 10;
 actualizarVisibilidadSeries();
+actualizarEstadoCategoriaUI();
 
 // 🔥 ESTA LÍNEA FALTABA
 sincronizarCategoriaEnVistas(categoriaSelect.value);
 cargarPartidosDelegado();
-
+categoriaSelect.onchange = () => {
+  sincronizarCategoriaEnVistas(categoriaSelect.value);
+  cargarPartidosDelegado();
+  actualizarEstadoCategoriaUI();
+  render();
+};
 render();
 mostrarPublico();
 });
