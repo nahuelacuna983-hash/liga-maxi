@@ -205,10 +205,13 @@ function resetearStorageTorneos() {
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== DOM =====
-  const tabLiga = document.getElementById("tab-liga");
-  const tabGestion = document.getElementById("tab-gestion");
-  const vistaLiga = document.getElementById("vista-liga");
-  const vistaGestion = document.getElementById("vista-gestion");
+ const tabPublico = document.getElementById("tab-publico");
+const tabDelegados = document.getElementById("tab-delegados");
+const tabAsociacion = document.getElementById("tab-asociacion");
+
+const vistaPublico = document.getElementById("vista-liga");
+const vistaDelegados = document.getElementById("vista-delegados");
+const vistaAsociacion = document.getElementById("vista-gestion");
 
   const categoriaSelect = document.getElementById("categoria-select");
   const tablaBody = document.getElementById("tabla-body");
@@ -234,10 +237,45 @@ document.addEventListener("DOMContentLoaded", () => {
   const plannerComparacion = document.getElementById("planner-comparacion");
   const generarBtn = document.getElementById("generar-fixture");
 
-  const partidoSelect = document.getElementById("partido-select");
-  const puntosLocal = document.getElementById("puntos-local");
-  const puntosVisitante = document.getElementById("puntos-visitante");
-  const guardarBtn = document.getElementById("guardar-resultado");
+  const delegadoCategoria = document.getElementById("delegado-categoria-select");
+const delegadoPartidoSelect = document.getElementById("delegado-partido-select");
+const delegadoPuntosLocal = document.getElementById("delegado-puntos-local");
+const delegadoPuntosVisitante = document.getElementById("delegado-puntos-visitante");
+const delegadoGuardarBtn = document.getElementById("delegado-guardar-resultado");
+function cargarPartidosDelegado() {
+  const cat = delegadoCategoria.value;
+  const partidos = obtenerPartidosPlanos(cat);
+
+  delegadoPartidoSelect.innerHTML = "";
+
+  partidos.forEach((p, i) => {
+    const option = document.createElement("option");
+    option.value = i;
+    option.textContent = `Fecha ${p.fechaNumero} - ${p.local} vs ${p.visitante}`;
+    delegadoPartidoSelect.appendChild(option);
+  });
+}
+
+delegadoCategoria.onchange = cargarPartidosDelegado;
+
+delegadoGuardarBtn.onclick = () => {
+  const cat = delegadoCategoria.value;
+  const index = Number(delegadoPartidoSelect.value);
+  const partidos = obtenerPartidosPlanos(cat);
+  const partido = partidos[index];
+
+  if (!partido) return;
+
+  partido.pl = delegadoPuntosLocal.value === "" ? null : Number(delegadoPuntosLocal.value);
+  partido.pv = delegadoPuntosVisitante.value === "" ? null : Number(delegadoPuntosVisitante.value);
+
+  guardarEnStorage();
+
+  delegadoPuntosLocal.value = "";
+  delegadoPuntosVisitante.value = "";
+
+  render();
+};
 
   // ===== BOTON IMPRIMIR =====
   let imprimirFixtureBtn = document.getElementById("imprimir-fixture-btn");
@@ -687,19 +725,36 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===== HELPERS UI =====
-  function mostrarLiga() {
-    vistaLiga.style.display = "block";
-    vistaGestion.style.display = "none";
-    tabLiga.classList.add("activo");
-    tabGestion.classList.remove("activo");
-  }
+ function mostrarPublico() {
+  vistaPublico.style.display = "block";
+  vistaDelegados.style.display = "none";
+  vistaAsociacion.style.display = "none";
 
-  function mostrarGestion() {
-    vistaLiga.style.display = "none";
-    vistaGestion.style.display = "block";
-    tabLiga.classList.remove("activo");
-    tabGestion.classList.add("activo");
-  }
+  tabPublico.classList.add("activo");
+  tabDelegados.classList.remove("activo");
+  tabAsociacion.classList.remove("activo");
+}
+
+function mostrarDelegados() {
+  vistaPublico.style.display = "none";
+  vistaDelegados.style.display = "block";
+  vistaAsociacion.style.display = "none";
+
+  tabPublico.classList.remove("activo");
+  tabDelegados.classList.add("activo");
+  tabAsociacion.classList.remove("activo");
+}
+
+function mostrarAsociacion() {
+  vistaPublico.style.display = "none";
+  vistaDelegados.style.display = "none";
+  vistaAsociacion.style.display = "block";
+
+  tabPublico.classList.remove("activo");
+  tabDelegados.classList.remove("activo");
+  tabAsociacion.classList.add("activo");
+}
+  
 
   // ===== CONFIG PLAYOFFS DINAMICA =====
   function asegurarUIPlayoffConfig() {
@@ -1390,8 +1445,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!data || !data.fechas || !data.fechas.length) {
       fixtureBody.innerHTML = "<p>No hay fixture generado.</p>";
-      partidoSelect.innerHTML = "";
-      return;
+            return;
     }
 
     const maxPartidos = Math.max(...data.fechas.map((f) => f.partidos.length));
@@ -2001,8 +2055,9 @@ Final
     render();
   });
 
-  tabLiga.onclick = mostrarLiga;
-  tabGestion.onclick = mostrarGestion;
+  tabPublico.onclick = mostrarPublico;
+tabDelegados.onclick = mostrarDelegados;
+tabAsociacion.onclick = mostrarAsociacion;
 
   abrirGestionBtn.onclick = () => {
     const clave = prompt("Clave:");
@@ -2019,7 +2074,7 @@ Final
 
   plannerCalcular.onclick = calcularPlanificacion;
   generarBtn.onclick = generarDesdePlanner;
-  guardarBtn.onclick = guardarResultado;
+  
 
   if (imprimirFixtureBtn) {
     imprimirFixtureBtn.onclick = imprimirFixtureActual;
@@ -2032,5 +2087,5 @@ Final
   plannerEquipos.value = fixturesPorCategoria[categoriaSelect.value]?.meta?.equipos || categorias[categoriaSelect.value]?.length || 10;
   actualizarVisibilidadSeries();
   render();
-  mostrarLiga();
+  mostrarPublico();
 });
