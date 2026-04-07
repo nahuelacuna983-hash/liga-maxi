@@ -840,7 +840,8 @@ function mostrarAsociacion() {
       </div>
     `;
 
-    plannerComparacion.parentNode.insertBefore(box, plannerComparacion.nextSibling);
+    const playoffConfigAnchor = document.getElementById("playoff-config-anchor");
+playoffConfigAnchor.parentNode.insertBefore(box, playoffConfigAnchor.nextSibling);
   }
   asegurarUIPlayoffConfig();
 
