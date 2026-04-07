@@ -2057,7 +2057,19 @@ function actualizarEstadoCategoriaUI() {
   const cat = plannerCategoria.value;
   const esOficial = categoriaEstaOficial(cat);
 
-  estadoCategoriaBadge.textContent = esOficial ? "Estado: OFICIAL" : "Estado: BORRADOR";
+  if (esOficial) {
+  estadoCategoriaBadge.textContent = "🔒 OFICIAL";
+  estadoCategoriaBadge.style.background = "#ffebee";
+  estadoCategoriaBadge.style.color = "#c62828";
+  estadoCategoriaBadge.style.padding = "6px 10px";
+  estadoCategoriaBadge.style.borderRadius = "6px";
+} else {
+  estadoCategoriaBadge.textContent = "🟢 BORRADOR";
+  estadoCategoriaBadge.style.background = "#e8f5e9";
+  estadoCategoriaBadge.style.color = "#2e7d32";
+  estadoCategoriaBadge.style.padding = "6px 10px";
+  estadoCategoriaBadge.style.borderRadius = "6px";
+}
   estadoCategoriaBadge.style.color = esOficial ? "#c62828" : "#2e7d32";
 
   bloquearCategoriaBtn.style.display = esOficial ? "none" : "inline-block";
