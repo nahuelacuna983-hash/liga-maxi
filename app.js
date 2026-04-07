@@ -247,6 +247,7 @@ const delegadoPartidoSelect = document.getElementById("delegado-partido-select")
 const delegadoPuntosLocal = document.getElementById("delegado-puntos-local");
 const delegadoPuntosVisitante = document.getElementById("delegado-puntos-visitante");
 const delegadoGuardarBtn = document.getElementById("delegado-guardar-resultado");
+const delegadoSinFixtureMsg = document.getElementById("delegado-sin-fixture-msg");
 
 function sincronizarCategoriaEnVistas(cat) {
   if (categoriaSelect) categoriaSelect.value = cat;
@@ -259,6 +260,21 @@ function cargarPartidosDelegado() {
   const partidos = obtenerPartidosPlanos(cat);
 
   delegadoPartidoSelect.innerHTML = "";
+
+  if (!partidos || partidos.length === 0) {
+    delegadoPartidoSelect.style.display = "none";
+    delegadoGuardarBtn.disabled = true;
+    delegadoPuntosLocal.disabled = true;
+    delegadoPuntosVisitante.disabled = true;
+    if (delegadoSinFixtureMsg) delegadoSinFixtureMsg.style.display = "block";
+    return;
+  }
+
+  delegadoPartidoSelect.style.display = "";
+  delegadoGuardarBtn.disabled = false;
+  delegadoPuntosLocal.disabled = false;
+  delegadoPuntosVisitante.disabled = false;
+  if (delegadoSinFixtureMsg) delegadoSinFixtureMsg.style.display = "none";
 
   partidos.forEach((p, i) => {
     const option = document.createElement("option");
