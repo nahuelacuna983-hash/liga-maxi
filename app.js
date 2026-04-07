@@ -2150,7 +2150,7 @@ desbloquearCategoriaBtn.onclick = desbloquearCategoriaActual;
     gestionContenido.style.display = "none";
   };
 
-  pplannerCalcular.onclick = () => {
+  plannerCalcular.onclick = () => {
   if (categoriaEstaOficial(plannerCategoria.value)) {
     alert("La categoría está oficializada y no se puede recalcular el formato.");
     return;
