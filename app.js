@@ -1360,7 +1360,7 @@ playoffConfigAnchor.parentNode.insertBefore(box, playoffConfigAnchor.nextSibling
 
   // ===== TABLA =====
  function obtenerPartidosPlanos(cat) {
-  const data = torneoActual?.categorias?.[cat];
+  const data = getCategoriaData(cat);
   if (!data || !data.fechas) return [];
   return data.fechas.flatMap((f) => f.partidos);
 }
