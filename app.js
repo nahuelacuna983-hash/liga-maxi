@@ -760,6 +760,9 @@ function mostrarDelegados() {
   tabPublico.classList.remove("activo");
   tabDelegados.classList.add("activo");
   tabAsociacion.classList.remove("activo");
+
+  sincronizarCategoriaEnVistas(categoriaSelect.value);
+  cargarPartidosDelegado();
 }
 
 function mostrarAsociacion() {
@@ -2081,11 +2084,13 @@ function desbloquearCategoriaActual() {
   render();
 }
   function render() {
-    const cat = categoriaSelect.value;
-    renderTabla(cat);
-    renderFixture(cat);
-    renderPlayoffs(cat);
-  }
+  const cat = categoriaSelect.value;
+  renderTabla(cat);
+  renderFixture(cat);
+  renderPlayoffs(cat);
+  cargarPartidosDelegado();
+}
+
 
   // ===== EVENTOS =====
   plannerPlayoffs.addEventListener("change", actualizarVisibilidadSeries);
