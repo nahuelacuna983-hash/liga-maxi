@@ -1359,19 +1359,19 @@ playoffConfigAnchor.parentNode.insertBefore(box, playoffConfigAnchor.nextSibling
   }
 
   // ===== TABLA =====
-  function obtenerPartidosPlanos(cat) {
-    const data = fixturesPorCategoria[cat];
-    if (!data || !data.fechas) return [];
-    return data.fechas.flatMap((f) => f.partidos);
-  }
+ function obtenerPartidosPlanos(cat) {
+  const data = torneoActual?.categorias?.[cat];
+  if (!data || !data.fechas) return [];
+  return data.fechas.flatMap((f) => f.partidos);
+}
 
-  function obtenerEquiposActivos(cat) {
-    const data = fixturesPorCategoria[cat];
-    if (data?.meta?.equipos) {
-      return obtenerEquiposCategoria(cat, data.meta.equipos);
-    }
-    return categorias[cat] ? [...categorias[cat]] : [];
+ function obtenerEquiposActivos(cat) {
+  const data = torneoActual?.categorias?.[cat];
+  if (data?.meta?.equipos) {
+    return obtenerEquiposCategoria(cat, data.meta.equipos);
   }
+  return categorias[cat] ? [...categorias[cat]] : [];
+}
 
   function calcularTabla(cat) {
     const equipos = obtenerEquiposActivos(cat);
@@ -2074,8 +2074,8 @@ Final
   // ===== RESULTADOS =====
    
   // ===== RENDER GENERAL =====
-  function categoriaEstaOficial(cat) {
-  return fixturesPorCategoria?.[cat]?.meta?.estado === "oficial";
+ function categoriaEstaOficial(cat) {
+  return torneoActual?.categorias?.[cat]?.meta?.estado === "oficial";
 }
 
 function actualizarEstadoCategoriaUI() {
