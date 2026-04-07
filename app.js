@@ -51,7 +51,15 @@ const categorias = {
   ]
 };
 
-let fixturesPorCategoria = {};
+let torneoActual = {
+  id: "apertura-2026",
+  nombre: "Apertura 2026",
+  organizacion: "Asociación Maxi Básquet La Plata",
+  temporada: "2026",
+  categorias: {}
+};
+
+let fixturesPorCategoria = torneoActual.categorias;
 
 function crearTorneoBase(cat) {
   const equipos = categorias[cat];
@@ -83,13 +91,19 @@ function crearTorneoBase(cat) {
 }
 
 function crearEstadoInicial() {
-  const base = {};
+  const categoriasBase = {};
 
   Object.keys(categorias).forEach((cat) => {
-    base[cat] = crearTorneoBase(cat);
+    categoriasBase[cat] = crearTorneoBase(cat);
   });
 
-  return base;
+  return {
+    id: "apertura-2026",
+    nombre: "Apertura 2026",
+    organizacion: "Asociación Maxi Básquet La Plata",
+    temporada: "2026",
+    categorias: categoriasBase
+  };
 }
 
 function mergeProfundo(base, extra) {
@@ -156,7 +170,7 @@ function guardarEnStorage() {
     const payload = {
       version: STORAGE_VERSION,
       actualizadoEn: new Date().toISOString(),
-      torneos: fixturesPorCategoria
+      torneoActual
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -172,16 +186,18 @@ function cargarDesdeStorage() {
     const raw = localStorage.getItem(STORAGE_KEY);
 
     if (!raw) {
-      fixturesPorCategoria = base;
+      torneoActual = base;
+      fixturesPorCategoria = torneoActual.categorias;
       guardarEnStorage();
       return;
     }
 
     const parsed = JSON.parse(raw);
-    const guardado = parsed?.torneos;
+    const guardado = parsed?.torneoActual;
 
     if (!guardado || typeof guardado !== "object") {
-      fixturesPorCategoria = base;
+      torneoActual = base;
+      fixturesPorCategoria = torneoActual.categorias;
       guardarEnStorage();
       return;
     }
@@ -189,13 +205,22 @@ function cargarDesdeStorage() {
     const combinado = {};
 
     Object.keys(categorias).forEach((cat) => {
-      combinado[cat] = normalizarTorneo(cat, guardado[cat]);
+      combinado[cat] = normalizarTorneo(cat, guardado?.categorias?.[cat]);
     });
 
-    fixturesPorCategoria = combinado;
+    torneoActual = {
+      id: guardado?.id || "apertura-2026",
+      nombre: guardado?.nombre || "Apertura 2026",
+      organizacion: guardado?.organizacion || "Asociación Maxi Básquet La Plata",
+      temporada: guardado?.temporada || "2026",
+      categorias: combinado
+    };
+
+    fixturesPorCategoria = torneoActual.categorias;
   } catch (error) {
     console.error("No se pudo leer localStorage, se recrea el estado base:", error);
-    fixturesPorCategoria = base;
+    torneoActual = base;
+    fixturesPorCategoria = torneoActual.categorias;
     guardarEnStorage();
   }
 }
