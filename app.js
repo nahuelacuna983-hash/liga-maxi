@@ -2083,7 +2083,12 @@ function actualizarEstadoCategoriaUI() {
 
 function bloquearCategoriaActual() {
   const cat = plannerCategoria.value;
-  if (!fixturesPorCategoria[cat]) return;
+  const data = fixturesPorCategoria[cat];
+
+  if (!data || !Array.isArray(data.fechas) || data.fechas.length === 0) {
+    alert("Primero generá el fixture para poder oficializar la categoría.");
+    return;
+  }
 
   fixturesPorCategoria[cat].meta.estado = "oficial";
   guardarEnStorage();
