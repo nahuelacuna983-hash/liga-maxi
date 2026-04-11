@@ -2,10 +2,7 @@
 const ADMIN_PASSWORD = "admin123";
 const STORAGE_KEY = "ligaMaxiTorneos";
 const STORAGE_VERSION = 1;
-const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ===== DATA =====
 const categorias = {
   "Maxi +35 A": [
@@ -54,15 +51,7 @@ const categorias = {
   ]
 };
 
-let torneoActual = {
-  id: "apertura-2026",
-  nombre: "Apertura 2026",
-  organizacion: "Asociación Maxi Básquet La Plata",
-  temporada: "2026",
-  categorias: {}
-};
-
-let fixturesPorCategoria = torneoActual.categorias;
+let fixturesPorCategoria = {};
 
 function crearTorneoBase(cat) {
   const equipos = categorias[cat];
@@ -94,19 +83,13 @@ function crearTorneoBase(cat) {
 }
 
 function crearEstadoInicial() {
-  const categoriasBase = {};
+  const base = {};
 
   Object.keys(categorias).forEach((cat) => {
-    categoriasBase[cat] = crearTorneoBase(cat);
+    base[cat] = crearTorneoBase(cat);
   });
 
-  return {
-    id: "apertura-2026",
-    nombre: "Apertura 2026",
-    organizacion: "Asociación Maxi Básquet La Plata",
-    temporada: "2026",
-    categorias: categoriasBase
-  };
+  return base;
 }
 
 function mergeProfundo(base, extra) {
@@ -173,7 +156,7 @@ function guardarEnStorage() {
     const payload = {
       version: STORAGE_VERSION,
       actualizadoEn: new Date().toISOString(),
-      torneoActual
+      torneos: fixturesPorCategoria
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -189,18 +172,16 @@ function cargarDesdeStorage() {
     const raw = localStorage.getItem(STORAGE_KEY);
 
     if (!raw) {
-      torneoActual = base;
-      fixturesPorCategoria = torneoActual.categorias;
+      fixturesPorCategoria = base;
       guardarEnStorage();
       return;
     }
 
     const parsed = JSON.parse(raw);
-    const guardado = parsed?.torneoActual;
+    const guardado = parsed?.torneos;
 
     if (!guardado || typeof guardado !== "object") {
-      torneoActual = base;
-      fixturesPorCategoria = torneoActual.categorias;
+      fixturesPorCategoria = base;
       guardarEnStorage();
       return;
     }
@@ -208,22 +189,13 @@ function cargarDesdeStorage() {
     const combinado = {};
 
     Object.keys(categorias).forEach((cat) => {
-      combinado[cat] = normalizarTorneo(cat, guardado?.categorias?.[cat]);
+      combinado[cat] = normalizarTorneo(cat, guardado[cat]);
     });
 
-    torneoActual = {
-      id: guardado?.id || "apertura-2026",
-      nombre: guardado?.nombre || "Apertura 2026",
-      organizacion: guardado?.organizacion || "Asociación Maxi Básquet La Plata",
-      temporada: guardado?.temporada || "2026",
-      categorias: combinado
-    };
-
-    fixturesPorCategoria = torneoActual.categorias;
+    fixturesPorCategoria = combinado;
   } catch (error) {
     console.error("No se pudo leer localStorage, se recrea el estado base:", error);
-    torneoActual = base;
-    fixturesPorCategoria = torneoActual.categorias;
+    fixturesPorCategoria = base;
     guardarEnStorage();
   }
 }
@@ -231,22 +203,6 @@ function cargarDesdeStorage() {
 function resetearStorageTorneos() {
   fixturesPorCategoria = crearEstadoInicial();
   guardarEnStorage();
-}
-async function probarConexionSupabase() {
-  try {
-    const { data, error } = await supabaseClient
-      .from("organizaciones")
-      .select("*");
-
-    if (error) {
-      console.error("Error leyendo Supabase:", error);
-      return;
-    }
-
-    console.log("Supabase conectado. Organizaciones:", data);
-  } catch (err) {
-    console.error("Fallo general de conexión con Supabase:", err);
-  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1378,19 +1334,19 @@ playoffConfigAnchor.parentNode.insertBefore(box, playoffConfigAnchor.nextSibling
   }
 
   // ===== TABLA =====
- function obtenerPartidosPlanos(cat) {
-  const data = getCategoriaData(cat);
-  if (!data || !data.fechas) return [];
-  return data.fechas.flatMap((f) => f.partidos);
-}
-
- function obtenerEquiposActivos(cat) {
-  const data = torneoActual?.categorias?.[cat];
-  if (data?.meta?.equipos) {
-    return obtenerEquiposCategoria(cat, data.meta.equipos);
+  function obtenerPartidosPlanos(cat) {
+    const data = fixturesPorCategoria[cat];
+    if (!data || !data.fechas) return [];
+    return data.fechas.flatMap((f) => f.partidos);
   }
-  return categorias[cat] ? [...categorias[cat]] : [];
-}
+
+  function obtenerEquiposActivos(cat) {
+    const data = fixturesPorCategoria[cat];
+    if (data?.meta?.equipos) {
+      return obtenerEquiposCategoria(cat, data.meta.equipos);
+    }
+    return categorias[cat] ? [...categorias[cat]] : [];
+  }
 
   function calcularTabla(cat) {
     const equipos = obtenerEquiposActivos(cat);
@@ -2093,27 +2049,15 @@ Final
   // ===== RESULTADOS =====
    
   // ===== RENDER GENERAL =====
- function categoriaEstaOficial(cat) {
-  return torneoActual?.categorias?.[cat]?.meta?.estado === "oficial";
+  function categoriaEstaOficial(cat) {
+  return fixturesPorCategoria?.[cat]?.meta?.estado === "oficial";
 }
 
 function actualizarEstadoCategoriaUI() {
   const cat = plannerCategoria.value;
   const esOficial = categoriaEstaOficial(cat);
 
-  if (esOficial) {
-  estadoCategoriaBadge.textContent = "🔒 OFICIAL";
-  estadoCategoriaBadge.style.background = "#ffebee";
-  estadoCategoriaBadge.style.color = "#c62828";
-  estadoCategoriaBadge.style.padding = "6px 10px";
-  estadoCategoriaBadge.style.borderRadius = "6px";
-} else {
-  estadoCategoriaBadge.textContent = "🟢 BORRADOR";
-  estadoCategoriaBadge.style.background = "#e8f5e9";
-  estadoCategoriaBadge.style.color = "#2e7d32";
-  estadoCategoriaBadge.style.padding = "6px 10px";
-  estadoCategoriaBadge.style.borderRadius = "6px";
-}
+  estadoCategoriaBadge.textContent = esOficial ? "Estado: OFICIAL" : "Estado: BORRADOR";
   estadoCategoriaBadge.style.color = esOficial ? "#c62828" : "#2e7d32";
 
   bloquearCategoriaBtn.style.display = esOficial ? "none" : "inline-block";
@@ -2240,5 +2184,4 @@ categoriaSelect.onchange = () => {
 };
 render();
 mostrarPublico();
-probarConexionSupabase();
 });
