@@ -2,7 +2,10 @@
 const ADMIN_PASSWORD = "admin123";
 const STORAGE_KEY = "ligaMaxiTorneos";
 const STORAGE_VERSION = 1;
+const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
 
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ===== DATA =====
 const categorias = {
   "Maxi +35 A": [
@@ -228,6 +231,22 @@ function cargarDesdeStorage() {
 function resetearStorageTorneos() {
   fixturesPorCategoria = crearEstadoInicial();
   guardarEnStorage();
+}
+async function probarConexionSupabase() {
+  try {
+    const { data, error } = await supabaseClient
+      .from("organizaciones")
+      .select("*");
+
+    if (error) {
+      console.error("Error leyendo Supabase:", error);
+      return;
+    }
+
+    console.log("Supabase conectado. Organizaciones:", data);
+  } catch (err) {
+    console.error("Fallo general de conexión con Supabase:", err);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2221,4 +2240,5 @@ categoriaSelect.onchange = () => {
 };
 render();
 mostrarPublico();
+probarConexionSupabase();
 });
