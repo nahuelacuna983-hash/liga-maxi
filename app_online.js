@@ -257,8 +257,8 @@ function completarInputsPartidoSeleccionado() {
 async function refrescarCategoria(nombreCategoria) {
   await cargarPartidosCategoria(nombreCategoria);
 
-  // ⚠️ ESTA LÍNEA ES LA CLAVE
-  renderTabla(nombreCategoria);
+  // ⚠️ NO tocamos la tabla
+  // ⚠️ NO llamamos renderTabla ni renderTablaPublica
 
   renderFixturePublico(nombreCategoria);
 
