@@ -256,7 +256,10 @@ function completarInputsPartidoSeleccionado() {
 
 async function refrescarCategoria(nombreCategoria) {
   await cargarPartidosCategoria(nombreCategoria);
-  renderTablaPublica(nombreCategoria);
+
+  // ⚠️ ESTA LÍNEA ES LA CLAVE
+  renderTabla(nombreCategoria);
+
   renderFixturePublico(nombreCategoria);
 
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
