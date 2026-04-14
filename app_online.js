@@ -189,59 +189,55 @@ function renderPlayoffs(nombreCategoria, tabla) {
 }
 
 function renderFixturePublico(nombreCategoria) {
-  const box = $("publico-fixture");
+  const container = document.getElementById("publico-fixture");
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
 
   if (!partidos.length) {
-    box.innerHTML = `<div class="empty">Todavía no hay partidos cargados para esta categoría.</div>`;
+    container.innerHTML = `<div class="empty">No hay partidos cargados.</div>`;
     return;
   }
 
-  box.innerHTML = partidos.map((p) => {
-    const score = (p.puntos_local == null || p.puntos_visitante == null)
-      ? "Pendiente"
-      : `${p.puntos_local} - ${p.puntos_visitante}`;
+  // agrupar por jornada
+  const porJornada = {};
 
-    return `
-      <div class="match">
-        <div class="teams">
-          <span>${p.local}</span>
-          <span class="vs">vs</span>
-          <span>${p.visitante}</span>
-        </div>
-        <div class="score">${score}</div>
-      </div>
-    `;
-  }).join("");
-}
-
-function poblarSelectPartidosDelegado(nombreCategoria) {
-  const select = $("delegado-partido");
-  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
-
-  select.innerHTML = "";
-
-  if (!partidos.length) {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = "No hay partidos cargados";
-    select.appendChild(option);
-    $("delegado-puntos-local").value = "";
-    $("delegado-puntos-visitante").value = "";
-    $("delegado-guardar").disabled = true;
-    return;
-  }
-
-  $("delegado-guardar").disabled = !estado.delegadoDesbloqueado;
-
-  partidos.forEach((p) => {
-    const option = document.createElement("option");
-    option.value = p.id;
-    option.textContent = `${p.local} vs ${p.visitante}`;
-    select.appendChild(option);
+  partidos.forEach(p => {
+    const j = p.jornada || 0;
+    if (!porJornada[j]) porJornada[j] = [];
+    porJornada[j].push(p);
   });
 
-  completarInputsPartidoSeleccionado();
+  // ordenar jornadas
+  const jornadasOrdenadas = Object.keys(porJornada)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  let html = "";
+
+  jornadasOrdenadas.forEach(jornada => {
+    html += `<div class="card"><h3>Fecha ${jornada}</h3>`;
+
+    porJornada[jornada].forEach(p => {
+      const estadoTxt =
+        p.puntos_local != null && p.puntos_visitante != null
+          ? `${p.puntos_local} - ${p.puntos_visitante}`
+          : "Pendiente";
+
+      html += `
+        <div class="match">
+          <div class="teams">
+            <span>${p.local}</span>
+            <span class="vs">vs</span>
+            <span>${p.visitante}</span>
+          </div>
+          <div class="score">${estadoTxt}</div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+  });
+
+  container.innerHTML = html;
 }
 
 function completarInputsPartidoSeleccionado() {
