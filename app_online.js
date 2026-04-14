@@ -152,11 +152,42 @@ function calcularTabla(partidos) {
 
   return salida;
 }
+function renderPlayoffs(nombreCategoria, tabla) {
+  const container = document.getElementById("publico-fixture");
 
+  if (!tabla.length) return;
+
+  let html = `<h3 style="margin-top:20px;">Playoffs</h3>`;
+
+  if (nombreCategoria.includes("+35")) {
+    if (tabla.length < 8) return;
+
+    html += `
+      <div class="match">1° ${tabla[0].equipo} vs 8° ${tabla[7].equipo}</div>
+      <div class="match">4° ${tabla[3].equipo} vs 5° ${tabla[4].equipo}</div>
+      <div class="match">2° ${tabla[1].equipo} vs 7° ${tabla[6].equipo}</div>
+      <div class="match">3° ${tabla[2].equipo} vs 6° ${tabla[5].equipo}</div>
+    `;
+  }
+
+  if (nombreCategoria.includes("+48")) {
+    if (tabla.length < 6) return;
+
+    html += `
+      <div class="match">1° ${tabla[0].equipo} (clasifica directo)</div>
+      <div class="match">2° ${tabla[1].equipo} (clasifica directo)</div>
+      <div class="match">3° ${tabla[2].equipo} vs 6° ${tabla[5].equipo}</div>
+      <div class="match">4° ${tabla[3].equipo} vs 5° ${tabla[4].equipo}</div>
+    `;
+  }
+
+  container.innerHTML += html;
+}
 function renderTablaPublica(nombreCategoria) {
   const wrap = $("publico-tabla-wrap");
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
   const tabla = calcularTabla(partidos);
+  renderPlayoffs(nombreCategoria, tabla);
 
   if (!tabla.length) {
     wrap.innerHTML = `<div class="empty">Todavía no hay resultados cargados para esta categoría.</div>`;
