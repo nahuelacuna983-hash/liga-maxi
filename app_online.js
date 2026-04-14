@@ -153,11 +153,14 @@ function calcularTabla(partidos) {
   return salida;
 }
 function renderPlayoffs(nombreCategoria, tabla) {
-  const container = document.getElementById("publico-fixture");
+  const container = document.getElementById("publico-playoffs");
 
-  if (!tabla.length) return;
+  if (!tabla.length) {
+    container.innerHTML = "";
+    return;
+  }
 
-  let html = `<h3 style="margin-top:20px;">Playoffs</h3>`;
+  let html = `<div class="card"><h3>Playoffs</h3>`;
 
   if (nombreCategoria.includes("+35")) {
     if (tabla.length < 8) return;
@@ -174,58 +177,15 @@ function renderPlayoffs(nombreCategoria, tabla) {
     if (tabla.length < 6) return;
 
     html += `
-      <div class="match">1° ${tabla[0].equipo} (clasifica directo)</div>
-      <div class="match">2° ${tabla[1].equipo} (clasifica directo)</div>
+      <div class="match">1° ${tabla[0].equipo} (directo a semifinal)</div>
+      <div class="match">2° ${tabla[1].equipo} (directo a semifinal)</div>
       <div class="match">3° ${tabla[2].equipo} vs 6° ${tabla[5].equipo}</div>
       <div class="match">4° ${tabla[3].equipo} vs 5° ${tabla[4].equipo}</div>
     `;
   }
 
-  container.innerHTML += html;
-}
-function renderTablaPublica(nombreCategoria) {
-  const wrap = $("publico-tabla-wrap");
-  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
-  const tabla = calcularTabla(partidos);
-  renderPlayoffs(nombreCategoria, tabla);
-
-  if (!tabla.length) {
-    wrap.innerHTML = `<div class="empty">Todavía no hay resultados cargados para esta categoría.</div>`;
-    return;
-  }
-
-  wrap.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Equipo</th>
-          <th>PJ</th>
-          <th>PG</th>
-          <th>PP</th>
-          <th>PF</th>
-          <th>PC</th>
-          <th>DIF</th>
-          <th>PTS</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${tabla.map((e, index) => `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${e.equipo}</td>
-            <td>${e.pj}</td>
-            <td>${e.pg}</td>
-            <td>${e.pp}</td>
-            <td>${e.pf}</td>
-            <td>${e.pc}</td>
-            <td>${e.dif}</td>
-            <td>${e.pts}</td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
+  html += `</div>`;
+  container.innerHTML = html;
 }
 
 function renderFixturePublico(nombreCategoria) {
@@ -298,6 +258,9 @@ async function refrescarCategoria(nombreCategoria) {
   await cargarPartidosCategoria(nombreCategoria);
   renderTablaPublica(nombreCategoria);
   renderFixturePublico(nombreCategoria);
+
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  renderPlayoffsSimple(nombreCategoria, partidos);
 }
 
 async function guardarResultadoDelegado() {
