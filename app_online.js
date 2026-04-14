@@ -529,3 +529,37 @@ function renderTablaSimple(nombreCategoria, partidos) {
     </table>
   `;
 }
+function poblarSelectPartidosDelegado(nombreCategoria) {
+  const select = document.getElementById("delegado-partido");
+  if (!select) return;
+
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+
+  select.innerHTML = "";
+
+  if (!partidos.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "No hay partidos cargados";
+    select.appendChild(option);
+
+    const localInput = document.getElementById("delegado-puntos-local");
+    const visitaInput = document.getElementById("delegado-puntos-visitante");
+    const guardarBtn = document.getElementById("delegado-guardar");
+
+    if (localInput) localInput.value = "";
+    if (visitaInput) visitaInput.value = "";
+    if (guardarBtn) guardarBtn.disabled = !estado.delegadoDesbloqueado;
+
+    return;
+  }
+
+  partidos.forEach((p) => {
+    const option = document.createElement("option");
+    option.value = p.id;
+    option.textContent = `Fecha ${p.jornada || "-"} · ${p.local} vs ${p.visitante}`;
+    select.appendChild(option);
+  });
+
+  completarInputsPartidoSeleccionado();
+}
