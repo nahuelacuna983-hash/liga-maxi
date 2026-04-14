@@ -257,12 +257,10 @@ function completarInputsPartidoSeleccionado() {
 async function refrescarCategoria(nombreCategoria) {
   await cargarPartidosCategoria(nombreCategoria);
 
-  // ⚠️ NO tocamos la tabla
-  // ⚠️ NO llamamos renderTabla ni renderTablaPublica
-
-  renderFixturePublico(nombreCategoria);
-
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+
+  renderTablaSimple(nombreCategoria, partidos);
+  renderFixturePublico(nombreCategoria);
   renderPlayoffsSimple(nombreCategoria, partidos);
 }
 
@@ -425,4 +423,113 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
 
   html += `</div>`;
   container.innerHTML = html;
+}
+function renderTablaSimple(nombreCategoria, partidos) {
+  const wrap = document.getElementById("publico-tabla-wrap");
+  if (!wrap) return;
+
+  const tabla = {};
+
+  partidos.forEach((p) => {
+    if (!tabla[p.local]) {
+      tabla[p.local] = {
+        equipo: p.local,
+        pj: 0,
+        pg: 0,
+        pp: 0,
+        pf: 0,
+        pc: 0,
+        dif: 0,
+        pts: 0
+      };
+    }
+
+    if (!tabla[p.visitante]) {
+      tabla[p.visitante] = {
+        equipo: p.visitante,
+        pj: 0,
+        pg: 0,
+        pp: 0,
+        pf: 0,
+        pc: 0,
+        dif: 0,
+        pts: 0
+      };
+    }
+
+    if (p.puntos_local == null || p.puntos_visitante == null) return;
+
+    tabla[p.local].pj += 1;
+    tabla[p.visitante].pj += 1;
+
+    tabla[p.local].pf += p.puntos_local;
+    tabla[p.local].pc += p.puntos_visitante;
+    tabla[p.visitante].pf += p.puntos_visitante;
+    tabla[p.visitante].pc += p.puntos_local;
+
+    if (p.puntos_local > p.puntos_visitante) {
+      tabla[p.local].pg += 1;
+      tabla[p.visitante].pp += 1;
+      tabla[p.local].pts += 2;
+      tabla[p.visitante].pts += 1;
+    } else if (p.puntos_visitante > p.puntos_local) {
+      tabla[p.visitante].pg += 1;
+      tabla[p.local].pp += 1;
+      tabla[p.visitante].pts += 2;
+      tabla[p.local].pts += 1;
+    } else {
+      tabla[p.local].pts += 1;
+      tabla[p.visitante].pts += 1;
+    }
+  });
+
+  const filas = Object.values(tabla)
+    .map((e) => {
+      e.dif = e.pf - e.pc;
+      return e;
+    })
+    .sort((a, b) => {
+      if (b.pts !== a.pts) return b.pts - a.pts;
+      if (b.dif !== a.dif) return b.dif - a.dif;
+      if (b.pf !== a.pf) return b.pf - a.pf;
+      return a.equipo.localeCompare(b.equipo);
+    });
+
+  if (!filas.length) {
+    wrap.innerHTML = `<div class="empty">Todavía no hay resultados cargados para esta categoría.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Equipo</th>
+          <th>PJ</th>
+          <th>PG</th>
+          <th>PP</th>
+          <th>PF</th>
+          <th>PC</th>
+          <th>DIF</th>
+          <th>PTS</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filas.map((e, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${e.equipo}</td>
+            <td>${e.pj}</td>
+            <td>${e.pg}</td>
+            <td>${e.pp}</td>
+            <td>${e.pf}</td>
+            <td>${e.pc}</td>
+            <td>${e.dif}</td>
+            <td>${e.pts}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
 }
