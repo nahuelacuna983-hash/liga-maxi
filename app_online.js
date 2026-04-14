@@ -1,5 +1,6 @@
 const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
+const DELEGADO_PASSWORD = "resultados123";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -7,7 +8,8 @@ const CATEGORIAS_OBJETIVO = ["Maxi +35 A", "Maxi +35 B", "Maxi +48"];
 
 const estado = {
   categorias: [],
-  partidosPorCategoria: {}
+  partidosPorCategoria: {},
+  delegadoDesbloqueado: false
 };
 
 function $(id) {
@@ -39,6 +41,14 @@ function mostrarVista(nombre) {
   Object.entries(views).forEach(([key, view]) => {
     view.classList.toggle("activa", key === nombre);
   });
+}
+
+function aplicarBloqueoDelegado() {
+  $("delegado-categoria").disabled = !estado.delegadoDesbloqueado;
+  $("delegado-partido").disabled = !estado.delegadoDesbloqueado;
+  $("delegado-puntos-local").disabled = !estado.delegadoDesbloqueado;
+  $("delegado-puntos-visitante").disabled = !estado.delegadoDesbloqueado;
+  $("delegado-guardar").disabled = !estado.delegadoDesbloqueado;
 }
 
 async function cargarCategorias() {
@@ -231,7 +241,7 @@ function poblarSelectPartidosDelegado(nombreCategoria) {
     return;
   }
 
-  $("delegado-guardar").disabled = false;
+  $("delegado-guardar").disabled = !estado.delegadoDesbloqueado;
 
   partidos.forEach((p) => {
     const option = document.createElement("option");
@@ -265,6 +275,11 @@ async function guardarResultadoDelegado() {
   const puntosLocal = $("delegado-puntos-local").value;
   const puntosVisitante = $("delegado-puntos-visitante").value;
   const status = $("delegado-status");
+
+  if (!estado.delegadoDesbloqueado) {
+    setStatus(status, "Primero habilitá edición con la clave.", "warn");
+    return;
+  }
 
   if (!partidoId) {
     setStatus(status, "Seleccioná un partido.", "warn");
@@ -306,6 +321,22 @@ async function guardarResultadoDelegado() {
   setStatus(status, "Resultado guardado correctamente.", "ok");
 }
 
+function desbloquearDelegado() {
+  const clave = $("delegado-clave").value.trim();
+  const status = $("delegado-status");
+
+  if (clave !== DELEGADO_PASSWORD) {
+    estado.delegadoDesbloqueado = false;
+    aplicarBloqueoDelegado();
+    setStatus(status, "Clave incorrecta.", "error");
+    return;
+  }
+
+  estado.delegadoDesbloqueado = true;
+  aplicarBloqueoDelegado();
+  setStatus(status, "Edición habilitada.", "ok");
+}
+
 async function inicializar() {
   try {
     $("tab-publico").addEventListener("click", () => mostrarVista("publico"));
@@ -326,6 +357,7 @@ async function inicializar() {
     await refrescarCategoria(categoriaInicial);
     $("delegado-categoria").value = categoriaInicial;
     poblarSelectPartidosDelegado(categoriaInicial);
+    aplicarBloqueoDelegado();
 
     $("publico-categoria").addEventListener("change", async (e) => {
       await refrescarCategoria(e.target.value);
@@ -337,10 +369,12 @@ async function inicializar() {
       $("publico-categoria").value = categoria;
       poblarSelectPartidosDelegado(categoria);
       setStatus($("delegado-status"), "", "");
+      aplicarBloqueoDelegado();
     });
 
     $("delegado-partido").addEventListener("change", completarInputsPartidoSeleccionado);
     $("delegado-guardar").addEventListener("click", guardarResultadoDelegado);
+    $("delegado-desbloquear").addEventListener("click", desbloquearDelegado);
   } catch (error) {
     console.error(error);
     $("vista-publico").innerHTML = `

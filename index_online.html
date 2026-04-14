@@ -15,9 +15,6 @@
       --muted: #b9c6dd;
       --accent: #2f6fed;
       --accent-2: #1f58c8;
-      --ok: #1d8f47;
-      --warn: #d49f1f;
-      --danger: #c63b3b;
       --shadow: 0 12px 28px rgba(0,0,0,0.22);
       --radius: 16px;
     }
@@ -325,6 +322,17 @@
     <div id="vista-delegados" class="view">
       <div class="row">
         <div class="field">
+          <label for="delegado-clave">Clave de delegado</label>
+          <input id="delegado-clave" type="password" placeholder="Ingresá la clave" />
+        </div>
+
+        <div class="field" style="max-width:220px;">
+          <button id="delegado-desbloquear" class="primary" type="button">Habilitar edición</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
           <label for="delegado-categoria">Categoría</label>
           <select id="delegado-categoria"></select>
         </div>
@@ -347,7 +355,7 @@
         </div>
 
         <div class="field" style="max-width:220px;">
-          <button id="delegado-guardar" class="primary" type="button">Guardar resultado</button>
+          <button id="delegado-guardar" class="primary" type="button" disabled>Guardar resultado</button>
         </div>
       </div>
 
