@@ -392,52 +392,34 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
   const equipos = {};
 
   partidos.forEach((p) => {
-    if (!equipos[p.local]) equipos[p.local] = { pts: 0, dif: 0 };
-    if (!equipos[p.visitante]) equipos[p.visitante] = { pts: 0, dif: 0 };
-
-    if (p.puntos_local != null && p.puntos_visitante != null) {
-      if (p.puntos_local > p.puntos_visitante) {
-        equipos[p.local].pts += 2;
-        equipos[p.visitante].pts += 1;
-      } else if (p.puntos_visitante > p.puntos_local) {
-        equipos[p.visitante].pts += 2;
-        equipos[p.local].pts += 1;
-      } else {
-        equipos[p.local].pts += 1;
-        equipos[p.visitante].pts += 1;
-      }
-
-      equipos[p.local].dif += (p.puntos_local - p.puntos_visitante);
-      equipos[p.visitante].dif += (p.puntos_visitante - p.puntos_local);
-    }
+    if (!equipos[p.local]) equipos[p.local] = true;
+    if (!equipos[p.visitante]) equipos[p.visitante] = true;
   });
 
-  const tabla = Object.entries(equipos)
-    .map(([equipo, data]) => ({ equipo, ...data }))
-    .sort((a, b) => b.pts - a.pts || b.dif - a.dif);
+  const cantidadEquipos = Object.keys(equipos).length;
 
-  if (!tabla.length) {
+  if (!cantidadEquipos) {
     container.innerHTML = "";
     return;
   }
 
   let html = `<div class="card"><h3>Playoffs</h3>`;
 
-  if (nombreCategoria.includes("+35") && tabla.length >= 8) {
+  if (nombreCategoria.includes("+35") && cantidadEquipos >= 8) {
     html += `
-      <div class="match">1° ${tabla[0].equipo} vs 8° ${tabla[7].equipo}</div>
-      <div class="match">4° ${tabla[3].equipo} vs 5° ${tabla[4].equipo}</div>
-      <div class="match">2° ${tabla[1].equipo} vs 7° ${tabla[6].equipo}</div>
-      <div class="match">3° ${tabla[2].equipo} vs 6° ${tabla[5].equipo}</div>
+      <div class="match"><div class="teams"><span>1°</span><span class="vs">vs</span><span>8°</span></div></div>
+      <div class="match"><div class="teams"><span>4°</span><span class="vs">vs</span><span>5°</span></div></div>
+      <div class="match"><div class="teams"><span>2°</span><span class="vs">vs</span><span>7°</span></div></div>
+      <div class="match"><div class="teams"><span>3°</span><span class="vs">vs</span><span>6°</span></div></div>
     `;
   }
 
-  if (nombreCategoria.includes("+48") && tabla.length >= 6) {
+  if (nombreCategoria.includes("+48") && cantidadEquipos >= 6) {
     html += `
-      <div class="match">1° ${tabla[0].equipo} (directo)</div>
-      <div class="match">2° ${tabla[1].equipo} (directo)</div>
-      <div class="match">3° ${tabla[2].equipo} vs 6° ${tabla[5].equipo}</div>
-      <div class="match">4° ${tabla[3].equipo} vs 5° ${tabla[4].equipo}</div>
+      <div class="match"><div class="teams"><span>1°</span><span class="vs">directo a semifinal</span></div></div>
+      <div class="match"><div class="teams"><span>2°</span><span class="vs">directo a semifinal</span></div></div>
+      <div class="match"><div class="teams"><span>3°</span><span class="vs">vs</span><span>6°</span></div></div>
+      <div class="match"><div class="teams"><span>4°</span><span class="vs">vs</span><span>5°</span></div></div>
     `;
   }
 
