@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APdB - Torneos</title>
+
+  <style>
+    :root {
+      --bg: #0b1730;
+      --bg-soft: #122349;
+      --card: #162b57;
+      --line: rgba(255,255,255,0.12);
+      --text: #f4f7fb;
+      --muted: #b9c6dd;
+      --accent: #2f6fed;
+      --accent-2: #1f58c8;
+      --ok: #1d8f47;
+      --warn: #d49f1f;
+      --danger: #c63b3b;
+      --shadow: 0 12px 28px rgba(0,0,0,0.22);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #081225, #102044);
+      color: var(--text);
+    }
+
+    .app {
+      width: min(1200px, calc(100% - 24px));
+      margin: 18px auto 28px;
+    }
+
+    .topbar {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .topbar h1 {
+      margin: 0 0 6px 0;
+      font-size: 24px;
+    }
+
+    .topbar p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      border: none;
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+    }
+
+    .tab.activo {
+      background: var(--accent);
+    }
+
+    .view {
+      display: none;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .view.activa {
+      display: block;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 220px;
+      flex: 1;
+    }
+
+    .field label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    select,
+    input,
+    button {
+      font: inherit;
+    }
+
+    select,
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      outline: none;
+    }
+
+    button.primary {
+      border: none;
+      background: var(--accent);
+      color: white;
+      padding: 11px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button.primary:hover {
+      background: var(--accent-2);
+    }
+
+    button.primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin: 8px 0 0;
+      font-size: 14px;
+      color: var(--muted);
+      min-height: 20px;
+    }
+
+    .status.ok { color: #7ee39b; }
+    .status.warn { color: #ffd37d; }
+    .status.error { color: #ff9a9a; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 800;
+      background: rgba(255,255,255,0.04);
+    }
+
+    td:first-child,
+    th:first-child {
+      text-align: center;
+      width: 44px;
+    }
+
+    td:nth-child(2),
+    th:nth-child(2) {
+      text-align: left;
+    }
+
+    .fixture-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .match {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line);
+    }
+
+    .teams {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      font-weight: 700;
+    }
+
+    .vs {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .score {
+      min-width: 78px;
+      text-align: right;
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+      padding: 8px 0;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 700px) {
+      .app {
+        width: min(100%, calc(100% - 14px));
+        margin: 10px auto 20px;
+      }
+
+      .topbar h1 {
+        font-size: 20px;
+      }
+
+      .card {
+        padding: 12px;
+      }
+
+      .match {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .score {
+        min-width: auto;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <h1>APdB · Torneos</h1>
+      <p>Versión online mínima: público consulta, delegados cargan resultados.</p>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-publico" class="tab activo" type="button">Público</button>
+      <button id="tab-delegados" class="tab" type="button">Delegados</button>
+      <button id="tab-asociacion" class="tab" type="button">Asociación</button>
+    </div>
+
+    <div id="vista-publico" class="view activa">
+      <div class="row">
+        <div class="field">
+          <label for="publico-categoria">Categoría</label>
+          <select id="publico-categoria"></select>
+        </div>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <h3>Tabla</h3>
+          <div id="publico-tabla-wrap" class="table-wrap"></div>
+        </div>
+
+        <div class="card">
+          <h3>Fixture / Resultados</h3>
+          <div id="publico-fixture" class="fixture-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="vista-delegados" class="view">
+      <div class="row">
+        <div class="field">
+          <label for="delegado-categoria">Categoría</label>
+          <select id="delegado-categoria"></select>
+        </div>
+
+        <div class="field">
+          <label for="delegado-partido">Partido</label>
+          <select id="delegado-partido"></select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="delegado-puntos-local">Puntos local</label>
+          <input id="delegado-puntos-local" type="number" min="0" />
+        </div>
+
+        <div class="field">
+          <label for="delegado-puntos-visitante">Puntos visitante</label>
+          <input id="delegado-puntos-visitante" type="number" min="0" />
+        </div>
+
+        <div class="field" style="max-width:220px;">
+          <button id="delegado-guardar" class="primary" type="button">Guardar resultado</button>
+        </div>
+      </div>
+
+      <div id="delegado-status" class="status"></div>
+    </div>
+
+    <div id="vista-asociacion" class="view">
+      <div class="card">
+        <h3>Asociación</h3>
+        <p class="note">
+          Esta primera versión online prioriza lo esencial:
+          consulta pública + carga de resultados por delegados.
+          La generación de torneos y fixture queda para la siguiente iteración.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app_online.js"></script>
+</body>
+</html>
