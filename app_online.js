@@ -215,7 +215,15 @@ function renderFixturePublico(nombreCategoria) {
   let html = "";
 
   jornadasOrdenadas.forEach(jornada => {
-    html += `<div class="card"><h3>Fecha ${jornada}</h3>`;
+    const fechaPartido = porJornada[jornada][0].fecha;
+
+let titulo = `Fecha ${jornada}`;
+if (fechaPartido) {
+  const f = new Date(fechaPartido);
+  titulo += ` · ${f.toLocaleDateString()}`;
+}
+
+html += `<div class="card"><h3>${titulo}</h3>`;
 
     porJornada[jornada].forEach(p => {
       const estadoTxt =
