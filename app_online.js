@@ -216,12 +216,12 @@ function renderFixturePublico(nombreCategoria) {
   let html = "";
 
   jornadasOrdenadas.forEach(jornada => {
-    const fechaPartido = porJornada[jornada][0].fecha;
+ const fechaPartido = porJornada[jornada][0].fecha;
 
 let titulo = `Fecha ${jornada}`;
 if (fechaPartido) {
-  const f = new Date(fechaPartido);
-  titulo += ` · ${f.toLocaleDateString()}`;
+  const [anio, mes, dia] = fechaPartido.split("-");
+  titulo += ` · ${dia}/${mes}/${anio}`;
 }
 
 html += `<div class="card"><h3>${titulo}</h3>`;
