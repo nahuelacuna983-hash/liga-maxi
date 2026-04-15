@@ -82,13 +82,14 @@ async function cargarPartidosCategoria(nombreCategoria) {
   const { data, error } = await supabaseClient
     .from("partidos")
     .select(`
-      id,
-      local,
-      visitante,
-      puntos_local,
-      puntos_visitante,
-      categoria_id,
-      categorias!inner(nombre)
+     id,
+  local,
+  visitante,
+  puntos_local,
+  puntos_visitante,
+  jornada,
+  categoria_id,
+  categorias!inner(nombre)
     `)
     .eq("categorias.nombre", nombreCategoria)
     .order("created_at", { ascending: true });
