@@ -78,15 +78,114 @@ function poblarSelectCategorias(selectId, categorias) {
   });
 }
 const DELEGADOS = {
-  "meri123": {
-    nombre: "Meridiano",
-    categorias: ["Maxi +35 A", "Maxi +48", "Femenino"],
-    equipos: ["MERIDIANO V", "MERIDIANO"]
+  "universal123": {
+    nombre: "UNIVERSAL",
+    categorias: ["Maxi +35 A"],
+    equipos: ["UNIVERSAL"]
+  },
+  "meridiano123": {
+    nombre: "MERIDIANO V",
+    categorias: ["Maxi +35 A", "Maxi +48"],
+    equipos: ["MERIDIANO V"]
+  },
+  "union123": {
+    nombre: "UNION VECINAL",
+    categorias: ["Maxi +35 A"],
+    equipos: ["UNION VECINAL"]
+  },
+  "vsc123": {
+    nombre: "VILLA SAN CARLOS",
+    categorias: ["Maxi +35 A", "Maxi +48"],
+    equipos: ["VILLA SAN CARLOS"]
+  },
+  "banco123": {
+    nombre: "BANCO PROVINCIA",
+    categorias: ["Maxi +35 A"],
+    equipos: ["BANCO PROVINCIA"]
+  },
+  "unlp123": {
+    nombre: "U.N.L.P.",
+    categorias: ["Maxi +35 A"],
+    equipos: ["U.N.L.P."]
+  },
+  "tolosano123": {
+    nombre: "TOLOSANO",
+    categorias: ["Maxi +35 A"],
+    equipos: ["TOLOSANO"]
+  },
+  "mayo123": {
+    nombre: "MAYO",
+    categorias: ["Maxi +35 A"],
+    equipos: ["MAYO"]
   },
   "hogar123": {
-    nombre: "Hogar Social",
+    nombre: "HOGAR SOCIAL",
     categorias: ["Maxi +35 A", "Maxi +48"],
     equipos: ["HOGAR SOCIAL"]
+  },
+  "sud123": {
+    nombre: "SUD AMERICA",
+    categorias: ["Maxi +35 A"],
+    equipos: ["SUD AMERICA"]
+  },
+
+  // +35 B
+  "gonnet123": {
+    nombre: "GONNET",
+    categorias: ["Maxi +35 B"],
+    equipos: ["GONNET"]
+  },
+  "estudiantes123": {
+    nombre: "ESTUDIANTES",
+    categorias: ["Maxi +35 B", "Maxi +48"],
+    equipos: ["ESTUDIANTES"]
+  },
+  "max123": {
+    nombre: "MAX NORDAU",
+    categorias: ["Maxi +35 B"],
+    equipos: ["MAX NORDAU"]
+  },
+  "hornos123": {
+    nombre: "LOS HORNOS",
+    categorias: ["Maxi +35 B"],
+    equipos: ["LOS HORNOS"]
+  },
+  "reconquista123": {
+    nombre: "RECONQUISTA",
+    categorias: ["Maxi +35 B"],
+    equipos: ["RECONQUISTA"]
+  },
+  "juventud123": {
+    nombre: "JUVENTUD",
+    categorias: ["Maxi +35 B", "Maxi +48"],
+    equipos: ["JUVENTUD"]
+  },
+  "estrella123": {
+    nombre: "ESTRELLA DE BERISSO",
+    categorias: ["Maxi +35 B"],
+    equipos: ["ESTRELLA DE BERISSO"]
+  },
+  "macabi123": {
+    nombre: "MACABI",
+    categorias: ["Maxi +35 B"],
+    equipos: ["MACABI"]
+  },
+  "unidos123": {
+    nombre: "UNIDOS DEL DIQUE",
+    categorias: ["Maxi +35 B"],
+    equipos: ["UNIDOS DEL DIQUE"]
+  },
+  "velisa123": {
+    nombre: "VILLA ELISA",
+    categorias: ["Maxi +35 B", "Maxi +48"],
+    equipos: ["VILLA ELISA"]
+  },
+
+  // +48 exclusivos
+  "platense123": {
+    nombre: "PLATENSE",
+    categorias: ["Maxi +48"],
+    equipos: ["PLATENSE"]
   }
 };
 function validarDelegado(clave) {
