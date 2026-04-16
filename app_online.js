@@ -81,7 +81,7 @@ function poblarSelectCategorias(selectId, categorias) {
 async function cargarPartidosCategoria(nombreCategoria) {
   const { data, error } = await supabaseClient
     .from("partidos")
-  .select(`
+.select(`
   id,
   local,
   visitante,
@@ -89,6 +89,7 @@ async function cargarPartidosCategoria(nombreCategoria) {
   puntos_visitante,
   jornada,
   fecha,
+  libre,
   categoria_id,
   categorias!inner(nombre)
 `)
