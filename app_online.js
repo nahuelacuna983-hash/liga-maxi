@@ -77,7 +77,29 @@ function poblarSelectCategorias(selectId, categorias) {
     select.appendChild(option);
   });
 }
+const DELEGADOS = {
+  "meri123": {
+    nombre: "Meridiano",
+    categorias: ["Maxi +35 A", "Maxi +48", "Femenino"],
+    equipos: ["MERIDIANO V", "MERIDIANO"]
+  },
+  "hogar123": {
+    nombre: "Hogar Social",
+    categorias: ["Maxi +35 A", "Maxi +48"],
+    equipos: ["HOGAR SOCIAL"]
+  }
+};
+function validarDelegado(clave) {
+  const claveLimpia = String(clave || "").trim();
+  const delegado = DELEGADOS[claveLimpia];
 
+  console.log("Clave ingresada:", claveLimpia);
+  console.log("Delegados disponibles:", Object.keys(DELEGADOS));
+  console.log("Delegado encontrado:", delegado);
+
+  if (!delegado) return null;
+  return delegado;
+}
 async function cargarPartidosCategoria(nombreCategoria) {
   const { data, error } = await supabaseClient
     .from("partidos")
@@ -331,16 +353,31 @@ function desbloquearDelegado() {
   const clave = $("delegado-clave").value.trim();
   const status = $("delegado-status");
 
-  if (clave !== DELEGADO_PASSWORD) {
+  const delegado = validarDelegado(clave);
+
+  if (!delegado) {
+    estado.delegado = null;
     estado.delegadoDesbloqueado = false;
     aplicarBloqueoDelegado();
     setStatus(status, "Clave incorrecta.", "error");
     return;
   }
 
+  estado.delegado = delegado;
   estado.delegadoDesbloqueado = true;
   aplicarBloqueoDelegado();
-  setStatus(status, "Edición habilitada.", "ok");
+
+  // dejar visibles solo las categorías habilitadas
+  poblarSelectCategorias("delegado-categoria", estado.categorias.filter(cat =>
+    delegado.categorias.includes(cat.nombre)
+  ));
+
+  const primeraCategoria = $("delegado-categoria").value;
+  if (primeraCategoria) {
+    poblarSelectPartidosDelegado(primeraCategoria);
+  }
+
+  setStatus(status, `Edición habilitada para ${delegado.nombre}.`, "ok");
 }
 
 async function inicializar() {
