@@ -213,7 +213,7 @@ function renderFixturePublico(nombreCategoria) {
 
   let html = "";
 
-  jjornadasOrdenadas.forEach((jornada) => {
+  jornadasOrdenadas.forEach((jornada) => {
   const partidosJornada = porJornada[jornada] || [];
 
   let titulo = `Fecha ${jornada}`;
