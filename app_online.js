@@ -199,34 +199,34 @@ function renderFixturePublico(nombreCategoria) {
     return;
   }
 
-  // agrupar por jornada
   const porJornada = {};
 
-  partidos.forEach(p => {
+  partidos.forEach((p) => {
     const j = p.jornada || 0;
     if (!porJornada[j]) porJornada[j] = [];
     porJornada[j].push(p);
   });
 
-  // ordenar jornadas
   const jornadasOrdenadas = Object.keys(porJornada)
     .map(Number)
     .sort((a, b) => a - b);
 
   let html = "";
 
-  jornadasOrdenadas.forEach(jornada => {
- const fechaPartido = porJornada[jornada][0].fecha;
+  jornadasOrdenadas.forEach((jornada) => {
+    const partidosJornada = porJornada[jornada] || [];
 
-let titulo = `Fecha ${jornada}`;
-if (fechaPartido) {
-  const [anio, mes, dia] = fechaPartido.split("-");
-  titulo += ` · ${dia}/${mes}/${anio}`;
-}
+    let titulo = `Fecha ${jornada}`;
 
-html += `<div class="card"><h3>${titulo}</h3>`;
+    const fechaPartido = partidosJornada[0]?.fecha;
+    if (fechaPartido) {
+      const [anio, mes, dia] = fechaPartido.split("-");
+      titulo += ` · ${dia}/${mes}/${anio}`;
+    }
 
-    porJornada[jornada].forEach(p => {
+    html += `<div class="card"><h3>${titulo}</h3>`;
+
+    partidosJornada.forEach((p) => {
       const estadoTxt =
         p.puntos_local != null && p.puntos_visitante != null
           ? `${p.puntos_local} - ${p.puntos_visitante}`
