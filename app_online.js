@@ -586,10 +586,17 @@ function poblarSelectPartidosDelegado(nombreCategoria) {
   if (!select) return;
 
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  const partidosFiltrados = partidos.filter((p) =>
+  estado.delegado &&
+  (
+    estado.delegado.equipos.includes(p.local) ||
+    estado.delegado.equipos.includes(p.visitante)
+  )
+);
 
   select.innerHTML = "";
 
-  if (!partidos.length) {
+  if (!partidosFiltrados.length) {
     const option = document.createElement("option");
     option.value = "";
     option.textContent = "No hay partidos cargados";
@@ -606,7 +613,7 @@ function poblarSelectPartidosDelegado(nombreCategoria) {
     return;
   }
 
-  partidos.forEach((p) => {
+  partidosFiltrados.forEach((p) => {
     const option = document.createElement("option");
     option.value = p.id;
     option.textContent = `Fecha ${p.jornada || "-"} · ${p.local} vs ${p.visitante}`;
