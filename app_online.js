@@ -213,18 +213,22 @@ function renderFixturePublico(nombreCategoria) {
 
   let html = "";
 
-  jornadasOrdenadas.forEach((jornada) => {
-    const partidosJornada = porJornada[jornada] || [];
+  jjornadasOrdenadas.forEach((jornada) => {
+  const partidosJornada = porJornada[jornada] || [];
 
-    let titulo = `Fecha ${jornada}`;
+  let titulo = `Fecha ${jornada}`;
 
-    const fechaPartido = partidosJornada[0]?.fecha;
-    if (fechaPartido) {
-      const [anio, mes, dia] = fechaPartido.split("-");
-      titulo += ` · ${dia}/${mes}/${anio}`;
-    }
+  const fechaPartido = partidosJornada[0]?.fecha;
+  if (fechaPartido) {
+    const [anio, mes, dia] = fechaPartido.split("-");
+    titulo += ` · ${dia}/${mes}/${anio}`;
+  }
 
-    html += `<div class="card"><h3>${titulo}</h3>`;
+  html += `<div class="card"><h3>${titulo}</h3>`;
+    const libre = partidosJornada[0]?.libre;
+  if (libre) {
+    html += `<div class="empty">Libre: ${libre}</div>`;
+  }
 
     partidosJornada.forEach((p) => {
       const estadoTxt =
