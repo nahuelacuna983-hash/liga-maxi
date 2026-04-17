@@ -477,6 +477,13 @@ function desbloquearDelegado() {
   }
 
   setStatus(status, `Edición habilitada para ${delegado.nombre}.`, "ok");
+  const info = document.getElementById("delegado-info");
+if (info) {
+  info.innerHTML = `
+    Delegado: ${delegado.nombre}<br>
+    Categorías: ${delegado.categorias.join(", ")}
+  `;
+}
 }
 
 async function inicializar() {
