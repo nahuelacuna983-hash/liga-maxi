@@ -1,6 +1,6 @@
 {
   "name": "Torneos",
-  "short_name": "Torneos"
+  "short_name": "Torneos",
   "start_url": "/liga-maxi/index_online.html",
   "display": "standalone",
   "background_color": "#0f172a",
