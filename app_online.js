@@ -425,16 +425,23 @@ async function guardarResultadoDelegado() {
     setStatus(status, "Los tanteadores deben ser números válidos.", "warn");
     return;
   }
+const confirmar = confirm(`¿Confirmás ${pl} - ${pv}?`);
+if (!confirmar) {
+  setStatus(status, "Operación cancelada.", "warn");
+  return;
+}
 
   setStatus(status, "Guardando resultado...", "");
 
   const { error } = await supabaseClient
-    .from("partidos")
-    .update({
-      puntos_local: pl,
-      puntos_visitante: pv
-    })
-    .eq("id", partidoId);
+  .from("partidos")
+  .update({
+    puntos_local: pl,
+    puntos_visitante: pv,
+    cargado_por: estado.delegado?.nombre || null,
+    cargado_en: new Date().toISOString()
+  })
+  .eq("id", partidoId);
 
   if (error) {
     setStatus(status, `No se pudo guardar: ${error.message}`, "error");
