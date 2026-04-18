@@ -1,5 +1,6 @@
 {
-  "name": "Torneos",
+  
+  "name": "Torneos Básquet",
   "short_name": "Torneos",
   "start_url": "/liga-maxi/index_online.html",
   "display": "standalone",
