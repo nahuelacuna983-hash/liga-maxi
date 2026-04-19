@@ -4,7 +4,7 @@ const DELEGADO_PASSWORD = "resultados123";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const CATEGORIAS_OBJETIVO = ["Maxi +35 A", "Maxi +35 B", "Maxi +48"];
+const CATEGORIAS_OBJETIVO = ["Maxi +35 A", "Maxi +35 B", "Maxi +48", "Femenino"];
 
 const estado = {
   categorias: [],
@@ -78,10 +78,10 @@ function poblarSelectCategorias(selectId, categorias) {
 }
 const DELEGADOS = {
   "universal123": {
-    nombre: "UNIVERSAL",
-    categorias: ["Maxi +35 A"],
-    equipos: ["UNIVERSAL"]
-  },
+  nombre: "UNIVERSAL",
+  categorias: ["Maxi +35 A", "Femenino"],
+  equipos: ["UNIVERSAL"]
+},
   "meridiano123": {
     nombre: "MERIDIANO V",
     categorias: ["Maxi +35 A", "Maxi +48"],
@@ -117,11 +117,11 @@ const DELEGADOS = {
     categorias: ["Maxi +35 A"],
     equipos: ["MAYO"]
   },
-  "hogar123": {
-    nombre: "HOGAR SOCIAL",
-    categorias: ["Maxi +35 A", "Maxi +48"],
-    equipos: ["HOGAR SOCIAL"]
-  },
+ "hogar123": {
+  nombre: "HOGAR SOCIAL",
+  categorias: ["Maxi +35 A", "Maxi +48", "Femenino"],
+  equipos: ["HOGAR SOCIAL"]
+},
   "sud123": {
     nombre: "SUD AMERICA",
     categorias: ["Maxi +35 A"],
@@ -129,21 +129,21 @@ const DELEGADOS = {
   },
 
   // +35 B
-  "gonnet123": {
-    nombre: "GONNET",
-    categorias: ["Maxi +35 B"],
-    equipos: ["GONNET"]
-  },
+ "gonnet123": {
+  nombre: "GONNET",
+  categorias: ["Maxi +35 B", "Femenino"],
+  equipos: ["GONNET"]
+},
   "estudiantes123": {
     nombre: "ESTUDIANTES",
     categorias: ["Maxi +35 B", "Maxi +48"],
     equipos: ["ESTUDIANTES"]
   },
-  "max123": {
-    nombre: "MAX NORDAU",
-    categorias: ["Maxi +35 B"],
-    equipos: ["MAX NORDAU"]
-  },
+ "max123": {
+  nombre: "MAX NORDAU",
+  categorias: ["Maxi +35 B", "Femenino"],
+  equipos: ["MAX NORDAU"]
+},
   "hornos123": {
     nombre: "LOS HORNOS",
     categorias: ["Maxi +35 B"],
@@ -165,10 +165,10 @@ const DELEGADOS = {
     equipos: ["ESTRELLA DE BERISSO"]
   },
   "macabi123": {
-    nombre: "MACABI",
-    categorias: ["Maxi +35 B"],
-    equipos: ["MACABI"]
-  },
+  nombre: "MACABI",
+  categorias: ["Maxi +35 B", "Femenino"],
+  equipos: ["MACABI"]
+},
   "unidos123": {
     nombre: "UNIDOS DEL DIQUE",
     categorias: ["Maxi +35 B"],
@@ -181,10 +181,26 @@ const DELEGADOS = {
   },
 
   // +48 exclusivos
-  "platense123": {
-    nombre: "PLATENSE",
-    categorias: ["Maxi +48"],
-    equipos: ["PLATENSE"]
+"platense123": {
+  nombre: "PLATENSE",
+  categorias: ["Maxi +48", "Femenino"],
+  equipos: ["PLATENSE"]
+}
+,
+  "astillerofem123": {
+    nombre: "ASTILLERO",
+    categorias: ["Femenino"],
+    equipos: ["ASTILLERO"]
+  },
+  "estrellafem123": {
+    nombre: "ESTRELLA DE BERISSO",
+    categorias: ["Femenino"],
+    equipos: ["ESTRELLA DE BERISSO"]
+  },
+  "sanvicentefem123": {
+    nombre: "SAN VICENTE",
+    categorias: ["Femenino"],
+    equipos: ["SAN VICENTE"]
   }
 };
 function validarDelegado(clave) {
