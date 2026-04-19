@@ -361,8 +361,17 @@ function renderFixturePublico(nombreCategoria) {
           : "Pendiente";
 
       let detalleCarga = "";
+
       if (p.cargado_por) {
-        detalleCarga = `<div class="empty">Cargado por: ${p.cargado_por}${p.cargado_en ? ` · ${p.cargado_en}` : ""}</div>`;
+        detalleCarga = `
+          <div style="margin-top:6px;">
+            <button type="button" onclick="toggleDetalle(${p.id})" style="font-size:11px;">Ver detalle</button>
+            <div id="detalle-${p.id}" style="display:none; font-size:12px; color:#aaa; margin-top:4px;">
+              Cargado por: ${p.cargado_por}<br>
+              ${p.cargado_en || ""}
+            </div>
+          </div>
+        `;
       }
 
       html += `
@@ -373,7 +382,7 @@ function renderFixturePublico(nombreCategoria) {
               <span class="vs">vs</span>
               <span>${p.visitante}</span>
             </div>
-            ${detalleCarga}
+            ${detalleCarga || ""}
           </div>
           <div class="score">${estadoTxt}</div>
         </div>
@@ -384,7 +393,7 @@ function renderFixturePublico(nombreCategoria) {
   });
 
   container.innerHTML = html;
-}
+} 
 
 function completarInputsPartidoSeleccionado() {
   const categoria = $("delegado-categoria").value;
@@ -744,4 +753,10 @@ function poblarSelectPartidosDelegado(nombreCategoria) {
   });
 
   completarInputsPartidoSeleccionado();
+}
+function toggleDetalle(id) {
+  const el = document.getElementById(`detalle-${id}`);
+  if (!el) return;
+
+  el.style.display = el.style.display === "none" ? "block" : "none";
 }
