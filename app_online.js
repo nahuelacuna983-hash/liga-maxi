@@ -202,18 +202,20 @@ function validarDelegado(clave) {
 async function cargarPartidosCategoria(nombreCategoria) {
   const { data, error } = await supabaseClient
     .from("partidos")
-.select(`
-  id,
-  local,
-  visitante,
-  puntos_local,
-  puntos_visitante,
-  jornada,
-  fecha,
-  libre,
-  categoria_id,
-  categorias!inner(nombre)
-`)
+    .select(`
+      id,
+      local,
+      visitante,
+      puntos_local,
+      puntos_visitante,
+      jornada,
+      fecha,
+      libre,
+      cargado_por,
+      cargado_en,
+      categoria_id,
+      categorias!inner(nombre)
+    `)
     .eq("categorias.nombre", nombreCategoria)
     .order("created_at", { ascending: true });
 
@@ -224,7 +226,6 @@ async function cargarPartidosCategoria(nombreCategoria) {
   estado.partidosPorCategoria[nombreCategoria] = data || [];
   return estado.partidosPorCategoria[nombreCategoria];
 }
-
 function calcularTabla(partidos) {
   const tabla = {};
 
@@ -336,21 +337,22 @@ function renderFixturePublico(nombreCategoria) {
   let html = "";
 
   jornadasOrdenadas.forEach((jornada) => {
-  const partidosJornada = porJornada[jornada] || [];
+    const partidosJornada = porJornada[jornada] || [];
 
-  let titulo = `Fecha ${jornada}`;
+    let titulo = `Fecha ${jornada}`;
 
-  const fechaPartido = partidosJornada[0]?.fecha;
-  if (fechaPartido) {
-    const [anio, mes, dia] = fechaPartido.split("-");
-    titulo += ` · ${dia}/${mes}/${anio}`;
-  }
+    const fechaPartido = partidosJornada[0]?.fecha;
+    if (fechaPartido) {
+      const [anio, mes, dia] = fechaPartido.split("-");
+      titulo += ` · ${dia}/${mes}/${anio}`;
+    }
 
-  html += `<div class="card"><h3>${titulo}</h3>`;
+    html += `<div class="card"><h3>${titulo}</h3>`;
+
     const libre = partidosJornada[0]?.libre;
-  if (libre) {
-    html += `<div class="empty">Libre: ${libre}</div>`;
-  }
+    if (libre) {
+      html += `<div class="empty">Libre: ${libre}</div>`;
+    }
 
     partidosJornada.forEach((p) => {
       const estadoTxt =
@@ -358,12 +360,20 @@ function renderFixturePublico(nombreCategoria) {
           ? `${p.puntos_local} - ${p.puntos_visitante}`
           : "Pendiente";
 
+      let detalleCarga = "";
+      if (p.cargado_por) {
+        detalleCarga = `<div class="empty">Cargado por: ${p.cargado_por}${p.cargado_en ? ` · ${p.cargado_en}` : ""}</div>`;
+      }
+
       html += `
         <div class="match">
-          <div class="teams">
-            <span>${p.local}</span>
-            <span class="vs">vs</span>
-            <span>${p.visitante}</span>
+          <div style="width:100%;">
+            <div class="teams">
+              <span>${p.local}</span>
+              <span class="vs">vs</span>
+              <span>${p.visitante}</span>
+            </div>
+            ${detalleCarga}
           </div>
           <div class="score">${estadoTxt}</div>
         </div>
