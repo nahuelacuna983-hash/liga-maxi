@@ -77,6 +77,7 @@ function poblarSelectCategorias(selectId, categorias) {
   });
 }
 const DELEGADOS = {
+  
   "universal123": {
   nombre: "UNIVERSAL",
   categorias: ["Maxi +35 A", "Femenino"],
@@ -201,7 +202,36 @@ const DELEGADOS = {
     nombre: "SAN VICENTE",
     categorias: ["Femenino"],
     equipos: ["SAN VICENTE"]
-  }
+  },
+  "admin123": {
+  nombre: "ADMIN",
+  categorias: ["Maxi +35 A", "Maxi +35 B", "Maxi +48", "Femenino"],
+  equipos: [
+    "UNIVERSAL",
+    "MERIDIANO V",
+    "UNION VECINAL",
+    "VILLA SAN CARLOS",
+    "BANCO PROVINCIA",
+    "U.N.L.P.",
+    "TOLOSANO",
+    "MAYO",
+    "HOGAR SOCIAL",
+    "SUD AMERICA",
+    "GONNET",
+    "ESTUDIANTES",
+    "MAX NORDAU",
+    "LOS HORNOS",
+    "RECONQUISTA",
+    "JUVENTUD",
+    "ESTRELLA DE BERISSO",
+    "MACABI",
+    "UNIDOS DEL DIQUE",
+    "VILLA ELISA",
+    "PLATENSE",
+    "ASTILLERO",
+    "SAN VICENTE"
+  ]
+}
 };
 function validarDelegado(clave) {
   const claveLimpia = String(clave || "").trim();
