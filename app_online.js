@@ -360,18 +360,19 @@ function renderFixturePublico(nombreCategoria) {
           ? `${p.puntos_local} - ${p.puntos_visitante}`
           : "Pendiente";
 
-      let detalleCarga = "";
+     let detalleCarga = "";
 
-      if (p.cargado_por) {
-        detalleCarga = `
-          <div style="margin-top:6px;">
-<button type="button" onclick="toggleDetalle('${p.id}')" style="font-size:11px;">Ver detalle</button>;">
-              Cargado por: ${p.cargado_por}<br>
-              ${p.cargado_en || ""}
-            </div>
-          </div>
-        `;
-      }
+if (p.cargado_por) {
+  detalleCarga = `
+    <details style="margin-top:6px;">
+      <summary style="font-size:11px; cursor:pointer;">Ver detalle</summary>
+      <div style="font-size:12px; color:#aaa; margin-top:4px;">
+        Cargado por: ${p.cargado_por}<br>
+        ${p.cargado_en || ""}
+      </div>
+    </details>
+  `;
+}
 
       html += `
         <div class="match">
