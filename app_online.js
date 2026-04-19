@@ -512,10 +512,12 @@ function desbloquearDelegado() {
     delegado.categorias.includes(cat.nombre)
   ));
 
-  const primeraCategoria = $("delegado-categoria").value;
-  if (primeraCategoria) {
+const primeraCategoria = $("delegado-categoria").value;
+if (primeraCategoria) {
+  refrescarCategoria(primeraCategoria).then(() => {
     poblarSelectPartidosDelegado(primeraCategoria);
-  }
+  });
+}
 
   setStatus(status, `Edición habilitada para ${delegado.nombre}.`, "ok");
   const info = document.getElementById("delegado-info");
