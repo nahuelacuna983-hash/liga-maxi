@@ -365,8 +365,7 @@ function renderFixturePublico(nombreCategoria) {
       if (p.cargado_por) {
         detalleCarga = `
           <div style="margin-top:6px;">
-            <button type="button" onclick="toggleDetalle(${p.id})" style="font-size:11px;">Ver detalle</button>
-            <div id="detalle-${p.id}" style="display:none; font-size:12px; color:#aaa; margin-top:4px;">
+<button type="button" onclick="toggleDetalle('${p.id}')" style="font-size:11px;">Ver detalle</button>;">
               Cargado por: ${p.cargado_por}<br>
               ${p.cargado_en || ""}
             </div>
