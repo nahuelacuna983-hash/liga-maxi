@@ -754,9 +754,9 @@ function poblarSelectPartidosDelegado(nombreCategoria) {
 
   completarInputsPartidoSeleccionado();
 }
-function toggleDetalle(id) {
+window.toggleDetalle = function (id) {
   const el = document.getElementById(`detalle-${id}`);
   if (!el) return;
 
   el.style.display = el.style.display === "none" ? "block" : "none";
-}
+};
