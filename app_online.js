@@ -54,12 +54,11 @@ function aplicarBloqueoDelegado() {
 async function cargarCategorias() {
   const { data, error } = await supabaseClient
     .from("categorias")
-    .select("id, nombre")
-    .in("nombre", CATEGORIAS_OBJETIVO)
-    .order("nombre", { ascending: true });
+    .select("id, nombre");
 
   if (error) {
-    throw new Error(`No se pudieron cargar las categorías: ${error.message}`);
+    console.error(error);
+    return [];
   }
 
   estado.categorias = data || [];
