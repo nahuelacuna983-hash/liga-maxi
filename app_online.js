@@ -365,26 +365,32 @@ function renderFixturePublico(nombreCategoria) {
         detalleCarga = `<div class="empty">Cargado por: ${p.cargado_por}${p.cargado_en ? ` · ${p.cargado_en}` : ""}</div>`;
       }
 
-      html += `
-        <div class="match">
-          <div style="width:100%;">
-            <div class="teams">
-              <span>${p.local}</span>
-              <span class="vs">vs</span>
-              <span>${p.visitante}</span>
-            </div>
-            ${detalleCarga}
-          </div>
-          <div class="score">${estadoTxt}</div>
-        </div>
-      `;
-    });
+     html += `
+  <div class="match">
+    <div style="width:100%;">
+      <div class="teams">
+        <span>${p.local}</span>
+        <span class="vs">vs</span>
+        <span>${p.visitante}</span>
+      </div>
 
-    html += `</div>`;
-  });
+      ${
+        p.cargado_por
+          ? `<div style="margin-top:6px;">
+              <button onclick="toggleDetalle(${p.id})" style="font-size:11px;">Ver detalle</button>
+              <div id="detalle-${p.id}" style="display:none; font-size:12px; color:#aaa;">
+                Cargado por: ${p.cargado_por}<br>
+                ${p.cargado_en || ""}
+              </div>
+            </div>`
+          : ""
+      }
 
-  container.innerHTML = html;
-}
+    </div>
+
+    <div class="score">${estadoTxt}</div>
+  </div>
+`;
 
 function completarInputsPartidoSeleccionado() {
   const categoria = $("delegado-categoria").value;
@@ -744,4 +750,14 @@ function poblarSelectPartidosDelegado(nombreCategoria) {
   });
 
   completarInputsPartidoSeleccionado();
+}
+function toggleDetalle(id) {
+  const el = document.getElementById(`detalle-${id}`);
+  if (!el) return;
+
+  if (el.style.display === "none") {
+    el.style.display = "block";
+  } else {
+    el.style.display = "none";
+  }
 }
