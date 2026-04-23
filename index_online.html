@@ -367,19 +367,39 @@
       <div id="delegado-status" class="status"></div>
     </div>
 
-    <div id="vista-asociacion" class="view">
-      <div class="card">
-        <h3>Asociación</h3>
-        <p class="note">
-          Esta primera versión online prioriza lo esencial:
-          consulta pública + carga de resultados por delegados.
-          La generación de torneos y fixture queda para la siguiente iteración.
-        </p>
-      </div>
+   <div id="vista-asociacion" class="view">
+  <div class="row">
+    <div class="field">
+      <label for="asociacion-categoria">Categoría</label>
+      <select id="asociacion-categoria"></select>
+    </div>
+
+    <div class="field">
+      <label for="asociacion-partido">Partido</label>
+      <select id="asociacion-partido"></select>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app_online.js"></script>
-</body>
-</html>
+  <div class="row">
+    <div class="field">
+      <label for="asociacion-puntos-local">Puntos local</label>
+      <input id="asociacion-puntos-local" type="number" min="0" />
+    </div>
+
+    <div class="field">
+      <label for="asociacion-puntos-visitante">Puntos visitante</label>
+      <input id="asociacion-puntos-visitante" type="number" min="0" />
+    </div>
+
+    <div class="field" style="max-width:220px;">
+      <button id="asociacion-guardar" class="primary" type="button">Guardar corrección</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Detalle de carga</h3>
+    <div id="asociacion-detalle" class="note">Seleccioná un partido para ver quién lo cargó y cuándo.</div>
+  </div>
+
+  <div id="asociacion-status" class="status"></div>
+</div>

@@ -449,6 +449,135 @@ function completarInputsPartidoSeleccionado() {
   $("delegado-puntos-local").value = partido?.puntos_local ?? "";
   $("delegado-puntos-visitante").value = partido?.puntos_visitante ?? "";
 }
+function poblarSelectPartidosAsociacion(nombreCategoria) {
+  const select = document.getElementById("asociacion-partido");
+  if (!select) return;
+
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  select.innerHTML = "";
+
+  if (!partidos.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "No hay partidos cargados";
+    select.appendChild(option);
+
+    document.getElementById("asociacion-puntos-local").value = "";
+    document.getElementById("asociacion-puntos-visitante").value = "";
+    document.getElementById("asociacion-detalle").innerHTML = "No hay partidos cargados para esta categoría.";
+    return;
+  }
+
+  partidos.forEach((p) => {
+    const option = document.createElement("option");
+    option.value = p.id;
+    option.textContent = `Fecha ${p.jornada || "-"} · ${p.local} vs ${p.visitante}`;
+    select.appendChild(option);
+  });
+
+  completarInputsAsociacion();
+}
+
+function completarInputsAsociacion() {
+  const categoria = document.getElementById("asociacion-categoria").value;
+  const partidoId = document.getElementById("asociacion-partido").value;
+  const partidos = estado.partidosPorCategoria[categoria] || [];
+  const partido = partidos.find((p) => p.id === partidoId);
+
+  document.getElementById("asociacion-puntos-local").value = partido?.puntos_local ?? "";
+  document.getElementById("asociacion-puntos-visitante").value = partido?.puntos_visitante ?? "";
+
+  const detalle = document.getElementById("asociacion-detalle");
+  if (!detalle) return;
+
+  if (!partido) {
+    detalle.innerHTML = "Seleccioná un partido para ver quién lo cargó y cuándo.";
+    return;
+  }
+
+  detalle.innerHTML = `
+    <strong>${partido.local} vs ${partido.visitante}</strong><br>
+    Cargado por: ${partido.cargado_por || "Sin registro"}<br>
+    Fecha/hora: ${partido.cargado_en || "Sin registro"}
+  `;
+}
+
+async function guardarResultadoAsociacion() {
+  const categoria = document.getElementById("asociacion-categoria").value;
+  const partidoId = document.getElementById("asociacion-partido").value;
+  const puntosLocal = document.getElementById("asociacion-puntos-local").value;
+  const puntosVisitante = document.getElementById("asociacion-puntos-visitante").value;
+  const status = document.getElementById("asociacion-status");
+
+  if (!partidoId) {
+    setStatus(status, "Seleccioná un partido.", "warn");
+    return;
+  }
+
+  if (puntosLocal === "" || puntosVisitante === "") {
+    setStatus(status, "Completá ambos tanteadores.", "warn");
+    return;
+  }
+
+  const pl = Number(puntosLocal);
+  const pv = Number(puntosVisitante);
+
+  if (!Number.isFinite(pl) || !Number.isFinite(pv) || pl < 0 || pv < 0) {
+    setStatus(status, "Los tanteadores deben ser números válidos.", "warn");
+    return;
+  }
+
+  const confirmar = confirm(`¿Confirmás la corrección ${pl} - ${pv}?`);
+  if (!confirmar) {
+    setStatus(status, "Operación cancelada.", "warn");
+    return;
+  }
+
+  setStatus(status, "Guardando corrección...", "");
+
+  const { error } = await supabaseClient
+    .from("partidos")
+    .update({
+      puntos_local: pl,
+      puntos_visitante: pv,
+      cargado_por: "ADMIN",
+      cargado_en: new Date().toISOString()
+    })
+    .eq("id", partidoId);
+
+  if (error) {
+    setStatus(status, `No se pudo guardar: ${error.message}`, "error");
+    return;
+  }
+
+  await refrescarCategoria(categoria);
+  poblarSelectPartidosAsociacion(categoria);
+  completarInputsAsociacion();
+
+  setStatus(status, "Corrección guardada correctamente.", "ok");
+}
+
+async function inicializarAsociacion() {
+  const categorias = estado.categorias || [];
+
+  poblarSelectCategorias("asociacion-categoria", categorias);
+
+  const categoriaInicial = document.getElementById("asociacion-categoria").value;
+  if (categoriaInicial) {
+    await refrescarCategoria(categoriaInicial);
+    poblarSelectPartidosAsociacion(categoriaInicial);
+  }
+
+  document.getElementById("asociacion-categoria").addEventListener("change", async (e) => {
+    const categoria = e.target.value;
+    await refrescarCategoria(categoria);
+    poblarSelectPartidosAsociacion(categoria);
+    setStatus(document.getElementById("asociacion-status"), "", "");
+  });
+
+  document.getElementById("asociacion-partido").addEventListener("change", completarInputsAsociacion);
+  document.getElementById("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
+}
 
 async function refrescarCategoria(nombreCategoria) {
   await cargarPartidosCategoria(nombreCategoria);
@@ -576,10 +705,12 @@ async function inicializar() {
 
     const categoriaInicial = categorias[0].nombre;
 
-    await refrescarCategoria(categoriaInicial);
-    $("delegado-categoria").value = categoriaInicial;
-    poblarSelectPartidosDelegado(categoriaInicial);
-    aplicarBloqueoDelegado();
+await refrescarCategoria(categoriaInicial);
+$("delegado-categoria").value = categoriaInicial;
+poblarSelectPartidosDelegado(categoriaInicial);
+aplicarBloqueoDelegado();
+
+await inicializarAsociacion();
 
     $("publico-categoria").addEventListener("change", async (e) => {
       await refrescarCategoria(e.target.value);
