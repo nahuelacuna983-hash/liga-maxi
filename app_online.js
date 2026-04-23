@@ -1,15 +1,13 @@
 const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
-const DELEGADO_PASSWORD = "resultados123";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-const CATEGORIAS_OBJETIVO = ["Maxi +35 A", "Maxi +35 B", "Maxi +48", "Femenino"];
 
 const estado = {
   categorias: [],
   partidosPorCategoria: {},
-  delegadoDesbloqueado: false
+  delegadoDesbloqueado: false,
+  delegado: null
 };
 
 function $(id) {
@@ -17,6 +15,7 @@ function $(id) {
 }
 
 function setStatus(element, text, kind = "") {
+  if (!element) return;
   element.textContent = text || "";
   element.className = `status${kind ? " " + kind : ""}`;
 }
@@ -35,20 +34,22 @@ function mostrarVista(nombre) {
   };
 
   Object.entries(tabs).forEach(([key, btn]) => {
-    btn.classList.toggle("activo", key === nombre);
+    if (btn) btn.classList.toggle("activo", key === nombre);
   });
 
   Object.entries(views).forEach(([key, view]) => {
-    view.classList.toggle("activa", key === nombre);
+    if (view) view.classList.toggle("activa", key === nombre);
   });
 }
 
 function aplicarBloqueoDelegado() {
-  $("delegado-categoria").disabled = !estado.delegadoDesbloqueado;
-  $("delegado-partido").disabled = !estado.delegadoDesbloqueado;
-  $("delegado-puntos-local").disabled = !estado.delegadoDesbloqueado;
-  $("delegado-puntos-visitante").disabled = !estado.delegadoDesbloqueado;
-  $("delegado-guardar").disabled = !estado.delegadoDesbloqueado;
+  const enabled = !!estado.delegadoDesbloqueado;
+
+  if ($("delegado-categoria")) $("delegado-categoria").disabled = !enabled;
+  if ($("delegado-partido")) $("delegado-partido").disabled = !enabled;
+  if ($("delegado-puntos-local")) $("delegado-puntos-local").disabled = !enabled;
+  if ($("delegado-puntos-visitante")) $("delegado-puntos-visitante").disabled = !enabled;
+  if ($("delegado-guardar")) $("delegado-guardar").disabled = !enabled;
 }
 
 async function cargarCategorias() {
@@ -67,22 +68,54 @@ async function cargarCategorias() {
 
 function poblarSelectCategorias(selectId, categorias) {
   const select = $(selectId);
+  if (!select) return;
+
   select.innerHTML = "";
 
-  categorias.forEach((cat) => {
+  (categorias || []).forEach((cat) => {
     const option = document.createElement("option");
     option.value = cat.nombre;
     option.textContent = cat.nombre;
     select.appendChild(option);
   });
 }
+
 const DELEGADOS = {
-  
+  "admin123": {
+    nombre: "ADMIN",
+    categorias: ["Femenino", "Maxi +35 A", "Maxi +35 B", "Maxi +48"],
+    equipos: [
+      "UNIVERSAL",
+      "MERIDIANO V",
+      "UNION VECINAL",
+      "VILLA SAN CARLOS",
+      "BANCO PROVINCIA",
+      "U.N.L.P.",
+      "TOLOSANO",
+      "MAYO",
+      "HOGAR SOCIAL",
+      "SUD AMERICA",
+      "GONNET",
+      "ESTUDIANTES",
+      "MAX NORDAU",
+      "LOS HORNOS",
+      "RECONQUISTA",
+      "JUVENTUD",
+      "ESTRELLA DE BERISSO",
+      "MACABI",
+      "UNIDOS DEL DIQUE",
+      "VILLA ELISA",
+      "PLATENSE",
+      "ASTILLERO",
+      "SAN VICENTE"
+    ]
+  },
+
   "universal123": {
-  nombre: "UNIVERSAL",
-  categorias: ["Maxi +35 A", "Femenino"],
-  equipos: ["UNIVERSAL"]
-},
+    nombre: "UNIVERSAL",
+    categorias: ["Maxi +35 A", "Femenino"],
+    equipos: ["UNIVERSAL"]
+  },
   "meridiano123": {
     nombre: "MERIDIANO V",
     categorias: ["Maxi +35 A", "Maxi +48"],
@@ -118,33 +151,32 @@ const DELEGADOS = {
     categorias: ["Maxi +35 A"],
     equipos: ["MAYO"]
   },
- "hogar123": {
-  nombre: "HOGAR SOCIAL",
-  categorias: ["Maxi +35 A", "Maxi +48", "Femenino"],
-  equipos: ["HOGAR SOCIAL"]
-},
+  "hogar123": {
+    nombre: "HOGAR SOCIAL",
+    categorias: ["Maxi +35 A", "Maxi +48", "Femenino"],
+    equipos: ["HOGAR SOCIAL"]
+  },
   "sud123": {
     nombre: "SUD AMERICA",
     categorias: ["Maxi +35 A"],
     equipos: ["SUD AMERICA"]
   },
 
-  // +35 B
- "gonnet123": {
-  nombre: "GONNET",
-  categorias: ["Maxi +35 B", "Femenino"],
-  equipos: ["GONNET"]
-},
+  "gonnet123": {
+    nombre: "GONNET",
+    categorias: ["Maxi +35 B", "Femenino"],
+    equipos: ["GONNET"]
+  },
   "estudiantes123": {
     nombre: "ESTUDIANTES",
     categorias: ["Maxi +35 B", "Maxi +48"],
     equipos: ["ESTUDIANTES"]
   },
- "max123": {
-  nombre: "MAX NORDAU",
-  categorias: ["Maxi +35 B", "Femenino"],
-  equipos: ["MAX NORDAU"]
-},
+  "max123": {
+    nombre: "MAX NORDAU",
+    categorias: ["Maxi +35 B", "Femenino"],
+    equipos: ["MAX NORDAU"]
+  },
   "hornos123": {
     nombre: "LOS HORNOS",
     categorias: ["Maxi +35 B"],
@@ -166,10 +198,10 @@ const DELEGADOS = {
     equipos: ["ESTRELLA DE BERISSO"]
   },
   "macabi123": {
-  nombre: "MACABI",
-  categorias: ["Maxi +35 B", "Femenino"],
-  equipos: ["MACABI"]
-},
+    nombre: "MACABI",
+    categorias: ["Maxi +35 B", "Femenino"],
+    equipos: ["MACABI"]
+  },
   "unidos123": {
     nombre: "UNIDOS DEL DIQUE",
     categorias: ["Maxi +35 B"],
@@ -181,13 +213,12 @@ const DELEGADOS = {
     equipos: ["VILLA ELISA"]
   },
 
-  // +48 exclusivos
-"platense123": {
-  nombre: "PLATENSE",
-  categorias: ["Maxi +48", "Femenino"],
-  equipos: ["PLATENSE"]
-}
-,
+  "platense123": {
+    nombre: "PLATENSE",
+    categorias: ["Maxi +48", "Femenino"],
+    equipos: ["PLATENSE"]
+  },
+
   "astillerofem123": {
     nombre: "ASTILLERO",
     categorias: ["Femenino"],
@@ -202,48 +233,14 @@ const DELEGADOS = {
     nombre: "SAN VICENTE",
     categorias: ["Femenino"],
     equipos: ["SAN VICENTE"]
-  },
-  "admin123": {
-  nombre: "ADMIN",
-  categorias: ["Maxi +35 A", "Maxi +35 B", "Maxi +48", "Femenino"],
-  equipos: [
-    "UNIVERSAL",
-    "MERIDIANO V",
-    "UNION VECINAL",
-    "VILLA SAN CARLOS",
-    "BANCO PROVINCIA",
-    "U.N.L.P.",
-    "TOLOSANO",
-    "MAYO",
-    "HOGAR SOCIAL",
-    "SUD AMERICA",
-    "GONNET",
-    "ESTUDIANTES",
-    "MAX NORDAU",
-    "LOS HORNOS",
-    "RECONQUISTA",
-    "JUVENTUD",
-    "ESTRELLA DE BERISSO",
-    "MACABI",
-    "UNIDOS DEL DIQUE",
-    "VILLA ELISA",
-    "PLATENSE",
-    "ASTILLERO",
-    "SAN VICENTE"
-  ]
-}
+  }
 };
+
 function validarDelegado(clave) {
   const claveLimpia = String(clave || "").trim();
-  const delegado = DELEGADOS[claveLimpia];
-
-  console.log("Clave ingresada:", claveLimpia);
-  console.log("Delegados disponibles:", Object.keys(DELEGADOS));
-  console.log("Delegado encontrado:", delegado);
-
-  if (!delegado) return null;
-  return delegado;
+  return DELEGADOS[claveLimpia] || null;
 }
+
 async function cargarPartidosCategoria(nombreCategoria) {
   const { data, error } = await supabaseClient
     .from("partidos")
@@ -271,6 +268,7 @@ async function cargarPartidosCategoria(nombreCategoria) {
   estado.partidosPorCategoria[nombreCategoria] = data || [];
   return estado.partidosPorCategoria[nombreCategoria];
 }
+
 function calcularTabla(partidos) {
   const tabla = {};
 
@@ -322,40 +320,50 @@ function calcularTabla(partidos) {
 
   return salida;
 }
-function renderPlayoffs(nombreCategoria, tabla) {
-  const container = document.getElementById("publico-playoffs");
 
-  if (!tabla.length) {
-    container.innerHTML = "";
+function renderTablaSimple(nombreCategoria, partidos) {
+  const wrap = document.getElementById("publico-tabla-wrap");
+  if (!wrap) return;
+
+  const filas = calcularTabla(partidos);
+
+  if (!filas.length) {
+    wrap.innerHTML = `<div class="empty">Todavía no hay resultados cargados para esta categoría.</div>`;
     return;
   }
 
-  let html = `<div class="card"><h3>Playoffs</h3>`;
-
-  if (nombreCategoria.includes("+35")) {
-    if (tabla.length < 8) return;
-
-    html += `
-      <div class="match">1° ${tabla[0].equipo} vs 8° ${tabla[7].equipo}</div>
-      <div class="match">4° ${tabla[3].equipo} vs 5° ${tabla[4].equipo}</div>
-      <div class="match">2° ${tabla[1].equipo} vs 7° ${tabla[6].equipo}</div>
-      <div class="match">3° ${tabla[2].equipo} vs 6° ${tabla[5].equipo}</div>
-    `;
-  }
-
-  if (nombreCategoria.includes("+48")) {
-    if (tabla.length < 6) return;
-
-    html += `
-      <div class="match">1° ${tabla[0].equipo} (directo a semifinal)</div>
-      <div class="match">2° ${tabla[1].equipo} (directo a semifinal)</div>
-      <div class="match">3° ${tabla[2].equipo} vs 6° ${tabla[5].equipo}</div>
-      <div class="match">4° ${tabla[3].equipo} vs 5° ${tabla[4].equipo}</div>
-    `;
-  }
-
-  html += `</div>`;
-  container.innerHTML = html;
+  wrap.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Equipo</th>
+          <th>PJ</th>
+          <th>PG</th>
+          <th>PP</th>
+          <th>PF</th>
+          <th>PC</th>
+          <th>DIF</th>
+          <th>PTS</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filas.map((e, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${e.equipo}</td>
+            <td>${e.pj}</td>
+            <td>${e.pg}</td>
+            <td>${e.pp}</td>
+            <td>${e.pf}</td>
+            <td>${e.pc}</td>
+            <td>${e.dif}</td>
+            <td>${e.pts}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
 }
 
 function renderFixturePublico(nombreCategoria) {
@@ -385,8 +393,8 @@ function renderFixturePublico(nombreCategoria) {
     const partidosJornada = porJornada[jornada] || [];
 
     let titulo = `Fecha ${jornada}`;
-
     const fechaPartido = partidosJornada[0]?.fecha;
+
     if (fechaPartido) {
       const [anio, mes, dia] = fechaPartido.split("-");
       titulo += ` · ${dia}/${mes}/${anio}`;
@@ -405,19 +413,19 @@ function renderFixturePublico(nombreCategoria) {
           ? `${p.puntos_local} - ${p.puntos_visitante}`
           : "Pendiente";
 
-     let detalleCarga = "";
+      let detalleCarga = "";
 
-if (p.cargado_por) {
-  detalleCarga = `
-    <details style="margin-top:6px;">
-      <summary style="font-size:11px; cursor:pointer;">Ver detalle</summary>
-      <div style="font-size:12px; color:#aaa; margin-top:4px;">
-        Cargado por: ${p.cargado_por}<br>
-        ${p.cargado_en || ""}
-      </div>
-    </details>
-  `;
-}
+      if (p.cargado_por) {
+        detalleCarga = `
+          <details style="margin-top:6px;">
+            <summary style="font-size:11px; cursor:pointer;">Ver detalle</summary>
+            <div style="font-size:12px; color:#aaa; margin-top:4px;">
+              Cargado por: ${p.cargado_por}<br>
+              ${p.cargado_en || ""}
+            </div>
+          </details>
+        `;
+      }
 
       html += `
         <div class="match">
@@ -438,7 +446,49 @@ if (p.cargado_por) {
   });
 
   container.innerHTML = html;
-} 
+}
+
+function renderPlayoffsSimple(nombreCategoria, partidos) {
+  const container = document.getElementById("publico-playoffs");
+  if (!container) return;
+
+  const equipos = {};
+
+  partidos.forEach((p) => {
+    if (p.local) equipos[p.local] = true;
+    if (p.visitante) equipos[p.visitante] = true;
+  });
+
+  const cantidadEquipos = Object.keys(equipos).length;
+
+  if (!cantidadEquipos) {
+    container.innerHTML = "";
+    return;
+  }
+
+  let html = `<div class="card"><h3>Playoffs</h3>`;
+
+  if (nombreCategoria.includes("+35") && cantidadEquipos >= 8) {
+    html += `
+      <div class="match"><div class="teams"><span>1°</span><span class="vs">vs</span><span>8°</span></div></div>
+      <div class="match"><div class="teams"><span>4°</span><span class="vs">vs</span><span>5°</span></div></div>
+      <div class="match"><div class="teams"><span>2°</span><span class="vs">vs</span><span>7°</span></div></div>
+      <div class="match"><div class="teams"><span>3°</span><span class="vs">vs</span><span>6°</span></div></div>
+    `;
+  }
+
+  if (nombreCategoria.includes("+48") && cantidadEquipos >= 6) {
+    html += `
+      <div class="match"><div class="teams"><span>1°</span><span class="vs">directo a semifinal</span></div></div>
+      <div class="match"><div class="teams"><span>2°</span><span class="vs">directo a semifinal</span></div></div>
+      <div class="match"><div class="teams"><span>3°</span><span class="vs">vs</span><span>6°</span></div></div>
+      <div class="match"><div class="teams"><span>4°</span><span class="vs">vs</span><span>5°</span></div></div>
+    `;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
 
 function completarInputsPartidoSeleccionado() {
   const categoria = $("delegado-categoria").value;
@@ -449,8 +499,157 @@ function completarInputsPartidoSeleccionado() {
   $("delegado-puntos-local").value = partido?.puntos_local ?? "";
   $("delegado-puntos-visitante").value = partido?.puntos_visitante ?? "";
 }
+
+function poblarSelectPartidosDelegado(nombreCategoria) {
+  const select = $("delegado-partido");
+  if (!select) return;
+
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  const partidosFiltrados = partidos.filter((p) =>
+    estado.delegado &&
+    (
+      estado.delegado.equipos.includes(p.local) ||
+      estado.delegado.equipos.includes(p.visitante) ||
+      estado.delegado.equipos.includes(p.libre)
+    )
+  );
+
+  select.innerHTML = "";
+
+  if (!partidosFiltrados.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "No hay partidos cargados";
+    select.appendChild(option);
+
+    $("delegado-puntos-local").value = "";
+    $("delegado-puntos-visitante").value = "";
+    if ($("delegado-guardar")) $("delegado-guardar").disabled = !estado.delegadoDesbloqueado;
+    return;
+  }
+
+  partidosFiltrados.forEach((p) => {
+    const option = document.createElement("option");
+    option.value = p.id;
+    option.textContent = `Fecha ${p.jornada || "-"} · ${p.local} vs ${p.visitante}`;
+    select.appendChild(option);
+  });
+
+  completarInputsPartidoSeleccionado();
+}
+
+async function refrescarCategoria(nombreCategoria) {
+  await cargarPartidosCategoria(nombreCategoria);
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+
+  renderTablaSimple(nombreCategoria, partidos);
+  renderFixturePublico(nombreCategoria);
+  renderPlayoffsSimple(nombreCategoria, partidos);
+}
+
+async function guardarResultadoDelegado() {
+  const categoria = $("delegado-categoria").value;
+  const partidoId = $("delegado-partido").value;
+  const puntosLocal = $("delegado-puntos-local").value;
+  const puntosVisitante = $("delegado-puntos-visitante").value;
+  const status = $("delegado-status");
+
+  if (!estado.delegadoDesbloqueado) {
+    setStatus(status, "Primero habilitá edición con la clave.", "warn");
+    return;
+  }
+
+  if (!partidoId) {
+    setStatus(status, "Seleccioná un partido.", "warn");
+    return;
+  }
+
+  if (puntosLocal === "" || puntosVisitante === "") {
+    setStatus(status, "Completá ambos tanteadores.", "warn");
+    return;
+  }
+
+  const pl = Number(puntosLocal);
+  const pv = Number(puntosVisitante);
+
+  if (!Number.isFinite(pl) || !Number.isFinite(pv) || pl < 0 || pv < 0) {
+    setStatus(status, "Los tanteadores deben ser números válidos.", "warn");
+    return;
+  }
+
+  const confirmar = confirm(`¿Confirmás ${pl} - ${pv}?`);
+  if (!confirmar) {
+    setStatus(status, "Operación cancelada.", "warn");
+    return;
+  }
+
+  setStatus(status, "Guardando resultado...", "");
+
+  const { error } = await supabaseClient
+    .from("partidos")
+    .update({
+      puntos_local: pl,
+      puntos_visitante: pv,
+      cargado_por: estado.delegado?.nombre || null,
+      cargado_en: new Date().toISOString()
+    })
+    .eq("id", partidoId);
+
+  if (error) {
+    setStatus(status, `No se pudo guardar: ${error.message}`, "error");
+    return;
+  }
+
+  await refrescarCategoria(categoria);
+  poblarSelectPartidosDelegado(categoria);
+  $("publico-categoria").value = categoria;
+
+  setStatus(status, "Resultado guardado correctamente.", "ok");
+}
+
+function desbloquearDelegado() {
+  const clave = $("delegado-clave").value.trim();
+  const status = $("delegado-status");
+
+  const delegado = validarDelegado(clave);
+
+  if (!delegado) {
+    estado.delegado = null;
+    estado.delegadoDesbloqueado = false;
+    aplicarBloqueoDelegado();
+    setStatus(status, "Clave incorrecta.", "error");
+    return;
+  }
+
+  estado.delegado = delegado;
+  estado.delegadoDesbloqueado = true;
+  aplicarBloqueoDelegado();
+
+  poblarSelectCategorias(
+    "delegado-categoria",
+    estado.categorias.filter((cat) => delegado.categorias.includes(cat.nombre))
+  );
+
+  const primeraCategoria = $("delegado-categoria").value;
+  if (primeraCategoria) {
+    refrescarCategoria(primeraCategoria).then(() => {
+      poblarSelectPartidosDelegado(primeraCategoria);
+    });
+  }
+
+  setStatus(status, `Edición habilitada para ${delegado.nombre}.`, "ok");
+
+  const info = $("delegado-info");
+  if (info) {
+    info.innerHTML = `
+      Delegado: ${delegado.nombre}<br>
+      Categorías: ${delegado.categorias.join(", ")}
+    `;
+  }
+}
+
 function poblarSelectPartidosAsociacion(nombreCategoria) {
-  const select = document.getElementById("asociacion-partido");
+  const select = $("asociacion-partido");
   if (!select) return;
 
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
@@ -462,9 +661,9 @@ function poblarSelectPartidosAsociacion(nombreCategoria) {
     option.textContent = "No hay partidos cargados";
     select.appendChild(option);
 
-    document.getElementById("asociacion-puntos-local").value = "";
-    document.getElementById("asociacion-puntos-visitante").value = "";
-    document.getElementById("asociacion-detalle").innerHTML = "No hay partidos cargados para esta categoría.";
+    $("asociacion-puntos-local").value = "";
+    $("asociacion-puntos-visitante").value = "";
+    $("asociacion-detalle").innerHTML = "No hay partidos cargados para esta categoría.";
     return;
   }
 
@@ -479,15 +678,15 @@ function poblarSelectPartidosAsociacion(nombreCategoria) {
 }
 
 function completarInputsAsociacion() {
-  const categoria = document.getElementById("asociacion-categoria").value;
-  const partidoId = document.getElementById("asociacion-partido").value;
+  const categoria = $("asociacion-categoria").value;
+  const partidoId = $("asociacion-partido").value;
   const partidos = estado.partidosPorCategoria[categoria] || [];
   const partido = partidos.find((p) => p.id === partidoId);
 
-  document.getElementById("asociacion-puntos-local").value = partido?.puntos_local ?? "";
-  document.getElementById("asociacion-puntos-visitante").value = partido?.puntos_visitante ?? "";
+  $("asociacion-puntos-local").value = partido?.puntos_local ?? "";
+  $("asociacion-puntos-visitante").value = partido?.puntos_visitante ?? "";
 
-  const detalle = document.getElementById("asociacion-detalle");
+  const detalle = $("asociacion-detalle");
   if (!detalle) return;
 
   if (!partido) {
@@ -503,11 +702,11 @@ function completarInputsAsociacion() {
 }
 
 async function guardarResultadoAsociacion() {
-  const categoria = document.getElementById("asociacion-categoria").value;
-  const partidoId = document.getElementById("asociacion-partido").value;
-  const puntosLocal = document.getElementById("asociacion-puntos-local").value;
-  const puntosVisitante = document.getElementById("asociacion-puntos-visitante").value;
-  const status = document.getElementById("asociacion-status");
+  const categoria = $("asociacion-categoria").value;
+  const partidoId = $("asociacion-partido").value;
+  const puntosLocal = $("asociacion-puntos-local").value;
+  const puntosVisitante = $("asociacion-puntos-visitante").value;
+  const status = $("asociacion-status");
 
   if (!partidoId) {
     setStatus(status, "Seleccioná un partido.", "warn");
@@ -558,134 +757,23 @@ async function guardarResultadoAsociacion() {
 }
 
 async function inicializarAsociacion() {
-  const categorias = estado.categorias || [];
+  poblarSelectCategorias("asociacion-categoria", estado.categorias);
 
-  poblarSelectCategorias("asociacion-categoria", categorias);
-
-  const categoriaInicial = document.getElementById("asociacion-categoria").value;
+  const categoriaInicial = $("asociacion-categoria").value;
   if (categoriaInicial) {
     await refrescarCategoria(categoriaInicial);
     poblarSelectPartidosAsociacion(categoriaInicial);
   }
 
-  document.getElementById("asociacion-categoria").addEventListener("change", async (e) => {
+  $("asociacion-categoria").addEventListener("change", async (e) => {
     const categoria = e.target.value;
     await refrescarCategoria(categoria);
     poblarSelectPartidosAsociacion(categoria);
-    setStatus(document.getElementById("asociacion-status"), "", "");
+    setStatus($("asociacion-status"), "", "");
   });
 
-  document.getElementById("asociacion-partido").addEventListener("change", completarInputsAsociacion);
-  document.getElementById("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
-}
-
-async function refrescarCategoria(nombreCategoria) {
-  await cargarPartidosCategoria(nombreCategoria);
-
-  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
-
-  renderTablaSimple(nombreCategoria, partidos);
-  renderFixturePublico(nombreCategoria);
-  renderPlayoffsSimple(nombreCategoria, partidos);
-}
-
-async function guardarResultadoDelegado() {
-  const categoria = $("delegado-categoria").value;
-  const partidoId = $("delegado-partido").value;
-  const puntosLocal = $("delegado-puntos-local").value;
-  const puntosVisitante = $("delegado-puntos-visitante").value;
-  const status = $("delegado-status");
-
-  if (!estado.delegadoDesbloqueado) {
-    setStatus(status, "Primero habilitá edición con la clave.", "warn");
-    return;
-  }
-
-  if (!partidoId) {
-    setStatus(status, "Seleccioná un partido.", "warn");
-    return;
-  }
-
-  if (puntosLocal === "" || puntosVisitante === "") {
-    setStatus(status, "Completá ambos tanteadores.", "warn");
-    return;
-  }
-
-  const pl = Number(puntosLocal);
-  const pv = Number(puntosVisitante);
-
-  if (!Number.isFinite(pl) || !Number.isFinite(pv) || pl < 0 || pv < 0) {
-    setStatus(status, "Los tanteadores deben ser números válidos.", "warn");
-    return;
-  }
-const confirmar = confirm(`¿Confirmás ${pl} - ${pv}?`);
-if (!confirmar) {
-  setStatus(status, "Operación cancelada.", "warn");
-  return;
-}
-
-  setStatus(status, "Guardando resultado...", "");
-
-  const { error } = await supabaseClient
-  .from("partidos")
-  .update({
-    puntos_local: pl,
-    puntos_visitante: pv,
-    cargado_por: estado.delegado?.nombre || null,
-    cargado_en: new Date().toISOString()
-  })
-  .eq("id", partidoId);
-
-  if (error) {
-    setStatus(status, `No se pudo guardar: ${error.message}`, "error");
-    return;
-  }
-
-  await refrescarCategoria(categoria);
-  poblarSelectPartidosDelegado(categoria);
-  $("publico-categoria").value = categoria;
-
-  setStatus(status, "Resultado guardado correctamente.", "ok");
-}
-
-function desbloquearDelegado() {
-  const clave = $("delegado-clave").value.trim();
-  const status = $("delegado-status");
-
-  const delegado = validarDelegado(clave);
-
-  if (!delegado) {
-    estado.delegado = null;
-    estado.delegadoDesbloqueado = false;
-    aplicarBloqueoDelegado();
-    setStatus(status, "Clave incorrecta.", "error");
-    return;
-  }
-
-  estado.delegado = delegado;
-  estado.delegadoDesbloqueado = true;
-  aplicarBloqueoDelegado();
-
-  // dejar visibles solo las categorías habilitadas
-  poblarSelectCategorias("delegado-categoria", estado.categorias.filter(cat =>
-    delegado.categorias.includes(cat.nombre)
-  ));
-
-const primeraCategoria = $("delegado-categoria").value;
-if (primeraCategoria) {
-  refrescarCategoria(primeraCategoria).then(() => {
-    poblarSelectPartidosDelegado(primeraCategoria);
-  });
-}
-
-  setStatus(status, `Edición habilitada para ${delegado.nombre}.`, "ok");
-  const info = document.getElementById("delegado-info");
-if (info) {
-  info.innerHTML = `
-    Delegado: ${delegado.nombre}<br>
-    Categorías: ${delegado.categorias.join(", ")}
-  `;
-}
+  $("asociacion-partido").addEventListener("change", completarInputsAsociacion);
+  $("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
 }
 
 async function inicializar() {
@@ -695,7 +783,6 @@ async function inicializar() {
     $("tab-asociacion").addEventListener("click", () => mostrarVista("asociacion"));
 
     const categorias = await cargarCategorias();
-    console.log("Categorias cargadas:", categorias);
 
     if (!categorias.length) {
       throw new Error("No se encontraron categorías cargadas en Supabase.");
@@ -741,201 +828,3 @@ async function inicializar() {
 }
 
 document.addEventListener("DOMContentLoaded", inicializar);
-function renderPlayoffsSimple(nombreCategoria, partidos) {
-  const container = document.getElementById("publico-playoffs");
-
-  if (!container) return;
-
-  const equipos = {};
-
-  partidos.forEach((p) => {
-    if (!equipos[p.local]) equipos[p.local] = true;
-    if (!equipos[p.visitante]) equipos[p.visitante] = true;
-  });
-
-  const cantidadEquipos = Object.keys(equipos).length;
-
-  if (!cantidadEquipos) {
-    container.innerHTML = "";
-    return;
-  }
-
-  let html = `<div class="card"><h3>Playoffs</h3>`;
-
-  if (nombreCategoria.includes("+35") && cantidadEquipos >= 8) {
-    html += `
-      <div class="match"><div class="teams"><span>1°</span><span class="vs">vs</span><span>8°</span></div></div>
-      <div class="match"><div class="teams"><span>4°</span><span class="vs">vs</span><span>5°</span></div></div>
-      <div class="match"><div class="teams"><span>2°</span><span class="vs">vs</span><span>7°</span></div></div>
-      <div class="match"><div class="teams"><span>3°</span><span class="vs">vs</span><span>6°</span></div></div>
-    `;
-  }
-
-  if (nombreCategoria.includes("+48") && cantidadEquipos >= 6) {
-    html += `
-      <div class="match"><div class="teams"><span>1°</span><span class="vs">directo a semifinal</span></div></div>
-      <div class="match"><div class="teams"><span>2°</span><span class="vs">directo a semifinal</span></div></div>
-      <div class="match"><div class="teams"><span>3°</span><span class="vs">vs</span><span>6°</span></div></div>
-      <div class="match"><div class="teams"><span>4°</span><span class="vs">vs</span><span>5°</span></div></div>
-    `;
-  }
-
-  html += `</div>`;
-  container.innerHTML = html;
-}
-function renderTablaSimple(nombreCategoria, partidos) {
-  const wrap = document.getElementById("publico-tabla-wrap");
-  if (!wrap) return;
-
-  const tabla = {};
-
-  partidos.forEach((p) => {
-    if (!tabla[p.local]) {
-      tabla[p.local] = {
-        equipo: p.local,
-        pj: 0,
-        pg: 0,
-        pp: 0,
-        pf: 0,
-        pc: 0,
-        dif: 0,
-        pts: 0
-      };
-    }
-
-    if (!tabla[p.visitante]) {
-      tabla[p.visitante] = {
-        equipo: p.visitante,
-        pj: 0,
-        pg: 0,
-        pp: 0,
-        pf: 0,
-        pc: 0,
-        dif: 0,
-        pts: 0
-      };
-    }
-
-    if (p.puntos_local == null || p.puntos_visitante == null) return;
-
-    tabla[p.local].pj += 1;
-    tabla[p.visitante].pj += 1;
-
-    tabla[p.local].pf += p.puntos_local;
-    tabla[p.local].pc += p.puntos_visitante;
-    tabla[p.visitante].pf += p.puntos_visitante;
-    tabla[p.visitante].pc += p.puntos_local;
-
-    if (p.puntos_local > p.puntos_visitante) {
-      tabla[p.local].pg += 1;
-      tabla[p.visitante].pp += 1;
-      tabla[p.local].pts += 2;
-      tabla[p.visitante].pts += 1;
-    } else if (p.puntos_visitante > p.puntos_local) {
-      tabla[p.visitante].pg += 1;
-      tabla[p.local].pp += 1;
-      tabla[p.visitante].pts += 2;
-      tabla[p.local].pts += 1;
-    } else {
-      tabla[p.local].pts += 1;
-      tabla[p.visitante].pts += 1;
-    }
-  });
-
-  const filas = Object.values(tabla)
-    .map((e) => {
-      e.dif = e.pf - e.pc;
-      return e;
-    })
-    .sort((a, b) => {
-      if (b.pts !== a.pts) return b.pts - a.pts;
-      if (b.dif !== a.dif) return b.dif - a.dif;
-      if (b.pf !== a.pf) return b.pf - a.pf;
-      return a.equipo.localeCompare(b.equipo);
-    });
-
-  if (!filas.length) {
-    wrap.innerHTML = `<div class="empty">Todavía no hay resultados cargados para esta categoría.</div>`;
-    return;
-  }
-
-  wrap.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Equipo</th>
-          <th>PJ</th>
-          <th>PG</th>
-          <th>PP</th>
-          <th>PF</th>
-          <th>PC</th>
-          <th>DIF</th>
-          <th>PTS</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${filas.map((e, i) => `
-          <tr>
-            <td>${i + 1}</td>
-            <td>${e.equipo}</td>
-            <td>${e.pj}</td>
-            <td>${e.pg}</td>
-            <td>${e.pp}</td>
-            <td>${e.pf}</td>
-            <td>${e.pc}</td>
-            <td>${e.dif}</td>
-            <td>${e.pts}</td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
-}
-function poblarSelectPartidosDelegado(nombreCategoria) {
-  const select = document.getElementById("delegado-partido");
-  if (!select) return;
-
-  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
-  const partidosFiltrados = partidos.filter((p) =>
-  estado.delegado &&
-  (
-    estado.delegado.equipos.includes(p.local) ||
-    estado.delegado.equipos.includes(p.visitante)
-  )
-);
-
-  select.innerHTML = "";
-
-  if (!partidosFiltrados.length) {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = "No hay partidos cargados";
-    select.appendChild(option);
-
-    const localInput = document.getElementById("delegado-puntos-local");
-    const visitaInput = document.getElementById("delegado-puntos-visitante");
-    const guardarBtn = document.getElementById("delegado-guardar");
-
-    if (localInput) localInput.value = "";
-    if (visitaInput) visitaInput.value = "";
-    if (guardarBtn) guardarBtn.disabled = !estado.delegadoDesbloqueado;
-
-    return;
-  }
-
-  partidosFiltrados.forEach((p) => {
-    const option = document.createElement("option");
-    option.value = p.id;
-    option.textContent = `Fecha ${p.jornada || "-"} · ${p.local} vs ${p.visitante}`;
-    select.appendChild(option);
-  });
-
-  completarInputsPartidoSeleccionado();
-}
-window.toggleDetalle = function (id) {
-  const el = document.getElementById(`detalle-${id}`);
-  if (!el) return;
-
-  el.style.display = el.style.display === "none" ? "block" : "none";
-};
