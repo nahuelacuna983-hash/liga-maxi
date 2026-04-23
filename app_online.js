@@ -54,11 +54,11 @@ function aplicarBloqueoDelegado() {
 async function cargarCategorias() {
   const { data, error } = await supabaseClient
     .from("categorias")
-    .select("id, nombre");
+    .select("id, nombre")
+    .order("nombre", { ascending: true });
 
   if (error) {
-    console.error(error);
-    return [];
+    throw new Error(`No se pudieron cargar las categorías: ${error.message}`);
   }
 
   estado.categorias = data || [];
@@ -695,6 +695,7 @@ async function inicializar() {
     $("tab-asociacion").addEventListener("click", () => mostrarVista("asociacion"));
 
     const categorias = await cargarCategorias();
+    console.log("Categorias cargadas:", categorias);
 
     if (!categorias.length) {
       throw new Error("No se encontraron categorías cargadas en Supabase.");
