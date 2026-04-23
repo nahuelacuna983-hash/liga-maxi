@@ -705,12 +705,12 @@ async function inicializar() {
 
     const categoriaInicial = categorias[0].nombre;
 
-await refrescarCategoria(categoriaInicial);
-$("delegado-categoria").value = categoriaInicial;
-poblarSelectPartidosDelegado(categoriaInicial);
-aplicarBloqueoDelegado();
+    await refrescarCategoria(categoriaInicial);
+    $("delegado-categoria").value = categoriaInicial;
+    poblarSelectPartidosDelegado(categoriaInicial);
+    aplicarBloqueoDelegado();
 
-await inicializarAsociacion();
+    await inicializarAsociacion();
 
     $("publico-categoria").addEventListener("change", async (e) => {
       await refrescarCategoria(e.target.value);
