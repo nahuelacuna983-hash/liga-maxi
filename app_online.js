@@ -821,14 +821,6 @@ const jornadasReales = new Set(
     let fechaFinalEstimada = "No definida";
 let entraEnCalendario = "Sin analizar";
 let bloqueadasCantidad = 0;
-
-if (fechaInicio) {
-  const inicio = new Date(fechaInicio);
-
-  const diasPorFecha = dia === "0" ? 7 : 7;
-
-let diasTotales = jornadasTotales * diasPorFecha;
-
 if (fechasBloqueadasTexto.trim()) {
   const fechasBloqueadas = fechasBloqueadasTexto
     .split(",")
@@ -836,9 +828,16 @@ if (fechasBloqueadasTexto.trim()) {
     .filter(Boolean);
 
   bloqueadasCantidad = fechasBloqueadas.length;
-
-  diasTotales += bloqueadasCantidad * 7;
 }
+
+if (fechaInicio) {
+  const inicio = new Date(fechaInicio);
+
+  const diasPorFecha = dia === "0" ? 7 : 7;
+
+let diasTotales = (jornadasTotales + bloqueadasCantidad) * diasPorFecha;
+
+
 }
 
     status.innerHTML = `
