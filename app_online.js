@@ -1,3 +1,4 @@
+console.log("APP ONLINE NUEVA CARGADA");
 const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
 
