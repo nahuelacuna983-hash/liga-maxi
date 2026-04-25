@@ -786,14 +786,27 @@ if (plannerBtn) {
 
     const status = document.getElementById("planner-status");
 
-    const equiposPorCategoria = {
-      "Maxi +35 A": 10,
-      "Maxi +35 B": 10,
-      "Maxi +48": 7,
-      "Femenino": 9
-    };
+const partidos = estado.partidosPorCategoria[categoria] || [];
 
-    const equipos = equiposPorCategoria[categoria] || 0;
+const equiposSet = new Set();
+
+partidos.forEach((p) => {
+  if (p.local) equiposSet.add(p.local);
+  if (p.visitante) equiposSet.add(p.visitante);
+  if (p.libre) equiposSet.add(p.libre);
+});
+
+const equipos = equiposSet.size;
+
+const partidosJugados = partidos.filter(
+  (p) => p.puntos_local != null && p.puntos_visitante != null
+).length;
+
+const partidosPendientes = partidos.length - partidosJugados;
+
+const jornadasReales = new Set(
+  partidos.map((p) => p.jornada).filter(Boolean)
+).size;
 
     const jornadasBase =
       equipos % 2 === 0
@@ -811,6 +824,10 @@ if (plannerBtn) {
         <p><strong>Categoría:</strong> ${categoria}</p>
         <p><strong>Competencia:</strong> ${competencia}</p>
         <p><strong>Equipos:</strong> ${equipos}</p>
+       <p><strong>Jornadas cargadas:</strong> ${jornadasReales}</p> 
+        <p><strong>Partidos cargados:</strong> ${partidos.length}</p>
+        <p><strong>Partidos jugados:</strong> ${partidosJugados}</p>
+        <p><strong>Partidos pendientes:</strong> ${partidosPendientes}</p>
         <p><strong>Ruedas:</strong> ${ruedas}</p>
         <p><strong>Día:</strong> ${dia === "0" ? "Domingo" : "Miércoles"}</p>
         <p><strong>Jornadas necesarias:</strong> ${jornadasTotales}</p>
@@ -818,6 +835,7 @@ if (plannerBtn) {
       </div>
     `;
   });
+
 }
 }
 
