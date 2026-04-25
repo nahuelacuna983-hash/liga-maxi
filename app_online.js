@@ -775,6 +775,28 @@ async function inicializarAsociacion() {
 
   $("asociacion-partido").addEventListener("change", completarInputsAsociacion);
   $("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
+  const plannerBtn = document.getElementById("planner-generar");
+
+if (plannerBtn) {
+  plannerBtn.addEventListener("click", () => {
+    const categoria = document.getElementById("planner-categoria").value;
+    const competencia = document.getElementById("planner-competencia").value;
+    const ruedas = document.getElementById("planner-ruedas").value;
+    const dia = document.getElementById("planner-dia").value;
+
+    const status = document.getElementById("planner-status");
+
+    status.innerHTML = `
+      <div class="empty">
+        Configuración lista:<br><br>
+        Categoría: ${categoria}<br>
+        Competencia: ${competencia}<br>
+        Ruedas: ${ruedas}<br>
+        Día: ${dia === "0" ? "Domingo" : "Miércoles"}
+      </div>
+    `;
+  });
+}
 }
 
 async function inicializar() {

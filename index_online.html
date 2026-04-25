@@ -368,6 +368,56 @@
     </div>
 
    <div id="vista-asociacion" class="view">
+    <div id="vista-asociacion" class="vista">
+
+  <div class="card">
+    <h3>Planificador de Torneo</h3>
+
+    <div class="planner-grid">
+
+      <div>
+        <label>Categoría</label>
+        <select id="planner-categoria">
+          <option>Maxi +35 A</option>
+          <option>Maxi +35 B</option>
+          <option>Maxi +48</option>
+          <option>Femenino</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Competencia</label>
+        <select id="planner-competencia">
+          <option>Apertura</option>
+          <option>Clausura</option>
+          <option>Anual</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Ruedas</label>
+        <select id="planner-ruedas">
+          <option value="1">1 rueda</option>
+          <option value="2">2 ruedas</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Día de juego</label>
+        <select id="planner-dia">
+          <option value="0">Domingo</option>
+          <option value="3">Miércoles</option>
+        </select>
+      </div>
+
+    </div>
+
+    <button id="planner-generar">
+      Generar torneo
+    </button>
+
+    <div id="planner-status"></div>
+  </div>
   <div class="row">
     <div class="field">
       <label for="asociacion-categoria">Categoría</label>
