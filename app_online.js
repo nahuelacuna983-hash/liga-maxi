@@ -775,27 +775,50 @@ async function inicializarAsociacion() {
 
   $("asociacion-partido").addEventListener("change", completarInputsAsociacion);
   $("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
-  const plannerBtn = document.getElementById("planner-generar");
+ const plannerBtn = document.getElementById("planner-generar");
 
 if (plannerBtn) {
   plannerBtn.addEventListener("click", () => {
     const categoria = document.getElementById("planner-categoria").value;
     const competencia = document.getElementById("planner-competencia").value;
-    const ruedas = document.getElementById("planner-ruedas").value;
+    const ruedas = Number(document.getElementById("planner-ruedas").value);
     const dia = document.getElementById("planner-dia").value;
 
     const status = document.getElementById("planner-status");
 
+    const equiposPorCategoria = {
+      "Maxi +35 A": 10,
+      "Maxi +35 B": 10,
+      "Maxi +48": 7,
+      "Femenino": 9
+    };
+
+    const equipos = equiposPorCategoria[categoria] || 0;
+
+    const jornadasBase =
+      equipos % 2 === 0
+        ? equipos - 1
+        : equipos;
+
+    const jornadasTotales = jornadasBase * ruedas;
+
+    const tieneLibre = equipos % 2 !== 0;
+
     status.innerHTML = `
-      <div class="empty">
-        Configuración lista:<br><br>
-        Categoría: ${categoria}<br>
-        Competencia: ${competencia}<br>
-        Ruedas: ${ruedas}<br>
-        Día: ${dia === "0" ? "Domingo" : "Miércoles"}
+      <div class="card" style="margin-top:10px;">
+        <h3>Diagnóstico de torneo</h3>
+
+        <p><strong>Categoría:</strong> ${categoria}</p>
+        <p><strong>Competencia:</strong> ${competencia}</p>
+        <p><strong>Equipos:</strong> ${equipos}</p>
+        <p><strong>Ruedas:</strong> ${ruedas}</p>
+        <p><strong>Día:</strong> ${dia === "0" ? "Domingo" : "Miércoles"}</p>
+        <p><strong>Jornadas necesarias:</strong> ${jornadasTotales}</p>
+        <p><strong>Libre por fecha:</strong> ${tieneLibre ? "Sí" : "No"}</p>
       </div>
     `;
   });
+
 }
 }
 
