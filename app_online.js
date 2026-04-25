@@ -783,6 +783,8 @@ if (plannerBtn) {
     const competencia = document.getElementById("planner-competencia").value;
     const ruedas = Number(document.getElementById("planner-ruedas").value);
     const dia = document.getElementById("planner-dia").value;
+    const fechaInicio = document.getElementById("planner-inicio").value;
+const fechaFin = document.getElementById("planner-fin").value;
 
     const status = document.getElementById("planner-status");
 
@@ -816,6 +818,30 @@ const jornadasReales = new Set(
     const jornadasTotales = jornadasBase * ruedas;
 
     const tieneLibre = equipos % 2 !== 0;
+    let fechaFinalEstimada = "No definida";
+let entraEnCalendario = "Sin analizar";
+
+if (fechaInicio) {
+  const inicio = new Date(fechaInicio);
+
+  const diasPorFecha = dia === "0" ? 7 : 7;
+
+  const diasTotales = jornadasTotales * diasPorFecha;
+
+  const estimada = new Date(inicio);
+  estimada.setDate(estimada.getDate() + diasTotales);
+
+  fechaFinalEstimada = estimada.toLocaleDateString("es-AR");
+
+  if (fechaFin) {
+    const limite = new Date(fechaFin);
+
+    entraEnCalendario =
+      estimada <= limite
+        ? "Sí"
+        : "No";
+  }
+}
 
     status.innerHTML = `
       <div class="card" style="margin-top:10px;">
@@ -831,6 +857,8 @@ const jornadasReales = new Set(
         <p><strong>Ruedas:</strong> ${ruedas}</p>
         <p><strong>Día:</strong> ${dia === "0" ? "Domingo" : "Miércoles"}</p>
         <p><strong>Jornadas necesarias:</strong> ${jornadasTotales}</p>
+        <p><strong>Fecha final estimada:</strong> ${fechaFinalEstimada}</p>
+<p><strong>Entra en calendario:</strong> ${entraEnCalendario}</p>
         <p><strong>Libre por fecha:</strong> ${tieneLibre ? "Sí" : "No"}</p>
       </div>
     `;
