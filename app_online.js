@@ -820,27 +820,25 @@ const jornadasReales = new Set(
     const tieneLibre = equipos % 2 !== 0;
     let fechaFinalEstimada = "No definida";
 let entraEnCalendario = "Sin analizar";
+let bloqueadasCantidad = 0;
 
 if (fechaInicio) {
   const inicio = new Date(fechaInicio);
 
   const diasPorFecha = dia === "0" ? 7 : 7;
 
-  const diasTotales = jornadasTotales * diasPorFecha;
+let diasTotales = jornadasTotales * diasPorFecha;
 
-  const estimada = new Date(inicio);
-  estimada.setDate(estimada.getDate() + diasTotales);
+if (fechasBloqueadasTexto.trim()) {
+  const fechasBloqueadas = fechasBloqueadasTexto
+    .split(",")
+    .map(f => f.trim())
+    .filter(Boolean);
 
-  fechaFinalEstimada = estimada.toLocaleDateString("es-AR");
+  bloqueadasCantidad = fechasBloqueadas.length;
 
-  if (fechaFin) {
-    const limite = new Date(fechaFin);
-
-    entraEnCalendario =
-      estimada <= limite
-        ? "Sí"
-        : "No";
-  }
+  diasTotales += bloqueadasCantidad * 7;
+}
 }
 
     status.innerHTML = `
@@ -858,6 +856,7 @@ if (fechaInicio) {
         <p><strong>Día:</strong> ${dia === "0" ? "Domingo" : "Miércoles"}</p>
         <p><strong>Jornadas necesarias:</strong> ${jornadasTotales}</p>
         <p><strong>Fecha final estimada:</strong> ${fechaFinalEstimada}</p>
+        <p><strong>Fechas bloqueadas:</strong> ${bloqueadasCantidad}</p>
 <p><strong>Entra en calendario:</strong> ${entraEnCalendario}</p>
         <p><strong>Libre por fecha:</strong> ${tieneLibre ? "Sí" : "No"}</p>
       </div>
