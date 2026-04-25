@@ -818,7 +818,6 @@ if (plannerBtn) {
       </div>
     `;
   });
-
 }
 }
 
