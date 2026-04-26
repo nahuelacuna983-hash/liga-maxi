@@ -785,6 +785,7 @@ if (plannerBtn) {
     const dia = document.getElementById("planner-dia").value;
     const fechaInicio = document.getElementById("planner-inicio").value;
 const fechaFin = document.getElementById("planner-fin").value;
+const fechasBloqueadasTexto = document.getElementById("planner-bloqueadas").value;
 
     const status = document.getElementById("planner-status");
 
