@@ -786,8 +786,12 @@ if (plannerBtn) {
     const fechaInicio = document.getElementById("planner-inicio").value;
 const fechaFin = document.getElementById("planner-fin").value;
 const fechasBloqueadasTexto = document.getElementById("planner-bloqueadas").value;
-let bloqueadasCantidad = 0;
 
+let bloqueadasCantidad = 0;
+let semanasDisponibles = "-";
+let margenCalendario = "-";
+let fechaFinalEstimada = "No definida";
+let entraEnCalendario = "Sin analizar";
     const status = document.getElementById("planner-status");
 
 const partidos = estado.partidosPorCategoria[categoria] || [];
