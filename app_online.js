@@ -822,14 +822,14 @@ const jornadasReales = new Set(
     let fechaFinalEstimada = "No definida";
 let entraEnCalendario = "Sin analizar";
 
-    status.innerHTML = `
+        status.innerHTML = `
       <div class="card" style="margin-top:10px;">
         <h3>Diagnóstico de torneo</h3>
 
         <p><strong>Categoría:</strong> ${categoria}</p>
         <p><strong>Competencia:</strong> ${competencia}</p>
         <p><strong>Equipos:</strong> ${equipos}</p>
-       <p><strong>Jornadas cargadas:</strong> ${jornadasReales}</p> 
+        <p><strong>Jornadas cargadas:</strong> ${jornadasReales}</p>
         <p><strong>Partidos cargados:</strong> ${partidos.length}</p>
         <p><strong>Partidos jugados:</strong> ${partidosJugados}</p>
         <p><strong>Partidos pendientes:</strong> ${partidosPendientes}</p>
@@ -838,14 +838,14 @@ let entraEnCalendario = "Sin analizar";
         <p><strong>Jornadas necesarias:</strong> ${jornadasTotales}</p>
         <p><strong>Fecha final estimada:</strong> ${fechaFinalEstimada}</p>
         <p><strong>Fechas bloqueadas:</strong> ${bloqueadasCantidad}</p>
-<p><strong>Entra en calendario:</strong> ${entraEnCalendario}</p>
-<p><strong>Semanas disponibles:</strong> ${semanasDisponibles}</p>
-<p><strong>Margen calendario:</strong> ${margenCalendario}</p>
+        <p><strong>Entra en calendario:</strong> ${entraEnCalendario}</p>
+        <p><strong>Semanas disponibles:</strong> ${semanasDisponibles}</p>
+        <p><strong>Margen calendario:</strong> ${margenCalendario}</p>
         <p><strong>Libre por fecha:</strong> ${tieneLibre ? "Sí" : "No"}</p>
       </div>
     `;
   });
-
+  
 }
 }
 
