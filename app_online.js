@@ -821,25 +821,6 @@ const jornadasReales = new Set(
     const tieneLibre = equipos % 2 !== 0;
     let fechaFinalEstimada = "No definida";
 let entraEnCalendario = "Sin analizar";
-let bloqueadasCantidad = 0;
-if (fechasBloqueadasTexto.trim()) {
-  const fechasBloqueadas = fechasBloqueadasTexto
-    .split(",")
-    .map(f => f.trim())
-    .filter(Boolean);
-
-  bloqueadasCantidad = fechasBloqueadas.length;
-}
-
-if (fechaInicio) {
-  const inicio = new Date(fechaInicio);
-
-  const diasPorFecha = dia === "0" ? 7 : 7;
-
-let diasTotales = (jornadasTotales + bloqueadasCantidad) * diasPorFecha;
-
-
-}
 
     status.innerHTML = `
       <div class="card" style="margin-top:10px;">
@@ -858,6 +839,8 @@ let diasTotales = (jornadasTotales + bloqueadasCantidad) * diasPorFecha;
         <p><strong>Fecha final estimada:</strong> ${fechaFinalEstimada}</p>
         <p><strong>Fechas bloqueadas:</strong> ${bloqueadasCantidad}</p>
 <p><strong>Entra en calendario:</strong> ${entraEnCalendario}</p>
+<p><strong>Semanas disponibles:</strong> ${semanasDisponibles}</p>
+<p><strong>Margen calendario:</strong> ${margenCalendario}</p>
         <p><strong>Libre por fecha:</strong> ${tieneLibre ? "Sí" : "No"}</p>
       </div>
     `;
