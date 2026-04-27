@@ -786,6 +786,49 @@ if (plannerBtn) {
     const fechaInicio = document.getElementById("planner-inicio").value;
 const fechaFin = document.getElementById("planner-fin").value;
 const fechasBloqueadasTexto = document.getElementById("planner-bloqueadas").value;
+let bloqueadasCantidad = 0;
+let semanasDisponibles = "-";
+let margenCalendario = "-";
+let fechaFinalEstimada = "No definida";
+let entraEnCalendario = "Sin analizar";
+
+if (fechasBloqueadasTexto.trim()) {
+  const fechasBloqueadas = fechasBloqueadasTexto
+    .split(",")
+    .map(f => f.trim())
+    .filter(Boolean);
+
+  bloqueadasCantidad = fechasBloqueadas.length;
+}
+
+if (fechaInicio) {
+  const inicio = new Date(fechaInicio);
+
+  const diasPorFecha = 7;
+  const diasTotales = (jornadasTotales + bloqueadasCantidad) * diasPorFecha;
+
+  const estimada = new Date(inicio);
+  estimada.setDate(estimada.getDate() + diasTotales);
+
+  fechaFinalEstimada = estimada.toLocaleDateString("es-AR");
+
+  if (fechaFin) {
+    const limite = new Date(fechaFin);
+
+    const diferenciaMs = limite - inicio;
+    const diferenciaDias = diferenciaMs / (1000 * 60 * 60 * 24);
+
+    semanasDisponibles = Math.floor(diferenciaDias / 7);
+
+    margenCalendario =
+      semanasDisponibles - (jornadasTotales + bloqueadasCantidad);
+
+    entraEnCalendario =
+      estimada <= limite
+        ? "Sí"
+        : "No";
+  }
+} 
 
 let bloqueadasCantidad = 0;
 let semanasDisponibles = "-";
