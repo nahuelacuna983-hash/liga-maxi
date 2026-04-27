@@ -824,8 +824,7 @@ const jornadasReales = new Set(
     const jornadasTotales = jornadasBase * ruedas;
 
     const tieneLibre = equipos % 2 !== 0;
-    let fechaFinalEstimada = "No definida";
-let entraEnCalendario = "Sin analizar";
+    let entraEnCalendario = "Sin analizar";
 
         status.innerHTML = `
       <div class="card" style="margin-top:10px;">
