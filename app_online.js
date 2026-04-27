@@ -830,11 +830,7 @@ if (fechaInicio) {
   }
 } 
 
-let bloqueadasCantidad = 0;
-let semanasDisponibles = "-";
-let margenCalendario = "-";
-let fechaFinalEstimada = "No definida";
-let entraEnCalendario = "Sin analizar";
+
     const status = document.getElementById("planner-status");
 
 const partidos = estado.partidosPorCategoria[categoria] || [];
