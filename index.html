@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>APdB - Torneos</title>
@@ -15,9 +17,6 @@
       --muted: #b9c6dd;
       --accent: #2f6fed;
       --accent-2: #1f58c8;
-      --ok: #1d8f47;
-      --warn: #d49f1f;
-      --danger: #c63b3b;
       --shadow: 0 12px 28px rgba(0,0,0,0.22);
       --radius: 16px;
     }
@@ -29,6 +28,7 @@
       font-family: Arial, Helvetica, sans-serif;
       background: linear-gradient(180deg, #081225, #102044);
       color: var(--text);
+      
     }
 
     .app {
@@ -128,6 +128,11 @@
       padding: 10px 12px;
       border-radius: 12px;
       outline: none;
+    }
+
+    select option {
+      background: #f8fafc;
+      color: #0f172a;
     }
 
     button.primary {
@@ -262,6 +267,48 @@
       line-height: 1.45;
     }
 
+    .doc-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .doc-pill {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .doc-pill strong {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 2px;
+    }
+
+    .doc-state {
+      display: inline-flex;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(255, 211, 125, 0.14);
+      color: #ffd37d;
+      font-weight: 800;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .doc-action-muted {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .doc-table td:nth-child(2) {
+      min-width: 220px;
+    }
+
     @media (max-width: 700px) {
       .app {
         width: min(100%, calc(100% - 14px));
@@ -324,6 +371,18 @@
     </div>
 
     <div id="vista-delegados" class="view">
+      <div id="delegado-info" style="margin:10px 0; font-weight:bold;"></div>
+      <div class="row">
+        <div class="field">
+          <label for="delegado-clave">Clave de delegado</label>
+          <input id="delegado-clave" type="password" placeholder="Ingresá la clave" />
+        </div>
+
+        <div class="field" style="max-width:220px;">
+          <button id="delegado-desbloquear" class="primary" type="button">Habilitar edición</button>
+        </div>
+      </div>
+
       <div class="row">
         <div class="field">
           <label for="delegado-categoria">Categoría</label>
@@ -348,26 +407,136 @@
         </div>
 
         <div class="field" style="max-width:220px;">
-          <button id="delegado-guardar" class="primary" type="button">Guardar resultado</button>
+          <button id="delegado-guardar" class="primary" type="button" disabled>Guardar resultado</button>
         </div>
       </div>
 
       <div id="delegado-status" class="status"></div>
+
+      <div class="card">
+        <h3>Documentacion</h3>
+        <p class="note">Modulo en preparacion. Aca se vera el estado documental de tu equipo; por ahora no permite subir archivos.</p>
+        <div id="delegado-documentacion" class="table-wrap"></div>
+      </div>
     </div>
 
-    <div id="vista-asociacion" class="view">
-      <div class="card">
-        <h3>Asociación</h3>
-        <p class="note">
-          Esta primera versión online prioriza lo esencial:
-          consulta pública + carga de resultados por delegados.
-          La generación de torneos y fixture queda para la siguiente iteración.
-        </p>
+   <div id="vista-asociacion" class="view">
+
+  <div class="card">
+    <h3>Planificador de Torneo</h3>
+
+    <div class="planner-grid">
+
+      <div>
+        <label>Categoría</label>
+        <select id="planner-categoria">
+          <option>Maxi +35 A</option>
+          <option>Maxi +35 B</option>
+          <option>Maxi +48</option>
+          <option>Femenino</option>
+        </select>
       </div>
+
+      <div>
+        <label>Competencia</label>
+        <select id="planner-competencia">
+          <option>Apertura</option>
+          <option>Clausura</option>
+          <option>Anual</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Ruedas</label>
+        <select id="planner-ruedas">
+          <option value="1">1 rueda</option>
+          <option value="2">2 ruedas</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Día de juego</label>
+        <select id="planner-dia">
+          <option value="0">Domingo</option>
+          <option value="3">Miércoles</option>
+        </select>
+      </div>
+      <div>
+  <label>Fecha de inicio</label>
+  <input id="planner-inicio" type="date">
+</div>
+
+<div>
+  <label>Fecha límite</label>
+  <input id="planner-fin" type="date">
+</div>
+<div>
+  <label>Fechas bloqueadas</label>
+  <input
+    id="planner-bloqueadas"
+    type="text"
+    placeholder="Ej: 25-5-2026, 9-8-2026"
+  >
+</div>
+
+    </div>
+
+    <button id="planner-generar">
+      Generar torneo
+    </button>
+
+    <div id="planner-status"></div>
+  </div>
+  <div class="row">
+    <div class="field">
+      <label for="asociacion-categoria">Categoría</label>
+      <select id="asociacion-categoria"></select>
+    </div>
+
+    <div class="field">
+      <label for="asociacion-partido">Partido</label>
+      <select id="asociacion-partido"></select>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app_online.js"></script>
+  <div class="row">
+    <div class="field">
+      <label for="asociacion-puntos-local">Puntos local</label>
+      <input id="asociacion-puntos-local" type="number" min="0" />
+    </div>
+
+    <div class="field">
+      <label for="asociacion-puntos-visitante">Puntos visitante</label>
+      <input id="asociacion-puntos-visitante" type="number" min="0" />
+    </div>
+
+    <div class="field" style="max-width:220px;">
+      <button id="asociacion-guardar" class="primary" type="button">Guardar corrección</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Detalle de carga</h3>
+    <div id="asociacion-detalle" class="note">Seleccioná un partido para ver quién lo cargó y cuándo.</div>
+  </div>
+
+  <div class="card">
+    <h3>Control documental</h3>
+    <p class="note">Vista preliminar de control. Todavia no escribe en Supabase ni permite aprobar archivos.</p>
+    <div id="documentacion-resumen" class="doc-summary"></div>
+    <div id="documentacion-tabla" class="table-wrap"></div>
+  </div>
+
+  <div id="asociacion-status" class="status"></div>
+</div>
+  </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app_online.js"></script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+  }
+</script>
 </body>
 </html>

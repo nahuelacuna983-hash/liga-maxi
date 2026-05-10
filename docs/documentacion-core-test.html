@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Documentacion Core</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #0b1730;
+      color: #f8fafc;
+      padding: 20px;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 12px;
+      padding: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Test Documentacion Core</h1>
+  <pre id="salida">Ejecutando...</pre>
+
+  <script src="documentacion-core.js"></script>
+  <script>
+    const documentos = [
+      {
+        id: "1",
+        equipo: "UNIVERSAL",
+        documento: "Certificado medico",
+        vencimiento: "30/06/2026",
+        estado: "pendiente",
+        observacion: "Sin carga"
+      },
+      {
+        id: "2",
+        equipo: "GONNET",
+        documento: "Seguro",
+        vencimiento: "15/05/2026",
+        estado: "observado",
+        observacion: "Falta hoja de cobertura"
+      },
+      {
+        id: "3",
+        equipo: "PLATENSE",
+        documento: "Lista de buena fe",
+        vencimiento: "No aplica",
+        estado: "aprobado",
+        observacion: "Completa"
+      }
+    ];
+
+    const core = window.DocumentacionCore;
+    const fechaBase = new Date(2026, 4, 10);
+    const resultado = {
+      metricas: core.calcularMetricasDocumentales(documentos, fechaBase),
+      criticos: core.obtenerPendientesCriticos(documentos),
+      requisitosFemenino: core.obtenerRequisitosCategoria("Femenino"),
+      csv: core.exportarDocumentosCsv(documentos),
+      cambioEstado: core.cambiarEstadoDocumento(documentos, "1", "cargado", "Archivo cargado")
+    };
+
+    document.getElementById("salida").textContent = JSON.stringify(resultado, null, 2);
+  </script>
+</body>
+</html>

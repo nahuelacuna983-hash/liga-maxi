@@ -130,6 +130,11 @@
       outline: none;
     }
 
+    select option {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
     button.primary {
       border: none;
       background: var(--accent);
@@ -262,6 +267,48 @@
       line-height: 1.45;
     }
 
+    .doc-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .doc-pill {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .doc-pill strong {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 2px;
+    }
+
+    .doc-state {
+      display: inline-flex;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(255, 211, 125, 0.14);
+      color: #ffd37d;
+      font-weight: 800;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .doc-action-muted {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .doc-table td:nth-child(2) {
+      min-width: 220px;
+    }
+
     @media (max-width: 700px) {
       .app {
         width: min(100%, calc(100% - 14px));
@@ -365,10 +412,15 @@
       </div>
 
       <div id="delegado-status" class="status"></div>
+
+      <div class="card">
+        <h3>Documentacion</h3>
+        <p class="note">Modulo en preparacion. Aca se vera el estado documental de tu equipo; por ahora no permite subir archivos.</p>
+        <div id="delegado-documentacion" class="table-wrap"></div>
+      </div>
     </div>
 
    <div id="vista-asociacion" class="view">
-    <div id="vista-asociacion" class="vista">
 
   <div class="card">
     <h3>Planificador de Torneo</h3>
@@ -468,8 +520,16 @@
     <div id="asociacion-detalle" class="note">Seleccioná un partido para ver quién lo cargó y cuándo.</div>
   </div>
 
+  <div class="card">
+    <h3>Control documental</h3>
+    <p class="note">Vista preliminar de control. Todavia no escribe en Supabase ni permite aprobar archivos.</p>
+    <div id="documentacion-resumen" class="doc-summary"></div>
+    <div id="documentacion-tabla" class="table-wrap"></div>
+  </div>
+
   <div id="asociacion-status" class="status"></div>
 </div>
+  </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app_online.js"></script>
 
@@ -478,3 +538,5 @@
     navigator.serviceWorker.register("sw.js");
   }
 </script>
+</body>
+</html>

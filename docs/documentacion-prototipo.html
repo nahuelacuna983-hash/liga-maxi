@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prototipo Documentacion - APdB Liga Maxi</title>
+  <style>
+    :root {
+      --bg: #0b1730;
+      --panel: #122349;
+      --card: #172b55;
+      --line: rgba(255,255,255,0.12);
+      --text: #f8fafc;
+      --muted: #b9c6dd;
+      --blue: #2f6fed;
+      --green: #7ee39b;
+      --yellow: #ffd37d;
+      --red: #ff9a9a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #081225, #102044);
+      color: var(--text);
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 24px));
+      margin: 18px auto 32px;
+    }
+
+    .topbar,
+    .panel,
+    .card {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.06);
+      border-radius: 14px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.22);
+    }
+
+    .topbar {
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    .topbar h1 {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .muted {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      padding: 14px;
+    }
+
+    .metric {
+      font-size: 30px;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+
+    .metric.warn {
+      color: var(--yellow);
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    select,
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font: inherit;
+    }
+
+    option {
+      color: #111827;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 86px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font: inherit;
+      resize: vertical;
+    }
+
+    .panel {
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .tab {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .tab.active {
+      background: var(--blue);
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      min-width: 820px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--muted);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .state {
+      display: inline-flex;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .state.pendiente { color: var(--yellow); background: rgba(255,211,125,0.14); }
+    .state.cargado { color: #9cc2ff; background: rgba(47,111,237,0.18); }
+    .state.aprobado { color: var(--green); background: rgba(126,227,155,0.14); }
+    .state.observado { color: var(--red); background: rgba(255,154,154,0.14); }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: var(--blue);
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: rgba(255,255,255,0.12);
+    }
+
+    .notice {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255,211,125,0.12);
+      border: 1px solid rgba(255,211,125,0.35);
+      color: #ffe3a6;
+      margin-bottom: 14px;
+    }
+
+    .status-line {
+      min-height: 22px;
+      color: var(--muted);
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .upload-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .history {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .event {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .event strong {
+      color: var(--text);
+    }
+
+    .critical-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .critical-item {
+      border: 1px solid rgba(255,211,125,0.35);
+      background: rgba(255,211,125,0.1);
+      color: #ffe3a6;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    .requirement-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 14px;
+    }
+
+    .requirement-chip {
+      display: inline-flex;
+      padding: 7px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0,0,0,0.55);
+      z-index: 20;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal {
+      width: min(520px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #122349;
+      padding: 16px;
+      box-shadow: 0 18px 42px rgba(0,0,0,0.35);
+    }
+
+    @media (max-width: 720px) {
+      .topbar h1 { font-size: 20px; }
+      .app { width: min(100%, calc(100% - 14px)); margin-top: 10px; }
+      .upload-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="topbar">
+      <h1>Control documental</h1>
+      <p class="muted">Prototipo independiente. No esta conectado a Supabase y no afecta la app en produccion.</p>
+    </section>
+
+    <div class="notice">
+      Esta pantalla es solo para validar el flujo: pendientes, cargas, observaciones y aprobaciones.
+    </div>
+
+    <nav class="tabs">
+      <button class="tab active" type="button" data-view="asociacion">Asociacion</button>
+      <button class="tab" type="button" data-view="delegado">Delegado</button>
+    </nav>
+
+    <section class="grid">
+      <article class="card">
+        <div id="metric-pendientes" class="metric">0</div>
+        <p class="muted">Documentos pendientes</p>
+      </article>
+      <article class="card">
+        <div id="metric-cargados" class="metric">0</div>
+        <p class="muted">Cargados para revisar</p>
+      </article>
+      <article class="card">
+        <div id="metric-aprobados" class="metric">0</div>
+        <p class="muted">Aprobados</p>
+      </article>
+      <article class="card">
+        <div id="metric-observados" class="metric">0</div>
+        <p class="muted">Observados</p>
+      </article>
+      <article class="card">
+        <div id="metric-vencimientos" class="metric warn">0</div>
+        <p class="muted">Vencen en 30 dias</p>
+      </article>
+    </section>
+
+    <section id="view-asociacion" class="panel view active">
+      <h2>Revision de Asociacion</h2>
+      <div id="requisitos-categoria" class="requirement-list"></div>
+      <div class="actions" style="margin-bottom:12px;">
+        <button id="exportar-csv" class="secondary" type="button">Exportar resumen CSV</button>
+      </div>
+      <div class="filters">
+        <div>
+          <label for="categoria">Categoria</label>
+          <select id="categoria">
+            <option>Maxi +35 A</option>
+            <option>Maxi +35 B</option>
+            <option>Maxi +48</option>
+            <option>Femenino</option>
+          </select>
+        </div>
+        <div>
+          <label for="estado">Estado</label>
+          <select id="estado">
+            <option>Todos</option>
+            <option>Pendiente</option>
+            <option>Cargado</option>
+            <option>Observado</option>
+            <option>Aprobado</option>
+          </select>
+        </div>
+        <div>
+          <label for="buscar">Buscar equipo</label>
+          <input id="buscar" type="search" placeholder="Ej: Universal">
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Equipo</th>
+              <th>Documento</th>
+              <th>Vencimiento</th>
+              <th>Estado</th>
+              <th>Observacion</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="asociacion-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="view-delegado" class="panel view">
+      <h2>Vista Delegado</h2>
+      <p class="muted">Ejemplo de lo que veria un delegado al entrar con su clave. La accion de subir archivo todavia no esta conectada.</p>
+
+      <div class="filters">
+        <div>
+          <label for="delegado-equipo">Equipo</label>
+          <select id="delegado-equipo">
+            <option>UNIVERSAL</option>
+            <option>MERIDIANO V</option>
+            <option>GONNET</option>
+            <option>PLATENSE</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Documento</th>
+              <th>Vencimiento</th>
+              <th>Estado</th>
+              <th>Observacion</th>
+              <th>Accion</th>
+            </tr>
+          </thead>
+          <tbody id="delegado-body"></tbody>
+        </table>
+      </div>
+
+      <div class="upload-row">
+        <div>
+          <label for="delegado-documento">Simular carga de documento</label>
+          <select id="delegado-documento"></select>
+        </div>
+        <button id="simular-carga" type="button">Marcar como cargado</button>
+      </div>
+
+      <div id="demo-status" class="status-line"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Historial simulado</h2>
+      <p class="muted">Registro visual de acciones. En la version real esto iria a la tabla de auditoria.</p>
+      <div id="historial" class="history"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Vista previa CSV</h2>
+      <p class="muted">En la version real esto podria descargarse como archivo.</p>
+      <textarea id="csv-preview" readonly placeholder="Toca Exportar resumen CSV para generar el contenido."></textarea>
+    </section>
+
+    <section class="panel">
+      <h2>Pendientes criticos</h2>
+      <p class="muted">Resumen de documentos pendientes u observados que requieren accion.</p>
+      <div id="pendientes-criticos" class="critical-list"></div>
+    </section>
+  </main>
+
+  <div id="observacion-modal" class="modal-backdrop">
+    <div class="modal">
+      <h2>Observar documento</h2>
+      <p id="observacion-contexto" class="muted"></p>
+      <label for="observacion-texto">Observacion para el delegado</label>
+      <textarea id="observacion-texto" placeholder="Ej: falta hoja de cobertura, archivo ilegible, vencimiento incorrecto"></textarea>
+      <div class="actions" style="margin-top:12px;">
+        <button id="confirmar-observacion" type="button">Guardar observacion</button>
+        <button id="cancelar-observacion" class="secondary" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let documentoEnObservacion = null;
+
+    const documentos = [
+      {
+        id: "universal-buena-fe",
+        equipo: "UNIVERSAL",
+        documento: "Lista de buena fe",
+        vencimiento: "No aplica",
+        estado: "aprobado",
+        observacion: "Completa"
+      },
+      {
+        id: "meridiano-certificado",
+        equipo: "MERIDIANO V",
+        documento: "Certificado medico",
+        vencimiento: "30/06/2026",
+        estado: "cargado",
+        observacion: "Esperando revision"
+      },
+      {
+        id: "gonnet-seguro",
+        equipo: "GONNET",
+        documento: "Seguro",
+        vencimiento: "15/05/2026",
+        estado: "observado",
+        observacion: "Falta hoja de cobertura"
+      },
+      {
+        id: "platense-ddjj",
+        equipo: "PLATENSE",
+        documento: "Declaracion jurada",
+        vencimiento: "No aplica",
+        estado: "pendiente",
+        observacion: "Sin carga"
+      },
+      {
+        id: "universal-certificado",
+        equipo: "UNIVERSAL",
+        documento: "Certificado medico",
+        vencimiento: "30/06/2026",
+        estado: "pendiente",
+        observacion: "Sin carga"
+      }
+    ];
+
+    const estadoLabel = {
+      pendiente: "Pendiente",
+      cargado: "Cargado",
+      aprobado: "Aprobado",
+      observado: "Observado"
+    };
+
+    const historial = [
+      {
+        actor: "Sistema",
+        accion: "Prototipo iniciado",
+        detalle: "Se cargaron documentos de ejemplo."
+      }
+    ];
+
+    const requisitosPorCategoria = {
+      "Maxi +35 A": [
+        "Lista de buena fe",
+        "Certificado medico",
+        "Seguro",
+        "Declaracion jurada"
+      ],
+      "Maxi +35 B": [
+        "Lista de buena fe",
+        "Certificado medico",
+        "Seguro",
+        "Declaracion jurada"
+      ],
+      "Maxi +48": [
+        "Lista de buena fe",
+        "Certificado medico",
+        "Seguro"
+      ],
+      "Femenino": [
+        "Lista de buena fe",
+        "Certificado medico",
+        "Seguro",
+        "Imagenes para redes"
+      ]
+    };
+
+    function estadoHtml(estado) {
+      return `<span class="state ${estado}">${estadoLabel[estado]}</span>`;
+    }
+
+    function accionAsociacion(estado) {
+      if (estado === "cargado") return `<button data-action="aprobar">Aprobar</button><button class="secondary" data-action="observar">Observar</button>`;
+      if (estado === "pendiente") return `<button class="secondary" data-action="recordar">Recordar</button>`;
+      return `<button class="secondary">Ver</button>`;
+    }
+
+    function accionDelegado(estado) {
+      if (estado === "aprobado") return `<button class="secondary">Ver</button>`;
+      if (estado === "observado") return `<button>Reemplazar</button>`;
+      return `<button>Subir</button>`;
+    }
+
+    function abrirModalObservacion(item) {
+      documentoEnObservacion = item;
+      document.getElementById("observacion-contexto").textContent = `${item.equipo} - ${item.documento}`;
+      document.getElementById("observacion-texto").value = item.observacion || "";
+      document.getElementById("observacion-modal").classList.add("active");
+    }
+
+    function cerrarModalObservacion() {
+      documentoEnObservacion = null;
+      document.getElementById("observacion-modal").classList.remove("active");
+    }
+
+    function renderMetricas() {
+      const contar = (estado) => documentos.filter((item) => item.estado === estado).length;
+      const proximos = documentos.filter((item) => {
+        if (item.vencimiento === "No aplica") return false;
+
+        const [dia, mes, anio] = item.vencimiento.split("/").map(Number);
+        const vencimiento = new Date(anio, mes - 1, dia);
+        const hoy = new Date(2026, 4, 10);
+        const diferenciaDias = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24));
+
+        return diferenciaDias >= 0 && diferenciaDias <= 30;
+      }).length;
+
+      document.getElementById("metric-pendientes").textContent = contar("pendiente");
+      document.getElementById("metric-cargados").textContent = contar("cargado");
+      document.getElementById("metric-aprobados").textContent = contar("aprobado");
+      document.getElementById("metric-observados").textContent = contar("observado");
+      document.getElementById("metric-vencimientos").textContent = proximos;
+    }
+
+    function renderRequisitosCategoria() {
+      const categoria = document.getElementById("categoria").value;
+      const requisitos = requisitosPorCategoria[categoria] || [];
+      const container = document.getElementById("requisitos-categoria");
+
+      container.innerHTML = requisitos.map((requisito) => `
+        <span class="requirement-chip">${requisito}</span>
+      `).join("");
+    }
+
+    function exportarCsv() {
+      const encabezado = ["equipo", "documento", "vencimiento", "estado", "observacion"];
+      const filas = documentos.map((item) => [
+        item.equipo,
+        item.documento,
+        item.vencimiento,
+        estadoLabel[item.estado],
+        item.observacion
+      ]);
+
+      const csv = [encabezado, ...filas]
+        .map((fila) => fila.map((valor) => `"${String(valor).replaceAll('"', '""')}"`).join(","))
+        .join("\n");
+
+      document.getElementById("csv-preview").value = csv;
+      setDemoStatus("Resumen CSV generado en la vista previa.");
+      agregarEvento("Asociacion", "Exporto resumen CSV", `${filas.length} filas generadas.`);
+    }
+
+    function renderAsociacion() {
+      const estadoFiltro = document.getElementById("estado").value.toLowerCase();
+      const busqueda = document.getElementById("buscar").value.trim().toLowerCase();
+      const body = document.getElementById("asociacion-body");
+
+      const filtrados = documentos.filter((item) => {
+        const coincideEstado = estadoFiltro === "todos" || item.estado === estadoFiltro;
+        const coincideEquipo = !busqueda || item.equipo.toLowerCase().includes(busqueda);
+        return coincideEstado && coincideEquipo;
+      });
+
+      body.innerHTML = filtrados.map((item) => `
+        <tr>
+          <td>${item.equipo}</td>
+          <td>${item.documento}</td>
+          <td>${item.vencimiento}</td>
+          <td>${estadoHtml(item.estado)}</td>
+          <td>${item.observacion}</td>
+          <td><div class="actions" data-id="${item.id}">${accionAsociacion(item.estado)}</div></td>
+        </tr>
+      `).join("");
+
+      body.querySelectorAll("[data-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const id = button.closest("[data-id]").dataset.id;
+          const item = documentos.find((doc) => doc.id === id);
+          if (!item) return;
+
+          if (button.dataset.action === "aprobar") {
+            item.estado = "aprobado";
+            item.observacion = "Aprobado por Asociacion";
+            setDemoStatus(`${item.documento} de ${item.equipo} aprobado.`);
+            agregarEvento("Asociacion", "Aprobo documento", `${item.equipo} - ${item.documento}`);
+          }
+
+          if (button.dataset.action === "observar") {
+            abrirModalObservacion(item);
+          }
+
+          if (button.dataset.action === "recordar") {
+            item.observacion = "Recordatorio enviado al delegado";
+            setDemoStatus(`Recordatorio generado para ${item.documento} de ${item.equipo}.`);
+            agregarEvento("Asociacion", "Genero recordatorio", `${item.equipo} - ${item.documento}`);
+          }
+
+          renderAsociacion();
+          renderDelegado();
+          renderMetricas();
+          renderPendientesCriticos();
+        });
+      });
+    }
+
+    function renderDelegado() {
+      const equipo = document.getElementById("delegado-equipo").value;
+      const body = document.getElementById("delegado-body");
+      const documentoSelect = document.getElementById("delegado-documento");
+      const filtrados = documentos.filter((item) => item.equipo === equipo);
+
+      body.innerHTML = filtrados.map((item) => `
+        <tr>
+          <td>${item.documento}</td>
+          <td>${item.vencimiento}</td>
+          <td>${estadoHtml(item.estado)}</td>
+          <td>${item.observacion}</td>
+          <td><div class="actions">${accionDelegado(item.estado)}</div></td>
+        </tr>
+      `).join("");
+
+      documentoSelect.innerHTML = filtrados
+        .filter((item) => item.estado !== "aprobado")
+        .map((item) => `<option value="${item.id}">${item.documento}</option>`)
+        .join("");
+    }
+
+    function setDemoStatus(texto) {
+      document.getElementById("demo-status").textContent = texto;
+    }
+
+    function agregarEvento(actor, accion, detalle) {
+      historial.unshift({ actor, accion, detalle });
+      renderHistorial();
+    }
+
+    function renderHistorial() {
+      const container = document.getElementById("historial");
+      container.innerHTML = historial.map((evento) => `
+        <div class="event">
+          <strong>${evento.actor}</strong> - ${evento.accion}<br>
+          ${evento.detalle}
+        </div>
+      `).join("");
+    }
+
+    function renderPendientesCriticos() {
+      const container = document.getElementById("pendientes-criticos");
+      const criticos = documentos.filter((item) =>
+        item.estado === "pendiente" || item.estado === "observado"
+      );
+
+      if (!criticos.length) {
+        container.innerHTML = `<div class="event">No hay pendientes criticos.</div>`;
+        return;
+      }
+
+      container.innerHTML = criticos.map((item) => `
+        <div class="critical-item">
+          <strong>${item.equipo}</strong> - ${item.documento}<br>
+          Estado: ${estadoLabel[item.estado]} | ${item.observacion}
+        </div>
+      `).join("");
+    }
+
+    function simularCargaDelegado() {
+      const documentoId = document.getElementById("delegado-documento").value;
+      const item = documentos.find((doc) => doc.id === documentoId);
+
+      if (!item) {
+        setDemoStatus("No hay documentos pendientes para simular.");
+        return;
+      }
+
+      item.estado = "cargado";
+      item.observacion = "Archivo cargado por delegado. Esperando revision.";
+
+      setDemoStatus(`${item.documento} de ${item.equipo} quedo cargado para revision.`);
+      agregarEvento("Delegado", "Cargo documento", `${item.equipo} - ${item.documento}`);
+      renderAsociacion();
+      renderDelegado();
+      renderMetricas();
+      renderPendientesCriticos();
+    }
+
+    document.querySelectorAll(".tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((item) => item.classList.remove("active"));
+        document.querySelectorAll(".view").forEach((item) => item.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(`view-${tab.dataset.view}`).classList.add("active");
+      });
+    });
+
+    document.getElementById("estado").addEventListener("change", renderAsociacion);
+    document.getElementById("buscar").addEventListener("input", renderAsociacion);
+    document.getElementById("exportar-csv").addEventListener("click", exportarCsv);
+    document.getElementById("categoria").addEventListener("change", () => {
+      renderRequisitosCategoria();
+      renderAsociacion();
+    });
+    document.getElementById("delegado-equipo").addEventListener("change", renderDelegado);
+    document.getElementById("simular-carga").addEventListener("click", simularCargaDelegado);
+    document.getElementById("cancelar-observacion").addEventListener("click", cerrarModalObservacion);
+    document.getElementById("confirmar-observacion").addEventListener("click", () => {
+      if (!documentoEnObservacion) return;
+
+      const texto = document.getElementById("observacion-texto").value.trim();
+      documentoEnObservacion.estado = "observado";
+      documentoEnObservacion.observacion = texto || "Revisar archivo cargado";
+
+      setDemoStatus(`${documentoEnObservacion.documento} de ${documentoEnObservacion.equipo} observado.`);
+      agregarEvento("Asociacion", "Observo documento", `${documentoEnObservacion.equipo} - ${documentoEnObservacion.documento}`);
+      cerrarModalObservacion();
+      renderAsociacion();
+      renderDelegado();
+      renderMetricas();
+      renderPendientesCriticos();
+    });
+
+    renderAsociacion();
+    renderDelegado();
+    renderRequisitosCategoria();
+    renderMetricas();
+    renderHistorial();
+    renderPendientesCriticos();
+  </script>
+</body>
+</html>

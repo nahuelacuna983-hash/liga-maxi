@@ -242,6 +242,127 @@ function validarDelegado(clave) {
   return DELEGADOS[claveLimpia] || null;
 }
 
+const DOCUMENTOS_REQUERIDOS = [
+  "Lista de buena fe",
+  "Certificado medico",
+  "Seguro",
+  "Declaracion jurada"
+];
+
+function docStateHtml(text = "Pendiente") {
+  return `<span class="doc-state">${escapeHtml(text)}</span>`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function obtenerEquiposCategoria(nombreCategoria) {
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  const equipos = new Set();
+
+  partidos.forEach((p) => {
+    if (p.local) equipos.add(p.local);
+    if (p.visitante) equipos.add(p.visitante);
+    if (p.libre) equipos.add(p.libre);
+  });
+
+  return Array.from(equipos).sort((a, b) => a.localeCompare(b));
+}
+
+function renderDocumentacionAsociacion(nombreCategoria) {
+  const resumen = $("documentacion-resumen");
+  const tabla = $("documentacion-tabla");
+
+  if (!resumen || !tabla) return;
+
+  const equipos = obtenerEquiposCategoria(nombreCategoria);
+  const totalPendientes = equipos.length * DOCUMENTOS_REQUERIDOS.length;
+
+  resumen.innerHTML = `
+    <div class="doc-pill"><strong>${equipos.length}</strong><span>Equipos</span></div>
+    <div class="doc-pill"><strong>${DOCUMENTOS_REQUERIDOS.length}</strong><span>Requisitos</span></div>
+    <div class="doc-pill"><strong>${totalPendientes}</strong><span>Pendientes estimados</span></div>
+  `;
+
+  if (!equipos.length) {
+    tabla.innerHTML = `<div class="empty">No hay equipos detectados para esta categoria.</div>`;
+    return;
+  }
+
+  tabla.innerHTML = `
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th>Equipo</th>
+          <th>Documentos requeridos</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${equipos.map((equipo) => `
+          <tr>
+            <td>${escapeHtml(equipo)}</td>
+            <td>${DOCUMENTOS_REQUERIDOS.map(escapeHtml).join(", ")}</td>
+            <td>${docStateHtml("Pendiente")}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderDocumentacionDelegado() {
+  const container = $("delegado-documentacion");
+  if (!container) return;
+
+  if (!estado.delegadoDesbloqueado || !estado.delegado) {
+    container.innerHTML = `<div class="empty">Habilita edicion con tu clave para ver la documentacion requerida.</div>`;
+    return;
+  }
+
+  const categoria = $("delegado-categoria")?.value;
+  const equiposCategoria = obtenerEquiposCategoria(categoria);
+  const equiposDelegado = equiposCategoria.filter((equipo) =>
+    estado.delegado.equipos.includes(equipo)
+  );
+
+  if (!equiposDelegado.length) {
+    container.innerHTML = `<div class="empty">No hay equipos vinculados a esta categoria para este delegado.</div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th>Equipo</th>
+          <th>Documento</th>
+          <th>Estado</th>
+          <th>Accion</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${equiposDelegado.map((equipo) =>
+          DOCUMENTOS_REQUERIDOS.map((documento) => `
+            <tr>
+              <td>${escapeHtml(equipo)}</td>
+              <td>${escapeHtml(documento)}</td>
+              <td>${docStateHtml("Pendiente")}</td>
+              <td><span class="doc-action-muted">Proxima etapa</span></td>
+            </tr>
+          `).join("")
+        ).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
 async function cargarPartidosCategoria(nombreCategoria) {
   const { data, error } = await supabaseClient
     .from("partidos")
@@ -618,6 +739,7 @@ function desbloquearDelegado() {
     estado.delegado = null;
     estado.delegadoDesbloqueado = false;
     aplicarBloqueoDelegado();
+    renderDocumentacionDelegado();
     setStatus(status, "Clave incorrecta.", "error");
     return;
   }
@@ -635,6 +757,7 @@ function desbloquearDelegado() {
   if (primeraCategoria) {
     refrescarCategoria(primeraCategoria).then(() => {
       poblarSelectPartidosDelegado(primeraCategoria);
+      renderDocumentacionDelegado();
     });
   }
 
@@ -647,6 +770,8 @@ function desbloquearDelegado() {
       Categorías: ${delegado.categorias.join(", ")}
     `;
   }
+
+  renderDocumentacionDelegado();
 }
 
 function poblarSelectPartidosAsociacion(nombreCategoria) {
@@ -764,12 +889,14 @@ async function inicializarAsociacion() {
   if (categoriaInicial) {
     await refrescarCategoria(categoriaInicial);
     poblarSelectPartidosAsociacion(categoriaInicial);
+    renderDocumentacionAsociacion(categoriaInicial);
   }
 
   $("asociacion-categoria").addEventListener("change", async (e) => {
     const categoria = e.target.value;
     await refrescarCategoria(categoria);
     poblarSelectPartidosAsociacion(categoria);
+    renderDocumentacionAsociacion(categoria);
     setStatus($("asociacion-status"), "", "");
   });
 
@@ -786,6 +913,30 @@ if (plannerBtn) {
     const fechaInicio = document.getElementById("planner-inicio").value;
 const fechaFin = document.getElementById("planner-fin").value;
 const fechasBloqueadasTexto = document.getElementById("planner-bloqueadas").value;
+const status = document.getElementById("planner-status");
+const partidos = estado.partidosPorCategoria[categoria] || [];
+const equiposSet = new Set();
+
+partidos.forEach((p) => {
+  if (p.local) equiposSet.add(p.local);
+  if (p.visitante) equiposSet.add(p.visitante);
+  if (p.libre) equiposSet.add(p.libre);
+});
+
+const equipos = equiposSet.size;
+const partidosJugados = partidos.filter(
+  (p) => p.puntos_local != null && p.puntos_visitante != null
+).length;
+const partidosPendientes = partidos.length - partidosJugados;
+const jornadasReales = new Set(
+  partidos.map((p) => p.jornada).filter(Boolean)
+).size;
+const jornadasBase =
+  equipos % 2 === 0
+    ? equipos - 1
+    : equipos;
+const jornadasTotales = jornadasBase * ruedas;
+const tieneLibre = equipos % 2 !== 0;
 let bloqueadasCantidad = 0;
 let semanasDisponibles = "-";
 let margenCalendario = "-";
@@ -830,40 +981,6 @@ if (fechaInicio) {
   }
 } 
 
-
-    const status = document.getElementById("planner-status");
-
-const partidos = estado.partidosPorCategoria[categoria] || [];
-
-const equiposSet = new Set();
-
-partidos.forEach((p) => {
-  if (p.local) equiposSet.add(p.local);
-  if (p.visitante) equiposSet.add(p.visitante);
-  if (p.libre) equiposSet.add(p.libre);
-});
-
-const equipos = equiposSet.size;
-
-const partidosJugados = partidos.filter(
-  (p) => p.puntos_local != null && p.puntos_visitante != null
-).length;
-
-const partidosPendientes = partidos.length - partidosJugados;
-
-const jornadasReales = new Set(
-  partidos.map((p) => p.jornada).filter(Boolean)
-).size;
-
-    const jornadasBase =
-      equipos % 2 === 0
-        ? equipos - 1
-        : equipos;
-
-    const jornadasTotales = jornadasBase * ruedas;
-
-    const tieneLibre = equipos % 2 !== 0;
-    
 
         status.innerHTML = `
       <div class="card" style="margin-top:10px;">
@@ -913,6 +1030,7 @@ async function inicializar() {
     $("delegado-categoria").value = categoriaInicial;
     poblarSelectPartidosDelegado(categoriaInicial);
     aplicarBloqueoDelegado();
+    renderDocumentacionDelegado();
 
     await inicializarAsociacion();
 
@@ -927,6 +1045,7 @@ async function inicializar() {
       poblarSelectPartidosDelegado(categoria);
       setStatus($("delegado-status"), "", "");
       aplicarBloqueoDelegado();
+      renderDocumentacionDelegado();
     });
 
     $("delegado-partido").addEventListener("change", completarInputsPartidoSeleccionado);
