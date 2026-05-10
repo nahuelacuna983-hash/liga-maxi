@@ -7,6 +7,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 const estado = {
   categorias: [],
   partidosPorCategoria: {},
+  equiposPorCategoriaId: {},
   requisitosDocumentales: [],
   delegadoDesbloqueado: false,
   delegado: null
@@ -277,6 +278,30 @@ async function cargarRequisitosDocumentales() {
   return estado.requisitosDocumentales;
 }
 
+async function cargarEquiposCategoria(categoriaId) {
+  if (!categoriaId) return [];
+
+  if (estado.equiposPorCategoriaId[categoriaId]) {
+    return estado.equiposPorCategoriaId[categoriaId];
+  }
+
+  const { data, error } = await supabaseClient
+    .from("equipos")
+    .select("id, nombre, categoria_id, activo")
+    .eq("categoria_id", categoriaId)
+    .eq("activo", true)
+    .order("nombre", { ascending: true });
+
+  if (error) {
+    console.warn("No se pudieron cargar equipos documentales:", error.message);
+    estado.equiposPorCategoriaId[categoriaId] = [];
+    return estado.equiposPorCategoriaId[categoriaId];
+  }
+
+  estado.equiposPorCategoriaId[categoriaId] = data || [];
+  return estado.equiposPorCategoriaId[categoriaId];
+}
+
 function docStateHtml(text = "Pendiente") {
   return `<span class="doc-state">${escapeHtml(text)}</span>`;
 }
@@ -292,6 +317,13 @@ function escapeHtml(value) {
 
 function obtenerEquiposCategoria(nombreCategoria) {
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const equiposSupabase = categoria ? estado.equiposPorCategoriaId[categoria.id] || [] : [];
+
+  if (equiposSupabase.length) {
+    return equiposSupabase.map((equipo) => equipo.nombre).sort((a, b) => a.localeCompare(b));
+  }
+
   const equipos = new Set();
 
   partidos.forEach((p) => {
@@ -692,6 +724,11 @@ function poblarSelectPartidosDelegado(nombreCategoria) {
 }
 
 async function refrescarCategoria(nombreCategoria) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  if (categoria) {
+    await cargarEquiposCategoria(categoria.id);
+  }
+
   await cargarPartidosCategoria(nombreCategoria);
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
 
