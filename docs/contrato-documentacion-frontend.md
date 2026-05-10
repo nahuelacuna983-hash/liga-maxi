@@ -14,6 +14,8 @@ La app necesita una lista de requisitos activos para la categoria seleccionada.
 [
   {
     id: "uuid",
+    organizacion_id: "uuid o null",
+    torneo_id: "uuid o null",
     nombre: "Certificado medico",
     descripcion: "Apto medico de jugadores",
     categoria_id: "uuid o null",
@@ -33,8 +35,11 @@ La app necesita una lista de documentos existentes o pendientes por equipo.
   {
     id: "uuid",
     requirement_id: "uuid",
+    organizacion_id: "uuid",
+    torneo_id: "uuid",
     categoria_id: "uuid",
-    equipo: "UNIVERSAL",
+    equipo_id: "uuid",
+    equipo_nombre: "UNIVERSAL",
     documento: "Certificado medico",
     uploaded_by: "UNIVERSAL",
     storage_path: "documentos/maxi-35-a/universal/certificado.pdf",
@@ -65,13 +70,21 @@ La app necesita una lista de documentos existentes o pendientes por equipo.
 
 ### Subir documento
 
+Funcion futura recomendada:
+
+```text
+upsert_team_document_metadata
+```
+
 Entrada:
 
 ```js
 {
   requirement_id: "uuid",
+  torneo_id: "uuid",
   categoria_id: "uuid",
-  equipo: "UNIVERSAL",
+  equipo_id: "uuid",
+  equipo_nombre: "UNIVERSAL",
   file: File,
   vencimiento: "2026-06-30"
 }
@@ -95,6 +108,12 @@ Igual que subir documento, pero conservando auditoria anterior.
 
 ### Aprobar
 
+Funcion futura recomendada:
+
+```text
+review_team_document
+```
+
 Entrada:
 
 ```js
@@ -114,6 +133,12 @@ Resultado:
 ```
 
 ### Observar
+
+Funcion futura recomendada:
+
+```text
+review_team_document
+```
 
 Entrada:
 
@@ -138,7 +163,7 @@ Resultado:
 
 Primera version:
 
-- solo registra evento;
+- registra evento con `create_document_reminder`;
 - no envia notificacion automatica.
 
 Version futura:
@@ -180,4 +205,3 @@ Tipos sugeridos:
 - Un documento observado se puede reemplazar.
 - Un documento pendiente se puede cargar.
 - Un documento cargado espera revision.
-

@@ -4,9 +4,11 @@
 
 create table if not exists public.document_requirements (
   id uuid primary key default gen_random_uuid(),
+  organizacion_id uuid references public.organizaciones(id),
+  torneo_id uuid references public.torneos(id),
   nombre text not null,
   descripcion text,
-  categoria_id uuid,
+  categoria_id uuid references public.categorias(id),
   obligatorio boolean not null default true,
   requiere_vencimiento boolean not null default false,
   activo boolean not null default true,
@@ -16,8 +18,11 @@ create table if not exists public.document_requirements (
 create table if not exists public.team_documents (
   id uuid primary key default gen_random_uuid(),
   requirement_id uuid not null references public.document_requirements(id),
-  categoria_id uuid,
-  equipo text not null,
+  organizacion_id uuid references public.organizaciones(id),
+  torneo_id uuid references public.torneos(id),
+  categoria_id uuid references public.categorias(id),
+  equipo_id uuid references public.equipos(id),
+  equipo_nombre text not null,
   uploaded_by text,
   storage_path text,
   file_name text,
@@ -46,14 +51,51 @@ create table if not exists public.document_events (
 create index if not exists idx_document_requirements_categoria
   on public.document_requirements(categoria_id);
 
+create index if not exists idx_document_requirements_torneo
+  on public.document_requirements(torneo_id);
+
 create index if not exists idx_team_documents_categoria_equipo
-  on public.team_documents(categoria_id, equipo);
+  on public.team_documents(categoria_id, equipo_id);
+
+create index if not exists idx_team_documents_torneo
+  on public.team_documents(torneo_id);
 
 create index if not exists idx_team_documents_status
   on public.team_documents(status);
 
 create index if not exists idx_document_events_document
   on public.document_events(team_document_id);
+
+create or replace view public.v_team_documents_admin as
+select
+  td.id,
+  td.requirement_id,
+  dr.nombre as requirement_nombre,
+  td.organizacion_id,
+  o.nombre as organizacion_nombre,
+  td.torneo_id,
+  t.nombre as torneo_nombre,
+  td.categoria_id,
+  c.nombre as categoria_nombre,
+  td.equipo_id,
+  td.equipo_nombre,
+  td.uploaded_by,
+  td.storage_path,
+  td.file_name,
+  td.file_type,
+  td.file_size,
+  td.status,
+  td.vencimiento,
+  td.observacion,
+  td.reviewed_by,
+  td.reviewed_at,
+  td.created_at,
+  td.updated_at
+from public.team_documents td
+left join public.document_requirements dr on dr.id = td.requirement_id
+left join public.organizaciones o on o.id = td.organizacion_id
+left join public.torneos t on t.id = td.torneo_id
+left join public.categorias c on c.id = td.categoria_id;
 
 create or replace function public.set_updated_at()
 returns trigger

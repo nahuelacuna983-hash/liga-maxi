@@ -31,14 +31,18 @@ Acciones:
 
 1. Hacer backup/export de estructura actual.
 2. Crear tablas documentales.
-3. Crear bucket `documentos`.
-4. Insertar requisitos iniciales.
-5. Verificar que nada toca `partidos`, `categorias` ni resultados.
+3. Crear vista `v_team_documents_admin`.
+4. Crear bucket `documentos`.
+5. Insertar requisitos iniciales.
+6. Ejecutar consultas SELECT de prueba.
+7. Verificar que nada toca `partidos`, `categorias` ni resultados.
 
 Criterio de exito:
 
 - las tablas existen;
+- la vista administrativa responde;
 - el bucket existe;
+- las consultas de prueba devuelven datos o vacio sin error;
 - la app actual sigue funcionando igual.
 
 ## Fase 2 - Lectura documental en entorno controlado
@@ -133,4 +137,3 @@ Si algo falla:
 - ocultar panel documental;
 - no tocar tablas deportivas;
 - conservar datos cargados en Storage/Supabase para revision manual.
-
