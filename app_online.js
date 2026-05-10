@@ -291,7 +291,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   `;
 
   if (!equipos.length) {
-    tabla.innerHTML = `<div class="empty">No hay equipos detectados para esta categoria.</div>`;
+    tabla.innerHTML = `<div class="empty">No hay equipos detectados para esta categoría.</div>`;
     return;
   }
 
@@ -322,7 +322,7 @@ function renderDocumentacionDelegado() {
   if (!container) return;
 
   if (!estado.delegadoDesbloqueado || !estado.delegado) {
-    container.innerHTML = `<div class="empty">Habilita edicion con tu clave para ver la documentacion requerida.</div>`;
+    container.innerHTML = `<div class="empty">Habilitá edición con tu clave para ver la documentación requerida.</div>`;
     return;
   }
 
@@ -333,7 +333,7 @@ function renderDocumentacionDelegado() {
   );
 
   if (!equiposDelegado.length) {
-    container.innerHTML = `<div class="empty">No hay equipos vinculados a esta categoria para este delegado.</div>`;
+    container.innerHTML = `<div class="empty">No hay equipos vinculados a esta categoría para este delegado.</div>`;
     return;
   }
 
@@ -354,7 +354,7 @@ function renderDocumentacionDelegado() {
               <td>${escapeHtml(equipo)}</td>
               <td>${escapeHtml(documento)}</td>
               <td>${docStateHtml("Pendiente")}</td>
-              <td><span class="doc-action-muted">Proxima etapa</span></td>
+              <td><span class="doc-action-muted">Próxima etapa</span></td>
             </tr>
           `).join("")
         ).join("")}
