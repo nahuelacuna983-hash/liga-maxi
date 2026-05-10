@@ -9,6 +9,7 @@ const estado = {
   partidosPorCategoria: {},
   equiposPorCategoriaId: {},
   requisitosDocumentales: [],
+  documentosPorCategoriaId: {},
   delegadoDesbloqueado: false,
   delegado: null
 };
@@ -302,8 +303,61 @@ async function cargarEquiposCategoria(categoriaId) {
   return estado.equiposPorCategoriaId[categoriaId];
 }
 
+async function cargarDocumentosCategoria(categoriaId) {
+  if (!categoriaId) return [];
+
+  if (estado.documentosPorCategoriaId[categoriaId]) {
+    return estado.documentosPorCategoriaId[categoriaId];
+  }
+
+  const { data, error } = await supabaseClient
+    .from("v_team_documents_admin")
+    .select("id, requirement_nombre, categoria_id, equipo_id, equipo_nombre, status, vencimiento, observacion")
+    .eq("categoria_id", categoriaId);
+
+  if (error) {
+    console.warn("No se pudieron cargar documentos por equipo:", error.message);
+    estado.documentosPorCategoriaId[categoriaId] = [];
+    return estado.documentosPorCategoriaId[categoriaId];
+  }
+
+  estado.documentosPorCategoriaId[categoriaId] = data || [];
+  return estado.documentosPorCategoriaId[categoriaId];
+}
+
 function docStateHtml(text = "Pendiente") {
   return `<span class="doc-state">${escapeHtml(text)}</span>`;
+}
+
+function normalizarTexto(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function obtenerDocumentoEquipo(nombreCategoria, equipo, requisito) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const documentos = categoria ? estado.documentosPorCategoriaId[categoria.id] || [] : [];
+  const equipoNormalizado = normalizarTexto(equipo);
+  const requisitoNormalizado = normalizarTexto(requisito);
+
+  return documentos.find((documento) =>
+    normalizarTexto(documento.equipo_nombre) === equipoNormalizado &&
+    normalizarTexto(documento.requirement_nombre) === requisitoNormalizado
+  ) || null;
+}
+
+function estadoDocumentoLabel(documento) {
+  if (!documento) return "Pendiente";
+
+  const labels = {
+    pendiente: "Pendiente",
+    cargado: "Cargado",
+    observado: "Observado",
+    aprobado: "Aprobado",
+    rechazado: "Rechazado",
+    vencido: "Vencido"
+  };
+
+  return labels[documento.status] || documento.status || "Pendiente";
 }
 
 function escapeHtml(value) {
@@ -343,11 +397,18 @@ function renderDocumentacionAsociacion(nombreCategoria) {
 
   const equipos = obtenerEquiposCategoria(nombreCategoria);
   const documentosRequeridos = obtenerDocumentosRequeridos();
-  const totalPendientes = equipos.length * documentosRequeridos.length;
+  const totalEsperado = equipos.length * documentosRequeridos.length;
+  const totalCargados = equipos.reduce((total, equipo) => {
+    return total + documentosRequeridos.filter((requisito) =>
+      !!obtenerDocumentoEquipo(nombreCategoria, equipo, requisito)
+    ).length;
+  }, 0);
+  const totalPendientes = Math.max(totalEsperado - totalCargados, 0);
 
   resumen.innerHTML = `
     <div class="doc-pill"><strong>${equipos.length}</strong><span>Equipos</span></div>
     <div class="doc-pill"><strong>${documentosRequeridos.length}</strong><span>Requisitos</span></div>
+    <div class="doc-pill"><strong>${totalCargados}</strong><span>Con registro</span></div>
     <div class="doc-pill"><strong>${totalPendientes}</strong><span>Pendientes estimados</span></div>
   `;
 
@@ -370,7 +431,9 @@ function renderDocumentacionAsociacion(nombreCategoria) {
           <tr>
             <td>${escapeHtml(equipo)}</td>
             <td>${documentosRequeridos.map(escapeHtml).join(", ")}</td>
-            <td>${docStateHtml("Pendiente")}</td>
+            <td>${docStateHtml(
+              totalCargados ? `${documentosRequeridos.filter((requisito) => !!obtenerDocumentoEquipo(nombreCategoria, equipo, requisito)).length}/${documentosRequeridos.length} con registro` : "Pendiente"
+            )}</td>
           </tr>
         `).join("")}
       </tbody>
@@ -416,7 +479,7 @@ function renderDocumentacionDelegado() {
             <tr>
               <td>${escapeHtml(equipo)}</td>
               <td>${escapeHtml(documento)}</td>
-              <td>${docStateHtml("Pendiente")}</td>
+              <td>${docStateHtml(estadoDocumentoLabel(obtenerDocumentoEquipo(categoria, equipo, documento)))}</td>
               <td><span class="doc-action-muted">Próxima etapa</span></td>
             </tr>
           `).join("")
@@ -727,6 +790,7 @@ async function refrescarCategoria(nombreCategoria) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   if (categoria) {
     await cargarEquiposCategoria(categoria.id);
+    await cargarDocumentosCategoria(categoria.id);
   }
 
   await cargarPartidosCategoria(nombreCategoria);
