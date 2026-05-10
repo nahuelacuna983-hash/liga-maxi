@@ -12,24 +12,33 @@ const REQUISITOS_POR_CATEGORIA = {
     "Lista de buena fe",
     "Certificado medico",
     "Seguro",
-    "Declaracion jurada"
+    "Declaracion jurada",
+    "Imagenes para redes",
+    "Pase"
   ],
   "Maxi +35 B": [
     "Lista de buena fe",
     "Certificado medico",
     "Seguro",
-    "Declaracion jurada"
+    "Declaracion jurada",
+    "Imagenes para redes",
+    "Pase"
   ],
   "Maxi +48": [
     "Lista de buena fe",
     "Certificado medico",
-    "Seguro"
+    "Seguro",
+    "Declaracion jurada",
+    "Imagenes para redes",
+    "Pase"
   ],
   Femenino: [
     "Lista de buena fe",
     "Certificado medico",
     "Seguro",
-    "Imagenes para redes"
+    "Declaracion jurada",
+    "Imagenes para redes",
+    "Pase"
   ]
 };
 

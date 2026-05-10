@@ -7,6 +7,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 const estado = {
   categorias: [],
   partidosPorCategoria: {},
+  requisitosDocumentales: [],
   delegadoDesbloqueado: false,
   delegado: null
 };
@@ -246,8 +247,35 @@ const DOCUMENTOS_REQUERIDOS = [
   "Lista de buena fe",
   "Certificado medico",
   "Seguro",
-  "Declaracion jurada"
+  "Declaracion jurada",
+  "Imagenes para redes",
+  "Pase"
 ];
+
+function obtenerDocumentosRequeridos() {
+  if (estado.requisitosDocumentales.length) {
+    return estado.requisitosDocumentales.map((requisito) => requisito.nombre);
+  }
+
+  return DOCUMENTOS_REQUERIDOS;
+}
+
+async function cargarRequisitosDocumentales() {
+  const { data, error } = await supabaseClient
+    .from("document_requirements")
+    .select("id, nombre, categoria_id, obligatorio, requiere_vencimiento, activo")
+    .eq("activo", true)
+    .order("nombre", { ascending: true });
+
+  if (error) {
+    console.warn("No se pudieron cargar requisitos documentales:", error.message);
+    estado.requisitosDocumentales = [];
+    return estado.requisitosDocumentales;
+  }
+
+  estado.requisitosDocumentales = data || [];
+  return estado.requisitosDocumentales;
+}
 
 function docStateHtml(text = "Pendiente") {
   return `<span class="doc-state">${escapeHtml(text)}</span>`;
@@ -282,11 +310,12 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   if (!resumen || !tabla) return;
 
   const equipos = obtenerEquiposCategoria(nombreCategoria);
-  const totalPendientes = equipos.length * DOCUMENTOS_REQUERIDOS.length;
+  const documentosRequeridos = obtenerDocumentosRequeridos();
+  const totalPendientes = equipos.length * documentosRequeridos.length;
 
   resumen.innerHTML = `
     <div class="doc-pill"><strong>${equipos.length}</strong><span>Equipos</span></div>
-    <div class="doc-pill"><strong>${DOCUMENTOS_REQUERIDOS.length}</strong><span>Requisitos</span></div>
+    <div class="doc-pill"><strong>${documentosRequeridos.length}</strong><span>Requisitos</span></div>
     <div class="doc-pill"><strong>${totalPendientes}</strong><span>Pendientes estimados</span></div>
   `;
 
@@ -308,7 +337,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
         ${equipos.map((equipo) => `
           <tr>
             <td>${escapeHtml(equipo)}</td>
-            <td>${DOCUMENTOS_REQUERIDOS.map(escapeHtml).join(", ")}</td>
+            <td>${documentosRequeridos.map(escapeHtml).join(", ")}</td>
             <td>${docStateHtml("Pendiente")}</td>
           </tr>
         `).join("")}
@@ -337,6 +366,8 @@ function renderDocumentacionDelegado() {
     return;
   }
 
+  const documentosRequeridos = obtenerDocumentosRequeridos();
+
   container.innerHTML = `
     <table class="doc-table">
       <thead>
@@ -349,7 +380,7 @@ function renderDocumentacionDelegado() {
       </thead>
       <tbody>
         ${equiposDelegado.map((equipo) =>
-          DOCUMENTOS_REQUERIDOS.map((documento) => `
+          documentosRequeridos.map((documento) => `
             <tr>
               <td>${escapeHtml(equipo)}</td>
               <td>${escapeHtml(documento)}</td>
@@ -1016,6 +1047,7 @@ async function inicializar() {
     $("tab-asociacion").addEventListener("click", () => mostrarVista("asociacion"));
 
     const categorias = await cargarCategorias();
+    await cargarRequisitosDocumentales();
 
     if (!categorias.length) {
       throw new Error("No se encontraron categorías cargadas en Supabase.");

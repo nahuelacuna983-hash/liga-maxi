@@ -24,6 +24,16 @@ insert into public.document_requirements (
   requiere_vencimiento,
   activo
 )
+select
+  seed.organizacion_id::uuid,
+  seed.torneo_id::uuid,
+  seed.categoria_id::uuid,
+  seed.nombre,
+  seed.descripcion,
+  seed.obligatorio,
+  seed.requiere_vencimiento,
+  seed.activo
+from (
 values
   (
     '4fc0ec74-71d3-43cc-9509-f788aceaedf1',
@@ -64,28 +74,32 @@ values
     true,
     false,
     true
-  );
-
--- Requisito especifico para Femenino.
-insert into public.document_requirements (
-  organizacion_id,
-  torneo_id,
-  categoria_id,
-  nombre,
-  descripcion,
-  obligatorio,
-  requiere_vencimiento,
-  activo
-)
-values
+  ),
   (
     '4fc0ec74-71d3-43cc-9509-f788aceaedf1',
     '7d0971e3-66ee-4791-bcbf-bace1d2fefb9',
-    '91aa11de-b9c4-4b86-9888-f25e20c10710',
+    null,
     'Imagenes para redes',
     'Material visual autorizado para comunicacion y redes.',
     false,
     false,
     true
-  );
-
+  ),
+  (
+    '4fc0ec74-71d3-43cc-9509-f788aceaedf1',
+    '7d0971e3-66ee-4791-bcbf-bace1d2fefb9',
+    null,
+    'Pase',
+    'Pase o autorizacion administrativa del jugador.',
+    true,
+    false,
+    true
+  )
+) as seed(organizacion_id, torneo_id, categoria_id, nombre, descripcion, obligatorio, requiere_vencimiento, activo)
+where not exists (
+  select 1
+  from public.document_requirements dr
+  where dr.torneo_id = seed.torneo_id::uuid
+    and dr.categoria_id is null
+    and lower(dr.nombre) = lower(seed.nombre)
+);

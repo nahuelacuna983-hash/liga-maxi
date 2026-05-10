@@ -26,6 +26,7 @@ Primera version:
 - Estudio complementario.
 - Seguro.
 - Declaracion jurada.
+- Pase.
 - DNI o documentacion identificatoria, si la Asociacion lo decide.
 - Imagenes para redes.
 
@@ -216,4 +217,3 @@ Para considerar el modulo resuelto en primera version:
 - Los archivos quedan en Supabase Storage.
 - No se rompe la carga de resultados.
 - No se modifica fixture ni tablas deportivas.
-
