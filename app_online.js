@@ -460,29 +460,53 @@ function renderDocumentacionAsociacion(nombreCategoria) {
       <thead>
         <tr>
           <th>Equipo</th>
-          <th>Documentos requeridos</th>
           <th>Estado</th>
+          <th>Documento</th>
+          <th>Archivo</th>
+          <th>Observacion</th>
+          <th>Revision</th>
         </tr>
       </thead>
       <tbody>
         ${equipos.map((equipo) => {
-          const registrosEquipo = documentosRequeridos.filter((requisito) =>
-            !!obtenerDocumentoEquipo(nombreCategoria, equipo, requisito)
-          ).length;
+          return documentosRequeridos.map((requisito) => {
+            const documento = obtenerDocumentoEquipo(nombreCategoria, equipo, requisito);
 
-          return `
+            return `
             <tr>
               <td>${escapeHtml(equipo)}</td>
-              <td>${documentosRequeridos.map(escapeHtml).join(", ")}</td>
               <td>${docStateHtml(
-                registrosEquipo ? `${registrosEquipo}/${documentosRequeridos.length} con registro` : "Pendiente",
-                registrosEquipo ? "cargado" : "pendiente"
+                estadoDocumentoLabel(documento),
+                estadoDocumentoClase(documento)
               )}</td>
+              <td>${escapeHtml(requisito)}</td>
+              <td>${documento?.file_name ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>` : `<span class="doc-action-muted">Sin archivo</span>`}</td>
+              <td>${escapeHtml(documento?.observacion || "")}</td>
+              <td>${renderAccionRevisionAsociacion(documento)}</td>
             </tr>
           `;
+          }).join("");
         }).join("")}
       </tbody>
     </table>
+  `;
+}
+
+function renderAccionRevisionAsociacion(documento) {
+  if (!documento) {
+    return `<span class="doc-action-muted">Sin registro</span>`;
+  }
+
+  if (!documento.file_name) {
+    return `<span class="doc-action-muted">Esperando carga</span>`;
+  }
+
+  return `
+    <div class="doc-review-actions">
+      <button class="doc-review-btn doc-review-ok" type="button" data-document-id="${escapeHtml(documento.id)}" data-status="aprobado">Aprobar</button>
+      <button class="doc-review-btn doc-review-warn" type="button" data-document-id="${escapeHtml(documento.id)}" data-status="observado">Observar</button>
+      <button class="doc-review-btn doc-review-danger" type="button" data-document-id="${escapeHtml(documento.id)}" data-status="rechazado">Rechazar</button>
+    </div>
   `;
 }
 
@@ -1186,6 +1210,62 @@ async function guardarResultadoAsociacion() {
   setStatus(status, "Corrección guardada correctamente.", "ok");
 }
 
+async function revisarDocumentoAsociacion(event) {
+  const button = event.target.closest(".doc-review-btn");
+  if (!button) return;
+
+  const documentId = button.dataset.documentId;
+  const nextStatus = button.dataset.status;
+  const categoria = $("asociacion-categoria")?.value || "";
+  const categoriaData = estado.categorias.find((cat) => cat.nombre === categoria);
+  const documento = obtenerDocumentoPorId(documentId);
+  const status = $("asociacion-status");
+
+  if (!documento || !categoriaData) {
+    setStatus(status, "No se encontró el documento seleccionado.", "error");
+    return;
+  }
+
+  const labels = {
+    aprobado: "aprobar",
+    observado: "observar",
+    rechazado: "rechazar"
+  };
+
+  let observacion = "";
+  if (nextStatus === "observado" || nextStatus === "rechazado") {
+    observacion = prompt("Observación para el delegado:", documento.observacion || "") || "";
+  }
+
+  const confirmar = confirm(`¿Confirmás ${labels[nextStatus] || "revisar"} ${documento.requirement_nombre} de ${documento.equipo_nombre}?`);
+  if (!confirmar) {
+    setStatus(status, "Revisión cancelada.", "warn");
+    return;
+  }
+
+  button.disabled = true;
+  setStatus(status, "Guardando revisión documental...", "");
+
+  const { error } = await supabaseClient.rpc("review_team_document", {
+    p_document_id: documentId,
+    p_status: nextStatus,
+    p_actor: "ADMIN",
+    p_observacion: observacion || null
+  });
+
+  if (error) {
+    button.disabled = false;
+    setStatus(status, `No se pudo guardar la revisión: ${error.message}`, "error");
+    return;
+  }
+
+  delete estado.documentosPorCategoriaId[categoriaData.id];
+  await cargarDocumentosCategoria(categoriaData.id);
+  renderDocumentacionAsociacion(categoria);
+  renderDocumentacionDelegado();
+  setStatus(status, "Revisión documental guardada.", "ok");
+}
+
 async function inicializarAsociacion() {
   poblarSelectCategorias("asociacion-categoria", estado.categorias);
 
@@ -1206,6 +1286,7 @@ async function inicializarAsociacion() {
 
   $("asociacion-partido").addEventListener("change", completarInputsAsociacion);
   $("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
+  $("documentacion-tabla").addEventListener("click", revisarDocumentoAsociacion);
  const plannerBtn = document.getElementById("planner-generar");
 
 if (plannerBtn) {

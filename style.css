@@ -802,6 +802,43 @@ td:nth-child(2) {
   overflow-wrap: anywhere;
 }
 
+.doc-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.doc-review-btn {
+  min-height: 30px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 8px;
+  color: #f8fafc;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 9px;
+}
+
+.doc-review-btn:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.doc-review-ok {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(52, 211, 153, 0.45);
+}
+
+.doc-review-warn {
+  background: rgba(249, 115, 22, 0.22);
+  border-color: rgba(251, 146, 60, 0.45);
+}
+
+.doc-review-danger {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
 .empty {
   color: #dbeafe;
   font-style: italic;
