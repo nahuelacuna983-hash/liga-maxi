@@ -274,6 +274,9 @@ function obtenerDocumentosRequeridos() {
 }
 
 function esDocumentoPorJugador(nombre) {
+  const requisito = obtenerRequisitoDocumental(nombre);
+  if (requisito?.scope) return requisito.scope === "player";
+
   const normalized = normalizarTexto(nombre);
   return DOCUMENTOS_POR_JUGADOR.some((documento) => normalized.includes(documento));
 }
@@ -287,6 +290,11 @@ function obtenerDocumentosJugador() {
 }
 
 function permiteMultiplesArchivos(nombre) {
+  const requisito = obtenerRequisitoDocumental(nombre);
+  if (typeof requisito?.allows_multiple_files === "boolean") {
+    return requisito.allows_multiple_files;
+  }
+
   const normalized = normalizarTexto(nombre);
   return DOCUMENTOS_MULTIPLE_ARCHIVO.some((documento) => normalized.includes(documento));
 }
@@ -300,7 +308,7 @@ function obtenerRequisitoDocumental(nombre) {
 async function cargarRequisitosDocumentales() {
   const { data, error } = await supabaseClient
     .from("document_requirements")
-    .select("id, nombre, categoria_id, obligatorio, requiere_vencimiento, activo")
+    .select("id, nombre, categoria_id, obligatorio, requiere_vencimiento, activo, scope, allows_multiple_files")
     .eq("activo", true)
     .order("nombre", { ascending: true });
 
