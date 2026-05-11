@@ -325,8 +325,9 @@ async function cargarDocumentosCategoria(categoriaId) {
   return estado.documentosPorCategoriaId[categoriaId];
 }
 
-function docStateHtml(text = "Pendiente") {
-  return `<span class="doc-state">${escapeHtml(text)}</span>`;
+function docStateHtml(text = "Pendiente", status = "") {
+  const className = `doc-state ${status ? `doc-state-${status}` : ""}`.trim();
+  return `<span class="${className}">${escapeHtml(text)}</span>`;
 }
 
 function normalizarTexto(value) {
@@ -358,6 +359,10 @@ function estadoDocumentoLabel(documento) {
   };
 
   return labels[documento.status] || documento.status || "Pendiente";
+}
+
+function estadoDocumentoClase(documento) {
+  return normalizarTexto(documento?.status || "pendiente");
 }
 
 function escapeHtml(value) {
@@ -427,15 +432,22 @@ function renderDocumentacionAsociacion(nombreCategoria) {
         </tr>
       </thead>
       <tbody>
-        ${equipos.map((equipo) => `
-          <tr>
-            <td>${escapeHtml(equipo)}</td>
-            <td>${documentosRequeridos.map(escapeHtml).join(", ")}</td>
-            <td>${docStateHtml(
-              totalCargados ? `${documentosRequeridos.filter((requisito) => !!obtenerDocumentoEquipo(nombreCategoria, equipo, requisito)).length}/${documentosRequeridos.length} con registro` : "Pendiente"
-            )}</td>
-          </tr>
-        `).join("")}
+        ${equipos.map((equipo) => {
+          const registrosEquipo = documentosRequeridos.filter((requisito) =>
+            !!obtenerDocumentoEquipo(nombreCategoria, equipo, requisito)
+          ).length;
+
+          return `
+            <tr>
+              <td>${escapeHtml(equipo)}</td>
+              <td>${documentosRequeridos.map(escapeHtml).join(", ")}</td>
+              <td>${docStateHtml(
+                registrosEquipo ? `${registrosEquipo}/${documentosRequeridos.length} con registro` : "Pendiente",
+                registrosEquipo ? "cargado" : "pendiente"
+              )}</td>
+            </tr>
+          `;
+        }).join("")}
       </tbody>
     </table>
   `;
@@ -479,7 +491,10 @@ function renderDocumentacionDelegado() {
             <tr>
               <td>${escapeHtml(equipo)}</td>
               <td>${escapeHtml(documento)}</td>
-              <td>${docStateHtml(estadoDocumentoLabel(obtenerDocumentoEquipo(categoria, equipo, documento)))}</td>
+              <td>${docStateHtml(
+                estadoDocumentoLabel(obtenerDocumentoEquipo(categoria, equipo, documento)),
+                estadoDocumentoClase(obtenerDocumentoEquipo(categoria, equipo, documento))
+              )}</td>
               <td><span class="doc-action-muted">Próxima etapa</span></td>
             </tr>
           `).join("")

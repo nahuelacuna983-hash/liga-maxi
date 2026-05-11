@@ -682,3 +682,101 @@ td:nth-child(2) {
 .playoff-equipo-linea:first-of-type {
   border-top: none;
 }
+
+.doc-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 14px 0 16px;
+}
+
+.doc-pill {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.24);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.doc-pill strong {
+  display: block;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.doc-pill span {
+  display: block;
+  margin-top: 6px;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.doc-table {
+  min-width: 760px;
+}
+
+.doc-table th,
+.doc-table td {
+  vertical-align: top;
+}
+
+.doc-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  background: rgba(148, 163, 184, 0.16);
+  color: #e5e7eb;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.doc-state-pendiente {
+  border-color: rgba(250, 204, 21, 0.38);
+  background: rgba(250, 204, 21, 0.12);
+  color: #fde68a;
+}
+
+.doc-state-cargado {
+  border-color: rgba(96, 165, 250, 0.4);
+  background: rgba(59, 130, 246, 0.14);
+  color: #bfdbfe;
+}
+
+.doc-state-aprobado {
+  border-color: rgba(52, 211, 153, 0.42);
+  background: rgba(16, 185, 129, 0.14);
+  color: #bbf7d0;
+}
+
+.doc-state-observado,
+.doc-state-vencido {
+  border-color: rgba(251, 146, 60, 0.42);
+  background: rgba(249, 115, 22, 0.14);
+  color: #fed7aa;
+}
+
+.doc-state-rechazado {
+  border-color: rgba(248, 113, 113, 0.42);
+  background: rgba(239, 68, 68, 0.14);
+  color: #fecaca;
+}
+
+.doc-action-muted {
+  color: #cbd5e1;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.empty {
+  color: #dbeafe;
+  font-style: italic;
+}
+
+@media (max-width: 720px) {
+  .doc-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
