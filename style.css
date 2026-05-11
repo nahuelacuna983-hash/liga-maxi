@@ -717,6 +717,11 @@ td:nth-child(2) {
   font-size: 13px;
 }
 
+.doc-pill-alert {
+  border-color: rgba(251, 146, 60, 0.38);
+  background: rgba(249, 115, 22, 0.12);
+}
+
 .doc-table {
   min-width: 760px;
 }
@@ -889,6 +894,18 @@ td:nth-child(2) {
 .doc-observation-important {
   color: #fed7aa;
   font-weight: 700;
+}
+
+.doc-observation-ok {
+  color: #bbf7d0;
+}
+
+.doc-observation small {
+  display: block;
+  margin-top: 3px;
+  color: inherit;
+  font-size: 12px;
+  opacity: 0.85;
 }
 
 .doc-review-actions {

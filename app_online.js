@@ -383,6 +383,33 @@ function formatearFecha(value) {
   return `${day}/${month}/${year}`;
 }
 
+function diasHastaFecha(value) {
+  if (!value) return null;
+
+  const [year, month, day] = String(value).split("-").map(Number);
+  if (!year || !month || !day) return null;
+
+  const target = new Date(year, month - 1, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+
+  return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+}
+
+function estadoVencimientoDocumento(documento) {
+  const requisito = obtenerRequisitoDocumental(documento?.requirement_nombre);
+  if (!requisito?.requiere_vencimiento) return "no_aplica";
+  if (!documento?.vencimiento) return "sin_fecha";
+
+  const dias = diasHastaFecha(documento.vencimiento);
+  if (dias == null) return "sin_fecha";
+  if (dias < 0) return "vencido";
+  if (dias <= 30) return "por_vencer";
+
+  return "vigente";
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -459,6 +486,11 @@ function renderDocumentacionAsociacion(nombreCategoria) {
     acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {});
+  const resumenVencimientos = documentos.reduce((acc, documento) => {
+    const estadoVencimiento = estadoVencimientoDocumento(documento);
+    acc[estadoVencimiento] = (acc[estadoVencimiento] || 0) + 1;
+    return acc;
+  }, {});
 
   resumen.innerHTML = `
     <div class="doc-pill"><strong>${equipos.length}</strong><span>Equipos</span></div>
@@ -467,6 +499,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
     <div class="doc-pill"><strong>${resumenEstados.cargado || 0}</strong><span>Para revisar</span></div>
     <div class="doc-pill"><strong>${resumenEstados.aprobado || 0}</strong><span>Aprobados</span></div>
     <div class="doc-pill"><strong>${(resumenEstados.observado || 0) + (resumenEstados.rechazado || 0)}</strong><span>Observados/Rechazados</span></div>
+    <div class="doc-pill doc-pill-alert"><strong>${(resumenVencimientos.vencido || 0) + (resumenVencimientos.por_vencer || 0)}</strong><span>Vencidos/por vencer</span></div>
     <div class="doc-pill"><strong>${totalEsperado}</strong><span>Total esperado</span></div>
   `;
 
@@ -666,7 +699,23 @@ function renderVencimientoDocumento(documento) {
     return `<span class="doc-observation doc-observation-important">Falta fecha</span>`;
   }
 
-  return `<span class="doc-observation">${escapeHtml(formatearFecha(documento.vencimiento))}</span>`;
+  const estadoVencimiento = estadoVencimientoDocumento(documento);
+  const dias = diasHastaFecha(documento.vencimiento);
+  const labels = {
+    vencido: `Vencido hace ${Math.abs(dias)} día${Math.abs(dias) === 1 ? "" : "s"}`,
+    por_vencer: `Vence en ${dias} día${dias === 1 ? "" : "s"}`,
+    vigente: "Vigente"
+  };
+  const className = estadoVencimiento === "vencido" || estadoVencimiento === "por_vencer"
+    ? "doc-observation doc-observation-important"
+    : "doc-observation doc-observation-ok";
+
+  return `
+    <span class="${className}">
+      ${escapeHtml(formatearFecha(documento.vencimiento))}
+      <small>${escapeHtml(labels[estadoVencimiento] || "")}</small>
+    </span>
+  `;
 }
 
 function renderAccionDocumentoDelegado(documento) {
