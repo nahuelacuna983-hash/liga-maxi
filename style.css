@@ -847,6 +847,13 @@ td:nth-child(2) {
   font-weight: 700;
 }
 
+.doc-expiry-field small {
+  display: block;
+  margin-top: 4px;
+  color: #fed7aa;
+  font-size: 12px;
+}
+
 .doc-expiry-input {
   width: 100%;
   min-height: 32px;

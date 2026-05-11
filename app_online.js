@@ -346,10 +346,10 @@ async function cargarEquiposCategoria(categoriaId) {
   return estado.equiposPorCategoriaId[categoriaId];
 }
 
-async function cargarDocumentosCategoria(categoriaId) {
+async function cargarDocumentosCategoria(categoriaId, force = false) {
   if (!categoriaId) return [];
 
-  if (estado.documentosPorCategoriaId[categoriaId]) {
+  if (!force && estado.documentosPorCategoriaId[categoriaId]) {
     return estado.documentosPorCategoriaId[categoriaId];
   }
 
@@ -798,13 +798,14 @@ function renderAccionDocumentoDelegado(documento) {
   const vencimientoInput = requisito?.requiere_vencimiento
     ? `
       <label class="doc-expiry-field">
-        <span>Vencimiento</span>
+        <span>Vencimiento obligatorio</span>
         <input
           class="doc-expiry-input"
           type="date"
           data-document-id="${escapeHtml(documento.id)}"
           value="${escapeHtml(documento.vencimiento || "")}"
         >
+        <small>Requerido para subir este documento.</small>
       </label>
     `
     : "";
@@ -1309,8 +1310,7 @@ async function subirDocumentoDelegado(event) {
     }
   }
 
-  delete estado.documentosPorCategoriaId[categoria.id];
-  await cargarDocumentosCategoria(categoria.id);
+  await cargarDocumentosCategoria(categoria.id, true);
   renderDocumentacionDelegado();
 
   if ($("asociacion-categoria")?.value === categoriaNombre) {
@@ -1522,8 +1522,16 @@ async function revisarDocumentoAsociacion(event) {
     return;
   }
 
-  delete estado.documentosPorCategoriaId[categoriaData.id];
-  await cargarDocumentosCategoria(categoriaData.id);
+  const documentosCategoria = estado.documentosPorCategoriaId[categoriaData.id] || [];
+  const documentoLocal = documentosCategoria.find((doc) => doc.id === documentId);
+  if (documentoLocal) {
+    documentoLocal.status = nextStatus;
+    documentoLocal.observacion = observacion || documentoLocal.observacion;
+  }
+
+  renderDocumentacionAsociacion(categoria);
+  renderDocumentacionDelegado();
+  await cargarDocumentosCategoria(categoriaData.id, true);
   renderDocumentacionAsociacion(categoria);
   renderDocumentacionDelegado();
   setStatus(status, "Revisión documental guardada.", "ok");
