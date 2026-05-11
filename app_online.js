@@ -255,12 +255,40 @@ const DOCUMENTOS_REQUERIDOS = [
   "Pase"
 ];
 
+const DOCUMENTOS_POR_JUGADOR = [
+  "certificado medico",
+  "declaracion jurada",
+  "pase"
+];
+
+const DOCUMENTOS_MULTIPLE_ARCHIVO = [
+  "imagenes para redes"
+];
+
 function obtenerDocumentosRequeridos() {
   if (estado.requisitosDocumentales.length) {
     return estado.requisitosDocumentales.map((requisito) => requisito.nombre);
   }
 
   return DOCUMENTOS_REQUERIDOS;
+}
+
+function esDocumentoPorJugador(nombre) {
+  const normalized = normalizarTexto(nombre);
+  return DOCUMENTOS_POR_JUGADOR.some((documento) => normalized.includes(documento));
+}
+
+function obtenerDocumentosEquipo() {
+  return obtenerDocumentosRequeridos().filter((nombre) => !esDocumentoPorJugador(nombre));
+}
+
+function obtenerDocumentosJugador() {
+  return obtenerDocumentosRequeridos().filter(esDocumentoPorJugador);
+}
+
+function permiteMultiplesArchivos(nombre) {
+  const normalized = normalizarTexto(nombre);
+  return DOCUMENTOS_MULTIPLE_ARCHIVO.some((documento) => normalized.includes(documento));
 }
 
 function obtenerRequisitoDocumental(nombre) {
@@ -437,12 +465,16 @@ function nombreArchivoSeguro(value) {
   return extension ? `${base}.${extension}` : base;
 }
 
-function validarArchivoDocumento(file) {
-  const tiposPermitidos = ["application/pdf", "image/jpeg", "image/png"];
+function validarArchivoDocumento(file, soloImagenes = false) {
+  const tiposPermitidos = soloImagenes
+    ? ["image/jpeg", "image/png"]
+    : ["application/pdf", "image/jpeg", "image/png"];
   const maxBytes = 10 * 1024 * 1024;
 
   if (!file) return "Seleccioná un archivo.";
-  if (!tiposPermitidos.includes(file.type)) return "Formato no permitido. Usá PDF, JPG o PNG.";
+  if (!tiposPermitidos.includes(file.type)) {
+    return soloImagenes ? "Formato no permitido. Usá JPG o PNG." : "Formato no permitido. Usá PDF, JPG o PNG.";
+  }
   if (file.size > maxBytes) return "El archivo supera 10 MB.";
 
   return "";
@@ -475,7 +507,8 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   if (!resumen || !tabla) return;
 
   const equipos = obtenerEquiposCategoria(nombreCategoria);
-  const documentosRequeridos = obtenerDocumentosRequeridos();
+  const documentosRequeridos = obtenerDocumentosEquipo();
+  const documentosJugador = obtenerDocumentosJugador();
   const filtroEstado = $("documentacion-filtro-estado")?.value || "";
   const filtroVencimiento = $("documentacion-filtro-vencimiento")?.value || "";
   const filtroTexto = normalizarTexto($("documentacion-buscar")?.value || "");
@@ -497,6 +530,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   resumen.innerHTML = `
     <div class="doc-pill"><strong>${equipos.length}</strong><span>Equipos</span></div>
     <div class="doc-pill"><strong>${documentosRequeridos.length}</strong><span>Requisitos</span></div>
+    <div class="doc-pill"><strong>${documentosJugador.length}</strong><span>Por jugador</span></div>
     <div class="doc-pill"><strong>${resumenEstados.pendiente || 0}</strong><span>Pendientes</span></div>
     <div class="doc-pill"><strong>${resumenEstados.cargado || 0}</strong><span>Para revisar</span></div>
     <div class="doc-pill"><strong>${resumenEstados.aprobado || 0}</strong><span>Aprobados</span></div>
@@ -541,11 +575,15 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   estado.filasDocumentacionAsociacion = filas;
 
   if (!filas.length) {
-    tabla.innerHTML = `<div class="empty">No hay documentos que coincidan con los filtros.</div>`;
+    tabla.innerHTML = `
+      ${renderAvisoDocumentosJugador(documentosJugador)}
+      <div class="empty">No hay documentos de equipo que coincidan con los filtros.</div>
+    `;
     return;
   }
 
   tabla.innerHTML = `
+    ${renderAvisoDocumentosJugador(documentosJugador)}
     <table class="doc-table">
       <thead>
         <tr>
@@ -579,6 +617,17 @@ function renderDocumentacionAsociacion(nombreCategoria) {
         }).join("")}
       </tbody>
     </table>
+  `;
+}
+
+function renderAvisoDocumentosJugador(documentosJugador) {
+  if (!documentosJugador.length) return "";
+
+  return `
+    <div class="doc-scope-note">
+      <strong>Documentos por jugador</strong>
+      <span>${documentosJugador.map(escapeHtml).join(", ")} se cargarán individualmente por jugador en el próximo paso.</span>
+    </div>
   `;
 }
 
@@ -620,12 +669,14 @@ function renderDocumentacionDelegado() {
     return;
   }
 
-  const documentosRequeridos = obtenerDocumentosRequeridos();
+  const documentosEquipo = obtenerDocumentosEquipo();
+  const documentosJugador = obtenerDocumentosJugador();
 
   container.innerHTML = `
     <div class="doc-delegate-summary">
-      ${equiposDelegado.map((equipo) => renderResumenDocumentalDelegado(categoria, equipo, documentosRequeridos)).join("")}
+      ${equiposDelegado.map((equipo) => renderResumenDocumentalDelegado(categoria, equipo, documentosEquipo)).join("")}
     </div>
+    ${renderAvisoDocumentosJugador(documentosJugador)}
     <table class="doc-table">
       <thead>
         <tr>
@@ -639,7 +690,7 @@ function renderDocumentacionDelegado() {
       </thead>
       <tbody>
         ${equiposDelegado.map((equipo) =>
-          documentosRequeridos.map((documento) => {
+          documentosEquipo.map((documento) => {
             const documentoEquipo = obtenerDocumentoEquipo(categoria, equipo, documento);
 
             return `
@@ -735,6 +786,7 @@ function renderAccionDocumentoDelegado(documento) {
     ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>`
     : "";
   const requisito = obtenerRequisitoDocumental(documento.requirement_nombre);
+  const multiple = permiteMultiplesArchivos(documento.requirement_nombre);
   const vencimientoInput = requisito?.requiere_vencimiento
     ? `
       <label class="doc-expiry-field">
@@ -756,12 +808,13 @@ function renderAccionDocumentoDelegado(documento) {
   return `
     ${vencimientoInput}
     <label class="doc-upload-button">
-      <span>${documento.file_name ? "Reemplazar" : "Subir"}</span>
+      <span>${multiple ? (documento.file_name ? "Agregar" : "Subir imágenes") : (documento.file_name ? "Reemplazar" : "Subir")}</span>
       <input
         class="doc-upload-input"
         type="file"
-        accept="application/pdf,image/jpeg,image/png"
+        accept="${multiple ? "image/jpeg,image/png" : "application/pdf,image/jpeg,image/png"}"
         data-document-id="${escapeHtml(documento.id)}"
+        ${multiple ? "multiple" : ""}
       >
     </label>
     ${nombreArchivo}
@@ -1145,8 +1198,13 @@ async function subirDocumentoDelegado(event) {
   if (!input?.classList?.contains("doc-upload-input")) return;
 
   const status = $("delegado-status");
-  const file = input.files?.[0];
-  const validationError = validarArchivoDocumento(file);
+  const files = Array.from(input.files || []);
+  const documentId = input.dataset.documentId;
+  const documento = obtenerDocumentoPorId(documentId);
+  const multiple = permiteMultiplesArchivos(documento?.requirement_nombre);
+  const validationError = files.length
+    ? files.map((file) => validarArchivoDocumento(file, multiple)).find(Boolean)
+    : "Seleccioná un archivo.";
 
   if (validationError) {
     setStatus(status, validationError, "warn");
@@ -1160,8 +1218,6 @@ async function subirDocumentoDelegado(event) {
     return;
   }
 
-  const documentId = input.dataset.documentId;
-  const documento = obtenerDocumentoPorId(documentId);
   const categoriaNombre = $("delegado-categoria")?.value || "";
   const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
 
@@ -1188,48 +1244,61 @@ async function subirDocumentoDelegado(event) {
     return;
   }
 
-  const storagePath = [
-    "apdb",
-    "2026",
-    slugify(categoriaNombre),
-    documento.equipo_id || slugify(documento.equipo_nombre),
-    documento.requirement_id,
-    `${Date.now()}-${nombreArchivoSeguro(file.name)}`
-  ].join("/");
-
   input.disabled = true;
-  setStatus(status, `Subiendo ${file.name}...`, "");
+  setStatus(status, `Subiendo ${files.length} archivo${files.length === 1 ? "" : "s"}...`, "");
 
-  const { error: uploadError } = await supabaseClient.storage
-    .from("documentos")
-    .upload(storagePath, file, {
-      cacheControl: "3600",
-      contentType: file.type,
-      upsert: false
-    });
+  for (const file of files) {
+    const storagePath = [
+      "apdb",
+      "2026",
+      slugify(categoriaNombre),
+      documento.equipo_id || slugify(documento.equipo_nombre),
+      documento.requirement_id,
+      `${Date.now()}-${nombreArchivoSeguro(file.name)}`
+    ].join("/");
 
-  if (uploadError) {
-    input.disabled = false;
-    input.value = "";
-    setStatus(status, `No se pudo subir el archivo: ${uploadError.message}`, "error");
-    return;
-  }
+    const { error: uploadError } = await supabaseClient.storage
+      .from("documentos")
+      .upload(storagePath, file, {
+        cacheControl: "3600",
+        contentType: file.type,
+        upsert: false
+      });
 
-  const { error: rpcError } = await supabaseClient.rpc("mark_team_document_uploaded", {
-    p_document_id: documento.id,
-    p_uploaded_by: estado.delegado.nombre,
-    p_storage_path: storagePath,
-    p_file_name: file.name,
-    p_file_type: file.type,
-    p_file_size: file.size,
-    p_vencimiento: vencimiento
-  });
+    if (uploadError) {
+      input.disabled = false;
+      input.value = "";
+      setStatus(status, `No se pudo subir ${file.name}: ${uploadError.message}`, "error");
+      return;
+    }
 
-  if (rpcError) {
-    input.disabled = false;
-    input.value = "";
-    setStatus(status, `El archivo subió, pero no se pudo registrar: ${rpcError.message}`, "error");
-    return;
+    const rpcName = multiple ? "add_team_document_file" : "mark_team_document_uploaded";
+    const rpcPayload = multiple
+      ? {
+          p_document_id: documento.id,
+          p_uploaded_by: estado.delegado.nombre,
+          p_storage_path: storagePath,
+          p_file_name: file.name,
+          p_file_type: file.type,
+          p_file_size: file.size
+        }
+      : {
+          p_document_id: documento.id,
+          p_uploaded_by: estado.delegado.nombre,
+          p_storage_path: storagePath,
+          p_file_name: file.name,
+          p_file_type: file.type,
+          p_file_size: file.size,
+          p_vencimiento: vencimiento
+        };
+    const { error: rpcError } = await supabaseClient.rpc(rpcName, rpcPayload);
+
+    if (rpcError) {
+      input.disabled = false;
+      input.value = "";
+      setStatus(status, `El archivo subió, pero no se pudo registrar: ${rpcError.message}`, "error");
+      return;
+    }
   }
 
   delete estado.documentosPorCategoriaId[categoria.id];
