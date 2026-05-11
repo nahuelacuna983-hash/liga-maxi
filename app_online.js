@@ -567,12 +567,16 @@ function renderDocumentacionDelegado() {
   const documentosRequeridos = obtenerDocumentosRequeridos();
 
   container.innerHTML = `
+    <div class="doc-delegate-summary">
+      ${equiposDelegado.map((equipo) => renderResumenDocumentalDelegado(categoria, equipo, documentosRequeridos)).join("")}
+    </div>
     <table class="doc-table">
       <thead>
         <tr>
           <th>Equipo</th>
           <th>Documento</th>
           <th>Estado</th>
+          <th>Observacion</th>
           <th>Accion</th>
         </tr>
       </thead>
@@ -589,6 +593,7 @@ function renderDocumentacionDelegado() {
                   estadoDocumentoLabel(documentoEquipo),
                   estadoDocumentoClase(documentoEquipo)
                 )}</td>
+                <td>${renderObservacionDocumento(documentoEquipo)}</td>
                 <td>${renderAccionDocumentoDelegado(documentoEquipo)}</td>
               </tr>
             `;
@@ -597,6 +602,40 @@ function renderDocumentacionDelegado() {
       </tbody>
     </table>
   `;
+}
+
+function renderResumenDocumentalDelegado(categoria, equipo, documentosRequeridos) {
+  const documentos = documentosRequeridos.map((requisito) =>
+    obtenerDocumentoEquipo(categoria, equipo, requisito)
+  );
+  const total = documentosRequeridos.length;
+  const cargados = documentos.filter((documento) => !!documento?.file_name).length;
+  const aprobados = documentos.filter((documento) => documento?.status === "aprobado").length;
+  const observados = documentos.filter((documento) =>
+    documento?.status === "observado" || documento?.status === "rechazado"
+  ).length;
+  const porcentaje = total ? Math.round((cargados / total) * 100) : 0;
+
+  return `
+    <div class="doc-progress-card">
+      <div>
+        <strong>${escapeHtml(equipo)}</strong>
+        <span>${cargados}/${total} cargados - ${aprobados} aprobados - ${observados} con observación</span>
+      </div>
+      <div class="doc-progress-bar" aria-label="${porcentaje}% cargado">
+        <span style="width:${porcentaje}%"></span>
+      </div>
+    </div>
+  `;
+}
+
+function renderObservacionDocumento(documento) {
+  if (!documento?.observacion) {
+    return `<span class="doc-action-muted">Sin observación</span>`;
+  }
+
+  const important = documento.status === "observado" || documento.status === "rechazado";
+  return `<span class="${important ? "doc-observation doc-observation-important" : "doc-observation"}">${escapeHtml(documento.observacion)}</span>`;
 }
 
 function renderAccionDocumentoDelegado(documento) {
