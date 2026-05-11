@@ -476,6 +476,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   const equipos = obtenerEquiposCategoria(nombreCategoria);
   const documentosRequeridos = obtenerDocumentosRequeridos();
   const filtroEstado = $("documentacion-filtro-estado")?.value || "";
+  const filtroVencimiento = $("documentacion-filtro-vencimiento")?.value || "";
   const filtroTexto = normalizarTexto($("documentacion-buscar")?.value || "");
   const totalEsperado = equipos.length * documentosRequeridos.length;
   const documentos = equipos.flatMap((equipo) =>
@@ -512,12 +513,14 @@ function renderDocumentacionAsociacion(nombreCategoria) {
     documentosRequeridos.map((requisito) => {
       const documento = obtenerDocumentoEquipo(nombreCategoria, equipo, requisito);
       const status = documento?.status || "pendiente";
+      const vencimientoStatus = estadoVencimientoDocumento(documento);
       const textoFila = normalizarTexto([
         equipo,
         requisito,
         documento?.file_name,
         documento?.observacion,
-        estadoDocumentoLabel(documento)
+        estadoDocumentoLabel(documento),
+        vencimientoStatus
       ].join(" "));
 
       return {
@@ -525,8 +528,10 @@ function renderDocumentacionAsociacion(nombreCategoria) {
         requisito,
         documento,
         status,
+        vencimientoStatus,
         visible:
           (!filtroEstado || status === filtroEstado) &&
+          (!filtroVencimiento || vencimientoStatus === filtroVencimiento) &&
           (!filtroTexto || textoFila.includes(filtroTexto))
       };
     })
@@ -1466,6 +1471,9 @@ async function inicializarAsociacion() {
   $("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
   $("documentacion-tabla").addEventListener("click", revisarDocumentoAsociacion);
   $("documentacion-filtro-estado").addEventListener("change", () => {
+    renderDocumentacionAsociacion($("asociacion-categoria").value);
+  });
+  $("documentacion-filtro-vencimiento").addEventListener("change", () => {
     renderDocumentacionAsociacion($("asociacion-categoria").value);
   });
   $("documentacion-buscar").addEventListener("input", () => {
