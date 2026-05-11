@@ -692,9 +692,18 @@ td:nth-child(2) {
 
 .doc-filters {
   display: grid;
-  grid-template-columns: minmax(170px, 220px) minmax(170px, 220px) minmax(220px, 1fr);
+  grid-template-columns: minmax(160px, 210px) minmax(160px, 210px) minmax(220px, 1fr) minmax(140px, 160px);
   gap: 12px;
   margin-top: 12px;
+}
+
+.doc-filter-action {
+  justify-content: end;
+}
+
+.doc-filter-action button {
+  width: 100%;
+  min-height: 50px;
 }
 
 .doc-pill {

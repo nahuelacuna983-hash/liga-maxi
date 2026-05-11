@@ -10,6 +10,7 @@ const estado = {
   equiposPorCategoriaId: {},
   requisitosDocumentales: [],
   documentosPorCategoriaId: {},
+  filasDocumentacionAsociacion: [],
   delegadoDesbloqueado: false,
   delegado: null
 };
@@ -505,6 +506,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   `;
 
   if (!equipos.length) {
+    estado.filasDocumentacionAsociacion = [];
     tabla.innerHTML = `<div class="empty">No hay equipos detectados para esta categoría.</div>`;
     return;
   }
@@ -536,6 +538,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
       };
     })
   ).filter((fila) => fila.visible);
+  estado.filasDocumentacionAsociacion = filas;
 
   if (!filas.length) {
     tabla.innerHTML = `<div class="empty">No hay documentos que coincidan con los filtros.</div>`;
@@ -1449,6 +1452,58 @@ async function revisarDocumentoAsociacion(event) {
   setStatus(status, "Revisión documental guardada.", "ok");
 }
 
+function csvCell(value) {
+  const text = String(value ?? "");
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+function exportarDocumentacionCsv() {
+  const status = $("asociacion-status");
+  const filas = estado.filasDocumentacionAsociacion || [];
+
+  if (!filas.length) {
+    setStatus(status, "No hay filas documentales para exportar.", "warn");
+    return;
+  }
+
+  const categoria = $("asociacion-categoria")?.value || "categoria";
+  const encabezado = [
+    "Categoria",
+    "Equipo",
+    "Documento",
+    "Estado",
+    "Archivo",
+    "Vencimiento",
+    "Estado vencimiento",
+    "Observacion"
+  ];
+  const rows = filas.map((fila) => [
+    categoria,
+    fila.equipo,
+    fila.requisito,
+    estadoDocumentoLabel(fila.documento),
+    fila.documento?.file_name || "",
+    fila.documento?.vencimiento ? formatearFecha(fila.documento.vencimiento) : "",
+    fila.vencimientoStatus,
+    fila.documento?.observacion || ""
+  ]);
+  const csv = [encabezado, ...rows]
+    .map((row) => row.map(csvCell).join(","))
+    .join("\r\n");
+  const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const fecha = new Date().toISOString().slice(0, 10);
+
+  link.href = url;
+  link.download = `documentacion-${slugify(categoria)}-${fecha}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  setStatus(status, "CSV documental exportado.", "ok");
+}
+
 async function inicializarAsociacion() {
   poblarSelectCategorias("asociacion-categoria", estado.categorias);
 
@@ -1479,6 +1534,7 @@ async function inicializarAsociacion() {
   $("documentacion-buscar").addEventListener("input", () => {
     renderDocumentacionAsociacion($("asociacion-categoria").value);
   });
+  $("documentacion-exportar").addEventListener("click", exportarDocumentacionCsv);
  const plannerBtn = document.getElementById("planner-generar");
 
 if (plannerBtn) {
