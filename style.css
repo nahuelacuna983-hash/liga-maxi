@@ -770,6 +770,38 @@ td:nth-child(2) {
   font-style: italic;
 }
 
+.doc-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  background: rgba(37, 99, 235, 0.2);
+  color: #dbeafe;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 5px 10px;
+}
+
+.doc-upload-button:hover {
+  background: rgba(37, 99, 235, 0.32);
+}
+
+.doc-upload-input {
+  display: none;
+}
+
+.doc-file-name {
+  display: block;
+  max-width: 220px;
+  margin-top: 6px;
+  color: #bfdbfe;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .empty {
   color: #dbeafe;
   font-style: italic;

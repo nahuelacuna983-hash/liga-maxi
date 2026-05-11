@@ -312,7 +312,7 @@ async function cargarDocumentosCategoria(categoriaId) {
 
   const { data, error } = await supabaseClient
     .from("v_team_documents_admin")
-    .select("id, requirement_nombre, categoria_id, equipo_id, equipo_nombre, status, vencimiento, observacion")
+    .select("id, requirement_id, requirement_nombre, categoria_id, equipo_id, equipo_nombre, status, vencimiento, observacion, storage_path, file_name, file_type, file_size")
     .eq("categoria_id", categoriaId);
 
   if (error) {
@@ -346,6 +346,11 @@ function obtenerDocumentoEquipo(nombreCategoria, equipo, requisito) {
   ) || null;
 }
 
+function obtenerDocumentoPorId(documentId) {
+  const documentos = Object.values(estado.documentosPorCategoriaId).flat();
+  return documentos.find((documento) => documento.id === documentId) || null;
+}
+
 function estadoDocumentoLabel(documento) {
   if (!documento) return "Pendiente";
 
@@ -372,6 +377,34 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function slugify(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "sin-nombre";
+}
+
+function nombreArchivoSeguro(value) {
+  const nombre = String(value || "documento").trim();
+  const partes = nombre.split(".");
+  const extension = partes.length > 1 ? partes.pop().toLowerCase() : "";
+  const base = slugify(partes.join(".") || nombre);
+  return extension ? `${base}.${extension}` : base;
+}
+
+function validarArchivoDocumento(file) {
+  const tiposPermitidos = ["application/pdf", "image/jpeg", "image/png"];
+  const maxBytes = 10 * 1024 * 1024;
+
+  if (!file) return "Seleccioná un archivo.";
+  if (!tiposPermitidos.includes(file.type)) return "Formato no permitido. Usá PDF, JPG o PNG.";
+  if (file.size > maxBytes) return "El archivo supera 10 MB.";
+
+  return "";
 }
 
 function obtenerEquiposCategoria(nombreCategoria) {
@@ -487,20 +520,51 @@ function renderDocumentacionDelegado() {
       </thead>
       <tbody>
         ${equiposDelegado.map((equipo) =>
-          documentosRequeridos.map((documento) => `
-            <tr>
-              <td>${escapeHtml(equipo)}</td>
-              <td>${escapeHtml(documento)}</td>
-              <td>${docStateHtml(
-                estadoDocumentoLabel(obtenerDocumentoEquipo(categoria, equipo, documento)),
-                estadoDocumentoClase(obtenerDocumentoEquipo(categoria, equipo, documento))
-              )}</td>
-              <td><span class="doc-action-muted">Próxima etapa</span></td>
-            </tr>
-          `).join("")
+          documentosRequeridos.map((documento) => {
+            const documentoEquipo = obtenerDocumentoEquipo(categoria, equipo, documento);
+
+            return `
+              <tr>
+                <td>${escapeHtml(equipo)}</td>
+                <td>${escapeHtml(documento)}</td>
+                <td>${docStateHtml(
+                  estadoDocumentoLabel(documentoEquipo),
+                  estadoDocumentoClase(documentoEquipo)
+                )}</td>
+                <td>${renderAccionDocumentoDelegado(documentoEquipo)}</td>
+              </tr>
+            `;
+          }).join("")
         ).join("")}
       </tbody>
     </table>
+  `;
+}
+
+function renderAccionDocumentoDelegado(documento) {
+  if (!documento) {
+    return `<span class="doc-action-muted">Sin registro</span>`;
+  }
+
+  const nombreArchivo = documento.file_name
+    ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>`
+    : "";
+
+  if (documento.status === "aprobado") {
+    return `${nombreArchivo}<span class="doc-action-muted">Aprobado</span>`;
+  }
+
+  return `
+    <label class="doc-upload-button">
+      <span>${documento.file_name ? "Reemplazar" : "Subir"}</span>
+      <input
+        class="doc-upload-input"
+        type="file"
+        accept="application/pdf,image/jpeg,image/png"
+        data-document-id="${escapeHtml(documento.id)}"
+      >
+    </label>
+    ${nombreArchivo}
   `;
 }
 
@@ -876,6 +940,99 @@ async function guardarResultadoDelegado() {
   setStatus(status, "Resultado guardado correctamente.", "ok");
 }
 
+async function subirDocumentoDelegado(event) {
+  const input = event.target;
+  if (!input?.classList?.contains("doc-upload-input")) return;
+
+  const status = $("delegado-status");
+  const file = input.files?.[0];
+  const validationError = validarArchivoDocumento(file);
+
+  if (validationError) {
+    setStatus(status, validationError, "warn");
+    input.value = "";
+    return;
+  }
+
+  if (!estado.delegadoDesbloqueado || !estado.delegado) {
+    setStatus(status, "Primero habilitá edición con la clave.", "warn");
+    input.value = "";
+    return;
+  }
+
+  const documentId = input.dataset.documentId;
+  const documento = obtenerDocumentoPorId(documentId);
+  const categoriaNombre = $("delegado-categoria")?.value || "";
+  const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
+
+  if (!documento || !categoria) {
+    setStatus(status, "No se encontró el registro documental.", "error");
+    input.value = "";
+    return;
+  }
+
+  const equipoPermitido = estado.delegado.equipos.includes(documento.equipo_nombre);
+  if (!equipoPermitido) {
+    setStatus(status, "Ese documento no pertenece a tu equipo.", "error");
+    input.value = "";
+    return;
+  }
+
+  const storagePath = [
+    "apdb",
+    "2026",
+    slugify(categoriaNombre),
+    documento.equipo_id || slugify(documento.equipo_nombre),
+    documento.requirement_id,
+    `${Date.now()}-${nombreArchivoSeguro(file.name)}`
+  ].join("/");
+
+  input.disabled = true;
+  setStatus(status, `Subiendo ${file.name}...`, "");
+
+  const { error: uploadError } = await supabaseClient.storage
+    .from("documentos")
+    .upload(storagePath, file, {
+      cacheControl: "3600",
+      contentType: file.type,
+      upsert: false
+    });
+
+  if (uploadError) {
+    input.disabled = false;
+    input.value = "";
+    setStatus(status, `No se pudo subir el archivo: ${uploadError.message}`, "error");
+    return;
+  }
+
+  const { error: rpcError } = await supabaseClient.rpc("mark_team_document_uploaded", {
+    p_document_id: documento.id,
+    p_uploaded_by: estado.delegado.nombre,
+    p_storage_path: storagePath,
+    p_file_name: file.name,
+    p_file_type: file.type,
+    p_file_size: file.size,
+    p_vencimiento: null
+  });
+
+  if (rpcError) {
+    input.disabled = false;
+    input.value = "";
+    setStatus(status, `El archivo subió, pero no se pudo registrar: ${rpcError.message}`, "error");
+    return;
+  }
+
+  delete estado.documentosPorCategoriaId[categoria.id];
+  await cargarDocumentosCategoria(categoria.id);
+  renderDocumentacionDelegado();
+
+  if ($("asociacion-categoria")?.value === categoriaNombre) {
+    renderDocumentacionAsociacion(categoriaNombre);
+  }
+
+  setStatus(status, "Documento cargado correctamente. Queda pendiente de revisión.", "ok");
+}
+
 function desbloquearDelegado() {
   const clave = $("delegado-clave").value.trim();
   const status = $("delegado-status");
@@ -1199,6 +1356,7 @@ async function inicializar() {
     $("delegado-partido").addEventListener("change", completarInputsPartidoSeleccionado);
     $("delegado-guardar").addEventListener("click", guardarResultadoDelegado);
     $("delegado-desbloquear").addEventListener("click", desbloquearDelegado);
+    $("delegado-documentacion").addEventListener("change", subirDocumentoDelegado);
   } catch (error) {
     console.error(error);
     $("vista-publico").innerHTML = `
