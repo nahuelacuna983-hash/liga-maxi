@@ -685,7 +685,7 @@ td:nth-child(2) {
 
 .doc-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
   gap: 12px;
   margin: 14px 0 16px;
 }
@@ -717,6 +717,10 @@ td:nth-child(2) {
 .doc-table th,
 .doc-table td {
   vertical-align: top;
+}
+
+.doc-team-start td {
+  border-top: 2px solid rgba(96, 165, 250, 0.28);
 }
 
 .doc-state {

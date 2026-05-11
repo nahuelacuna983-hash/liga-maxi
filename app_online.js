@@ -436,18 +436,23 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   const equipos = obtenerEquiposCategoria(nombreCategoria);
   const documentosRequeridos = obtenerDocumentosRequeridos();
   const totalEsperado = equipos.length * documentosRequeridos.length;
-  const totalCargados = equipos.reduce((total, equipo) => {
-    return total + documentosRequeridos.filter((requisito) =>
-      !!obtenerDocumentoEquipo(nombreCategoria, equipo, requisito)
-    ).length;
-  }, 0);
-  const totalPendientes = Math.max(totalEsperado - totalCargados, 0);
+  const documentos = equipos.flatMap((equipo) =>
+    documentosRequeridos.map((requisito) => obtenerDocumentoEquipo(nombreCategoria, equipo, requisito))
+  );
+  const resumenEstados = documentos.reduce((acc, documento) => {
+    const status = documento?.status || "pendiente";
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
 
   resumen.innerHTML = `
     <div class="doc-pill"><strong>${equipos.length}</strong><span>Equipos</span></div>
     <div class="doc-pill"><strong>${documentosRequeridos.length}</strong><span>Requisitos</span></div>
-    <div class="doc-pill"><strong>${totalCargados}</strong><span>Con registro</span></div>
-    <div class="doc-pill"><strong>${totalPendientes}</strong><span>Pendientes estimados</span></div>
+    <div class="doc-pill"><strong>${resumenEstados.pendiente || 0}</strong><span>Pendientes</span></div>
+    <div class="doc-pill"><strong>${resumenEstados.cargado || 0}</strong><span>Para revisar</span></div>
+    <div class="doc-pill"><strong>${resumenEstados.aprobado || 0}</strong><span>Aprobados</span></div>
+    <div class="doc-pill"><strong>${(resumenEstados.observado || 0) + (resumenEstados.rechazado || 0)}</strong><span>Observados/Rechazados</span></div>
+    <div class="doc-pill"><strong>${totalEsperado}</strong><span>Total esperado</span></div>
   `;
 
   if (!equipos.length) {
@@ -469,11 +474,11 @@ function renderDocumentacionAsociacion(nombreCategoria) {
       </thead>
       <tbody>
         ${equipos.map((equipo) => {
-          return documentosRequeridos.map((requisito) => {
+          return documentosRequeridos.map((requisito, requisitoIndex) => {
             const documento = obtenerDocumentoEquipo(nombreCategoria, equipo, requisito);
 
             return `
-            <tr>
+            <tr class="${requisitoIndex === 0 ? "doc-team-start" : ""}">
               <td>${escapeHtml(equipo)}</td>
               <td>${docStateHtml(
                 estadoDocumentoLabel(documento),
