@@ -868,6 +868,20 @@ td:nth-child(2) {
   display: none;
 }
 
+.doc-uploaded-mark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #bbf7d0;
+  font-size: 12px;
+  font-weight: 800;
+  margin-left: 6px;
+  padding: 4px 9px;
+}
+
 .doc-file-name {
   display: block;
   max-width: 220px;
@@ -960,9 +974,48 @@ td:nth-child(2) {
   padding: 5px 9px;
 }
 
+.doc-view-btn,
+.doc-review-current {
+  min-height: 30px;
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  border-radius: 8px;
+  background: rgba(37, 99, 235, 0.2);
+  color: #dbeafe;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 9px;
+}
+
+.doc-review-current {
+  cursor: default;
+}
+
+.doc-review-current-ok {
+  border-color: rgba(52, 211, 153, 0.45);
+  background: rgba(16, 185, 129, 0.16);
+  color: #bbf7d0;
+}
+
+.doc-review-current-warn {
+  border-color: rgba(251, 146, 60, 0.45);
+  background: rgba(249, 115, 22, 0.16);
+  color: #fed7aa;
+}
+
+.doc-review-current-danger {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(239, 68, 68, 0.16);
+  color: #fecaca;
+}
+
 .doc-review-btn:disabled {
   cursor: wait;
   opacity: 0.65;
+}
+
+#vista-asociacion.asociacion-locked > .card:not(#asociacion-acceso) {
+  display: none;
 }
 
 .doc-review-ok {

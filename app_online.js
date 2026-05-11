@@ -12,7 +12,8 @@ const estado = {
   documentosPorCategoriaId: {},
   filasDocumentacionAsociacion: [],
   delegadoDesbloqueado: false,
-  delegado: null
+  delegado: null,
+  asociacionDesbloqueada: false
 };
 
 function $(id) {
@@ -55,6 +56,19 @@ function aplicarBloqueoDelegado() {
   if ($("delegado-puntos-local")) $("delegado-puntos-local").disabled = !enabled;
   if ($("delegado-puntos-visitante")) $("delegado-puntos-visitante").disabled = !enabled;
   if ($("delegado-guardar")) $("delegado-guardar").disabled = !enabled;
+}
+
+function aplicarBloqueoAsociacion() {
+  const enabled = !!estado.asociacionDesbloqueada;
+  const view = $("vista-asociacion");
+  if (!view) return;
+
+  view.classList.toggle("asociacion-locked", !enabled);
+
+  view.querySelectorAll("input, select, button").forEach((element) => {
+    const isAccessControl = element.id === "asociacion-clave" || element.id === "asociacion-desbloquear";
+    if (!isAccessControl) element.disabled = !enabled;
+  });
 }
 
 async function cargarCategorias() {
@@ -240,6 +254,8 @@ const DELEGADOS = {
     equipos: ["SAN VICENTE"]
   }
 };
+
+const CLAVES_ASOCIACION = ["admin123"];
 
 function validarDelegado(clave) {
   const claveLimpia = String(clave || "").trim();
@@ -648,11 +664,21 @@ function renderAccionRevisionAsociacion(documento) {
     return `<span class="doc-action-muted">Esperando carga</span>`;
   }
 
+  if (documento.status === "aprobado") {
+    return `
+      <div class="doc-review-actions">
+        <button class="doc-view-btn" type="button" data-document-id="${escapeHtml(documento.id)}">Ver</button>
+        <span class="doc-review-current doc-review-current-ok">Aprobado</span>
+      </div>
+    `;
+  }
+
   return `
     <div class="doc-review-actions">
+      <button class="doc-view-btn" type="button" data-document-id="${escapeHtml(documento.id)}">Ver</button>
       <button class="doc-review-btn doc-review-ok" type="button" data-document-id="${escapeHtml(documento.id)}" data-status="aprobado">Aprobar</button>
-      <button class="doc-review-btn doc-review-warn" type="button" data-document-id="${escapeHtml(documento.id)}" data-status="observado">Observar</button>
-      <button class="doc-review-btn doc-review-danger" type="button" data-document-id="${escapeHtml(documento.id)}" data-status="rechazado">Rechazar</button>
+      ${documento.status !== "observado" ? `<button class="doc-review-btn doc-review-warn" type="button" data-document-id="${escapeHtml(documento.id)}" data-status="observado">Observar</button>` : `<span class="doc-review-current doc-review-current-warn">Observado</span>`}
+      ${documento.status !== "rechazado" ? `<button class="doc-review-btn doc-review-danger" type="button" data-document-id="${escapeHtml(documento.id)}" data-status="rechazado">Rechazar</button>` : `<span class="doc-review-current doc-review-current-danger">Rechazado</span>`}
     </div>
   `;
 }
@@ -814,6 +840,10 @@ function renderAccionDocumentoDelegado(documento) {
     return `${nombreArchivo}<span class="doc-action-muted">Aprobado</span>`;
   }
 
+  const marcaCargado = documento.file_name
+    ? `<span class="doc-uploaded-mark">Cargado, pendiente de revisión</span>`
+    : "";
+
   return `
     ${vencimientoInput}
     <label class="doc-upload-button">
@@ -827,6 +857,7 @@ function renderAccionDocumentoDelegado(documento) {
       >
     </label>
     ${nombreArchivo}
+    ${marcaCargado}
   `;
 }
 
@@ -1425,6 +1456,11 @@ async function guardarResultadoAsociacion() {
   const puntosVisitante = $("asociacion-puntos-visitante").value;
   const status = $("asociacion-status");
 
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilitá Asociación con la clave administrativa.", "warn");
+    return;
+  }
+
   if (!partidoId) {
     setStatus(status, "Seleccioná un partido.", "warn");
     return;
@@ -1484,6 +1520,11 @@ async function revisarDocumentoAsociacion(event) {
   const documento = obtenerDocumentoPorId(documentId);
   const status = $("asociacion-status");
 
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilitá Asociación con la clave administrativa.", "warn");
+    return;
+  }
+
   if (!documento || !categoriaData) {
     setStatus(status, "No se encontró el documento seleccionado.", "error");
     return;
@@ -1535,6 +1576,54 @@ async function revisarDocumentoAsociacion(event) {
   renderDocumentacionAsociacion(categoria);
   renderDocumentacionDelegado();
   setStatus(status, "Revisión documental guardada.", "ok");
+}
+
+async function verDocumentoAsociacion(event) {
+  const button = event.target.closest(".doc-view-btn");
+  if (!button) return;
+
+  const status = $("asociacion-status");
+
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilitá Asociación con la clave administrativa.", "warn");
+    return;
+  }
+
+  const documento = obtenerDocumentoPorId(button.dataset.documentId);
+  if (!documento?.storage_path) {
+    setStatus(status, "Este documento no tiene archivo disponible.", "warn");
+    return;
+  }
+
+  setStatus(status, "Abriendo archivo...", "");
+
+  const { data, error } = await supabaseClient.storage
+    .from("documentos")
+    .createSignedUrl(documento.storage_path, 300);
+
+  if (error || !data?.signedUrl) {
+    setStatus(status, `No se pudo abrir el archivo: ${error?.message || "sin URL"}`, "error");
+    return;
+  }
+
+  window.open(data.signedUrl, "_blank", "noopener");
+  setStatus(status, "Archivo abierto en una pestaña nueva.", "ok");
+}
+
+function desbloquearAsociacion() {
+  const clave = $("asociacion-clave")?.value?.trim() || "";
+  const status = $("asociacion-acceso-status");
+
+  if (!CLAVES_ASOCIACION.includes(clave)) {
+    estado.asociacionDesbloqueada = false;
+    aplicarBloqueoAsociacion();
+    setStatus(status, "Clave administrativa incorrecta.", "error");
+    return;
+  }
+
+  estado.asociacionDesbloqueada = true;
+  aplicarBloqueoAsociacion();
+  setStatus(status, "Asociación habilitada.", "ok");
 }
 
 function csvCell(value) {
@@ -1610,6 +1699,7 @@ async function inicializarAsociacion() {
   $("asociacion-partido").addEventListener("change", completarInputsAsociacion);
   $("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
   $("documentacion-tabla").addEventListener("click", revisarDocumentoAsociacion);
+  $("documentacion-tabla").addEventListener("click", verDocumentoAsociacion);
   $("documentacion-filtro-estado").addEventListener("change", () => {
     renderDocumentacionAsociacion($("asociacion-categoria").value);
   });
@@ -1620,6 +1710,11 @@ async function inicializarAsociacion() {
     renderDocumentacionAsociacion($("asociacion-categoria").value);
   });
   $("documentacion-exportar").addEventListener("click", exportarDocumentacionCsv);
+  $("asociacion-desbloquear").addEventListener("click", desbloquearAsociacion);
+  $("asociacion-clave").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") desbloquearAsociacion();
+  });
+  aplicarBloqueoAsociacion();
  const plannerBtn = document.getElementById("planner-generar");
 
 if (plannerBtn) {
