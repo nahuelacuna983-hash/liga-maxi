@@ -262,6 +262,12 @@ function obtenerDocumentosRequeridos() {
   return DOCUMENTOS_REQUERIDOS;
 }
 
+function obtenerRequisitoDocumental(nombre) {
+  return estado.requisitosDocumentales.find((requisito) =>
+    normalizarTexto(requisito.nombre) === normalizarTexto(nombre)
+  ) || null;
+}
+
 async function cargarRequisitosDocumentales() {
   const { data, error } = await supabaseClient
     .from("document_requirements")
@@ -368,6 +374,13 @@ function estadoDocumentoLabel(documento) {
 
 function estadoDocumentoClase(documento) {
   return normalizarTexto(documento?.status || "pendiente");
+}
+
+function formatearFecha(value) {
+  if (!value) return "";
+  const [year, month, day] = String(value).split("-");
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
 }
 
 function escapeHtml(value) {
@@ -499,6 +512,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
           <th>Estado</th>
           <th>Documento</th>
           <th>Archivo</th>
+          <th>Vencimiento</th>
           <th>Observacion</th>
           <th>Revision</th>
         </tr>
@@ -516,6 +530,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
               )}</td>
               <td>${escapeHtml(fila.requisito)}</td>
               <td>${fila.documento?.file_name ? `<span class="doc-file-name">${escapeHtml(fila.documento.file_name)}</span>` : `<span class="doc-action-muted">Sin archivo</span>`}</td>
+              <td>${renderVencimientoDocumento(fila.documento)}</td>
               <td>${escapeHtml(fila.documento?.observacion || "")}</td>
               <td>${renderAccionRevisionAsociacion(fila.documento)}</td>
             </tr>
@@ -576,6 +591,7 @@ function renderDocumentacionDelegado() {
           <th>Equipo</th>
           <th>Documento</th>
           <th>Estado</th>
+          <th>Vencimiento</th>
           <th>Observacion</th>
           <th>Accion</th>
         </tr>
@@ -593,6 +609,7 @@ function renderDocumentacionDelegado() {
                   estadoDocumentoLabel(documentoEquipo),
                   estadoDocumentoClase(documentoEquipo)
                 )}</td>
+                <td>${renderVencimientoDocumento(documentoEquipo)}</td>
                 <td>${renderObservacionDocumento(documentoEquipo)}</td>
                 <td>${renderAccionDocumentoDelegado(documentoEquipo)}</td>
               </tr>
@@ -638,6 +655,20 @@ function renderObservacionDocumento(documento) {
   return `<span class="${important ? "doc-observation doc-observation-important" : "doc-observation"}">${escapeHtml(documento.observacion)}</span>`;
 }
 
+function renderVencimientoDocumento(documento) {
+  const requisito = obtenerRequisitoDocumental(documento?.requirement_nombre);
+
+  if (!requisito?.requiere_vencimiento) {
+    return `<span class="doc-action-muted">No aplica</span>`;
+  }
+
+  if (!documento?.vencimiento) {
+    return `<span class="doc-observation doc-observation-important">Falta fecha</span>`;
+  }
+
+  return `<span class="doc-observation">${escapeHtml(formatearFecha(documento.vencimiento))}</span>`;
+}
+
 function renderAccionDocumentoDelegado(documento) {
   if (!documento) {
     return `<span class="doc-action-muted">Sin registro</span>`;
@@ -646,12 +677,27 @@ function renderAccionDocumentoDelegado(documento) {
   const nombreArchivo = documento.file_name
     ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>`
     : "";
+  const requisito = obtenerRequisitoDocumental(documento.requirement_nombre);
+  const vencimientoInput = requisito?.requiere_vencimiento
+    ? `
+      <label class="doc-expiry-field">
+        <span>Vencimiento</span>
+        <input
+          class="doc-expiry-input"
+          type="date"
+          data-document-id="${escapeHtml(documento.id)}"
+          value="${escapeHtml(documento.vencimiento || "")}"
+        >
+      </label>
+    `
+    : "";
 
   if (documento.status === "aprobado") {
     return `${nombreArchivo}<span class="doc-action-muted">Aprobado</span>`;
   }
 
   return `
+    ${vencimientoInput}
     <label class="doc-upload-button">
       <span>${documento.file_name ? "Reemplazar" : "Subir"}</span>
       <input
@@ -1068,6 +1114,16 @@ async function subirDocumentoDelegado(event) {
     return;
   }
 
+  const requisito = obtenerRequisitoDocumental(documento.requirement_nombre);
+  const vencimientoInput = document.querySelector(`.doc-expiry-input[data-document-id="${documentId}"]`);
+  const vencimiento = vencimientoInput?.value || null;
+
+  if (requisito?.requiere_vencimiento && !vencimiento) {
+    setStatus(status, "Completá la fecha de vencimiento antes de subir este documento.", "warn");
+    input.value = "";
+    return;
+  }
+
   const equipoPermitido = estado.delegado.equipos.includes(documento.equipo_nombre);
   if (!equipoPermitido) {
     setStatus(status, "Ese documento no pertenece a tu equipo.", "error");
@@ -1109,7 +1165,7 @@ async function subirDocumentoDelegado(event) {
     p_file_name: file.name,
     p_file_type: file.type,
     p_file_size: file.size,
-    p_vencimiento: null
+    p_vencimiento: vencimiento
   });
 
   if (rpcError) {

@@ -800,6 +800,30 @@ td:nth-child(2) {
   background: rgba(37, 99, 235, 0.32);
 }
 
+.doc-expiry-field {
+  display: block;
+  max-width: 180px;
+  margin-bottom: 8px;
+}
+
+.doc-expiry-field span {
+  display: block;
+  margin-bottom: 4px;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.doc-expiry-input {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.3);
+  color: #f8fafc;
+  padding: 5px 8px;
+}
+
 .doc-upload-input {
   display: none;
 }
