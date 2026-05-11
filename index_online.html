@@ -522,7 +522,24 @@
 
   <div class="card">
     <h3>Control documental</h3>
-    <p class="note">Vista preliminar de control. Todavía no escribe en Supabase ni permite aprobar archivos.</p>
+    <p class="note">Control administrativo de documentos cargados por delegados.</p>
+    <div class="doc-filters">
+      <div class="field">
+        <label for="documentacion-filtro-estado">Estado</label>
+        <select id="documentacion-filtro-estado">
+          <option value="">Todos</option>
+          <option value="pendiente">Pendientes</option>
+          <option value="cargado">Para revisar</option>
+          <option value="aprobado">Aprobados</option>
+          <option value="observado">Observados</option>
+          <option value="rechazado">Rechazados</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="documentacion-buscar">Buscar</label>
+        <input id="documentacion-buscar" type="search" placeholder="Equipo, requisito o archivo" />
+      </div>
+    </div>
     <div id="documentacion-resumen" class="doc-summary"></div>
     <div id="documentacion-tabla" class="table-wrap"></div>
   </div>

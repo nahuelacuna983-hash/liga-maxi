@@ -435,6 +435,8 @@ function renderDocumentacionAsociacion(nombreCategoria) {
 
   const equipos = obtenerEquiposCategoria(nombreCategoria);
   const documentosRequeridos = obtenerDocumentosRequeridos();
+  const filtroEstado = $("documentacion-filtro-estado")?.value || "";
+  const filtroTexto = normalizarTexto($("documentacion-buscar")?.value || "");
   const totalEsperado = equipos.length * documentosRequeridos.length;
   const documentos = equipos.flatMap((equipo) =>
     documentosRequeridos.map((requisito) => obtenerDocumentoEquipo(nombreCategoria, equipo, requisito))
@@ -460,6 +462,35 @@ function renderDocumentacionAsociacion(nombreCategoria) {
     return;
   }
 
+  const filas = equipos.flatMap((equipo) =>
+    documentosRequeridos.map((requisito) => {
+      const documento = obtenerDocumentoEquipo(nombreCategoria, equipo, requisito);
+      const status = documento?.status || "pendiente";
+      const textoFila = normalizarTexto([
+        equipo,
+        requisito,
+        documento?.file_name,
+        documento?.observacion,
+        estadoDocumentoLabel(documento)
+      ].join(" "));
+
+      return {
+        equipo,
+        requisito,
+        documento,
+        status,
+        visible:
+          (!filtroEstado || status === filtroEstado) &&
+          (!filtroTexto || textoFila.includes(filtroTexto))
+      };
+    })
+  ).filter((fila) => fila.visible);
+
+  if (!filas.length) {
+    tabla.innerHTML = `<div class="empty">No hay documentos que coincidan con los filtros.</div>`;
+    return;
+  }
+
   tabla.innerHTML = `
     <table class="doc-table">
       <thead>
@@ -473,24 +504,22 @@ function renderDocumentacionAsociacion(nombreCategoria) {
         </tr>
       </thead>
       <tbody>
-        ${equipos.map((equipo) => {
-          return documentosRequeridos.map((requisito, requisitoIndex) => {
-            const documento = obtenerDocumentoEquipo(nombreCategoria, equipo, requisito);
+        ${filas.map((fila, index) => {
+          const equipoAnterior = filas[index - 1]?.equipo;
 
-            return `
-            <tr class="${requisitoIndex === 0 ? "doc-team-start" : ""}">
-              <td>${escapeHtml(equipo)}</td>
+          return `
+            <tr class="${fila.equipo !== equipoAnterior ? "doc-team-start" : ""}">
+              <td>${escapeHtml(fila.equipo)}</td>
               <td>${docStateHtml(
-                estadoDocumentoLabel(documento),
-                estadoDocumentoClase(documento)
+                estadoDocumentoLabel(fila.documento),
+                estadoDocumentoClase(fila.documento)
               )}</td>
-              <td>${escapeHtml(requisito)}</td>
-              <td>${documento?.file_name ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>` : `<span class="doc-action-muted">Sin archivo</span>`}</td>
-              <td>${escapeHtml(documento?.observacion || "")}</td>
-              <td>${renderAccionRevisionAsociacion(documento)}</td>
+              <td>${escapeHtml(fila.requisito)}</td>
+              <td>${fila.documento?.file_name ? `<span class="doc-file-name">${escapeHtml(fila.documento.file_name)}</span>` : `<span class="doc-action-muted">Sin archivo</span>`}</td>
+              <td>${escapeHtml(fila.documento?.observacion || "")}</td>
+              <td>${renderAccionRevisionAsociacion(fila.documento)}</td>
             </tr>
           `;
-          }).join("");
         }).join("")}
       </tbody>
     </table>
@@ -1292,6 +1321,12 @@ async function inicializarAsociacion() {
   $("asociacion-partido").addEventListener("change", completarInputsAsociacion);
   $("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
   $("documentacion-tabla").addEventListener("click", revisarDocumentoAsociacion);
+  $("documentacion-filtro-estado").addEventListener("change", () => {
+    renderDocumentacionAsociacion($("asociacion-categoria").value);
+  });
+  $("documentacion-buscar").addEventListener("input", () => {
+    renderDocumentacionAsociacion($("asociacion-categoria").value);
+  });
  const plannerBtn = document.getElementById("planner-generar");
 
 if (plannerBtn) {

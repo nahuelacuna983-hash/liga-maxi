@@ -690,6 +690,13 @@ td:nth-child(2) {
   margin: 14px 0 16px;
 }
 
+.doc-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(220px, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
 .doc-pill {
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: rgba(15, 23, 42, 0.24);
@@ -849,7 +856,8 @@ td:nth-child(2) {
 }
 
 @media (max-width: 720px) {
+  .doc-filters,
   .doc-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 }
