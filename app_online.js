@@ -74,6 +74,16 @@ function aplicarBloqueoAsociacion() {
   });
 }
 
+function mostrarPanelAsociacion(panel = "documentacion") {
+  document.querySelectorAll(".assoc-nav-btn").forEach((button) => {
+    button.classList.toggle("activo", button.dataset.asociacionPanel === panel);
+  });
+
+  document.querySelectorAll(".assoc-panel").forEach((section) => {
+    section.classList.toggle("activa", section.dataset.asociacionPanelView === panel);
+  });
+}
+
 async function cargarCategorias() {
   const { data, error } = await supabaseClient
     .from("categorias")
@@ -2316,6 +2326,10 @@ async function inicializarAsociacion() {
   $("asociacion-clave").addEventListener("keydown", (event) => {
     if (event.key === "Enter") desbloquearAsociacion();
   });
+  document.querySelectorAll(".assoc-nav-btn").forEach((button) => {
+    button.addEventListener("click", () => mostrarPanelAsociacion(button.dataset.asociacionPanel));
+  });
+  mostrarPanelAsociacion("documentacion");
   aplicarBloqueoAsociacion();
  const plannerBtn = document.getElementById("planner-generar");
 

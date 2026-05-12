@@ -436,7 +436,14 @@
     <div id="asociacion-acceso-status" class="status"></div>
   </div>
 
-  <div class="card">
+  <div class="assoc-subnav" aria-label="Secciones de Asociación">
+    <button class="assoc-nav-btn activo" type="button" data-asociacion-panel="documentacion">Documentación</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="resultados">Resultados</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="torneo">Torneo</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="permisos">Permisos</button>
+  </div>
+
+  <div class="card assoc-panel" data-asociacion-panel-view="torneo">
     <h3>Planificador de Torneo</h3>
 
     <div class="planner-grid">
@@ -501,6 +508,9 @@
 
     <div id="planner-status"></div>
   </div>
+
+  <div class="card assoc-panel" data-asociacion-panel-view="resultados">
+  <h3>Resultados y correcciones</h3>
   <div class="row">
     <div class="field">
       <label for="asociacion-categoria">Categoría</label>
@@ -529,12 +539,14 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="assoc-detail-box">
     <h3>Detalle de carga</h3>
     <div id="asociacion-detalle" class="note">Seleccioná un partido para ver quién lo cargó y cuándo.</div>
   </div>
 
-  <div class="card">
+  </div>
+
+  <div class="card assoc-panel activa" data-asociacion-panel-view="documentacion">
     <h3>Control documental</h3>
     <p class="note">Control administrativo de documentos cargados por delegados.</p>
     <div class="doc-filters">
@@ -570,6 +582,17 @@
     </div>
     <div id="documentacion-resumen" class="doc-summary"></div>
     <div id="documentacion-tabla" class="table-wrap"></div>
+  </div>
+
+  <div class="card assoc-panel" data-asociacion-panel-view="permisos">
+    <h3>Usuarios y permisos</h3>
+    <p class="note">Base de roles activa en Supabase. Próximo paso: edición visual de usuarios, equipos y accesos desde este panel.</p>
+    <div class="assoc-permission-grid">
+      <div><strong>Admin general</strong><span>Acceso total y modo socorro.</span></div>
+      <div><strong>Asociación</strong><span>Torneos, correcciones, documentación y socorro.</span></div>
+      <div><strong>Delegados</strong><span>Resultados y documentos de sus equipos.</span></div>
+      <div><strong>Jugadores</strong><span>Acceso personal futuro.</span></div>
+    </div>
   </div>
 
   <div id="asociacion-status" class="status"></div>
