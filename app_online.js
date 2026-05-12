@@ -265,6 +265,75 @@ function validarDelegado(clave) {
   return DELEGADOS[claveLimpia] || null;
 }
 
+async function cargarPermisosPorClave(clave) {
+  const claveLimpia = String(clave || "").trim();
+  if (!claveLimpia) return [];
+
+  const { data, error } = await supabaseClient
+    .from("v_app_user_permissions")
+    .select("display_name, role, legacy_key, active, emergency_access, categoria_nombre, equipo_nombre, can_load_results, can_load_documents, can_review_documents, can_correct_results, can_manage_tournaments, can_manage_users, can_emergency_override")
+    .eq("legacy_key", claveLimpia);
+
+  if (error) {
+    console.warn("No se pudieron cargar permisos de usuario:", error.message);
+    return [];
+  }
+
+  return (data || []).filter((permiso) => permiso.active !== false);
+}
+
+function delegadoDesdePermisos(permisos, respaldo = null) {
+  if (!permisos.length) return respaldo;
+
+  const rol = permisos[0].role;
+  if (rol === "admin_general") {
+    return {
+      ...(respaldo || DELEGADOS.admin123),
+      nombre: permisos[0].display_name || respaldo?.nombre || "ADMIN",
+      rol,
+      permisos
+    };
+  }
+
+  if (rol !== "delegado") return respaldo;
+
+  const categorias = Array.from(new Set([
+    ...(respaldo?.categorias || []),
+    ...permisos.map((permiso) => permiso.categoria_nombre).filter(Boolean)
+  ]));
+  const equipos = Array.from(new Set([
+    ...(respaldo?.equipos || []),
+    ...permisos.map((permiso) => permiso.equipo_nombre).filter(Boolean)
+  ]));
+
+  if (!categorias.length || !equipos.length) return respaldo;
+
+  return {
+    nombre: permisos[0].display_name || respaldo?.nombre || "Delegado",
+    categorias,
+    equipos,
+    rol,
+    permisos
+  };
+}
+
+async function validarDelegadoConPermisos(clave) {
+  const respaldo = validarDelegado(clave);
+  const permisos = await cargarPermisosPorClave(clave);
+  return delegadoDesdePermisos(permisos, respaldo);
+}
+
+function puedeAccederAsociacion(permisos) {
+  return permisos.some((permiso) =>
+    permiso.role === "admin_general" ||
+    permiso.role === "asociacion" ||
+    permiso.can_review_documents ||
+    permiso.can_correct_results ||
+    permiso.can_manage_tournaments ||
+    permiso.can_emergency_override
+  );
+}
+
 const DOCUMENTOS_REQUERIDOS = [
   "Lista de buena fe",
   "Certificado medico",
@@ -1866,11 +1935,12 @@ async function subirDocumentoJugadorDelegado(event) {
   setStatus(status, "Documento del jugador cargado correctamente. Queda pendiente de revisión.", "ok");
 }
 
-function desbloquearDelegado() {
+async function desbloquearDelegado() {
   const clave = $("delegado-clave").value.trim();
   const status = $("delegado-status");
 
-  const delegado = validarDelegado(clave);
+  setStatus(status, "Validando acceso...", "");
+  const delegado = await validarDelegadoConPermisos(clave);
 
   if (!delegado) {
     estado.delegado = null;
@@ -2140,11 +2210,13 @@ async function verDocumentoAsociacion(event) {
   setStatus(status, "Archivo abierto en una pestaña nueva.", "ok");
 }
 
-function desbloquearAsociacion() {
+async function desbloquearAsociacion() {
   const clave = $("asociacion-clave")?.value?.trim() || "";
   const status = $("asociacion-acceso-status");
+  const permisos = await cargarPermisosPorClave(clave);
+  const accesoSupabase = puedeAccederAsociacion(permisos);
 
-  if (!CLAVES_ASOCIACION.includes(clave)) {
+  if (!CLAVES_ASOCIACION.includes(clave) && !accesoSupabase) {
     estado.asociacionDesbloqueada = false;
     aplicarBloqueoAsociacion();
     setStatus(status, "Clave administrativa incorrecta.", "error");
@@ -2153,7 +2225,7 @@ function desbloquearAsociacion() {
 
   estado.asociacionDesbloqueada = true;
   aplicarBloqueoAsociacion();
-  setStatus(status, "Asociación habilitada.", "ok");
+  setStatus(status, accesoSupabase ? `Asociación habilitada para ${permisos[0].display_name}.` : "Asociación habilitada.", "ok");
 }
 
 function csvCell(value) {
