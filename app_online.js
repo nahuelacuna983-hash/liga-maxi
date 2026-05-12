@@ -30,6 +30,10 @@ function setStatus(element, text, kind = "") {
 }
 
 function mostrarVista(nombre) {
+  if (nombre === "asociacion") {
+    inicializarNavegacionAsociacion();
+  }
+
   const tabs = {
     publico: $("tab-publico"),
     delegados: $("tab-delegados"),
@@ -82,6 +86,21 @@ function mostrarPanelAsociacion(panel = "documentacion") {
   document.querySelectorAll(".assoc-panel").forEach((section) => {
     section.classList.toggle("activa", section.dataset.asociacionPanelView === panel);
   });
+}
+
+function inicializarNavegacionAsociacion() {
+  const view = $("vista-asociacion");
+  if (!view || view.dataset.navReady === "true") return;
+
+  view.dataset.navReady = "true";
+  view.addEventListener("click", (event) => {
+    const button = event.target.closest(".assoc-nav-btn");
+    if (!button) return;
+
+    mostrarPanelAsociacion(button.dataset.asociacionPanel || "documentacion");
+  });
+
+  mostrarPanelAsociacion("documentacion");
 }
 
 async function cargarCategorias() {
@@ -2326,10 +2345,7 @@ async function inicializarAsociacion() {
   $("asociacion-clave").addEventListener("keydown", (event) => {
     if (event.key === "Enter") desbloquearAsociacion();
   });
-  document.querySelectorAll(".assoc-nav-btn").forEach((button) => {
-    button.addEventListener("click", () => mostrarPanelAsociacion(button.dataset.asociacionPanel));
-  });
-  mostrarPanelAsociacion("documentacion");
+  inicializarNavegacionAsociacion();
   aplicarBloqueoAsociacion();
  const plannerBtn = document.getElementById("planner-generar");
 
