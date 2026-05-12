@@ -382,6 +382,32 @@ const DOCUMENTOS_MULTIPLE_ARCHIVO = [
   "imagenes para redes"
 ];
 
+const ESCUDOS_EQUIPOS = {
+  "banco provincia": "assets/escudos/banco-provincia.png",
+  "estudiantes": "assets/escudos/estudiantes.png",
+  "gonnet": "assets/escudos/gonnet.png",
+  "hogar social": "assets/escudos/hogar-social.png",
+  "juventud": "assets/escudos/juventud.png",
+  "los hornos": "assets/escudos/los-hornos.png",
+  "macabi": "assets/escudos/macabi.png",
+  "mayo": "assets/escudos/mayo.png",
+  "meridiano v": "assets/escudos/meridiano-v.png",
+  "platense": "assets/escudos/platense.png",
+  "reconquista": "assets/escudos/reconquista.png",
+  "sud america": "assets/escudos/sud-america.png",
+  "sud américa": "assets/escudos/sud-america.png",
+  "tolosano": "assets/escudos/tolosano.png",
+  "u.n.l.p": "assets/escudos/unlp.png",
+  "u.n.l.p.": "assets/escudos/unlp.png",
+  "unidos del dique": "assets/escudos/unidos-del-dique.png",
+  "union vecinal": "assets/escudos/union-vecinal.png",
+  "unión vecinal": "assets/escudos/union-vecinal.png",
+  "unon vecinal": "assets/escudos/union-vecinal.png",
+  "universal": "assets/escudos/universal.png",
+  "villa elisa": "assets/escudos/villa-elisa.jpg",
+  "villa san carlos": "assets/escudos/villa-san-carlos.png"
+};
+
 function obtenerDocumentosRequeridos() {
   if (estado.requisitosDocumentales.length) {
     return estado.requisitosDocumentales.map((requisito) => requisito.nombre);
@@ -566,6 +592,35 @@ function docStateHtml(text = "Pendiente", status = "") {
 
 function normalizarTexto(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function escudoEquipoUrl(equipo) {
+  return ESCUDOS_EQUIPOS[normalizarTexto(equipo)] || "";
+}
+
+function inicialesEquipo(equipo) {
+  return String(equipo || "?")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((parte) => parte[0])
+    .join("")
+    .toUpperCase();
+}
+
+function escudoEquipoHtml(equipo, size = "sm") {
+  const url = escudoEquipoUrl(equipo);
+  const nombre = escapeHtml(equipo);
+
+  if (url) {
+    return `<span class="team-crest team-crest-${size}"><img src="${escapeHtml(url)}" alt="${nombre}" loading="lazy"></span>`;
+  }
+
+  return `<span class="team-crest team-crest-${size} team-crest-fallback">${escapeHtml(inicialesEquipo(equipo))}</span>`;
+}
+
+function nombreEquipoHtml(equipo, size = "sm") {
+  return `<span class="team-name-with-crest">${escudoEquipoHtml(equipo, size)}<span>${escapeHtml(equipo)}</span></span>`;
 }
 
 function obtenerDocumentoEquipo(nombreCategoria, equipo, requisito) {
@@ -1411,7 +1466,7 @@ function renderTablaSimple(nombreCategoria, partidos) {
         ${filas.map((e, i) => `
           <tr>
             <td>${i + 1}</td>
-            <td>${e.equipo}</td>
+            <td>${nombreEquipoHtml(e.equipo)}</td>
             <td>${e.pj}</td>
             <td>${e.pg}</td>
             <td>${e.pp}</td>
@@ -1491,9 +1546,9 @@ function renderFixturePublico(nombreCategoria) {
         <div class="match">
           <div style="width:100%;">
             <div class="teams">
-              <span>${p.local}</span>
+              ${nombreEquipoHtml(p.local, "md")}
               <span class="vs">vs</span>
-              <span>${p.visitante}</span>
+              ${nombreEquipoHtml(p.visitante, "md")}
             </div>
             ${detalleCarga || ""}
           </div>
