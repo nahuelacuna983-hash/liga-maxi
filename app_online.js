@@ -1,6 +1,7 @@
 console.log("APP ONLINE NUEVA CARGADA");
 const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
+const TORNEO_ID = "7d0971e3-66ee-4791-bcbf-bace1d2fefb9";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -10,6 +11,8 @@ const estado = {
   equiposPorCategoriaId: {},
   requisitosDocumentales: [],
   documentosPorCategoriaId: {},
+  jugadoresPorCategoriaId: {},
+  documentosJugadoresPorCategoriaId: {},
   filasDocumentacionAsociacion: [],
   delegadoDesbloqueado: false,
   delegado: null,
@@ -384,6 +387,53 @@ async function cargarDocumentosCategoria(categoriaId, force = false) {
   return estado.documentosPorCategoriaId[categoriaId];
 }
 
+async function cargarJugadoresCategoria(categoriaId, force = false) {
+  if (!categoriaId) return [];
+
+  if (!force && estado.jugadoresPorCategoriaId[categoriaId]) {
+    return estado.jugadoresPorCategoriaId[categoriaId];
+  }
+
+  const { data, error } = await supabaseClient
+    .from("team_players")
+    .select("id, organizacion_id, torneo_id, categoria_id, equipo_id, equipo_nombre, nombre, dni, dorsal, activo")
+    .eq("categoria_id", categoriaId)
+    .eq("activo", true)
+    .order("equipo_nombre", { ascending: true })
+    .order("nombre", { ascending: true });
+
+  if (error) {
+    console.warn("No se pudieron cargar jugadores documentales:", error.message);
+    estado.jugadoresPorCategoriaId[categoriaId] = [];
+    return estado.jugadoresPorCategoriaId[categoriaId];
+  }
+
+  estado.jugadoresPorCategoriaId[categoriaId] = data || [];
+  return estado.jugadoresPorCategoriaId[categoriaId];
+}
+
+async function cargarDocumentosJugadoresCategoria(categoriaId, force = false) {
+  if (!categoriaId) return [];
+
+  if (!force && estado.documentosJugadoresPorCategoriaId[categoriaId]) {
+    return estado.documentosJugadoresPorCategoriaId[categoriaId];
+  }
+
+  const { data, error } = await supabaseClient
+    .from("v_player_documents_admin")
+    .select("id, player_id, jugador_nombre, jugador_dni, jugador_dorsal, requirement_id, requirement_nombre, categoria_id, equipo_id, equipo_nombre, status, vencimiento, observacion, storage_path, file_name, file_type, file_size")
+    .eq("categoria_id", categoriaId);
+
+  if (error) {
+    console.warn("No se pudieron cargar documentos por jugador:", error.message);
+    estado.documentosJugadoresPorCategoriaId[categoriaId] = [];
+    return estado.documentosJugadoresPorCategoriaId[categoriaId];
+  }
+
+  estado.documentosJugadoresPorCategoriaId[categoriaId] = data || [];
+  return estado.documentosJugadoresPorCategoriaId[categoriaId];
+}
+
 function docStateHtml(text = "Pendiente", status = "") {
   const className = `doc-state ${status ? `doc-state-${status}` : ""}`.trim();
   return `<span class="${className}">${escapeHtml(text)}</span>`;
@@ -408,6 +458,37 @@ function obtenerDocumentoEquipo(nombreCategoria, equipo, requisito) {
 function obtenerDocumentoPorId(documentId) {
   const documentos = Object.values(estado.documentosPorCategoriaId).flat();
   return documentos.find((documento) => documento.id === documentId) || null;
+}
+
+function obtenerJugadorPorId(playerId) {
+  const jugadores = Object.values(estado.jugadoresPorCategoriaId).flat();
+  return jugadores.find((jugador) => jugador.id === playerId) || null;
+}
+
+function obtenerJugadoresEquipo(nombreCategoria, equipo) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const jugadores = categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : [];
+  const equipoNormalizado = normalizarTexto(equipo);
+
+  return jugadores.filter((jugador) =>
+    normalizarTexto(jugador.equipo_nombre) === equipoNormalizado
+  );
+}
+
+function obtenerDocumentoJugadorPorId(documentId) {
+  const documentos = Object.values(estado.documentosJugadoresPorCategoriaId).flat();
+  return documentos.find((documento) => documento.id === documentId) || null;
+}
+
+function obtenerDocumentoJugador(nombreCategoria, playerId, requisito) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const documentos = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
+  const requisitoNormalizado = normalizarTexto(requisito);
+
+  return documentos.find((documento) =>
+    documento.player_id === playerId &&
+    normalizarTexto(documento.requirement_nombre) === requisitoNormalizado
+  ) || null;
 }
 
 function estadoDocumentoLabel(documento) {
@@ -536,6 +617,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   const filtroEstado = $("documentacion-filtro-estado")?.value || "";
   const filtroVencimiento = $("documentacion-filtro-vencimiento")?.value || "";
   const filtroTexto = normalizarTexto($("documentacion-buscar")?.value || "");
+  const documentosJugadores = estado.documentosJugadoresPorCategoriaId[estado.categorias.find((cat) => cat.nombre === nombreCategoria)?.id] || [];
   const totalEsperado = equipos.length * documentosRequeridos.length;
   const documentos = equipos.flatMap((equipo) =>
     documentosRequeridos.map((requisito) => obtenerDocumentoEquipo(nombreCategoria, equipo, requisito))
@@ -554,7 +636,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   resumen.innerHTML = `
     <div class="doc-pill"><strong>${equipos.length}</strong><span>Equipos</span></div>
     <div class="doc-pill"><strong>${documentosRequeridos.length}</strong><span>Requisitos</span></div>
-    <div class="doc-pill"><strong>${documentosJugador.length}</strong><span>Por jugador</span></div>
+    <div class="doc-pill"><strong>${documentosJugadores.length}</strong><span>Docs jugador</span></div>
     <div class="doc-pill"><strong>${resumenEstados.pendiente || 0}</strong><span>Pendientes</span></div>
     <div class="doc-pill"><strong>${resumenEstados.cargado || 0}</strong><span>Para revisar</span></div>
     <div class="doc-pill"><strong>${resumenEstados.aprobado || 0}</strong><span>Aprobados</span></div>
@@ -601,6 +683,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   if (!filas.length) {
     tabla.innerHTML = `
       ${renderAvisoDocumentosJugador(documentosJugador)}
+      ${renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugador)}
       <div class="empty">No hay documentos de equipo que coincidan con los filtros.</div>
     `;
     return;
@@ -641,6 +724,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
         }).join("")}
       </tbody>
     </table>
+    ${renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugador)}
   `;
 }
 
@@ -650,12 +734,12 @@ function renderAvisoDocumentosJugador(documentosJugador) {
   return `
     <div class="doc-scope-note">
       <strong>Documentos por jugador</strong>
-      <span>${documentosJugador.map(escapeHtml).join(", ")} se cargarán individualmente por jugador en el próximo paso.</span>
+      <span>${documentosJugador.map(escapeHtml).join(", ")} se cargan individualmente por jugador.</span>
     </div>
   `;
 }
 
-function renderAccionRevisionAsociacion(documento) {
+function renderAccionRevisionAsociacion(documento, scope = "team") {
   if (!documento) {
     return `<span class="doc-action-muted">Sin registro</span>`;
   }
@@ -664,10 +748,13 @@ function renderAccionRevisionAsociacion(documento) {
     return `<span class="doc-action-muted">Esperando carga</span>`;
   }
 
+  const scopeAttr = escapeHtml(scope);
+  const documentId = escapeHtml(documento.id);
+
   if (documento.status === "aprobado") {
     return `
       <div class="doc-review-actions">
-        <button class="doc-view-btn" type="button" data-document-id="${escapeHtml(documento.id)}">Ver</button>
+        <button class="doc-view-btn" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}">Ver</button>
         <span class="doc-review-current doc-review-current-ok">Aprobado</span>
       </div>
     `;
@@ -675,10 +762,92 @@ function renderAccionRevisionAsociacion(documento) {
 
   return `
     <div class="doc-review-actions">
-      <button class="doc-view-btn" type="button" data-document-id="${escapeHtml(documento.id)}">Ver</button>
-      <button class="doc-review-btn doc-review-ok" type="button" data-document-id="${escapeHtml(documento.id)}" data-status="aprobado">Aprobar</button>
-      ${documento.status !== "observado" ? `<button class="doc-review-btn doc-review-warn" type="button" data-document-id="${escapeHtml(documento.id)}" data-status="observado">Observar</button>` : `<span class="doc-review-current doc-review-current-warn">Observado</span>`}
-      ${documento.status !== "rechazado" ? `<button class="doc-review-btn doc-review-danger" type="button" data-document-id="${escapeHtml(documento.id)}" data-status="rechazado">Rechazar</button>` : `<span class="doc-review-current doc-review-current-danger">Rechazado</span>`}
+      <button class="doc-view-btn" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}">Ver</button>
+      <button class="doc-review-btn doc-review-ok" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="aprobado">Aprobar</button>
+      ${documento.status !== "observado" ? `<button class="doc-review-btn doc-review-warn" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="observado">Observar</button>` : `<span class="doc-review-current doc-review-current-warn">Observado</span>`}
+      ${documento.status !== "rechazado" ? `<button class="doc-review-btn doc-review-danger" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="rechazado">Rechazar</button>` : `<span class="doc-review-current doc-review-current-danger">Rechazado</span>`}
+    </div>
+  `;
+}
+
+function renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugador) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const documentos = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
+  const filtroEstado = $("documentacion-filtro-estado")?.value || "";
+  const filtroTexto = normalizarTexto($("documentacion-buscar")?.value || "");
+
+  if (!documentosJugador.length) return "";
+
+  if (!documentos.length) {
+    return `
+      <div class="doc-player-section">
+        <h4>Documentos por jugador</h4>
+        <div class="empty">Todavía no hay jugadores cargados para esta categoría.</div>
+      </div>
+    `;
+  }
+
+  const filas = documentos.filter((documento) => {
+    const status = documento?.status || "pendiente";
+    const textoFila = normalizarTexto([
+      documento.equipo_nombre,
+      documento.jugador_nombre,
+      documento.jugador_dni,
+      documento.jugador_dorsal,
+      documento.requirement_nombre,
+      documento.file_name,
+      documento.observacion,
+      estadoDocumentoLabel(documento)
+    ].join(" "));
+
+    return (!filtroEstado || status === filtroEstado) &&
+      (!filtroTexto || textoFila.includes(filtroTexto));
+  });
+
+  if (!filas.length) {
+    return `
+      <div class="doc-player-section">
+        <h4>Documentos por jugador</h4>
+        <div class="empty">No hay documentos de jugador que coincidan con los filtros.</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="doc-player-section">
+      <h4>Documentos por jugador</h4>
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th>Equipo</th>
+            <th>Jugador</th>
+            <th>Estado</th>
+            <th>Documento</th>
+            <th>Archivo</th>
+            <th>Observación</th>
+            <th>Revisión</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filas.map((documento) => `
+            <tr>
+              <td>${escapeHtml(documento.equipo_nombre)}</td>
+              <td>
+                <strong>${escapeHtml(documento.jugador_nombre)}</strong>
+                <span class="doc-player-meta">${documento.jugador_dni ? `DNI ${escapeHtml(documento.jugador_dni)}` : ""}${documento.jugador_dorsal ? ` #${escapeHtml(documento.jugador_dorsal)}` : ""}</span>
+              </td>
+              <td>${docStateHtml(
+                estadoDocumentoLabel(documento),
+                estadoDocumentoClase(documento)
+              )}</td>
+              <td>${escapeHtml(documento.requirement_nombre)}</td>
+              <td>${documento.file_name ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>` : `<span class="doc-action-muted">Sin archivo</span>`}</td>
+              <td>${escapeHtml(documento.observacion || "")}</td>
+              <td>${renderAccionRevisionAsociacion(documento, "player")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
     </div>
   `;
 }
@@ -744,6 +913,126 @@ function renderDocumentacionDelegado() {
         ).join("")}
       </tbody>
     </table>
+    ${renderDocumentacionJugadoresDelegado(categoria, equiposDelegado, documentosJugador)}
+  `;
+}
+
+function renderDocumentacionJugadoresDelegado(categoria, equiposDelegado, documentosJugador) {
+  if (!documentosJugador.length) return "";
+
+  return `
+    <div class="doc-player-section">
+      <h4>Documentos por jugador</h4>
+      <div class="doc-player-create">
+        <div class="field">
+          <label for="jugador-equipo">Equipo</label>
+          <select id="jugador-equipo">
+            ${equiposDelegado.map((equipo) => `<option value="${escapeHtml(equipo)}">${escapeHtml(equipo)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="field">
+          <label for="jugador-nombre">Jugador</label>
+          <input id="jugador-nombre" type="text" placeholder="Nombre y apellido" />
+        </div>
+        <div class="field">
+          <label for="jugador-dni">DNI</label>
+          <input id="jugador-dni" type="text" placeholder="Opcional" />
+        </div>
+        <div class="field">
+          <label for="jugador-dorsal">N°</label>
+          <input id="jugador-dorsal" type="text" placeholder="Opcional" />
+        </div>
+        <div class="field doc-player-create-action">
+          <button id="jugador-agregar" class="primary" type="button">Agregar jugador</button>
+        </div>
+      </div>
+      ${equiposDelegado.map((equipo) => renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador)).join("")}
+    </div>
+  `;
+}
+
+function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
+  const jugadores = obtenerJugadoresEquipo(categoria, equipo);
+
+  if (!jugadores.length) {
+    return `
+      <div class="doc-player-team">
+        <h5>${escapeHtml(equipo)}</h5>
+        <div class="empty">Todavía no hay jugadores cargados para este equipo.</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="doc-player-team">
+      <h5>${escapeHtml(equipo)}</h5>
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th>Jugador</th>
+            <th>Documento</th>
+            <th>Estado</th>
+            <th>Observación</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${jugadores.map((jugador) =>
+            documentosJugador.map((requisito) => {
+              const documento = obtenerDocumentoJugador(categoria, jugador.id, requisito);
+
+              return `
+                <tr>
+                  <td>
+                    <strong>${escapeHtml(jugador.nombre)}</strong>
+                    <span class="doc-player-meta">${jugador.dni ? `DNI ${escapeHtml(jugador.dni)}` : ""}${jugador.dorsal ? ` #${escapeHtml(jugador.dorsal)}` : ""}</span>
+                  </td>
+                  <td>${escapeHtml(requisito)}</td>
+                  <td>${docStateHtml(
+                    estadoDocumentoLabel(documento),
+                    estadoDocumentoClase(documento)
+                  )}</td>
+                  <td>${renderObservacionDocumento(documento)}</td>
+                  <td>${renderAccionDocumentoJugadorDelegado(documento)}</td>
+                </tr>
+              `;
+            }).join("")
+          ).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderAccionDocumentoJugadorDelegado(documento) {
+  if (!documento) {
+    return `<span class="doc-action-muted">Sin registro</span>`;
+  }
+
+  const nombreArchivo = documento.file_name
+    ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>`
+    : "";
+
+  if (documento.status === "aprobado") {
+    return `${nombreArchivo}<span class="doc-action-muted">Aprobado</span>`;
+  }
+
+  const marcaCargado = documento.file_name
+    ? `<span class="doc-uploaded-mark">Cargado, pendiente de revisión</span>`
+    : "";
+
+  return `
+    <label class="doc-upload-button">
+      <span>${documento.file_name ? "Reemplazar" : "Subir"}</span>
+      <input
+        class="player-doc-upload-input"
+        type="file"
+        accept="application/pdf,image/jpeg,image/png"
+        data-document-id="${escapeHtml(documento.id)}"
+      >
+    </label>
+    ${nombreArchivo}
+    ${marcaCargado}
   `;
 }
 
@@ -1163,6 +1452,8 @@ async function refrescarCategoria(nombreCategoria) {
   if (categoria) {
     await cargarEquiposCategoria(categoria.id);
     await cargarDocumentosCategoria(categoria.id);
+    await cargarJugadoresCategoria(categoria.id);
+    await cargarDocumentosJugadoresCategoria(categoria.id);
   }
 
   await cargarPartidosCategoria(nombreCategoria);
@@ -1351,6 +1642,172 @@ async function subirDocumentoDelegado(event) {
   setStatus(status, "Documento cargado correctamente. Queda pendiente de revisión.", "ok");
 }
 
+async function agregarJugadorDelegado() {
+  const status = $("delegado-status");
+
+  if (!estado.delegadoDesbloqueado || !estado.delegado) {
+    setStatus(status, "Primero habilitá edición con la clave.", "warn");
+    return;
+  }
+
+  const categoriaNombre = $("delegado-categoria")?.value || "";
+  const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
+  const equipoNombre = $("jugador-equipo")?.value || "";
+  const nombre = $("jugador-nombre")?.value?.trim() || "";
+  const dni = $("jugador-dni")?.value?.trim() || "";
+  const dorsal = $("jugador-dorsal")?.value?.trim() || "";
+
+  if (!categoria || !equipoNombre) {
+    setStatus(status, "Seleccioná categoría y equipo.", "warn");
+    return;
+  }
+
+  if (!nombre) {
+    setStatus(status, "Ingresá el nombre del jugador.", "warn");
+    return;
+  }
+
+  if (!estado.delegado.equipos.includes(equipoNombre)) {
+    setStatus(status, "Ese equipo no está habilitado para tu clave.", "error");
+    return;
+  }
+
+  const equipo = (estado.equiposPorCategoriaId[categoria.id] || [])
+    .find((item) => normalizarTexto(item.nombre) === normalizarTexto(equipoNombre));
+
+  setStatus(status, "Agregando jugador...", "");
+
+  const { error } = await supabaseClient.rpc("add_team_player", {
+    p_organizacion_id: null,
+    p_torneo_id: TORNEO_ID,
+    p_categoria_id: categoria.id,
+    p_equipo_id: equipo?.id || null,
+    p_equipo_nombre: equipoNombre,
+    p_nombre: nombre,
+    p_dni: dni || null,
+    p_dorsal: dorsal || null,
+    p_created_by: estado.delegado.nombre
+  });
+
+  if (error) {
+    setStatus(status, `No se pudo agregar el jugador: ${error.message}`, "error");
+    return;
+  }
+
+  $("jugador-nombre").value = "";
+  $("jugador-dni").value = "";
+  $("jugador-dorsal").value = "";
+
+  await cargarJugadoresCategoria(categoria.id, true);
+  await cargarDocumentosJugadoresCategoria(categoria.id, true);
+  renderDocumentacionDelegado();
+
+  if ($("asociacion-categoria")?.value === categoriaNombre) {
+    renderDocumentacionAsociacion(categoriaNombre);
+  }
+
+  setStatus(status, "Jugador agregado. Ya podés cargar sus documentos.", "ok");
+}
+
+async function subirDocumentoJugadorDelegado(event) {
+  const input = event.target;
+  if (!input?.classList?.contains("player-doc-upload-input")) return;
+
+  const status = $("delegado-status");
+  const file = input.files?.[0] || null;
+  const documentId = input.dataset.documentId;
+  const documento = obtenerDocumentoJugadorPorId(documentId);
+  const validationError = file ? validarArchivoDocumento(file, false) : "Seleccioná un archivo.";
+
+  if (validationError) {
+    setStatus(status, validationError, "warn");
+    input.value = "";
+    return;
+  }
+
+  if (!estado.delegadoDesbloqueado || !estado.delegado) {
+    setStatus(status, "Primero habilitá edición con la clave.", "warn");
+    input.value = "";
+    return;
+  }
+
+  if (!documento) {
+    setStatus(status, "No se encontró el documento del jugador.", "error");
+    input.value = "";
+    return;
+  }
+
+  const categoriaNombre = $("delegado-categoria")?.value || "";
+  const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
+
+  if (!categoria) {
+    setStatus(status, "No se encontró la categoría.", "error");
+    input.value = "";
+    return;
+  }
+
+  if (!estado.delegado.equipos.includes(documento.equipo_nombre)) {
+    setStatus(status, "Ese jugador no pertenece a tu equipo habilitado.", "error");
+    input.value = "";
+    return;
+  }
+
+  input.disabled = true;
+  setStatus(status, "Subiendo documento del jugador...", "");
+
+  const storagePath = [
+    "apdb",
+    "2026",
+    slugify(categoriaNombre),
+    documento.equipo_id || slugify(documento.equipo_nombre),
+    "jugadores",
+    documento.player_id,
+    documento.requirement_id,
+    `${Date.now()}-${nombreArchivoSeguro(file.name)}`
+  ].join("/");
+
+  const { error: uploadError } = await supabaseClient.storage
+    .from("documentos")
+    .upload(storagePath, file, {
+      cacheControl: "3600",
+      contentType: file.type,
+      upsert: false
+    });
+
+  if (uploadError) {
+    input.disabled = false;
+    input.value = "";
+    setStatus(status, `No se pudo subir ${file.name}: ${uploadError.message}`, "error");
+    return;
+  }
+
+  const { error: rpcError } = await supabaseClient.rpc("mark_player_document_uploaded", {
+    p_document_id: documento.id,
+    p_uploaded_by: estado.delegado.nombre,
+    p_storage_path: storagePath,
+    p_file_name: file.name,
+    p_file_type: file.type,
+    p_file_size: file.size,
+    p_vencimiento: null
+  });
+
+  if (rpcError) {
+    input.disabled = false;
+    input.value = "";
+    setStatus(status, `El archivo subió, pero no se pudo registrar: ${rpcError.message}`, "error");
+    return;
+  }
+
+  await cargarDocumentosJugadoresCategoria(categoria.id, true);
+  renderDocumentacionDelegado();
+
+  if ($("asociacion-categoria")?.value === categoriaNombre) {
+    renderDocumentacionAsociacion(categoriaNombre);
+  }
+
+  setStatus(status, "Documento del jugador cargado correctamente. Queda pendiente de revisión.", "ok");
+}
+
 function desbloquearDelegado() {
   const clave = $("delegado-clave").value.trim();
   const status = $("delegado-status");
@@ -1514,10 +1971,13 @@ async function revisarDocumentoAsociacion(event) {
   if (!button) return;
 
   const documentId = button.dataset.documentId;
+  const scope = button.dataset.documentScope || "team";
   const nextStatus = button.dataset.status;
   const categoria = $("asociacion-categoria")?.value || "";
   const categoriaData = estado.categorias.find((cat) => cat.nombre === categoria);
-  const documento = obtenerDocumentoPorId(documentId);
+  const documento = scope === "player"
+    ? obtenerDocumentoJugadorPorId(documentId)
+    : obtenerDocumentoPorId(documentId);
   const status = $("asociacion-status");
 
   if (!estado.asociacionDesbloqueada) {
@@ -1541,7 +2001,10 @@ async function revisarDocumentoAsociacion(event) {
     observacion = prompt("Observación para el delegado:", documento.observacion || "") || "";
   }
 
-  const confirmar = confirm(`¿Confirmás ${labels[nextStatus] || "revisar"} ${documento.requirement_nombre} de ${documento.equipo_nombre}?`);
+  const sujeto = scope === "player"
+    ? `${documento.requirement_nombre} de ${documento.jugador_nombre} (${documento.equipo_nombre})`
+    : `${documento.requirement_nombre} de ${documento.equipo_nombre}`;
+  const confirmar = confirm(`¿Confirmás ${labels[nextStatus] || "revisar"} ${sujeto}?`);
   if (!confirmar) {
     setStatus(status, "Revisión cancelada.", "warn");
     return;
@@ -1550,7 +2013,7 @@ async function revisarDocumentoAsociacion(event) {
   button.disabled = true;
   setStatus(status, "Guardando revisión documental...", "");
 
-  const { error } = await supabaseClient.rpc("review_team_document", {
+  const { error } = await supabaseClient.rpc(scope === "player" ? "review_player_document" : "review_team_document", {
     p_document_id: documentId,
     p_status: nextStatus,
     p_actor: "ADMIN",
@@ -1563,7 +2026,9 @@ async function revisarDocumentoAsociacion(event) {
     return;
   }
 
-  const documentosCategoria = estado.documentosPorCategoriaId[categoriaData.id] || [];
+  const documentosCategoria = scope === "player"
+    ? estado.documentosJugadoresPorCategoriaId[categoriaData.id] || []
+    : estado.documentosPorCategoriaId[categoriaData.id] || [];
   const documentoLocal = documentosCategoria.find((doc) => doc.id === documentId);
   if (documentoLocal) {
     documentoLocal.status = nextStatus;
@@ -1572,7 +2037,11 @@ async function revisarDocumentoAsociacion(event) {
 
   renderDocumentacionAsociacion(categoria);
   renderDocumentacionDelegado();
-  await cargarDocumentosCategoria(categoriaData.id, true);
+  if (scope === "player") {
+    await cargarDocumentosJugadoresCategoria(categoriaData.id, true);
+  } else {
+    await cargarDocumentosCategoria(categoriaData.id, true);
+  }
   renderDocumentacionAsociacion(categoria);
   renderDocumentacionDelegado();
   setStatus(status, "Revisión documental guardada.", "ok");
@@ -1589,7 +2058,10 @@ async function verDocumentoAsociacion(event) {
     return;
   }
 
-  const documento = obtenerDocumentoPorId(button.dataset.documentId);
+  const scope = button.dataset.documentScope || "team";
+  const documento = scope === "player"
+    ? obtenerDocumentoJugadorPorId(button.dataset.documentId)
+    : obtenerDocumentoPorId(button.dataset.documentId);
   if (!documento?.storage_path) {
     setStatus(status, "Este documento no tiene archivo disponible.", "warn");
     return;
@@ -1866,6 +2338,10 @@ async function inicializar() {
     $("delegado-guardar").addEventListener("click", guardarResultadoDelegado);
     $("delegado-desbloquear").addEventListener("click", desbloquearDelegado);
     $("delegado-documentacion").addEventListener("change", subirDocumentoDelegado);
+    $("delegado-documentacion").addEventListener("change", subirDocumentoJugadorDelegado);
+    $("delegado-documentacion").addEventListener("click", (event) => {
+      if (event.target.closest("#jugador-agregar")) agregarJugadorDelegado();
+    });
   } catch (error) {
     console.error(error);
     $("vista-publico").innerHTML = `
