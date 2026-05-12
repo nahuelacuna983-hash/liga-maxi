@@ -395,12 +395,11 @@ async function cargarJugadoresCategoria(categoriaId, force = false) {
   }
 
   const { data, error } = await supabaseClient
-    .from("team_players")
-    .select("id, organizacion_id, torneo_id, categoria_id, equipo_id, equipo_nombre, nombre, dni, dorsal, activo")
+    .from("v_player_documents_admin")
+    .select("player_id, jugador_nombre, jugador_dni, jugador_dorsal, categoria_id, equipo_id, equipo_nombre")
     .eq("categoria_id", categoriaId)
-    .eq("activo", true)
     .order("equipo_nombre", { ascending: true })
-    .order("nombre", { ascending: true });
+    .order("jugador_nombre", { ascending: true });
 
   if (error) {
     console.warn("No se pudieron cargar jugadores documentales:", error.message);
@@ -408,7 +407,7 @@ async function cargarJugadoresCategoria(categoriaId, force = false) {
     return estado.jugadoresPorCategoriaId[categoriaId];
   }
 
-  estado.jugadoresPorCategoriaId[categoriaId] = data || [];
+  estado.jugadoresPorCategoriaId[categoriaId] = normalizarJugadoresDesdeDocumentos(data || []);
   return estado.jugadoresPorCategoriaId[categoriaId];
 }
 
@@ -431,7 +430,35 @@ async function cargarDocumentosJugadoresCategoria(categoriaId, force = false) {
   }
 
   estado.documentosJugadoresPorCategoriaId[categoriaId] = data || [];
+  if (!estado.jugadoresPorCategoriaId[categoriaId]?.length) {
+    estado.jugadoresPorCategoriaId[categoriaId] = normalizarJugadoresDesdeDocumentos(data || []);
+  }
   return estado.documentosJugadoresPorCategoriaId[categoriaId];
+}
+
+function normalizarJugadoresDesdeDocumentos(rows) {
+  const jugadoresMap = new Map();
+
+  rows.forEach((row) => {
+    if (!row.player_id || jugadoresMap.has(row.player_id)) return;
+
+    jugadoresMap.set(row.player_id, {
+      id: row.player_id,
+      categoria_id: row.categoria_id,
+      equipo_id: row.equipo_id,
+      equipo_nombre: row.equipo_nombre,
+      nombre: row.jugador_nombre,
+      dni: row.jugador_dni,
+      dorsal: row.jugador_dorsal,
+      activo: true
+    });
+  });
+
+  return Array.from(jugadoresMap.values())
+    .sort((a, b) =>
+      String(a.equipo_nombre || "").localeCompare(String(b.equipo_nombre || "")) ||
+      String(a.nombre || "").localeCompare(String(b.nombre || ""))
+    );
 }
 
 function docStateHtml(text = "Pendiente", status = "") {
