@@ -494,12 +494,38 @@ function obtenerJugadorPorId(playerId) {
 
 function obtenerJugadoresEquipo(nombreCategoria, equipo) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
-  const jugadores = categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : [];
+  const jugadoresCache = categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : [];
+  const documentosJugador = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
   const equipoNormalizado = normalizarTexto(equipo);
+  const jugadoresPorDocumentos = normalizarJugadoresDesdeDocumentos(
+    documentosJugador.filter((documento) =>
+      normalizarTexto(documento.equipo_nombre) === equipoNormalizado
+    )
+  );
+  const jugadores = jugadoresPorDocumentos.length ? jugadoresPorDocumentos : jugadoresCache;
 
   return jugadores.filter((jugador) =>
     normalizarTexto(jugador.equipo_nombre) === equipoNormalizado
   );
+}
+
+function normalizarDocumentoIdentidad(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function jugadorYaExiste(categoriaNombre, equipoNombre, nombre, dni, dorsal) {
+  const jugadores = obtenerJugadoresEquipo(categoriaNombre, equipoNombre);
+  const nombreNormalizado = normalizarTexto(nombre);
+  const dniNormalizado = normalizarDocumentoIdentidad(dni);
+  const dorsalNormalizado = normalizarTexto(dorsal);
+
+  return jugadores.some((jugador) => {
+    const mismoDni = dniNormalizado && normalizarDocumentoIdentidad(jugador.dni) === dniNormalizado;
+    const mismoNombre = normalizarTexto(jugador.nombre) === nombreNormalizado;
+    const mismoDorsal = dorsalNormalizado && normalizarTexto(jugador.dorsal) === dorsalNormalizado;
+
+    return mismoDni || (mismoNombre && (!dorsalNormalizado || mismoDorsal));
+  });
 }
 
 function obtenerDocumentoJugadorPorId(documentId) {
@@ -1696,6 +1722,11 @@ async function agregarJugadorDelegado() {
 
   if (!estado.delegado.equipos.includes(equipoNombre)) {
     setStatus(status, "Ese equipo no está habilitado para tu clave.", "error");
+    return;
+  }
+
+  if (jugadorYaExiste(categoriaNombre, equipoNombre, nombre, dni, dorsal)) {
+    setStatus(status, "Ese jugador ya figura en este equipo. Revisá la tabla de documentos por jugador.", "warn");
     return;
   }
 
