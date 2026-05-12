@@ -364,6 +364,11 @@
       display: block;
     }
 
+    .assoc-context-card {
+      margin-bottom: 12px;
+      padding: 14px;
+    }
+
     .assoc-detail-box {
       border: 1px solid var(--line);
       border-radius: 10px;
@@ -514,6 +519,13 @@
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="permisos">Permisos</button>
   </div>
 
+  <div class="card assoc-context-card">
+    <div class="field">
+      <label for="asociacion-categoria">Categoría</label>
+      <select id="asociacion-categoria"></select>
+    </div>
+  </div>
+
   <div class="card assoc-panel" data-asociacion-panel-view="torneo">
     <h3>Planificador de Torneo</h3>
 
@@ -583,11 +595,6 @@
   <div class="card assoc-panel" data-asociacion-panel-view="resultados">
   <h3>Resultados y correcciones</h3>
   <div class="row">
-    <div class="field">
-      <label for="asociacion-categoria">Categoría</label>
-      <select id="asociacion-categoria"></select>
-    </div>
-
     <div class="field">
       <label for="asociacion-partido">Partido</label>
       <select id="asociacion-partido"></select>
