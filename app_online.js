@@ -383,6 +383,7 @@ const DOCUMENTOS_MULTIPLE_ARCHIVO = [
 ];
 
 const ESCUDOS_EQUIPOS = {
+  "astillero": "assets/escudos/astillero.png",
   "banco provincia": "assets/escudos/banco-provincia.png",
   "estrella de berisso": "assets/escudos/estrella-berisso.jpeg",
   "estudiantes": "assets/escudos/estudiantes.png",
