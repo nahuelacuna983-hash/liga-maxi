@@ -405,6 +405,33 @@
       margin-top: 5px;
     }
 
+    .usage-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 12px 0;
+    }
+
+    .usage-grid > div {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.2);
+      padding: 12px;
+    }
+
+    .usage-grid h4 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .usage-grid p {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 6px 0;
+      color: var(--muted);
+    }
+
     #vista-asociacion.asociacion-locked > .card:not(#asociacion-acceso),
     #vista-asociacion.asociacion-locked > .assoc-subnav {
       display: none;
@@ -559,6 +586,7 @@
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="resultados">Resultados</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="torneo">Torneo</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="permisos">Permisos</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="uso">Uso</button>
   </div>
 
   <div class="card assoc-context-card">
@@ -713,6 +741,14 @@
       <div><strong>Delegados</strong><span>Resultados y documentos de sus equipos.</span></div>
       <div><strong>Jugadores</strong><span>Acceso personal futuro.</span></div>
     </div>
+  </div>
+
+  <div class="card assoc-panel" data-asociacion-panel-view="uso">
+    <h3>Uso de la app</h3>
+    <p class="note">Estadísticas privadas de actividad reciente. Solo se muestran dentro de Asociación.</p>
+    <div id="uso-resumen" class="doc-summary"></div>
+    <div id="uso-detalle"></div>
+    <div id="uso-status" class="status"></div>
   </div>
 
   <div id="asociacion-status" class="status"></div>

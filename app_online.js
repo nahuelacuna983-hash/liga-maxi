@@ -14,10 +14,12 @@ const estado = {
   jugadoresPorCategoriaId: {},
   documentosJugadoresPorCategoriaId: {},
   filasDocumentacionAsociacion: [],
+  eventosUso: [],
   publicoCargaActual: 0,
   delegadoDesbloqueado: false,
   delegado: null,
-  asociacionDesbloqueada: false
+  asociacionDesbloqueada: false,
+  usuarioAsociacion: null
 };
 
 function $(id) {
@@ -28,6 +30,78 @@ function setStatus(element, text, kind = "") {
   if (!element) return;
   element.textContent = text || "";
   element.className = `status${kind ? " " + kind : ""}`;
+}
+
+function obtenerSesionUso() {
+  const key = "apdb_usage_session_id";
+  let sessionId = "";
+
+  try {
+    sessionId = localStorage.getItem(key) || "";
+    if (!sessionId) {
+      sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem(key, sessionId);
+    }
+  } catch (error) {
+    sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  return sessionId;
+}
+
+function obtenerTipoDispositivo() {
+  const width = window.innerWidth || document.documentElement.clientWidth || 0;
+  if (width <= 640) return "mobile";
+  if (width <= 1024) return "tablet";
+  return "desktop";
+}
+
+async function registrarUso(eventType, detalle = {}) {
+  try {
+    await supabaseClient
+      .from("app_usage_events")
+      .insert({
+        event_type: eventType,
+        area: detalle.area || null,
+        categoria_nombre: detalle.categoria || null,
+        equipo_nombre: detalle.equipo || null,
+        user_role: detalle.role || estado.delegado?.rol || estado.usuarioAsociacion?.role || null,
+        user_label: detalle.user || estado.delegado?.nombre || estado.usuarioAsociacion?.display_name || null,
+        session_id: obtenerSesionUso(),
+        device_type: obtenerTipoDispositivo(),
+        path: window.location.pathname || "/",
+        user_agent: navigator.userAgent || null
+      });
+  } catch (error) {
+    console.warn("No se pudo registrar uso:", error.message);
+  }
+}
+
+function contarEventos(filas, filtro) {
+  return filas.filter(filtro).length;
+}
+
+function fechaLocalCorta(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function topEventos(filas, campo, limite = 5) {
+  const conteo = {};
+
+  filas.forEach((fila) => {
+    const valor = fila[campo] || "Sin dato";
+    conteo[valor] = (conteo[valor] || 0) + 1;
+  });
+
+  return Object.entries(conteo)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limite);
 }
 
 function mostrarVista(nombre) {
@@ -87,6 +161,10 @@ function mostrarPanelAsociacion(panel = "documentacion") {
   document.querySelectorAll(".assoc-panel").forEach((section) => {
     section.classList.toggle("activa", section.dataset.asociacionPanelView === panel);
   });
+
+  if (panel === "uso" && estado.asociacionDesbloqueada) {
+    actualizarEstadisticasUso();
+  }
 }
 
 function inicializarNavegacionAsociacion() {
@@ -1063,6 +1141,105 @@ function renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugad
   `;
 }
 
+async function cargarEventosUso() {
+  const desde = new Date();
+  desde.setDate(desde.getDate() - 30);
+
+  const { data, error } = await supabaseClient
+    .from("app_usage_events")
+    .select("created_at, event_type, area, categoria_nombre, equipo_nombre, user_role, user_label, device_type, session_id")
+    .gte("created_at", desde.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1000);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  estado.eventosUso = data || [];
+  return estado.eventosUso;
+}
+
+function renderEstadisticasUso() {
+  const resumen = $("uso-resumen");
+  const detalle = $("uso-detalle");
+  if (!resumen || !detalle) return;
+
+  const filas = estado.eventosUso || [];
+  const ahora = Date.now();
+  const diaMs = 24 * 60 * 60 * 1000;
+  const enRango = (fila, dias) => {
+    const fecha = new Date(fila.created_at).getTime();
+    return Number.isFinite(fecha) && ahora - fecha <= dias * diaMs;
+  };
+  const sesiones = new Set(filas.map((fila) => fila.session_id).filter(Boolean));
+  const categorias = topEventos(filas.filter((fila) => fila.categoria_nombre), "categoria_nombre");
+  const dispositivos = topEventos(filas, "device_type", 3);
+
+  resumen.innerHTML = `
+    <div class="doc-pill"><strong>${contarEventos(filas, (fila) => enRango(fila, 1))}</strong><span>Eventos 24 h</span></div>
+    <div class="doc-pill"><strong>${contarEventos(filas, (fila) => enRango(fila, 7))}</strong><span>Eventos 7 días</span></div>
+    <div class="doc-pill"><strong>${filas.length}</strong><span>Eventos 30 días</span></div>
+    <div class="doc-pill"><strong>${sesiones.size}</strong><span>Dispositivos aprox.</span></div>
+    <div class="doc-pill"><strong>${contarEventos(filas, (fila) => fila.event_type === "resultado_cargado")}</strong><span>Resultados</span></div>
+    <div class="doc-pill"><strong>${contarEventos(filas, (fila) => fila.event_type === "documento_cargado" || fila.event_type === "documento_jugador_cargado")}</strong><span>Documentos</span></div>
+  `;
+
+  detalle.innerHTML = `
+    <div class="usage-grid">
+      <div>
+        <h4>Categorías más consultadas</h4>
+        ${categorias.length ? categorias.map(([nombre, total]) => `<p>${escapeHtml(nombre)} <strong>${total}</strong></p>`).join("") : `<p class="note">Sin datos todavía.</p>`}
+      </div>
+      <div>
+        <h4>Dispositivos</h4>
+        ${dispositivos.length ? dispositivos.map(([nombre, total]) => `<p>${escapeHtml(nombre)} <strong>${total}</strong></p>`).join("") : `<p class="note">Sin datos todavía.</p>`}
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Acción</th>
+            <th>Área</th>
+            <th>Categoría</th>
+            <th>Equipo/usuario</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filas.slice(0, 40).map((fila) => `
+            <tr>
+              <td>${fechaLocalCorta(fila.created_at)}</td>
+              <td>${escapeHtml(fila.event_type || "")}</td>
+              <td>${escapeHtml(fila.area || "")}</td>
+              <td>${escapeHtml(fila.categoria_nombre || "")}</td>
+              <td>${escapeHtml(fila.equipo_nombre || fila.user_label || "")}</td>
+            </tr>
+          `).join("") || `<tr><td colspan="5">Todavía no hay eventos registrados.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function actualizarEstadisticasUso() {
+  const status = $("uso-status");
+
+  try {
+    if (status) setStatus(status, "Cargando estadísticas...", "");
+    await cargarEventosUso();
+    renderEstadisticasUso();
+    if (status) setStatus(status, "Estadísticas actualizadas.", "ok");
+  } catch (error) {
+    if ($("uso-resumen")) $("uso-resumen").innerHTML = "";
+    if ($("uso-detalle")) {
+      $("uso-detalle").innerHTML = `<div class="empty">Todavía falta correr el SQL de estadísticas de uso en Supabase.</div>`;
+    }
+    if (status) setStatus(status, `No se pudieron cargar estadísticas: ${error.message}`, "warn");
+  }
+}
+
 function renderDocumentacionDelegado() {
   const container = $("delegado-documentacion");
   if (!container) return;
@@ -1643,6 +1820,10 @@ async function refrescarPublicoCategoria(nombreCategoria) {
     }
 
     renderPublicoCategoria(nombreCategoria);
+    registrarUso("categoria_publico", {
+      area: "publico",
+      categoria: nombreCategoria
+    });
   } catch (error) {
     if (cargaId !== estado.publicoCargaActual) return;
 
@@ -1771,6 +1952,12 @@ async function guardarResultadoDelegado() {
   $("publico-categoria").value = categoria;
   await refrescarCategoria(categoria);
   poblarSelectPartidosDelegado(categoria);
+  registrarUso("resultado_cargado", {
+    area: "delegados",
+    categoria,
+    user: estado.delegado?.nombre || null,
+    role: estado.delegado?.rol || "delegado"
+  });
 
   setStatus(status, "Resultado guardado correctamente.", "ok");
 }
@@ -1890,6 +2077,14 @@ async function subirDocumentoDelegado(event) {
     renderDocumentacionAsociacion(categoriaNombre);
   }
 
+  registrarUso("documento_cargado", {
+    area: "delegados",
+    categoria: categoriaNombre,
+    equipo: documento.equipo_nombre,
+    user: estado.delegado?.nombre || null,
+    role: estado.delegado?.rol || "delegado"
+  });
+
   setStatus(status, "Documento cargado correctamente. Queda pendiente de revisión.", "ok");
 }
 
@@ -1961,6 +2156,14 @@ async function agregarJugadorDelegado() {
   if ($("asociacion-categoria")?.value === categoriaNombre) {
     renderDocumentacionAsociacion(categoriaNombre);
   }
+
+  registrarUso("jugador_agregado", {
+    area: "delegados",
+    categoria: categoriaNombre,
+    equipo: equipoNombre,
+    user: estado.delegado?.nombre || null,
+    role: estado.delegado?.rol || "delegado"
+  });
 
   setStatus(status, "Jugador agregado. Ya podés cargar sus documentos.", "ok");
 }
@@ -2061,6 +2264,14 @@ async function subirDocumentoJugadorDelegado(event) {
     renderDocumentacionAsociacion(categoriaNombre);
   }
 
+  registrarUso("documento_jugador_cargado", {
+    area: "delegados",
+    categoria: categoriaNombre,
+    equipo: documento.equipo_nombre,
+    user: estado.delegado?.nombre || null,
+    role: estado.delegado?.rol || "delegado"
+  });
+
   setStatus(status, "Documento del jugador cargado correctamente. Queda pendiente de revisión.", "ok");
 }
 
@@ -2083,6 +2294,11 @@ async function desbloquearDelegado() {
   estado.delegado = delegado;
   estado.delegadoDesbloqueado = true;
   aplicarBloqueoDelegado();
+  registrarUso("acceso_delegado", {
+    area: "delegados",
+    user: delegado.nombre,
+    role: delegado.rol || "delegado"
+  });
 
   poblarSelectCategorias(
     "delegado-categoria",
@@ -2221,6 +2437,12 @@ async function guardarResultadoAsociacion() {
   });
   poblarSelectPartidosAsociacion(categoria);
   completarInputsAsociacion();
+  registrarUso("resultado_corregido", {
+    area: "asociacion",
+    categoria,
+    user: estado.usuarioAsociacion?.display_name || "Asociación",
+    role: estado.usuarioAsociacion?.role || "asociacion"
+  });
 
   setStatus(status, "Corrección guardada correctamente.", "ok");
 }
@@ -2349,13 +2571,26 @@ async function desbloquearAsociacion() {
 
   if (!CLAVES_ASOCIACION.includes(clave) && !accesoSupabase) {
     estado.asociacionDesbloqueada = false;
+    estado.usuarioAsociacion = null;
     aplicarBloqueoAsociacion();
     setStatus(status, "Clave administrativa incorrecta.", "error");
     return;
   }
 
   estado.asociacionDesbloqueada = true;
+  estado.usuarioAsociacion = permisos[0] || {
+    display_name: CLAVES_ASOCIACION.includes(clave) ? "Asociación" : "Admin",
+    role: "asociacion"
+  };
   aplicarBloqueoAsociacion();
+  registrarUso("acceso_asociacion", {
+    area: "asociacion",
+    user: estado.usuarioAsociacion.display_name,
+    role: estado.usuarioAsociacion.role
+  });
+  if (document.querySelector('.assoc-nav-btn.activo')?.dataset.asociacionPanel === "uso") {
+    actualizarEstadisticasUso();
+  }
   setStatus(status, accesoSupabase ? `Asociación habilitada para ${permisos[0].display_name}.` : "Asociación habilitada.", "ok");
 }
 
@@ -2558,12 +2793,22 @@ if (fechaInicio) {
 
 async function inicializar() {
   try {
-    $("tab-publico").addEventListener("click", () => mostrarVista("publico"));
-    $("tab-delegados").addEventListener("click", () => mostrarVista("delegados"));
-    $("tab-asociacion").addEventListener("click", () => mostrarVista("asociacion"));
+    $("tab-publico").addEventListener("click", () => {
+      mostrarVista("publico");
+      registrarUso("vista_publico", { area: "publico", categoria: $("publico-categoria")?.value || null });
+    });
+    $("tab-delegados").addEventListener("click", () => {
+      mostrarVista("delegados");
+      registrarUso("vista_delegados", { area: "delegados" });
+    });
+    $("tab-asociacion").addEventListener("click", () => {
+      mostrarVista("asociacion");
+      registrarUso("vista_asociacion", { area: "asociacion" });
+    });
 
     const categorias = await cargarCategorias();
     await cargarRequisitosDocumentales();
+    registrarUso("app_abierta", { area: "inicio" });
 
     if (!categorias.length) {
       throw new Error("No se encontraron categorías cargadas en Supabase.");
