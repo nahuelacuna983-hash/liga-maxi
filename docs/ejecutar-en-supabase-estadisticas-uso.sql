@@ -1,8 +1,11 @@
 -- APdB - Liga Maxi
--- Estadísticas privadas de uso de la app.
+-- Estadisticas privadas de uso de la app.
 --
 -- Ejecutar una sola vez en Supabase SQL Editor.
--- La app no se rompe si esta tabla todavía no existe: simplemente no registra estadísticas.
+-- Copiar el contenido de este archivo, no la ruta C:\liga-maxi\...
+-- La app no se rompe si esta tabla todavia no existe: simplemente no registra estadisticas.
+
+create extension if not exists pgcrypto;
 
 create table if not exists public.app_usage_events (
   id uuid primary key default gen_random_uuid(),
@@ -30,6 +33,9 @@ create index if not exists idx_app_usage_events_categoria
 
 alter table public.app_usage_events enable row level security;
 
+grant select, insert on public.app_usage_events to anon;
+grant select, insert on public.app_usage_events to authenticated;
+
 drop policy if exists "app_usage_events_insert_anon" on public.app_usage_events;
 create policy "app_usage_events_insert_anon"
 on public.app_usage_events
@@ -44,7 +50,21 @@ for select
 to anon
 using (true);
 
+drop policy if exists "app_usage_events_insert_authenticated" on public.app_usage_events;
+create policy "app_usage_events_insert_authenticated"
+on public.app_usage_events
+for insert
+to authenticated
+with check (true);
+
+drop policy if exists "app_usage_events_select_authenticated" on public.app_usage_events;
+create policy "app_usage_events_select_authenticated"
+on public.app_usage_events
+for select
+to authenticated
+using (true);
+
 -- Nota:
--- La visualización queda oculta detrás de la clave de Asociación/Admin en la app.
+-- La visualizacion queda oculta detras de la clave de Asociacion/Admin en la app.
 -- Para privacidad fuerte a nivel base de datos conviene migrar esta parte a Supabase Auth
 -- o a una Edge Function con clave privada.
