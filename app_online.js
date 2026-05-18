@@ -14,6 +14,7 @@ const estado = {
   jugadoresPorCategoriaId: {},
   documentosJugadoresPorCategoriaId: {},
   filasDocumentacionAsociacion: [],
+  publicoCargaActual: 0,
   delegadoDesbloqueado: false,
   delegado: null,
   asociacionDesbloqueada: false
@@ -1609,6 +1610,49 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
   container.innerHTML = html;
 }
 
+function renderPublicoCategoria(nombreCategoria) {
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  renderTablaSimple(nombreCategoria, partidos);
+  renderFixturePublico(nombreCategoria);
+  renderPlayoffsSimple(nombreCategoria, partidos);
+}
+
+function mostrarCargaPublico(nombreCategoria) {
+  const tabla = $("publico-tabla-wrap");
+  const fixture = $("publico-fixture");
+  const playoffs = $("publico-playoffs");
+  const mensaje = `<div class="empty">Cargando ${escapeHtml(nombreCategoria || "categoría")}...</div>`;
+
+  if (tabla) tabla.innerHTML = mensaje;
+  if (fixture) fixture.innerHTML = mensaje;
+  if (playoffs) playoffs.innerHTML = "";
+}
+
+async function refrescarPublicoCategoria(nombreCategoria) {
+  if (!nombreCategoria) return;
+
+  const cargaId = ++estado.publicoCargaActual;
+  mostrarCargaPublico(nombreCategoria);
+
+  try {
+    await cargarPartidosCategoria(nombreCategoria);
+
+    const categoriaActual = $("publico-categoria")?.value || "";
+    if (cargaId !== estado.publicoCargaActual || categoriaActual !== nombreCategoria) {
+      return;
+    }
+
+    renderPublicoCategoria(nombreCategoria);
+  } catch (error) {
+    if (cargaId !== estado.publicoCargaActual) return;
+
+    const tabla = $("publico-tabla-wrap");
+    if (tabla) {
+      tabla.innerHTML = `<div class="empty">No se pudo cargar la categoría: ${escapeHtml(error.message)}</div>`;
+    }
+  }
+}
+
 function completarInputsPartidoSeleccionado() {
   const categoria = $("delegado-categoria").value;
   const partidoId = $("delegado-partido").value;
@@ -1657,9 +1701,10 @@ function poblarSelectPartidosDelegado(nombreCategoria) {
   completarInputsPartidoSeleccionado();
 }
 
-async function refrescarCategoria(nombreCategoria) {
+async function refrescarCategoria(nombreCategoria, opciones = {}) {
+  const { incluirDocumentacion = true, actualizarPublico = true } = opciones;
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
-  if (categoria) {
+  if (categoria && incluirDocumentacion) {
     await cargarEquiposCategoria(categoria.id);
     await cargarDocumentosCategoria(categoria.id);
     await cargarJugadoresCategoria(categoria.id);
@@ -1667,11 +1712,7 @@ async function refrescarCategoria(nombreCategoria) {
   }
 
   await cargarPartidosCategoria(nombreCategoria);
-  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
-
-  renderTablaSimple(nombreCategoria, partidos);
-  renderFixturePublico(nombreCategoria);
-  renderPlayoffsSimple(nombreCategoria, partidos);
+  if (actualizarPublico) renderPublicoCategoria(nombreCategoria);
 }
 
 async function guardarResultadoDelegado() {
@@ -1727,9 +1768,9 @@ async function guardarResultadoDelegado() {
     return;
   }
 
+  $("publico-categoria").value = categoria;
   await refrescarCategoria(categoria);
   poblarSelectPartidosDelegado(categoria);
-  $("publico-categoria").value = categoria;
 
   setStatus(status, "Resultado guardado correctamente.", "ok");
 }
@@ -2050,7 +2091,7 @@ async function desbloquearDelegado() {
 
   const primeraCategoria = $("delegado-categoria").value;
   if (primeraCategoria) {
-    refrescarCategoria(primeraCategoria).then(() => {
+    refrescarCategoria(primeraCategoria, { actualizarPublico: false }).then(() => {
       poblarSelectPartidosDelegado(primeraCategoria);
       renderDocumentacionDelegado();
     });
@@ -2175,7 +2216,9 @@ async function guardarResultadoAsociacion() {
     return;
   }
 
-  await refrescarCategoria(categoria);
+  await refrescarCategoria(categoria, {
+    actualizarPublico: $("publico-categoria")?.value === categoria
+  });
   poblarSelectPartidosAsociacion(categoria);
   completarInputsAsociacion();
 
@@ -2373,14 +2416,14 @@ async function inicializarAsociacion() {
 
   const categoriaInicial = $("asociacion-categoria").value;
   if (categoriaInicial) {
-    await refrescarCategoria(categoriaInicial);
+    await refrescarCategoria(categoriaInicial, { actualizarPublico: false });
     poblarSelectPartidosAsociacion(categoriaInicial);
     renderDocumentacionAsociacion(categoriaInicial);
   }
 
   $("asociacion-categoria").addEventListener("change", async (e) => {
     const categoria = e.target.value;
-    await refrescarCategoria(categoria);
+    await refrescarCategoria(categoria, { actualizarPublico: false });
     poblarSelectPartidosAsociacion(categoria);
     renderDocumentacionAsociacion(categoria);
     setStatus($("asociacion-status"), "", "");
@@ -2529,9 +2572,14 @@ async function inicializar() {
     poblarSelectCategorias("publico-categoria", categorias);
     poblarSelectCategorias("delegado-categoria", categorias);
 
-    const categoriaInicial = categorias[0].nombre;
+    $("publico-categoria").addEventListener("change", (e) => {
+      refrescarPublicoCategoria(e.target.value);
+    });
 
-    await refrescarCategoria(categoriaInicial);
+    const categoriaInicial = $("publico-categoria")?.value || categorias[0].nombre;
+
+    await refrescarPublicoCategoria(categoriaInicial);
+    await refrescarCategoria(categoriaInicial, { actualizarPublico: false });
     $("delegado-categoria").value = categoriaInicial;
     poblarSelectPartidosDelegado(categoriaInicial);
     aplicarBloqueoDelegado();
@@ -2539,14 +2587,10 @@ async function inicializar() {
 
     await inicializarAsociacion();
 
-    $("publico-categoria").addEventListener("change", async (e) => {
-      await refrescarCategoria(e.target.value);
-    });
-
     $("delegado-categoria").addEventListener("change", async (e) => {
       const categoria = e.target.value;
-      await refrescarCategoria(categoria);
       $("publico-categoria").value = categoria;
+      await refrescarCategoria(categoria);
       poblarSelectPartidosDelegado(categoria);
       setStatus($("delegado-status"), "", "");
       aplicarBloqueoDelegado();
