@@ -28,12 +28,14 @@
       font-family: Arial, Helvetica, sans-serif;
       background: linear-gradient(180deg, #081225, #102044);
       color: var(--text);
-      
+      overflow-x: hidden;
     }
 
     .app {
       width: min(1200px, calc(100% - 24px));
       margin: 18px auto 28px;
+      max-width: 100%;
+      min-width: 0;
     }
 
     .topbar {
@@ -85,6 +87,8 @@
       border-radius: 18px;
       padding: 16px;
       box-shadow: var(--shadow);
+      max-width: 100%;
+      min-width: 0;
     }
 
     .view.activa {
@@ -169,6 +173,7 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 14px;
+      min-width: 0;
     }
 
     .card {
@@ -176,6 +181,8 @@
       border: 1px solid var(--line);
       border-radius: var(--radius);
       padding: 14px;
+      max-width: 100%;
+      min-width: 0;
     }
 
     .card h3 {
@@ -184,7 +191,11 @@
     }
 
     .table-wrap {
+      width: 100%;
+      max-width: 100%;
       overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
     }
 
     table {
