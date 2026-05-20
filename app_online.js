@@ -111,12 +111,14 @@ function mostrarVista(nombre) {
 
   const tabs = {
     publico: $("tab-publico"),
+    fecha: $("tab-fecha"),
     delegados: $("tab-delegados"),
     asociacion: $("tab-asociacion")
   };
 
   const views = {
     publico: $("vista-publico"),
+    fecha: $("vista-fecha"),
     delegados: $("vista-delegados"),
     asociacion: $("vista-asociacion")
   };
@@ -1663,6 +1665,65 @@ function renderTablaSimple(nombreCategoria, partidos) {
   `;
 }
 
+function fechaPartidoLabel(fecha) {
+  if (!fecha) return "";
+  const [anio, mes, dia] = fecha.split("-");
+  if (!anio || !mes || !dia) return "";
+  return `${dia}/${mes}/${anio}`;
+}
+
+function partidoTieneResultado(partido) {
+  return partido.puntos_local != null && partido.puntos_visitante != null;
+}
+
+function renderPartidoResultadoHtml(partido) {
+  const tieneResultado = partidoTieneResultado(partido);
+  const puntosLocal = tieneResultado ? partido.puntos_local : "–";
+  const puntosVisitante = tieneResultado ? partido.puntos_visitante : "–";
+  const detalleCarga = partido.cargado_por
+    ? `
+      <details class="result-detail">
+        <summary>Ver detalle</summary>
+        <div>
+          Cargado por: ${escapeHtml(partido.cargado_por)}<br>
+          ${escapeHtml(partido.cargado_en || "")}
+        </div>
+      </details>
+    `
+    : "";
+
+  return `
+    <div class="result-match${tieneResultado ? "" : " result-match-pending"}">
+      <div class="result-team">
+        ${escudoEquipoHtml(partido.local, "lg")}
+        <span>${escapeHtml(partido.local)}</span>
+      </div>
+      <div class="result-scoreboard">
+        <div class="result-scoreline">
+          <span>${puntosLocal}</span>
+          <small>-</small>
+          <span>${puntosVisitante}</span>
+        </div>
+        <div class="result-state">${tieneResultado ? "Final" : "Pendiente"}</div>
+      </div>
+      <div class="result-team result-team-away">
+        ${escudoEquipoHtml(partido.visitante, "lg")}
+        <span>${escapeHtml(partido.visitante)}</span>
+      </div>
+      ${detalleCarga}
+    </div>
+  `;
+}
+
+function agruparPartidosPorJornada(partidos) {
+  return (partidos || []).reduce((acc, partido) => {
+    const jornada = partido.jornada || 0;
+    if (!acc[jornada]) acc[jornada] = [];
+    acc[jornada].push(partido);
+    return acc;
+  }, {});
+}
+
 function renderFixturePublico(nombreCategoria) {
   const container = document.getElementById("publico-fixture");
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
@@ -1672,13 +1733,7 @@ function renderFixturePublico(nombreCategoria) {
     return;
   }
 
-  const porJornada = {};
-
-  partidos.forEach((p) => {
-    const j = p.jornada || 0;
-    if (!porJornada[j]) porJornada[j] = [];
-    porJornada[j].push(p);
-  });
+  const porJornada = agruparPartidosPorJornada(partidos);
 
   const jornadasOrdenadas = Object.keys(porJornada)
     .map(Number)
@@ -1697,7 +1752,7 @@ function renderFixturePublico(nombreCategoria) {
       titulo += ` · ${dia}/${mes}/${anio}`;
     }
 
-    html += `<div class="card"><h3>${titulo}</h3>`;
+    html += `<div class="card result-date-card"><div class="result-date-head"><h3>${titulo}</h3><span>${escapeHtml(nombreCategoria)}</span></div>`;
 
     const libre = partidosJornada[0]?.libre;
     if (libre) {
@@ -1705,44 +1760,49 @@ function renderFixturePublico(nombreCategoria) {
     }
 
     partidosJornada.forEach((p) => {
-      const estadoTxt =
-        p.puntos_local != null && p.puntos_visitante != null
-          ? `${p.puntos_local} - ${p.puntos_visitante}`
-          : "Pendiente";
-
-      let detalleCarga = "";
-
-      if (p.cargado_por) {
-        detalleCarga = `
-          <details style="margin-top:6px;">
-            <summary style="font-size:11px; cursor:pointer;">Ver detalle</summary>
-            <div style="font-size:12px; color:#aaa; margin-top:4px;">
-              Cargado por: ${p.cargado_por}<br>
-              ${p.cargado_en || ""}
-            </div>
-          </details>
-        `;
-      }
-
-      html += `
-        <div class="match">
-          <div style="width:100%;">
-            <div class="teams">
-              ${nombreEquipoHtml(p.local, "md")}
-              <span class="vs">vs</span>
-              ${nombreEquipoHtml(p.visitante, "md")}
-            </div>
-            ${detalleCarga || ""}
-          </div>
-          <div class="score">${estadoTxt}</div>
-        </div>
-      `;
+      html += renderPartidoResultadoHtml(p);
     });
 
     html += `</div>`;
   });
 
   container.innerHTML = html;
+}
+
+function renderFechaDestacada(nombreCategoria) {
+  const container = $("fecha-destacada");
+  if (!container) return;
+
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  const partidosConResultado = partidos.filter(partidoTieneResultado);
+
+  if (!partidos.length) {
+    container.innerHTML = `<div class="card"><div class="empty">No hay partidos cargados para esta categoría.</div></div>`;
+    return;
+  }
+
+  if (!partidosConResultado.length) {
+    container.innerHTML = `<div class="card"><div class="empty">Todavía no hay resultados cargados para esta categoría.</div></div>`;
+    return;
+  }
+
+  const jornada = Math.max(...partidosConResultado.map((p) => Number(p.jornada || 0)));
+  const partidosJornada = partidos.filter((p) => Number(p.jornada || 0) === jornada);
+  const fechaPartido = partidosJornada[0]?.fecha;
+  const fechaTexto = fechaPartido ? fechaPartidoLabel(fechaPartido) : "";
+
+  container.innerHTML = `
+    <div class="card result-date-card result-feature-card">
+      <div class="result-date-head">
+        <div>
+          <span>${escapeHtml(nombreCategoria)}</span>
+          <h3>Resultados · Fecha ${jornada}</h3>
+        </div>
+        ${fechaTexto ? `<span>${fechaTexto}</span>` : ""}
+      </div>
+      ${partidosJornada.map(renderPartidoResultadoHtml).join("")}
+    </div>
+  `;
 }
 
 function renderPlayoffsSimple(nombreCategoria, partidos) {
@@ -1791,17 +1851,20 @@ function renderPublicoCategoria(nombreCategoria) {
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
   renderTablaSimple(nombreCategoria, partidos);
   renderFixturePublico(nombreCategoria);
+  renderFechaDestacada(nombreCategoria);
   renderPlayoffsSimple(nombreCategoria, partidos);
 }
 
 function mostrarCargaPublico(nombreCategoria) {
   const tabla = $("publico-tabla-wrap");
   const fixture = $("publico-fixture");
+  const fecha = $("fecha-destacada");
   const playoffs = $("publico-playoffs");
   const mensaje = `<div class="empty">Cargando ${escapeHtml(nombreCategoria || "categoría")}...</div>`;
 
   if (tabla) tabla.innerHTML = mensaje;
   if (fixture) fixture.innerHTML = mensaje;
+  if (fecha) fecha.innerHTML = `<div class="card">${mensaje}</div>`;
   if (playoffs) playoffs.innerHTML = "";
 }
 
@@ -2797,6 +2860,15 @@ async function inicializar() {
       mostrarVista("publico");
       registrarUso("vista_publico", { area: "publico", categoria: $("publico-categoria")?.value || null });
     });
+    $("tab-fecha").addEventListener("click", () => {
+      mostrarVista("fecha");
+      const categoria = $("fecha-categoria")?.value || $("publico-categoria")?.value || null;
+      if (categoria) {
+        $("publico-categoria").value = categoria;
+        refrescarPublicoCategoria(categoria);
+      }
+      registrarUso("vista_fecha", { area: "publico", categoria });
+    });
     $("tab-delegados").addEventListener("click", () => {
       mostrarVista("delegados");
       registrarUso("vista_delegados", { area: "delegados" });
@@ -2815,13 +2887,20 @@ async function inicializar() {
     }
 
     poblarSelectCategorias("publico-categoria", categorias);
+    poblarSelectCategorias("fecha-categoria", categorias);
     poblarSelectCategorias("delegado-categoria", categorias);
 
     $("publico-categoria").addEventListener("change", (e) => {
+      if ($("fecha-categoria")) $("fecha-categoria").value = e.target.value;
+      refrescarPublicoCategoria(e.target.value);
+    });
+    $("fecha-categoria").addEventListener("change", (e) => {
+      if ($("publico-categoria")) $("publico-categoria").value = e.target.value;
       refrescarPublicoCategoria(e.target.value);
     });
 
     const categoriaInicial = $("publico-categoria")?.value || categorias[0].nombre;
+    if ($("fecha-categoria")) $("fecha-categoria").value = categoriaInicial;
 
     await refrescarPublicoCategoria(categoriaInicial);
     await refrescarCategoria(categoriaInicial, { actualizarPublico: false });
@@ -2835,6 +2914,7 @@ async function inicializar() {
     $("delegado-categoria").addEventListener("change", async (e) => {
       const categoria = e.target.value;
       $("publico-categoria").value = categoria;
+      if ($("fecha-categoria")) $("fecha-categoria").value = categoria;
       await refrescarCategoria(categoria);
       poblarSelectPartidosDelegado(categoria);
       setStatus($("delegado-status"), "", "");

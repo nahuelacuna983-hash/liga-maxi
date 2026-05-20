@@ -266,6 +266,114 @@
       font-size: 16px;
     }
 
+    .result-date-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .result-date-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 10px;
+      margin-bottom: 4px;
+    }
+
+    .result-date-head h3 {
+      margin: 0;
+      font-size: 24px;
+      text-transform: uppercase;
+    }
+
+    .result-date-head span {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .result-match {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.52), rgba(30, 41, 59, 0.38));
+    }
+
+    .result-team {
+      display: grid;
+      justify-items: center;
+      gap: 6px;
+      min-width: 0;
+      text-align: center;
+      font-weight: 900;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .result-team span:last-child {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .result-scoreboard {
+      display: grid;
+      justify-items: center;
+      gap: 4px;
+      min-width: 96px;
+    }
+
+    .result-scoreline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .result-scoreline small {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .result-state {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .result-detail {
+      grid-column: 1 / -1;
+      justify-self: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .result-detail summary {
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .result-detail div {
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    .team-crest-lg {
+      width: 46px;
+      height: 46px;
+    }
+
     .empty {
       color: var(--muted);
       font-style: italic;
@@ -342,6 +450,30 @@
       .score {
         min-width: auto;
         text-align: left;
+      }
+
+      .result-date-head {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .result-match {
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .result-scoreboard {
+        min-width: 78px;
+      }
+
+      .result-scoreline {
+        font-size: 25px;
+        gap: 6px;
+      }
+
+      .team-crest-lg {
+        width: 40px;
+        height: 40px;
       }
     }
 
@@ -500,6 +632,7 @@
 
     <div class="tabs">
       <button id="tab-publico" class="tab activo" type="button">Público</button>
+      <button id="tab-fecha" class="tab" type="button">Fecha</button>
       <button id="tab-delegados" class="tab" type="button">Delegados</button>
       <button id="tab-asociacion" class="tab" type="button">Asociación</button>
     </div>
@@ -524,6 +657,17 @@
           <div id="publico-playoffs"></div>
         </div>
       </div>
+    </div>
+
+    <div id="vista-fecha" class="view">
+      <div class="row">
+        <div class="field">
+          <label for="fecha-categoria">Categoría</label>
+          <select id="fecha-categoria"></select>
+        </div>
+      </div>
+
+      <div id="fecha-destacada"></div>
     </div>
 
     <div id="vista-delegados" class="view">
