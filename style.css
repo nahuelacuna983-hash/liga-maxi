@@ -1339,6 +1339,52 @@ td:nth-child(2) {
     grid-template-columns: 1fr;
   }
 
+  #publico-tabla-wrap {
+    overflow-x: visible;
+  }
+
+  #publico-tabla-wrap table {
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  #publico-tabla-wrap th,
+  #publico-tabla-wrap td {
+    padding: 8px 2px;
+    font-size: 12px;
+  }
+
+  #publico-tabla-wrap th:first-child,
+  #publico-tabla-wrap td:first-child {
+    width: 24px;
+  }
+
+  #publico-tabla-wrap th:nth-child(2),
+  #publico-tabla-wrap td:nth-child(2) {
+    width: auto;
+  }
+
+  #publico-tabla-wrap th:nth-child(n+3),
+  #publico-tabla-wrap td:nth-child(n+3) {
+    width: 30px;
+  }
+
+  #publico-tabla-wrap .team-name-with-crest {
+    gap: 5px;
+  }
+
+  #publico-tabla-wrap .team-name-with-crest span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #publico-tabla-wrap .team-crest-sm {
+    width: 22px;
+    height: 22px;
+  }
+
   .result-date-head {
     align-items: start;
     flex-direction: column;
