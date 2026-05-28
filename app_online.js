@@ -5,6 +5,13 @@ const TORNEO_ID = "7d0971e3-66ee-4791-bcbf-bace1d2fefb9";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const CATEGORIAS_BASE = [
+  { nombre: "Femenino" },
+  { nombre: "Maxi +35 A" },
+  { nombre: "Maxi +35 B" },
+  { nombre: "Maxi +48" }
+];
+
 const estado = {
   categorias: [],
   partidosPorCategoria: {},
@@ -2878,17 +2885,9 @@ async function inicializar() {
       registrarUso("vista_asociacion", { area: "asociacion" });
     });
 
-    const categorias = await cargarCategorias();
-    await cargarRequisitosDocumentales();
-    registrarUso("app_abierta", { area: "inicio" });
-
-    if (!categorias.length) {
-      throw new Error("No se encontraron categorías cargadas en Supabase.");
-    }
-
-    poblarSelectCategorias("publico-categoria", categorias);
-    poblarSelectCategorias("fecha-categoria", categorias);
-    poblarSelectCategorias("delegado-categoria", categorias);
+    poblarSelectCategorias("publico-categoria", CATEGORIAS_BASE);
+    poblarSelectCategorias("fecha-categoria", CATEGORIAS_BASE);
+    poblarSelectCategorias("delegado-categoria", CATEGORIAS_BASE);
 
     $("publico-categoria").addEventListener("change", (e) => {
       if ($("fecha-categoria")) $("fecha-categoria").value = e.target.value;
@@ -2899,10 +2898,26 @@ async function inicializar() {
       refrescarPublicoCategoria(e.target.value);
     });
 
-    const categoriaInicial = $("publico-categoria")?.value || categorias[0].nombre;
+    const categorias = await cargarCategorias();
+    registrarUso("app_abierta", { area: "inicio" });
+
+    if (!categorias.length) {
+      throw new Error("No se encontraron categorías cargadas en Supabase.");
+    }
+
+    const categoriaPrevia = $("publico-categoria")?.value || categorias[0].nombre;
+    poblarSelectCategorias("publico-categoria", categorias);
+    poblarSelectCategorias("fecha-categoria", categorias);
+    poblarSelectCategorias("delegado-categoria", categorias);
+
+    const categoriaInicial = categorias.some((cat) => cat.nombre === categoriaPrevia)
+      ? categoriaPrevia
+      : categorias[0].nombre;
+    $("publico-categoria").value = categoriaInicial;
     if ($("fecha-categoria")) $("fecha-categoria").value = categoriaInicial;
 
     await refrescarPublicoCategoria(categoriaInicial);
+    await cargarRequisitosDocumentales();
     await refrescarCategoria(categoriaInicial, { actualizarPublico: false });
     $("delegado-categoria").value = categoriaInicial;
     poblarSelectPartidosDelegado(categoriaInicial);
