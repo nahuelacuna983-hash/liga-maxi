@@ -259,6 +259,114 @@
       text-transform: uppercase;
     }
 
+    .playoff-card {
+      margin-top: 14px;
+    }
+
+    .playoff-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 10px;
+    }
+
+    .playoff-head p {
+      color: var(--muted);
+      font-size: 13px;
+      margin: -6px 0 0;
+    }
+
+    .playoff-preview summary {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 800;
+      list-style: none;
+      padding: 9px 13px;
+    }
+
+    .playoff-preview summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .playoff-preview[open] summary {
+      background: var(--accent-2);
+      margin-bottom: 14px;
+    }
+
+    .playoff-bracket {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .playoff-round {
+      min-width: 220px;
+    }
+
+    .playoff-round h4 {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .playoff-match {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+
+    .playoff-match-title {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .playoff-slot {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      border-radius: 10px;
+      background: rgba(15,23,42,0.22);
+      padding: 7px 8px;
+    }
+
+    .playoff-slot + .playoff-slot {
+      margin-top: 6px;
+    }
+
+    .playoff-slot-empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .playoff-seed {
+      min-width: 28px;
+      color: #dbeafe;
+      font-weight: 900;
+    }
+
+    .playoff-team-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .score {
       min-width: 78px;
       text-align: right;

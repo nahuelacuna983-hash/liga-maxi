@@ -1854,6 +1854,117 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
   container.innerHTML = html;
 }
 
+function renderPlayoffSlot(posicion, equipo, textoFallback = "") {
+  const nombre = equipo?.equipo || textoFallback || `${posicion}Â°`;
+
+  return `
+    <div class="playoff-slot${equipo ? "" : " playoff-slot-empty"}">
+      <span class="playoff-seed">${posicion}Â°</span>
+      ${equipo ? escudoEquipoHtml(nombre, "sm") : ""}
+      <span class="playoff-team-name">${escapeHtml(nombre)}</span>
+    </div>
+  `;
+}
+
+function renderPlayoffPendiente(texto) {
+  return `
+    <div class="playoff-slot playoff-slot-empty">
+      <span class="playoff-seed">-</span>
+      <span class="playoff-team-name">${escapeHtml(texto)}</span>
+    </div>
+  `;
+}
+
+function renderPlayoffMatch(titulo, slotA, slotB) {
+  return `
+    <div class="playoff-match">
+      <span class="playoff-match-title">${escapeHtml(titulo)}</span>
+      ${slotA}
+      ${slotB}
+    </div>
+  `;
+}
+
+function renderPlayoffsSimple(nombreCategoria, partidos) {
+  const container = document.getElementById("publico-playoffs");
+  if (!container) return;
+
+  const tabla = calcularTabla(partidos);
+  const cantidadEquipos = tabla.length;
+
+  if (!cantidadEquipos) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const equipo = (posicion) => tabla[posicion - 1] || null;
+  let bracket = "";
+
+  if (nombreCategoria.includes("+35") && cantidadEquipos >= 8) {
+    bracket = `
+      <div class="playoff-bracket playoff-bracket-three">
+        <div class="playoff-round">
+          <h4>Cuartos</h4>
+          ${renderPlayoffMatch("Llave A", renderPlayoffSlot(1, equipo(1)), renderPlayoffSlot(8, equipo(8)))}
+          ${renderPlayoffMatch("Llave B", renderPlayoffSlot(4, equipo(4)), renderPlayoffSlot(5, equipo(5)))}
+          ${renderPlayoffMatch("Llave C", renderPlayoffSlot(2, equipo(2)), renderPlayoffSlot(7, equipo(7)))}
+          ${renderPlayoffMatch("Llave D", renderPlayoffSlot(3, equipo(3)), renderPlayoffSlot(6, equipo(6)))}
+        </div>
+        <div class="playoff-round">
+          <h4>Semifinales</h4>
+          ${renderPlayoffMatch("Semi 1", renderPlayoffPendiente("Ganador 1Â°/8Â°"), renderPlayoffPendiente("Ganador 4Â°/5Â°"))}
+          ${renderPlayoffMatch("Semi 2", renderPlayoffPendiente("Ganador 2Â°/7Â°"), renderPlayoffPendiente("Ganador 3Â°/6Â°"))}
+        </div>
+        <div class="playoff-round">
+          <h4>Final</h4>
+          ${renderPlayoffMatch("Final", renderPlayoffPendiente("Ganador Semi 1"), renderPlayoffPendiente("Ganador Semi 2"))}
+        </div>
+      </div>
+    `;
+  }
+
+  if (nombreCategoria.includes("+48") && cantidadEquipos >= 6) {
+    bracket = `
+      <div class="playoff-bracket playoff-bracket-three">
+        <div class="playoff-round">
+          <h4>ClasificaciÃ³n</h4>
+          ${renderPlayoffMatch("Repechaje 1", renderPlayoffSlot(3, equipo(3)), renderPlayoffSlot(6, equipo(6)))}
+          ${renderPlayoffMatch("Repechaje 2", renderPlayoffSlot(4, equipo(4)), renderPlayoffSlot(5, equipo(5)))}
+        </div>
+        <div class="playoff-round">
+          <h4>Semifinales</h4>
+          ${renderPlayoffMatch("Semi 1", renderPlayoffSlot(1, equipo(1), "1Â° directo"), renderPlayoffPendiente("Ganador 4Â°/5Â°"))}
+          ${renderPlayoffMatch("Semi 2", renderPlayoffSlot(2, equipo(2), "2Â° directo"), renderPlayoffPendiente("Ganador 3Â°/6Â°"))}
+        </div>
+        <div class="playoff-round">
+          <h4>Final</h4>
+          ${renderPlayoffMatch("Final", renderPlayoffPendiente("Ganador Semi 1"), renderPlayoffPendiente("Ganador Semi 2"))}
+        </div>
+      </div>
+    `;
+  }
+
+  if (!bracket) {
+    container.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="card playoff-card">
+      <div class="playoff-head">
+        <div>
+          <h3>Playoffs</h3>
+          <p>ProyecciÃ³n segÃºn la tabla actual de ${escapeHtml(nombreCategoria)}.</p>
+        </div>
+      </div>
+      <details class="playoff-preview">
+        <summary>Ver cÃ³mo quedarÃ­a hoy</summary>
+        ${bracket}
+      </details>
+    </div>
+  `;
+}
+
 function renderPublicoCategoria(nombreCategoria) {
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
   renderTablaSimple(nombreCategoria, partidos);
