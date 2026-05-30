@@ -986,9 +986,21 @@ td:nth-child(2) {
 }
 
 .playoff-head p {
-  color: #cbd5e1;
+  color: #dbeafe;
   font-size: 13px;
   margin: -6px 0 0;
+}
+
+.playoff-empty-title {
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 900;
+  margin: 2px 0 10px;
+  text-transform: uppercase;
+}
+
+.playoff-preview {
+  margin-top: 14px;
 }
 
 .playoff-preview summary {
@@ -1035,7 +1047,7 @@ td:nth-child(2) {
 .playoff-match {
   border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 12px;
-  background: rgba(15, 23, 42, 0.2);
+  background: rgba(15, 23, 42, 0.34);
   margin-bottom: 10px;
   padding: 10px;
 }
@@ -1055,7 +1067,7 @@ td:nth-child(2) {
   gap: 8px;
   min-height: 38px;
   border-radius: 10px;
-  background: rgba(15, 23, 42, 0.22);
+  background: rgba(15, 23, 42, 0.46);
   padding: 7px 8px;
 }
 
@@ -1064,7 +1076,7 @@ td:nth-child(2) {
 }
 
 .playoff-slot-empty {
-  color: #cbd5e1;
+  color: #e2e8f0;
   font-style: italic;
 }
 
