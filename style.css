@@ -1491,6 +1491,43 @@ td:nth-child(2) {
     width: 40px;
     height: 40px;
   }
+
+  .playoff-bracket {
+    grid-template-columns: 1fr;
+    overflow-x: visible;
+  }
+
+  .playoff-round {
+    min-width: 0;
+  }
+
+  .playoff-round h4 {
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  .playoff-round-meta {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .playoff-match {
+    padding: 9px;
+  }
+
+  .playoff-slot {
+    gap: 7px;
+    min-height: 36px;
+  }
+
+  .playoff-team-name {
+    font-size: 14px;
+  }
+
+  .playoff-preview summary {
+    justify-content: center;
+    width: 100%;
+  }
 }
 
 @media (max-width: 920px) and (orientation: landscape) {
