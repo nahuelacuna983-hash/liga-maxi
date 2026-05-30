@@ -194,7 +194,7 @@ function inicializarNavegacionAsociacion() {
 async function cargarCategorias() {
   const { data, error } = await supabaseClient
     .from("categorias")
-    .select("id, nombre")
+    .select("id, nombre, playoffs, clasificados, fecha_inicio, fecha_fin, series_playoff")
     .order("nombre", { ascending: true });
 
   if (error) {
@@ -1885,24 +1885,71 @@ function renderPlayoffMatch(titulo, slotA, slotB) {
   `;
 }
 
+function obtenerCategoriaPorNombre(nombreCategoria) {
+  return estado.categorias.find((cat) => cat.nombre === nombreCategoria) || null;
+}
+
+function normalizarClaveRonda(nombre) {
+  return normalizarTexto(nombre).replace(/\s+/g, "_");
+}
+
+function obtenerDatosRondaPlayoff(nombreCategoria, ronda) {
+  const categoria = obtenerCategoriaPorNombre(nombreCategoria);
+  const series = categoria?.series_playoff || {};
+  const clave = normalizarClaveRonda(ronda);
+  const posiblesClaves = {
+    cuartos: ["cuartos", "cuartos_de_final"],
+    clasificacion: ["clasificacion", "repechaje", "repechajes"],
+    semifinales: ["semifinales", "semi", "semis"],
+    final: ["final"]
+  }[clave] || [clave];
+
+  for (const posible of posiblesClaves) {
+    if (series[posible]) return series[posible];
+  }
+
+  return {};
+}
+
+function renderMetaRondaPlayoff(nombreCategoria, ronda) {
+  const datos = obtenerDatosRondaPlayoff(nombreCategoria, ronda);
+  const partidos = datos.partidos || datos.cantidad_partidos || datos.juegos || datos.mejor_de || "";
+  const fecha = datos.fecha || datos.fecha_inicio || datos.dia || "";
+  const partes = [];
+
+  if (partidos) {
+    partes.push(Number(partidos) === 1 ? "1 partido" : `${partidos} partidos`);
+  } else {
+    partes.push("Partidos a confirmar");
+  }
+
+  partes.push(fecha ? fechaPartidoLabel(fecha) || fecha : "Fecha a confirmar");
+
+  return `<span class="playoff-round-meta">${partes.map(escapeHtml).join(" · ")}</span>`;
+}
+
+function renderPlayoffRoundTitulo(titulo, nombreCategoria, ronda) {
+  return `<h4>${escapeHtml(titulo)}${renderMetaRondaPlayoff(nombreCategoria, ronda)}</h4>`;
+}
+
 function renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos) {
   if (nombreCategoria.includes("+35") && cantidadEquipos >= 8) {
     return `
       <div class="playoff-bracket playoff-bracket-three">
         <div class="playoff-round">
-          <h4>Cuartos</h4>
+          ${renderPlayoffRoundTitulo("Cuartos", nombreCategoria, "cuartos")}
           ${renderPlayoffMatch("Llave A", renderPlayoffSlot(1, null), renderPlayoffSlot(8, null))}
           ${renderPlayoffMatch("Llave B", renderPlayoffSlot(4, null), renderPlayoffSlot(5, null))}
           ${renderPlayoffMatch("Llave C", renderPlayoffSlot(2, null), renderPlayoffSlot(7, null))}
           ${renderPlayoffMatch("Llave D", renderPlayoffSlot(3, null), renderPlayoffSlot(6, null))}
         </div>
         <div class="playoff-round">
-          <h4>Semifinales</h4>
+          ${renderPlayoffRoundTitulo("Semifinales", nombreCategoria, "semifinales")}
           ${renderPlayoffMatch("Semi 1", renderPlayoffPendiente("Ganador 1/8"), renderPlayoffPendiente("Ganador 4/5"))}
           ${renderPlayoffMatch("Semi 2", renderPlayoffPendiente("Ganador 2/7"), renderPlayoffPendiente("Ganador 3/6"))}
         </div>
         <div class="playoff-round">
-          <h4>Final</h4>
+          ${renderPlayoffRoundTitulo("Final", nombreCategoria, "final")}
           ${renderPlayoffMatch("Final", renderPlayoffPendiente("Ganador Semi 1"), renderPlayoffPendiente("Ganador Semi 2"))}
         </div>
       </div>
@@ -1913,17 +1960,17 @@ function renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos) {
     return `
       <div class="playoff-bracket playoff-bracket-three">
         <div class="playoff-round">
-          <h4>Clasificacion</h4>
+          ${renderPlayoffRoundTitulo("Clasificacion", nombreCategoria, "clasificacion")}
           ${renderPlayoffMatch("Repechaje 1", renderPlayoffSlot(3, null), renderPlayoffSlot(6, null))}
           ${renderPlayoffMatch("Repechaje 2", renderPlayoffSlot(4, null), renderPlayoffSlot(5, null))}
         </div>
         <div class="playoff-round">
-          <h4>Semifinales</h4>
+          ${renderPlayoffRoundTitulo("Semifinales", nombreCategoria, "semifinales")}
           ${renderPlayoffMatch("Semi 1", renderPlayoffSlot(1, null, "Directo"), renderPlayoffPendiente("Ganador 4/5"))}
           ${renderPlayoffMatch("Semi 2", renderPlayoffSlot(2, null, "Directo"), renderPlayoffPendiente("Ganador 3/6"))}
         </div>
         <div class="playoff-round">
-          <h4>Final</h4>
+          ${renderPlayoffRoundTitulo("Final", nombreCategoria, "final")}
           ${renderPlayoffMatch("Final", renderPlayoffPendiente("Ganador Semi 1"), renderPlayoffPendiente("Ganador Semi 2"))}
         </div>
       </div>
@@ -1952,19 +1999,19 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
     bracket = `
       <div class="playoff-bracket playoff-bracket-three">
         <div class="playoff-round">
-          <h4>Cuartos</h4>
+          ${renderPlayoffRoundTitulo("Cuartos", nombreCategoria, "cuartos")}
           ${renderPlayoffMatch("Llave A", renderPlayoffSlot(1, equipo(1)), renderPlayoffSlot(8, equipo(8)))}
           ${renderPlayoffMatch("Llave B", renderPlayoffSlot(4, equipo(4)), renderPlayoffSlot(5, equipo(5)))}
           ${renderPlayoffMatch("Llave C", renderPlayoffSlot(2, equipo(2)), renderPlayoffSlot(7, equipo(7)))}
           ${renderPlayoffMatch("Llave D", renderPlayoffSlot(3, equipo(3)), renderPlayoffSlot(6, equipo(6)))}
         </div>
         <div class="playoff-round">
-          <h4>Semifinales</h4>
+          ${renderPlayoffRoundTitulo("Semifinales", nombreCategoria, "semifinales")}
           ${renderPlayoffMatch("Semi 1", renderPlayoffPendiente("Ganador 1/8"), renderPlayoffPendiente("Ganador 4/5"))}
           ${renderPlayoffMatch("Semi 2", renderPlayoffPendiente("Ganador 2/7"), renderPlayoffPendiente("Ganador 3/6"))}
         </div>
         <div class="playoff-round">
-          <h4>Final</h4>
+          ${renderPlayoffRoundTitulo("Final", nombreCategoria, "final")}
           ${renderPlayoffMatch("Final", renderPlayoffPendiente("Ganador Semi 1"), renderPlayoffPendiente("Ganador Semi 2"))}
         </div>
       </div>
@@ -1975,17 +2022,17 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
     bracket = `
       <div class="playoff-bracket playoff-bracket-three">
         <div class="playoff-round">
-          <h4>Clasificacion</h4>
+          ${renderPlayoffRoundTitulo("Clasificacion", nombreCategoria, "clasificacion")}
           ${renderPlayoffMatch("Repechaje 1", renderPlayoffSlot(3, equipo(3)), renderPlayoffSlot(6, equipo(6)))}
           ${renderPlayoffMatch("Repechaje 2", renderPlayoffSlot(4, equipo(4)), renderPlayoffSlot(5, equipo(5)))}
         </div>
         <div class="playoff-round">
-          <h4>Semifinales</h4>
+          ${renderPlayoffRoundTitulo("Semifinales", nombreCategoria, "semifinales")}
           ${renderPlayoffMatch("Semi 1", renderPlayoffSlot(1, equipo(1), "1 directo"), renderPlayoffPendiente("Ganador 4/5"))}
           ${renderPlayoffMatch("Semi 2", renderPlayoffSlot(2, equipo(2), "2 directo"), renderPlayoffPendiente("Ganador 3/6"))}
         </div>
         <div class="playoff-round">
-          <h4>Final</h4>
+          ${renderPlayoffRoundTitulo("Final", nombreCategoria, "final")}
           ${renderPlayoffMatch("Final", renderPlayoffPendiente("Ganador Semi 1"), renderPlayoffPendiente("Ganador Semi 2"))}
         </div>
       </div>

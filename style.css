@@ -1044,6 +1044,15 @@ td:nth-child(2) {
   text-transform: uppercase;
 }
 
+.playoff-round-meta {
+  display: block;
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 4px;
+  text-transform: none;
+}
+
 .playoff-match {
   border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 12px;
