@@ -779,6 +779,12 @@
       font-size: 13px;
     }
 
+    .planner-playoff-dates {
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      margin-top: 12px;
+      padding-top: 12px;
+    }
+
     .assoc-subnav {
       display: flex;
       flex-wrap: wrap;
@@ -1145,6 +1151,31 @@
             <option value="10-general">10mo directo</option>
             <option value="sin-descenso">Sin descenso</option>
           </select>
+        </div>
+      </div>
+      <div class="planner-playoff-dates">
+        <h4>Fechas de playoffs</h4>
+        <div class="planner-grid">
+          <div>
+            <label>Cuartos / repechaje</label>
+            <input id="planner-fecha-cuartos" type="date">
+          </div>
+          <div>
+            <label>Semifinales</label>
+            <input id="planner-fecha-semis" type="date">
+          </div>
+          <div>
+            <label>Final 1</label>
+            <input id="planner-fecha-final-1" type="date">
+          </div>
+          <div>
+            <label>Final 2</label>
+            <input id="planner-fecha-final-2" type="date">
+          </div>
+          <div>
+            <label>Final 3</label>
+            <input id="planner-fecha-final-3" type="date">
+          </div>
         </div>
       </div>
     </div>

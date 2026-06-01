@@ -184,6 +184,12 @@ select:focus {
   font-size: 13px;
 }
 
+.planner-playoff-dates {
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
 .planner-resultado {
   margin-top: 18px;
   padding: 16px;
