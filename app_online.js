@@ -3207,7 +3207,205 @@ function detalleFormatoPlanner(categoria) {
   };
 }
 
+function renderTablaInforme(tabla) {
+  if (!tabla.length) return "<p>No hay tabla disponible.</p>";
+  return `
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Equipo</th>
+          <th>PJ</th>
+          <th>PG</th>
+          <th>PP</th>
+          <th>PF</th>
+          <th>PC</th>
+          <th>DIF</th>
+          <th>PTS</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tabla.map((fila, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHtml(fila.equipo)}</td>
+            <td>${fila.pj}</td>
+            <td>${fila.pg}</td>
+            <td>${fila.pp}</td>
+            <td>${fila.pf}</td>
+            <td>${fila.pc}</td>
+            <td>${fila.dif}</td>
+            <td>${fila.pts}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderPartidosInforme(partidos, titulo, vacio) {
+  if (!partidos.length) return `<h2>${escapeHtml(titulo)}</h2><p>${escapeHtml(vacio)}</p>`;
+  return `
+    <h2>${escapeHtml(titulo)}</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Dia</th>
+          <th>Local</th>
+          <th>Visitante</th>
+          <th>Resultado</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${partidos.map((p) => {
+          const resultado = partidoTieneResultado(p)
+            ? `${p.puntos_local} - ${p.puntos_visitante}`
+            : "Pendiente";
+          return `
+            <tr>
+              <td>${escapeHtml(String(p.jornada || "-"))}</td>
+              <td>${escapeHtml(fechaPartidoLabel(p.fecha) || "-")}</td>
+              <td>${escapeHtml(p.local || "-")}</td>
+              <td>${escapeHtml(p.visitante || "-")}</td>
+              <td>${escapeHtml(resultado)}</td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderFixtureInforme(partidos) {
+  if (!partidos.length) return "<h2>Fixture completo</h2><p>No hay partidos cargados.</p>";
+  const porJornada = agruparPartidosPorJornada(partidos);
+  const jornadas = Object.keys(porJornada).map(Number).sort((a, b) => a - b);
+
+  return `
+    <h2>Fixture completo</h2>
+    ${jornadas.map((jornada) => {
+      const partidosJornada = porJornada[jornada] || [];
+      const fecha = fechaPartidoLabel(partidosJornada[0]?.fecha) || "Fecha a confirmar";
+      const libre = partidosJornada[0]?.libre;
+      return `
+        <h3>Fecha ${jornada} - ${escapeHtml(fecha)}</h3>
+        ${libre ? `<p><strong>Libre:</strong> ${escapeHtml(libre)}</p>` : ""}
+        <table>
+          <thead>
+            <tr>
+              <th>Local</th>
+              <th>Visitante</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${partidosJornada.map((p) => {
+              const resultado = partidoTieneResultado(p)
+                ? `${p.puntos_local} - ${p.puntos_visitante}`
+                : "Pendiente";
+              return `
+                <tr>
+                  <td>${escapeHtml(p.local || "-")}</td>
+                  <td>${escapeHtml(p.visitante || "-")}</td>
+                  <td>${escapeHtml(resultado)}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }).join("")}
+  `;
+}
+
+function generarInformeTorneo() {
+  const categoria = document.getElementById("planner-categoria")?.value || "";
+  const competencia = document.getElementById("planner-competencia")?.value || "";
+  const partidos = estado.partidosPorCategoria[categoria] || [];
+  const tabla = calcularTabla(partidos);
+  const formato = detalleFormatoPlanner(categoria);
+  const pendientes = partidos
+    .filter((p) => !partidoTieneResultado(p))
+    .sort((a, b) => Number(a.jornada || 0) - Number(b.jornada || 0));
+  const ultimosResultados = partidos
+    .filter(partidoTieneResultado)
+    .sort((a, b) => Number(b.jornada || 0) - Number(a.jornada || 0))
+    .slice(0, 12)
+    .reverse();
+
+  const ventana = window.open("", "_blank");
+  if (!ventana) {
+    alert("El navegador bloqueo la ventana del informe. Habilita ventanas emergentes para esta pagina.");
+    return;
+  }
+
+  const fechaGeneracion = new Date().toLocaleString("es-AR");
+  const html = `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <title>Informe ${escapeHtml(categoria)}</title>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 28px; }
+        h1 { margin: 0 0 4px; font-size: 26px; }
+        h2 { margin: 22px 0 8px; font-size: 18px; }
+        .muted { color: #4b5563; margin: 0 0 16px; }
+        .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0; }
+        .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; }
+        .box strong { display: block; font-size: 18px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th, td { border-bottom: 1px solid #d1d5db; padding: 7px 6px; font-size: 12px; text-align: left; }
+        th { background: #eef2ff; font-weight: 800; }
+        .rules { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; }
+        .print-actions { margin: 18px 0; }
+        .print-actions button { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; font-weight: 700; }
+        @media print {
+          body { margin: 12mm; }
+          .print-actions { display: none; }
+          h2 { break-after: avoid; }
+          table { break-inside: auto; }
+          tr { break-inside: avoid; }
+        }
+      </style>
+    </head>
+    <body>
+      <h1>APdB - Informe de torneo</h1>
+      <p class="muted">${escapeHtml(categoria)} - ${escapeHtml(competencia)} - Generado ${escapeHtml(fechaGeneracion)}</p>
+      <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
+
+      <div class="summary">
+        <div class="box"><span>Equipos</span><strong>${tabla.length}</strong></div>
+        <div class="box"><span>Partidos pendientes</span><strong>${pendientes.length}</strong></div>
+        <div class="box"><span>Partidos cargados</span><strong>${partidos.length}</strong></div>
+      </div>
+
+      <h2>Reglas y fechas</h2>
+      <div class="rules">
+        <p><strong>Playoffs:</strong> ${escapeHtml(formato.playoffsTexto)} - <strong>Final:</strong> ${escapeHtml(formato.finalTexto)}</p>
+        <p><strong>Cuartos / repechaje:</strong> ${escapeHtml(fechaPlannerLabel(formato.fechaCuartos))} - <strong>Semifinales:</strong> ${escapeHtml(fechaPlannerLabel(formato.fechaSemis))}</p>
+        <p><strong>Final:</strong> ${escapeHtml(fechaPlannerLabel(formato.fechaFinal1))}${formato.partidosFinal > 1 ? `, ${escapeHtml(fechaPlannerLabel(formato.fechaFinal2))}, ${escapeHtml(fechaPlannerLabel(formato.fechaFinal3))}` : ""}</p>
+        <p><strong>Ascenso / repechaje B:</strong> ${escapeHtml(formato.definicionBTexto)} - <strong>Descenso +35 A:</strong> ${escapeHtml(formato.descensoATexto)}</p>
+        <p><strong>Regla aplicada:</strong> ${escapeHtml(formato.reglaPromocion)}</p>
+      </div>
+
+      <h2>Tabla actual</h2>
+      ${renderTablaInforme(tabla)}
+      ${renderPartidosInforme(pendientes, "Partidos pendientes", "No quedan partidos pendientes.")}
+      ${renderPartidosInforme(ultimosResultados, "Ultimos resultados cargados", "Todavia no hay resultados cargados.")}
+      ${renderFixtureInforme(partidos)}
+    </body>
+    </html>
+  `;
+
+  ventana.document.open();
+  ventana.document.write(html);
+  ventana.document.close();
+}
+
  const plannerBtn = document.getElementById("planner-generar");
+ const plannerInformeBtn = document.getElementById("planner-informe");
  const plannerCategoria = document.getElementById("planner-categoria");
  const plannerFinal = document.getElementById("planner-final");
 
@@ -3218,6 +3416,10 @@ if (plannerCategoria) {
 
 if (plannerFinal) {
   plannerFinal.addEventListener("change", actualizarFechasFinalPlanner);
+}
+
+if (plannerInformeBtn) {
+  plannerInformeBtn.addEventListener("click", generarInformeTorneo);
 }
 
 if (plannerBtn) {
