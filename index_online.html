@@ -752,6 +752,33 @@
       }
     }
 
+    .planner-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .planner-rules-box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(15,23,42,0.28);
+      margin: 14px 0;
+      padding: 14px;
+    }
+
+    .planner-rules-box h4 {
+      margin: 0 0 6px;
+      color: #f8fafc;
+      font-size: 15px;
+    }
+
+    .planner-rules-box p {
+      margin: 0 0 12px;
+      color: #bfdbfe;
+      font-size: 13px;
+    }
+
     .assoc-subnav {
       display: flex;
       flex-wrap: wrap;
@@ -1083,6 +1110,43 @@
   >
 </div>
 
+    </div>
+
+    <div class="planner-rules-box">
+      <h4>Formato y definicion</h4>
+      <p>Configuracion de simulacion. No modifica fixtures ni resultados cargados.</p>
+      <div class="planner-grid">
+        <div>
+          <label>Playoffs</label>
+          <select id="planner-playoffs">
+            <option value="top8">Top 8</option>
+            <option value="top6">Top 6</option>
+            <option value="top4">Top 4</option>
+            <option value="sin-playoffs">Sin playoffs</option>
+          </select>
+        </div>
+        <div>
+          <label>Final</label>
+          <select id="planner-final">
+            <option value="mejor-3">Mejor de 3</option>
+            <option value="un-partido">1 partido</option>
+          </select>
+        </div>
+        <div>
+          <label>Ascenso / repechaje B</label>
+          <select id="planner-definicion-b">
+            <option value="playoffs">Por playoffs</option>
+            <option value="tabla">Por tabla general</option>
+          </select>
+        </div>
+        <div>
+          <label>Descenso +35 A</label>
+          <select id="planner-descenso-a">
+            <option value="10-general">10mo directo</option>
+            <option value="sin-descenso">Sin descenso</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <button id="planner-generar">

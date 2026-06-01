@@ -3059,7 +3059,81 @@ async function inicializarAsociacion() {
   });
   inicializarNavegacionAsociacion();
   aplicarBloqueoAsociacion();
+
+ function configurarDefaultsPlanner() {
+  const categoria = document.getElementById("planner-categoria")?.value || "";
+  const playoffs = document.getElementById("planner-playoffs");
+  const final = document.getElementById("planner-final");
+  const definicionB = document.getElementById("planner-definicion-b");
+  const descensoA = document.getElementById("planner-descenso-a");
+
+  if (!playoffs || !final || !definicionB || !descensoA) return;
+
+  if (categoria === "Maxi +48") {
+    playoffs.value = "top6";
+    final.value = "un-partido";
+    definicionB.value = "tabla";
+    descensoA.value = "sin-descenso";
+    return;
+  }
+
+  if (categoria === "Maxi +35 A" || categoria === "Maxi +35 B") {
+    playoffs.value = "top8";
+    final.value = "mejor-3";
+    definicionB.value = "playoffs";
+    descensoA.value = categoria === "Maxi +35 A" ? "10-general" : "sin-descenso";
+    return;
+  }
+
+  playoffs.value = "top8";
+  final.value = "un-partido";
+  definicionB.value = "tabla";
+  descensoA.value = "sin-descenso";
+}
+
+function textoOpcionPlanner(id, fallback = "-") {
+  const select = document.getElementById(id);
+  return select?.selectedOptions?.[0]?.textContent || fallback;
+}
+
+function detalleFormatoPlanner(categoria) {
+  const playoffs = document.getElementById("planner-playoffs")?.value || "top8";
+  const final = document.getElementById("planner-final")?.value || "mejor-3";
+  const definicionB = document.getElementById("planner-definicion-b")?.value || "playoffs";
+  const descensoA = document.getElementById("planner-descenso-a")?.value || "10-general";
+  const clasificados = playoffs === "sin-playoffs" ? 0 : Number(playoffs.replace("top", ""));
+
+  let reglaPromocion = "Sin regla especial";
+  if (categoria === "Maxi +35 A") {
+    reglaPromocion =
+      descensoA === "10-general"
+        ? "9no juega promocion y 10mo desciende directo."
+        : "Sin descenso configurado.";
+  } else if (categoria === "Maxi +35 B") {
+    reglaPromocion =
+      definicionB === "playoffs"
+        ? "Campeon de playoffs asciende y subcampeon juega promocion."
+        : "1ro de tabla asciende y 2do de tabla juega promocion.";
+  }
+
+  return {
+    clasificados,
+    playoffsTexto: textoOpcionPlanner("planner-playoffs"),
+    finalTexto: textoOpcionPlanner("planner-final"),
+    definicionBTexto: textoOpcionPlanner("planner-definicion-b"),
+    descensoATexto: textoOpcionPlanner("planner-descenso-a"),
+    reglaPromocion,
+    partidosFinal: final === "mejor-3" ? 3 : 1
+  };
+}
+
  const plannerBtn = document.getElementById("planner-generar");
+ const plannerCategoria = document.getElementById("planner-categoria");
+
+if (plannerCategoria) {
+  configurarDefaultsPlanner();
+  plannerCategoria.addEventListener("change", configurarDefaultsPlanner);
+}
 
 if (plannerBtn) {
   plannerBtn.addEventListener("click", () => {
@@ -3072,6 +3146,7 @@ const fechaFin = document.getElementById("planner-fin").value;
 const fechasBloqueadasTexto = document.getElementById("planner-bloqueadas").value;
 const status = document.getElementById("planner-status");
 const partidos = estado.partidosPorCategoria[categoria] || [];
+const formato = detalleFormatoPlanner(categoria);
 const equiposSet = new Set();
 
 partidos.forEach((p) => {
@@ -3152,6 +3227,13 @@ if (fechaInicio) {
         <p><strong>Partidos pendientes:</strong> ${partidosPendientes}</p>
         <p><strong>Ruedas:</strong> ${ruedas}</p>
         <p><strong>Día:</strong> ${dia === "0" ? "Domingo" : "Miércoles"}</p>
+        <p><strong>Playoffs:</strong> ${formato.playoffsTexto}</p>
+        <p><strong>Clasificados:</strong> ${formato.clasificados || "No aplica"}</p>
+        <p><strong>Final:</strong> ${formato.finalTexto}</p>
+        <p><strong>Partidos de final:</strong> ${formato.partidosFinal}</p>
+        <p><strong>Ascenso / repechaje B:</strong> ${formato.definicionBTexto}</p>
+        <p><strong>Descenso +35 A:</strong> ${formato.descensoATexto}</p>
+        <p><strong>Regla aplicada:</strong> ${formato.reglaPromocion}</p>
         <p><strong>Jornadas necesarias:</strong> ${jornadasTotales}</p>
         <p><strong>Fecha final estimada:</strong> ${fechaFinalEstimada}</p>
         <p><strong>Fechas bloqueadas:</strong> ${bloqueadasCantidad}</p>
