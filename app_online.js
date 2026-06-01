@@ -1262,9 +1262,12 @@ function renderDocumentacionDelegado() {
 
   const categoria = $("delegado-categoria")?.value;
   const equiposCategoria = obtenerEquiposCategoria(categoria);
-  const equiposDelegado = equiposCategoria.filter((equipo) =>
-    estado.delegado.equipos.includes(equipo)
-  );
+  const nombreDelegadoNormalizado = normalizarTexto(estado.delegado.nombre || "");
+  const equipoPrincipal = equiposCategoria.find((equipo) => normalizarTexto(equipo) === nombreDelegadoNormalizado);
+  const equiposPermitidos = new Set((estado.delegado.equipos || []).map(normalizarTexto));
+  const equiposDelegado = equipoPrincipal
+    ? [equipoPrincipal]
+    : equiposCategoria.filter((equipo) => equiposPermitidos.has(normalizarTexto(equipo)));
 
   if (!equiposDelegado.length) {
     container.innerHTML = `<div class="empty">No hay equipos vinculados a esta categoría para este delegado.</div>`;
@@ -1408,12 +1411,13 @@ function renderAccionDocumentoJugadorDelegado(documento) {
     return `<span class="doc-action-muted">Sin registro</span>`;
   }
 
+  const botonVer = renderBotonVerDocumentoDelegado(documento, "player");
   const nombreArchivo = documento.file_name
     ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>`
     : "";
 
   if (documento.status === "aprobado") {
-    return `${nombreArchivo}<span class="doc-action-muted">Aprobado</span>`;
+    return `${botonVer}${nombreArchivo}<span class="doc-action-muted">Aprobado</span>`;
   }
 
   const marcaCargado = documento.file_name
@@ -1421,6 +1425,7 @@ function renderAccionDocumentoJugadorDelegado(documento) {
     : "";
 
   return `
+    ${botonVer}
     <label class="doc-upload-button">
       <span>${documento.file_name ? "Reemplazar" : "Subir"}</span>
       <input
@@ -1432,6 +1437,19 @@ function renderAccionDocumentoJugadorDelegado(documento) {
     </label>
     ${nombreArchivo}
     ${marcaCargado}
+`;
+}
+
+function renderBotonVerDocumentoDelegado(documento, scope = "team") {
+  if (!documento?.file_name || !documento?.storage_path) return "";
+  const multiple = scope === "team" && permiteMultiplesArchivos(documento.requirement_nombre);
+  return `
+    <button
+      class="doc-view-btn doc-view-delegate-btn"
+      type="button"
+      data-document-id="${escapeHtml(documento.id)}"
+      data-document-scope="${escapeHtml(scope)}"
+    >${multiple ? "Ver archivos" : "Ver"}</button>
   `;
 }
 
@@ -1504,6 +1522,7 @@ function renderAccionDocumentoDelegado(documento) {
     return `<span class="doc-action-muted">Sin registro</span>`;
   }
 
+  const botonVer = renderBotonVerDocumentoDelegado(documento, "team");
   const nombreArchivo = documento.file_name
     ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>`
     : "";
@@ -1525,7 +1544,7 @@ function renderAccionDocumentoDelegado(documento) {
     : "";
 
   if (documento.status === "aprobado") {
-    return `${nombreArchivo}<span class="doc-action-muted">Aprobado</span>`;
+    return `${botonVer}${nombreArchivo}<span class="doc-action-muted">Aprobado</span>`;
   }
 
   const marcaCargado = documento.file_name
@@ -1534,6 +1553,7 @@ function renderAccionDocumentoDelegado(documento) {
 
   return `
     ${vencimientoInput}
+    ${botonVer}
     <label class="doc-upload-button">
       <span>${multiple ? (documento.file_name ? "Agregar" : "Subir imágenes") : (documento.file_name ? "Reemplazar" : "Subir")}</span>
       <input
@@ -2945,6 +2965,53 @@ async function verDocumentoAsociacion(event) {
   setStatus(status, "Archivo abierto en una pestaña nueva.", "ok");
 }
 
+async function verDocumentoDelegado(event) {
+  const button = event.target.closest(".doc-view-delegate-btn");
+  if (!button) return;
+
+  const status = $("delegado-status");
+
+  if (!estado.delegadoDesbloqueado || !estado.delegado) {
+    setStatus(status, "Primero habilitá edición con la clave.", "warn");
+    return;
+  }
+
+  const scope = button.dataset.documentScope || "team";
+  const documento = scope === "player"
+    ? obtenerDocumentoJugadorPorId(button.dataset.documentId)
+    : obtenerDocumentoPorId(button.dataset.documentId);
+
+  if (!documento?.storage_path) {
+    setStatus(status, "Este documento no tiene archivo disponible.", "warn");
+    return;
+  }
+
+  const equiposPermitidos = new Set((estado.delegado.equipos || []).map(normalizarTexto));
+  if (!equiposPermitidos.has(normalizarTexto(documento.equipo_nombre))) {
+    setStatus(status, "Ese documento no pertenece a tu equipo.", "error");
+    return;
+  }
+
+  if (scope === "team" && permiteMultiplesArchivos(documento.requirement_nombre)) {
+    await verArchivosMultiplesDocumento(documento, status);
+    return;
+  }
+
+  setStatus(status, "Abriendo archivo...", "");
+
+  const { data, error } = await supabaseClient.storage
+    .from("documentos")
+    .createSignedUrl(documento.storage_path, 300);
+
+  if (error || !data?.signedUrl) {
+    setStatus(status, `No se pudo abrir el archivo: ${error?.message || "sin URL"}`, "error");
+    return;
+  }
+
+  window.open(data.signedUrl, "_blank", "noopener");
+  setStatus(status, "Archivo abierto en una pestaña nueva.", "ok");
+}
+
 async function verArchivosMultiplesDocumento(documento, status) {
   const ventana = window.open("", "_blank");
   if (!ventana) {
@@ -3787,6 +3854,7 @@ async function inicializar() {
     $("delegado-documentacion").addEventListener("change", subirDocumentoDelegado);
     $("delegado-documentacion").addEventListener("change", subirDocumentoJugadorDelegado);
     $("delegado-documentacion").addEventListener("click", (event) => {
+      verDocumentoDelegado(event);
       if (event.target.closest("#jugador-agregar")) agregarJugadorDelegado();
     });
   } catch (error) {
