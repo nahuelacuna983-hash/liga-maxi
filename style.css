@@ -190,6 +190,25 @@ select:focus {
   padding-top: 12px;
 }
 
+.planner-report-box {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.22);
+  margin-top: 14px;
+  padding: 14px;
+}
+
+.planner-report-box h4 {
+  margin: 0 0 6px;
+  color: #f8fafc;
+}
+
+.planner-report-box p {
+  margin: 0 0 12px;
+  color: #bfdbfe;
+  font-size: 13px;
+}
+
 .planner-resultado {
   margin-top: 18px;
   padding: 16px;

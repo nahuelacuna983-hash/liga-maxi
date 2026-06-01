@@ -3277,6 +3277,54 @@ function renderPartidosInforme(partidos, titulo, vacio) {
   `;
 }
 
+function calcularPendientesPorEquipo(partidosPendientes) {
+  const resumen = {};
+
+  partidosPendientes.forEach((partido) => {
+    [partido.local, partido.visitante].forEach((equipo) => {
+      if (!equipo) return;
+      if (!resumen[equipo]) resumen[equipo] = { equipo, cantidad: 0, jornadas: [] };
+      resumen[equipo].cantidad += 1;
+      if (partido.jornada && !resumen[equipo].jornadas.includes(partido.jornada)) {
+        resumen[equipo].jornadas.push(partido.jornada);
+      }
+    });
+  });
+
+  return Object.values(resumen)
+    .sort((a, b) => {
+      if (b.cantidad !== a.cantidad) return b.cantidad - a.cantidad;
+      return a.equipo.localeCompare(b.equipo);
+    });
+}
+
+function renderPendientesPorEquipoInforme(partidosPendientes) {
+  const resumen = calcularPendientesPorEquipo(partidosPendientes);
+  if (!resumen.length) return "<h2>Pendientes por equipo</h2><p>No hay equipos con partidos pendientes.</p>";
+
+  return `
+    <h2>Pendientes por equipo</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Equipo</th>
+          <th>Pendientes</th>
+          <th>Fechas afectadas</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${resumen.map((fila) => `
+          <tr>
+            <td>${escapeHtml(fila.equipo)}</td>
+            <td>${fila.cantidad}</td>
+            <td>${escapeHtml(fila.jornadas.map((jornada) => `Fecha ${jornada}`).join(", ") || "-")}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
 function renderFixtureInforme(partidos) {
   if (!partidos.length) return "<h2>Fixture completo</h2><p>No hay partidos cargados.</p>";
   const porJornada = agruparPartidosPorJornada(partidos);
@@ -3392,6 +3440,7 @@ function generarInformeTorneo() {
 
       <h2>Tabla actual</h2>
       ${renderTablaInforme(tabla)}
+      ${renderPendientesPorEquipoInforme(pendientes)}
       ${renderPartidosInforme(pendientes, "Partidos pendientes", "No quedan partidos pendientes.")}
       ${renderPartidosInforme(ultimosResultados, "Ultimos resultados cargados", "Todavia no hay resultados cargados.")}
       ${renderFixtureInforme(partidos)}

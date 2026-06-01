@@ -785,6 +785,25 @@
       padding-top: 12px;
     }
 
+    .planner-report-box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(15,23,42,0.22);
+      margin-top: 14px;
+      padding: 14px;
+    }
+
+    .planner-report-box h4 {
+      margin: 0 0 6px;
+      color: #f8fafc;
+    }
+
+    .planner-report-box p {
+      margin: 0 0 12px;
+      color: #bfdbfe;
+      font-size: 13px;
+    }
+
     .assoc-subnav {
       display: flex;
       flex-wrap: wrap;
@@ -1183,11 +1202,16 @@
     <button id="planner-generar">
       Generar torneo
     </button>
-    <button id="planner-informe" class="secondary" type="button">
-      Generar informe PDF
-    </button>
 
     <div id="planner-status"></div>
+
+    <div class="planner-report-box">
+      <h4>Informes del torneo actual</h4>
+      <p>Usa la categoria seleccionada arriba para generar un documento de seguimiento del torneo que ya esta en juego.</p>
+      <button id="planner-informe" class="secondary" type="button">
+        Generar informe PDF
+      </button>
+    </div>
   </div>
 
   <div class="card assoc-panel" data-asociacion-panel-view="resultados">
