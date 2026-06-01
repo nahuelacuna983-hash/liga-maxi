@@ -1048,11 +1048,13 @@ function renderAccionRevisionAsociacion(documento, scope = "team") {
 
   const scopeAttr = escapeHtml(scope);
   const documentId = escapeHtml(documento.id);
+  const multiple = scope === "team" && permiteMultiplesArchivos(documento.requirement_nombre);
+  const verLabel = multiple ? "Ver archivos" : "Ver";
 
   if (documento.status === "aprobado") {
     return `
       <div class="doc-review-actions">
-        <button class="doc-view-btn" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}">Ver</button>
+        <button class="doc-view-btn" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}">${verLabel}</button>
         <span class="doc-review-current doc-review-current-ok">Aprobado</span>
       </div>
     `;
@@ -1060,7 +1062,7 @@ function renderAccionRevisionAsociacion(documento, scope = "team") {
 
   return `
     <div class="doc-review-actions">
-      <button class="doc-view-btn" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}">Ver</button>
+      <button class="doc-view-btn" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}">${verLabel}</button>
       <button class="doc-review-btn doc-review-ok" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="aprobado">Aprobar</button>
       ${documento.status !== "observado" ? `<button class="doc-review-btn doc-review-warn" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="observado">Observar</button>` : `<span class="doc-review-current doc-review-current-warn">Observado</span>`}
       ${documento.status !== "rechazado" ? `<button class="doc-review-btn doc-review-danger" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="rechazado">Rechazar</button>` : `<span class="doc-review-current doc-review-current-danger">Rechazado</span>`}
@@ -2923,6 +2925,11 @@ async function verDocumentoAsociacion(event) {
     return;
   }
 
+  if (scope === "team" && permiteMultiplesArchivos(documento.requirement_nombre)) {
+    await verArchivosMultiplesDocumento(documento, status);
+    return;
+  }
+
   setStatus(status, "Abriendo archivo...", "");
 
   const { data, error } = await supabaseClient.storage
@@ -2936,6 +2943,115 @@ async function verDocumentoAsociacion(event) {
 
   window.open(data.signedUrl, "_blank", "noopener");
   setStatus(status, "Archivo abierto en una pestaña nueva.", "ok");
+}
+
+async function verArchivosMultiplesDocumento(documento, status) {
+  const ventana = window.open("", "_blank");
+  if (!ventana) {
+    setStatus(status, "El navegador bloqueo la ventana de archivos. Habilita ventanas emergentes.", "warn");
+    return;
+  }
+
+  ventana.document.write(`
+    <!doctype html>
+    <html lang="es">
+      <head><meta charset="utf-8"><title>Archivos</title></head>
+      <body style="font-family:Arial,sans-serif;padding:24px;color:#111827;">
+        <h1>Abriendo archivos...</h1>
+      </body>
+    </html>
+  `);
+  ventana.document.close();
+  setStatus(status, "Buscando archivos cargados...", "");
+
+  const { data: archivos, error } = await supabaseClient
+    .from("document_files")
+    .select("id, file_name, file_type, file_size, storage_path, created_at")
+    .eq("team_document_id", documento.id)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    ventana.close();
+    setStatus(status, `No se pudo leer el listado de archivos: ${error.message}`, "error");
+    return;
+  }
+
+  const listaArchivos = archivos?.length
+    ? archivos
+    : [{
+        id: documento.id,
+        file_name: documento.file_name,
+        file_type: documento.file_type,
+        file_size: documento.file_size,
+        storage_path: documento.storage_path,
+        created_at: null
+      }];
+
+  const archivosConUrl = [];
+  for (const archivo of listaArchivos) {
+    const { data, error: signedError } = await supabaseClient.storage
+      .from("documentos")
+      .createSignedUrl(archivo.storage_path, 300);
+
+    archivosConUrl.push({
+      ...archivo,
+      signedUrl: data?.signedUrl || "",
+      error: signedError?.message || ""
+    });
+  }
+
+  ventana.document.open();
+  ventana.document.write(renderVentanaArchivosDocumento(documento, archivosConUrl));
+  ventana.document.close();
+  setStatus(status, `${archivosConUrl.length} archivo${archivosConUrl.length === 1 ? "" : "s"} disponible${archivosConUrl.length === 1 ? "" : "s"} para revisar.`, "ok");
+}
+
+function renderVentanaArchivosDocumento(documento, archivos) {
+  const items = archivos.map((archivo, index) => {
+    const esImagen = String(archivo.file_type || "").startsWith("image/");
+    const fecha = archivo.created_at ? new Date(archivo.created_at).toLocaleString("es-AR") : "";
+    const nombre = archivo.file_name || `Archivo ${index + 1}`;
+
+    return `
+      <article class="file-card">
+        <div class="file-head">
+          <strong>${index + 1}. ${escapeHtml(nombre)}</strong>
+          ${fecha ? `<small>${escapeHtml(fecha)}</small>` : ""}
+        </div>
+        ${archivo.error ? `<p class="error">No se pudo generar enlace: ${escapeHtml(archivo.error)}</p>` : ""}
+        ${archivo.signedUrl && esImagen ? `<img src="${archivo.signedUrl}" alt="${escapeHtml(nombre)}">` : ""}
+        ${archivo.signedUrl ? `<p><a href="${archivo.signedUrl}" target="_blank" rel="noopener">Abrir archivo</a></p>` : ""}
+      </article>
+    `;
+  }).join("");
+
+  return `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>${escapeHtml(documento.requirement_nombre || "Archivos")}</title>
+      <style>
+        body { margin: 0; padding: 24px; font-family: Arial, Helvetica, sans-serif; background: #0b1730; color: #f8fafc; }
+        h1 { margin: 0 0 4px; font-size: 24px; }
+        .muted { color: #bfdbfe; margin: 0 0 18px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+        .file-card { border: 1px solid rgba(255,255,255,.14); border-radius: 12px; background: rgba(255,255,255,.06); padding: 12px; }
+        .file-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+        small { color: #cbd5e1; }
+        img { width: 100%; max-height: 520px; object-fit: contain; background: #111827; border-radius: 8px; }
+        a { color: #93c5fd; font-weight: 700; }
+        .error { color: #fecaca; }
+      </style>
+    </head>
+    <body>
+      <h1>${escapeHtml(documento.requirement_nombre || "Archivos")}</h1>
+      <p class="muted">${escapeHtml(documento.equipo_nombre || "")} - ${archivos.length} archivo${archivos.length === 1 ? "" : "s"}</p>
+      <div class="grid">${items}</div>
+    </body>
+    </html>
+  `;
 }
 
 async function desbloquearAsociacion() {
