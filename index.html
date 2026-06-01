@@ -388,6 +388,63 @@
       white-space: nowrap;
     }
 
+    .playoff-status-box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(15,23,42,0.34);
+      margin-top: 14px;
+      padding: 12px;
+    }
+
+    .playoff-status-box h4 {
+      margin: 0 0 10px;
+      color: #f8fafc;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .playoff-status-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(120px, 0.8fr);
+      gap: 10px;
+      align-items: center;
+      border-radius: 10px;
+      background: rgba(15,23,42,0.46);
+      padding: 8px;
+    }
+
+    .playoff-status-row + .playoff-status-row {
+      margin-top: 8px;
+    }
+
+    .playoff-status-team {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .playoff-status-team strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .playoff-status-label {
+      display: block;
+      color: #f8fafc;
+      font-weight: 900;
+    }
+
+    .playoff-status-row small {
+      display: block;
+      color: #dbeafe;
+      font-size: 12px;
+      line-height: 1.3;
+      margin-top: 3px;
+    }
+
     .score {
       min-width: 78px;
       text-align: right;
@@ -640,6 +697,10 @@
       .playoff-preview summary {
         justify-content: center;
         width: 100%;
+      }
+
+      .playoff-status-row {
+        grid-template-columns: 1fr;
       }
     }
 

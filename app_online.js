@@ -1617,14 +1617,67 @@ function calcularTabla(partidos) {
     e.dif = e.pf - e.pc;
   });
 
-  salida.sort((a, b) => {
-    if (b.pts !== a.pts) return b.pts - a.pts;
-    if (b.dif !== a.dif) return b.dif - a.dif;
-    if (b.pf !== a.pf) return b.pf - a.pf;
-    return a.equipo.localeCompare(b.equipo);
-  });
+  salida.sort((a, b) => compararEquiposTabla(a, b, salida, partidos));
 
   return salida;
+}
+
+function compararEquiposTabla(a, b, tablaCompleta, partidos) {
+  if (b.pts !== a.pts) return b.pts - a.pts;
+
+  const empatados = tablaCompleta
+    .filter((equipo) => equipo.pts === a.pts)
+    .map((equipo) => equipo.equipo);
+
+  if (empatados.length > 1) {
+    const miniTabla = calcularMiniTablaOlimpica(empatados, partidos);
+    const miniA = miniTabla[a.equipo] || { pts: 0, dif: 0, pf: 0 };
+    const miniB = miniTabla[b.equipo] || { pts: 0, dif: 0, pf: 0 };
+
+    if (miniB.pts !== miniA.pts) return miniB.pts - miniA.pts;
+    if (miniB.dif !== miniA.dif) return miniB.dif - miniA.dif;
+    if (miniB.pf !== miniA.pf) return miniB.pf - miniA.pf;
+  }
+
+  if (b.dif !== a.dif) return b.dif - a.dif;
+  if (b.pf !== a.pf) return b.pf - a.pf;
+  return a.equipo.localeCompare(b.equipo);
+}
+
+function calcularMiniTablaOlimpica(equipos, partidos) {
+  const setEquipos = new Set(equipos);
+  const miniTabla = {};
+
+  equipos.forEach((equipo) => {
+    miniTabla[equipo] = { pts: 0, pf: 0, pc: 0, dif: 0 };
+  });
+
+  partidos.forEach((p) => {
+    if (!setEquipos.has(p.local) || !setEquipos.has(p.visitante)) return;
+    if (p.puntos_local == null || p.puntos_visitante == null) return;
+
+    miniTabla[p.local].pf += p.puntos_local;
+    miniTabla[p.local].pc += p.puntos_visitante;
+    miniTabla[p.visitante].pf += p.puntos_visitante;
+    miniTabla[p.visitante].pc += p.puntos_local;
+
+    if (p.puntos_local > p.puntos_visitante) {
+      miniTabla[p.local].pts += 2;
+      miniTabla[p.visitante].pts += 1;
+    } else if (p.puntos_visitante > p.puntos_local) {
+      miniTabla[p.visitante].pts += 2;
+      miniTabla[p.local].pts += 1;
+    } else {
+      miniTabla[p.local].pts += 1;
+      miniTabla[p.visitante].pts += 1;
+    }
+  });
+
+  Object.values(miniTabla).forEach((equipo) => {
+    equipo.dif = equipo.pf - equipo.pc;
+  });
+
+  return miniTabla;
 }
 
 function renderTablaSimple(nombreCategoria, partidos) {
@@ -1925,11 +1978,51 @@ function renderMetaRondaPlayoff(nombreCategoria, ronda) {
 
   partes.push(fecha ? fechaPartidoLabel(fecha) || fecha : "Fecha a confirmar");
 
-  return `<span class="playoff-round-meta">${partes.map(escapeHtml).join(" · ")}</span>`;
+  return `<span class="playoff-round-meta">${partes.map(escapeHtml).join(" - ")}</span>`;
 }
 
 function renderPlayoffRoundTitulo(titulo, nombreCategoria, ronda) {
   return `<h4>${escapeHtml(titulo)}${renderMetaRondaPlayoff(nombreCategoria, ronda)}</h4>`;
+}
+
+function renderEquipoEstadoCompetencia(posicion, equipo, estadoTexto, detalle = "") {
+  return `
+    <div class="playoff-status-row">
+      <div class="playoff-status-team">
+        <span class="playoff-seed">${posicion}</span>
+        ${equipo ? escudoEquipoHtml(equipo.equipo, "sm") : ""}
+        <strong>${escapeHtml(equipo?.equipo || "Por definir")}</strong>
+      </div>
+      <div>
+        <span class="playoff-status-label">${escapeHtml(estadoTexto)}</span>
+        ${detalle ? `<small>${escapeHtml(detalle)}</small>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function renderPromocionDescenso(nombreCategoria, tabla) {
+  if (nombreCategoria === "Maxi +35 A") {
+    return `
+      <div class="playoff-status-box">
+        <h4>Promocion y descenso</h4>
+        ${renderEquipoEstadoCompetencia("9no", tabla[8], "Promocion", "Juega contra el subcampeon de playoffs de Maxi +35 B.")}
+        ${renderEquipoEstadoCompetencia("10mo", tabla[9], "Descenso directo", "Desciende a Maxi +35 B.")}
+      </div>
+    `;
+  }
+
+  if (nombreCategoria === "Maxi +35 B") {
+    return `
+      <div class="playoff-status-box">
+        <h4>Ascenso y promocion</h4>
+        ${renderEquipoEstadoCompetencia("Campeon", null, "Ascenso directo", "El campeon de playoffs asciende a Maxi +35 A.")}
+        ${renderEquipoEstadoCompetencia("Subcampeon", null, "Promocion", "El subcampeon de playoffs juega contra el 9no de Maxi +35 A.")}
+      </div>
+    `;
+  }
+
+  return "";
 }
 
 function renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos) {
@@ -2045,6 +2138,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
   }
 
   const bracketVacio = renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos);
+  const promocionDescenso = renderPromocionDescenso(nombreCategoria, tabla);
 
   container.innerHTML = `
     <div class="card playoff-card">
@@ -2059,6 +2153,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
       <details class="playoff-preview">
         <summary>Completar con tabla de hoy</summary>
         ${bracket}
+        ${promocionDescenso}
       </details>
     </div>
   `;
