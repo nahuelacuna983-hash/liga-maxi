@@ -686,6 +686,13 @@ function normalizarTexto(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function nombresEquipoCoinciden(a, b) {
+  const uno = normalizarTexto(a);
+  const dos = normalizarTexto(b);
+  if (!uno || !dos) return false;
+  return uno === dos || uno.includes(dos) || dos.includes(uno);
+}
+
 function escudoEquipoUrl(equipo) {
   return ESCUDOS_EQUIPOS[normalizarTexto(equipo)] || "";
 }
@@ -718,11 +725,10 @@ function nombreEquipoHtml(equipo, size = "sm") {
 function obtenerDocumentoEquipo(nombreCategoria, equipo, requisito) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const documentos = categoria ? estado.documentosPorCategoriaId[categoria.id] || [] : [];
-  const equipoNormalizado = normalizarTexto(equipo);
   const requisitoNormalizado = normalizarTexto(requisito);
 
   return documentos.find((documento) =>
-    normalizarTexto(documento.equipo_nombre) === equipoNormalizado &&
+    nombresEquipoCoinciden(documento.equipo_nombre, equipo) &&
     normalizarTexto(documento.requirement_nombre) === requisitoNormalizado
   ) || null;
 }
@@ -741,16 +747,15 @@ function obtenerJugadoresEquipo(nombreCategoria, equipo) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const jugadoresCache = categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : [];
   const documentosJugador = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
-  const equipoNormalizado = normalizarTexto(equipo);
   const jugadoresPorDocumentos = normalizarJugadoresDesdeDocumentos(
     documentosJugador.filter((documento) =>
-      normalizarTexto(documento.equipo_nombre) === equipoNormalizado
+      nombresEquipoCoinciden(documento.equipo_nombre, equipo)
     )
   );
   const jugadores = jugadoresPorDocumentos.length ? jugadoresPorDocumentos : jugadoresCache;
 
   return jugadores.filter((jugador) =>
-    normalizarTexto(jugador.equipo_nombre) === equipoNormalizado
+    nombresEquipoCoinciden(jugador.equipo_nombre, equipo)
   );
 }
 
@@ -1262,12 +1267,13 @@ function renderDocumentacionDelegado() {
 
   const categoria = $("delegado-categoria")?.value;
   const equiposCategoria = obtenerEquiposCategoria(categoria);
-  const nombreDelegadoNormalizado = normalizarTexto(estado.delegado.nombre || "");
-  const equipoPrincipal = equiposCategoria.find((equipo) => normalizarTexto(equipo) === nombreDelegadoNormalizado);
-  const equiposPermitidos = new Set((estado.delegado.equipos || []).map(normalizarTexto));
+  const equipoPrincipal = equiposCategoria.find((equipo) => nombresEquipoCoinciden(equipo, estado.delegado.nombre));
+  const equiposPermitidos = estado.delegado.equipos || [];
   const equiposDelegado = equipoPrincipal
     ? [equipoPrincipal]
-    : equiposCategoria.filter((equipo) => equiposPermitidos.has(normalizarTexto(equipo)));
+    : equiposCategoria.filter((equipo) =>
+        equiposPermitidos.some((equipoPermitido) => nombresEquipoCoinciden(equipo, equipoPermitido))
+      );
 
   if (!equiposDelegado.length) {
     container.innerHTML = `<div class="empty">No hay equipos vinculados a esta categoría para este delegado.</div>`;
@@ -2986,8 +2992,8 @@ async function verDocumentoDelegado(event) {
     return;
   }
 
-  const equiposPermitidos = new Set((estado.delegado.equipos || []).map(normalizarTexto));
-  if (!equiposPermitidos.has(normalizarTexto(documento.equipo_nombre))) {
+  const equiposPermitidos = estado.delegado.equipos || [];
+  if (!equiposPermitidos.some((equipoPermitido) => nombresEquipoCoinciden(documento.equipo_nombre, equipoPermitido))) {
     setStatus(status, "Ese documento no pertenece a tu equipo.", "error");
     return;
   }
