@@ -1874,8 +1874,17 @@ function renderFechaDestacada(nombreCategoria) {
     return;
   }
 
-  const jornada = Math.max(...partidosConResultado.map((p) => Number(p.jornada || 0)));
+  const resultadosPorJornada = partidosConResultado.reduce((acc, partido) => {
+    const numero = Number(partido.jornada || 0);
+    acc[numero] = (acc[numero] || 0) + 1;
+    return acc;
+  }, {});
+  const jornadasConResultados = Object.keys(resultadosPorJornada).map(Number).sort((a, b) => b - a);
+  const jornada =
+    jornadasConResultados.find((numero) => resultadosPorJornada[numero] > 1) ||
+    jornadasConResultados[0];
   const partidosJornada = partidos.filter((p) => Number(p.jornada || 0) === jornada);
+  const posterioresConResultado = partidosConResultado.filter((p) => Number(p.jornada || 0) > jornada).length;
   const fechaPartido = partidosJornada[0]?.fecha;
   const fechaTexto = fechaPartido ? fechaPartidoLabel(fechaPartido) : "";
 
@@ -1888,6 +1897,7 @@ function renderFechaDestacada(nombreCategoria) {
         </div>
         ${fechaTexto ? `<span>${fechaTexto}</span>` : ""}
       </div>
+      ${posterioresConResultado ? `<div class="empty">Hay ${posterioresConResultado} resultado${posterioresConResultado === 1 ? "" : "s"} cargado${posterioresConResultado === 1 ? "" : "s"} en fechas posteriores. Revisar en Asociacion.</div>` : ""}
       ${partidosJornada.map(renderPartidoResultadoHtml).join("")}
     </div>
   `;
@@ -2850,6 +2860,61 @@ async function guardarResultadoAsociacion() {
   setStatus(status, "Corrección guardada correctamente.", "ok");
 }
 
+async function anularResultadoAsociacion() {
+  const categoria = $("asociacion-categoria").value;
+  const partidoId = $("asociacion-partido").value;
+  const status = $("asociacion-status");
+
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilita Asociacion con la clave administrativa.", "warn");
+    return;
+  }
+
+  if (!partidoId) {
+    setStatus(status, "Selecciona un partido.", "warn");
+    return;
+  }
+
+  const partidos = estado.partidosPorCategoria[categoria] || [];
+  const partido = partidos.find((p) => p.id === partidoId);
+  const confirmar = confirm(`Anulas el resultado de ${partido?.local || "local"} vs ${partido?.visitante || "visitante"}? El partido quedara pendiente.`);
+  if (!confirmar) {
+    setStatus(status, "Operacion cancelada.", "warn");
+    return;
+  }
+
+  setStatus(status, "Anulando resultado...", "");
+
+  const { error } = await supabaseClient
+    .from("partidos")
+    .update({
+      puntos_local: null,
+      puntos_visitante: null,
+      cargado_por: "ADMIN - ANULADO",
+      cargado_en: new Date().toISOString()
+    })
+    .eq("id", partidoId);
+
+  if (error) {
+    setStatus(status, `No se pudo anular: ${error.message}`, "error");
+    return;
+  }
+
+  await refrescarCategoria(categoria, {
+    actualizarPublico: $("publico-categoria")?.value === categoria
+  });
+  poblarSelectPartidosAsociacion(categoria);
+  completarInputsAsociacion();
+  registrarUso("resultado_anulado", {
+    area: "asociacion",
+    categoria,
+    user: estado.usuarioAsociacion?.display_name || "Asociacion",
+    role: estado.usuarioAsociacion?.role || "asociacion"
+  });
+
+  setStatus(status, "Resultado anulado. El partido quedo pendiente.", "ok");
+}
+
 async function revisarDocumentoAsociacion(event) {
   const button = event.target.closest(".doc-review-btn");
   if (!button) return;
@@ -3230,6 +3295,7 @@ async function inicializarAsociacion() {
 
   $("asociacion-partido").addEventListener("change", completarInputsAsociacion);
   $("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
+  $("asociacion-anular")?.addEventListener("click", anularResultadoAsociacion);
   $("documentacion-tabla").addEventListener("click", revisarDocumentoAsociacion);
   $("documentacion-tabla").addEventListener("click", verDocumentoAsociacion);
   $("documentacion-filtro-estado").addEventListener("change", () => {
