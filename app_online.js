@@ -1999,13 +1999,36 @@ function obtenerDatosRondaPlayoff(nombreCategoria, ronda) {
     if (series[posible]) return series[posible];
   }
 
+  return obtenerDatosRondaPlayoffFallback(nombreCategoria, clave);
+}
+
+function obtenerDatosRondaPlayoffFallback(nombreCategoria, clave) {
+  if (nombreCategoria === "Maxi +35 A" || nombreCategoria === "Maxi +35 B") {
+    const datos35 = {
+      cuartos: { partidos: 1, fecha: "2026-06-21" },
+      semifinales: { partidos: 1, fecha: "2026-06-28" },
+      final: { partidos: 3, fechas: ["2026-07-05", "2026-07-12", "2026-07-19"] }
+    };
+    return datos35[clave] || {};
+  }
+
+  if (nombreCategoria === "Maxi +48") {
+    const datos48 = {
+      clasificacion: { partidos: 1 },
+      semifinales: { partidos: 1 },
+      final: { partidos: 1 }
+    };
+    return datos48[clave] || {};
+  }
+
   return {};
 }
 
 function renderMetaRondaPlayoff(nombreCategoria, ronda) {
   const datos = obtenerDatosRondaPlayoff(nombreCategoria, ronda);
   const partidos = datos.partidos || datos.cantidad_partidos || datos.juegos || datos.mejor_de || "";
-  const fecha = datos.fecha || datos.fecha_inicio || datos.dia || "";
+  const fechas = Array.isArray(datos.fechas) ? datos.fechas : [];
+  const fecha = datos.fecha || datos.fecha_inicio || datos.dia || fechas[0] || "";
   const partes = [];
 
   if (partidos) {
@@ -2014,7 +2037,11 @@ function renderMetaRondaPlayoff(nombreCategoria, ronda) {
     partes.push("Partidos a confirmar");
   }
 
-  partes.push(fecha ? fechaPartidoLabel(fecha) || fecha : "Fecha a confirmar");
+  if (fechas.length > 1) {
+    partes.push(fechas.map((item) => fechaPartidoLabel(item) || item).join(", "));
+  } else {
+    partes.push(fecha ? fechaPartidoLabel(fecha) || fecha : "Fecha a confirmar");
+  }
 
   return `<span class="playoff-round-meta">${partes.map(escapeHtml).join(" - ")}</span>`;
 }
