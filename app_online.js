@@ -1587,6 +1587,7 @@ async function cargarPartidosCategoria(nombreCategoria) {
       jornada,
       fecha,
       libre,
+      estado_resultado,
       cargado_por,
       cargado_en,
       categoria_id,
@@ -1614,10 +1615,23 @@ function calcularTabla(partidos) {
       tabla[p.visitante] = { equipo: p.visitante, pj: 0, pg: 0, pp: 0, pf: 0, pc: 0, dif: 0, pts: 0 };
     }
 
-    if (p.puntos_local == null || p.puntos_visitante == null) return;
+    if (!partidoTieneResultado(p)) return;
 
     tabla[p.local].pj += 1;
     tabla[p.visitante].pj += 1;
+
+    if (esResolucionAdministrativa(p)) {
+      if (p.estado_resultado === "resolucion_local") {
+        tabla[p.local].pg += 1;
+        tabla[p.visitante].pp += 1;
+        tabla[p.local].pts += 2;
+      } else {
+        tabla[p.visitante].pg += 1;
+        tabla[p.local].pp += 1;
+        tabla[p.visitante].pts += 2;
+      }
+      return;
+    }
 
     tabla[p.local].pf += p.puntos_local;
     tabla[p.local].pc += p.puntos_visitante;
@@ -1682,7 +1696,16 @@ function calcularMiniTablaOlimpica(equipos, partidos) {
 
   partidos.forEach((p) => {
     if (!setEquipos.has(p.local) || !setEquipos.has(p.visitante)) return;
-    if (p.puntos_local == null || p.puntos_visitante == null) return;
+    if (!partidoTieneResultado(p)) return;
+
+    if (esResolucionAdministrativa(p)) {
+      if (p.estado_resultado === "resolucion_local") {
+        miniTabla[p.local].pts += 2;
+      } else {
+        miniTabla[p.visitante].pts += 2;
+      }
+      return;
+    }
 
     miniTabla[p.local].pf += p.puntos_local;
     miniTabla[p.local].pc += p.puntos_visitante;
@@ -1760,8 +1783,24 @@ function fechaPartidoLabel(fecha) {
   return `${dia}/${mes}/${anio}`;
 }
 
+function esResolucionAdministrativa(partido) {
+  return partido?.estado_resultado === "resolucion_local" || partido?.estado_resultado === "resolucion_visitante";
+}
+
 function partidoTieneResultado(partido) {
-  return partido.puntos_local != null && partido.puntos_visitante != null;
+  return esResolucionAdministrativa(partido) || (partido.puntos_local != null && partido.puntos_visitante != null);
+}
+
+function resultadoPartidoLabel(partido) {
+  if (esResolucionAdministrativa(partido)) {
+    return partido.estado_resultado === "resolucion_local"
+      ? "Resolucion administrativa: local 2 pts, visitante 0 pts"
+      : "Resolucion administrativa: visitante 2 pts, local 0 pts";
+  }
+
+  return partidoTieneResultado(partido)
+    ? `${partido.puntos_local} - ${partido.puntos_visitante}`
+    : "Pendiente";
 }
 
 function renderPartidoResultadoHtml(partido) {
@@ -2379,6 +2418,7 @@ async function guardarResultadoDelegado() {
     .update({
       puntos_local: pl,
       puntos_visitante: pv,
+      estado_resultado: "jugado",
       cargado_por: estado.delegado?.nombre || null,
       cargado_en: new Date().toISOString()
     })
@@ -2814,6 +2854,7 @@ function completarInputsAsociacion() {
 
   detalle.innerHTML = `
     <strong>${partido.local} vs ${partido.visitante}</strong><br>
+    Estado: ${escapeHtml(resultadoPartidoLabel(partido))}<br>
     Cargado por: ${partido.cargado_por || "Sin registro"}<br>
     Fecha/hora: ${partido.cargado_en || "Sin registro"}
   `;
@@ -2862,6 +2903,7 @@ async function guardarResultadoAsociacion() {
     .update({
       puntos_local: pl,
       puntos_visitante: pv,
+      estado_resultado: "jugado",
       cargado_por: "ADMIN",
       cargado_en: new Date().toISOString()
     })
@@ -2885,6 +2927,66 @@ async function guardarResultadoAsociacion() {
   });
 
   setStatus(status, "Corrección guardada correctamente.", "ok");
+}
+
+async function resolverPartidoAdministrativamente(ganador) {
+  const categoria = $("asociacion-categoria").value;
+  const partidoId = $("asociacion-partido").value;
+  const status = $("asociacion-status");
+
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilita Asociacion con la clave administrativa.", "warn");
+    return;
+  }
+
+  if (!partidoId) {
+    setStatus(status, "Selecciona un partido.", "warn");
+    return;
+  }
+
+  const partidos = estado.partidosPorCategoria[categoria] || [];
+  const partido = partidos.find((p) => p.id === partidoId);
+  const ganaLocal = ganador === "local";
+  const equipoGanador = ganaLocal ? partido?.local : partido?.visitante;
+  const equipoPerdedor = ganaLocal ? partido?.visitante : partido?.local;
+  const confirmar = confirm(`Confirmas resolucion administrativa? ${equipoGanador || "Ganador"} suma 2 puntos de tabla y ${equipoPerdedor || "perdedor"} suma 0.`);
+
+  if (!confirmar) {
+    setStatus(status, "Operacion cancelada.", "warn");
+    return;
+  }
+
+  setStatus(status, "Guardando resolucion administrativa...", "");
+
+  const { error } = await supabaseClient
+    .from("partidos")
+    .update({
+      puntos_local: ganaLocal ? 2 : 0,
+      puntos_visitante: ganaLocal ? 0 : 2,
+      estado_resultado: ganaLocal ? "resolucion_local" : "resolucion_visitante",
+      cargado_por: "ADMIN - RESOLUCION",
+      cargado_en: new Date().toISOString()
+    })
+    .eq("id", partidoId);
+
+  if (error) {
+    setStatus(status, `No se pudo guardar la resolucion: ${error.message}`, "error");
+    return;
+  }
+
+  await refrescarCategoria(categoria, {
+    actualizarPublico: $("publico-categoria")?.value === categoria
+  });
+  poblarSelectPartidosAsociacion(categoria);
+  completarInputsAsociacion();
+  registrarUso("resultado_resolucion_admin", {
+    area: "asociacion",
+    categoria,
+    user: estado.usuarioAsociacion?.display_name || "Asociacion",
+    role: estado.usuarioAsociacion?.role || "asociacion"
+  });
+
+  setStatus(status, "Resolucion administrativa guardada. La tabla suma 2-0 sin cargar tantos deportivos.", "ok");
 }
 
 async function anularResultadoAsociacion() {
@@ -2917,6 +3019,7 @@ async function anularResultadoAsociacion() {
     .update({
       puntos_local: null,
       puntos_visitante: null,
+      estado_resultado: "pendiente",
       cargado_por: "ADMIN - ANULADO",
       cargado_en: new Date().toISOString()
     })
@@ -3323,6 +3426,8 @@ async function inicializarAsociacion() {
   $("asociacion-partido").addEventListener("change", completarInputsAsociacion);
   $("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
   $("asociacion-anular")?.addEventListener("click", anularResultadoAsociacion);
+  $("asociacion-resuelve-local")?.addEventListener("click", () => resolverPartidoAdministrativamente("local"));
+  $("asociacion-resuelve-visitante")?.addEventListener("click", () => resolverPartidoAdministrativamente("visitante"));
   $("documentacion-tabla").addEventListener("click", revisarDocumentoAsociacion);
   $("documentacion-tabla").addEventListener("click", verDocumentoAsociacion);
   $("documentacion-filtro-estado").addEventListener("change", () => {
@@ -3541,9 +3646,7 @@ function renderPartidosInforme(partidos, titulo, vacio) {
       </thead>
       <tbody>
         ${partidos.map((p) => {
-          const resultado = partidoTieneResultado(p)
-            ? `${p.puntos_local} - ${p.puntos_visitante}`
-            : "Pendiente";
+          const resultado = resultadoPartidoLabel(p);
           return `
             <tr>
               <td>${escapeHtml(String(p.jornada || "-"))}</td>
@@ -3631,9 +3734,7 @@ function renderFixtureInforme(partidos) {
           </thead>
           <tbody>
             ${partidosJornada.map((p) => {
-              const resultado = partidoTieneResultado(p)
-                ? `${p.puntos_local} - ${p.puntos_visitante}`
-                : "Pendiente";
+              const resultado = resultadoPartidoLabel(p);
               return `
                 <tr>
                   <td>${escapeHtml(p.local || "-")}</td>
@@ -3774,9 +3875,7 @@ partidos.forEach((p) => {
 });
 
 const equipos = equiposSet.size;
-const partidosJugados = partidos.filter(
-  (p) => p.puntos_local != null && p.puntos_visitante != null
-).length;
+const partidosJugados = partidos.filter(partidoTieneResultado).length;
 const partidosPendientes = partidos.length - partidosJugados;
 const jornadasReales = new Set(
   partidos.map((p) => p.jornada).filter(Boolean)
