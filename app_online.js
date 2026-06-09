@@ -1620,6 +1620,11 @@ function calcularTabla(partidos) {
     tabla[p.local].pj += 1;
     tabla[p.visitante].pj += 1;
 
+    tabla[p.local].pf += p.puntos_local;
+    tabla[p.local].pc += p.puntos_visitante;
+    tabla[p.visitante].pf += p.puntos_visitante;
+    tabla[p.visitante].pc += p.puntos_local;
+
     if (esResolucionAdministrativa(p)) {
       if (p.estado_resultado === "resolucion_local") {
         tabla[p.local].pg += 1;
@@ -1632,11 +1637,6 @@ function calcularTabla(partidos) {
       }
       return;
     }
-
-    tabla[p.local].pf += p.puntos_local;
-    tabla[p.local].pc += p.puntos_visitante;
-    tabla[p.visitante].pf += p.puntos_visitante;
-    tabla[p.visitante].pc += p.puntos_local;
 
     if (p.puntos_local > p.puntos_visitante) {
       tabla[p.local].pg += 1;
@@ -1698,6 +1698,11 @@ function calcularMiniTablaOlimpica(equipos, partidos) {
     if (!setEquipos.has(p.local) || !setEquipos.has(p.visitante)) return;
     if (!partidoTieneResultado(p)) return;
 
+    miniTabla[p.local].pf += p.puntos_local;
+    miniTabla[p.local].pc += p.puntos_visitante;
+    miniTabla[p.visitante].pf += p.puntos_visitante;
+    miniTabla[p.visitante].pc += p.puntos_local;
+
     if (esResolucionAdministrativa(p)) {
       if (p.estado_resultado === "resolucion_local") {
         miniTabla[p.local].pts += 2;
@@ -1706,11 +1711,6 @@ function calcularMiniTablaOlimpica(equipos, partidos) {
       }
       return;
     }
-
-    miniTabla[p.local].pf += p.puntos_local;
-    miniTabla[p.local].pc += p.puntos_visitante;
-    miniTabla[p.visitante].pf += p.puntos_visitante;
-    miniTabla[p.visitante].pc += p.puntos_local;
 
     if (p.puntos_local > p.puntos_visitante) {
       miniTabla[p.local].pts += 2;
@@ -1794,8 +1794,8 @@ function partidoTieneResultado(partido) {
 function resultadoPartidoLabel(partido) {
   if (esResolucionAdministrativa(partido)) {
     return partido.estado_resultado === "resolucion_local"
-      ? "Resolucion administrativa: local 2 pts, visitante 0 pts"
-      : "Resolucion administrativa: visitante 2 pts, local 0 pts";
+      ? "20 - 0 (resolucion administrativa)"
+      : "0 - 20 (resolucion administrativa)";
   }
 
   return partidoTieneResultado(partido)
@@ -2949,7 +2949,8 @@ async function resolverPartidoAdministrativamente(ganador) {
   const ganaLocal = ganador === "local";
   const equipoGanador = ganaLocal ? partido?.local : partido?.visitante;
   const equipoPerdedor = ganaLocal ? partido?.visitante : partido?.local;
-  const confirmar = confirm(`Confirmas resolucion administrativa? ${equipoGanador || "Ganador"} suma 2 puntos de tabla y ${equipoPerdedor || "perdedor"} suma 0.`);
+  const resultado = ganaLocal ? "20-0" : "0-20";
+  const confirmar = confirm(`Confirmas resolucion administrativa ${resultado}? ${equipoGanador || "Ganador"} suma 2 puntos de tabla y ${equipoPerdedor || "perdedor"} suma 0.`);
 
   if (!confirmar) {
     setStatus(status, "Operacion cancelada.", "warn");
@@ -2961,8 +2962,8 @@ async function resolverPartidoAdministrativamente(ganador) {
   const { error } = await supabaseClient
     .from("partidos")
     .update({
-      puntos_local: ganaLocal ? 2 : 0,
-      puntos_visitante: ganaLocal ? 0 : 2,
+      puntos_local: ganaLocal ? 20 : 0,
+      puntos_visitante: ganaLocal ? 0 : 20,
       estado_resultado: ganaLocal ? "resolucion_local" : "resolucion_visitante",
       cargado_por: "ADMIN - RESOLUCION",
       cargado_en: new Date().toISOString()
@@ -2986,7 +2987,7 @@ async function resolverPartidoAdministrativamente(ganador) {
     role: estado.usuarioAsociacion?.role || "asociacion"
   });
 
-  setStatus(status, "Resolucion administrativa guardada. La tabla suma 2-0 sin cargar tantos deportivos.", "ok");
+  setStatus(status, "Resolucion administrativa guardada. Resultado 20-0 y tabla con puntos 2-0.", "ok");
 }
 
 async function anularResultadoAsociacion() {
