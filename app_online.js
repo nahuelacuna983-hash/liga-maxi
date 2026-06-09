@@ -2014,9 +2014,9 @@ function obtenerDatosRondaPlayoffFallback(nombreCategoria, clave) {
 
   if (nombreCategoria === "Maxi +48") {
     const datos48 = {
-      clasificacion: { partidos: 1 },
-      semifinales: { partidos: 1 },
-      final: { partidos: 1 }
+      clasificacion: { partidos: 1, fecha: "2026-06-03" },
+      semifinales: { partidos: 3, fechas: ["2026-06-10", "2026-06-17", "2026-06-24"] },
+      final: { partidos: 3, fechas: ["2026-07-01", "2026-07-08", "2026-07-15"] }
     };
     return datos48[clave] || {};
   }
@@ -3353,7 +3353,7 @@ async function inicializarAsociacion() {
 
   if (categoria === "Maxi +48") {
     playoffs.value = "top6";
-    final.value = "un-partido";
+    final.value = "mejor-3";
     definicionB.value = "tabla";
     descensoA.value = "sin-descenso";
     configurarFechasPlayoffPlanner(categoria);
