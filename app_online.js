@@ -986,6 +986,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   if (!filas.length) {
     tabla.innerHTML = `
       ${renderAvisoDocumentosJugador(documentosJugador)}
+      ${renderGestionJugadoresAsociacion(nombreCategoria)}
       ${renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugador)}
       <div class="empty">No hay documentos de equipo que coincidan con los filtros.</div>
     `;
@@ -994,6 +995,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
 
   tabla.innerHTML = `
     ${renderAvisoDocumentosJugador(documentosJugador)}
+    ${renderGestionJugadoresAsociacion(nombreCategoria)}
     <table class="doc-table">
       <thead>
         <tr>
@@ -1028,6 +1030,65 @@ function renderDocumentacionAsociacion(nombreCategoria) {
       </tbody>
     </table>
     ${renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugador)}
+  `;
+}
+
+function renderGestionJugadoresAsociacion(nombreCategoria) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const jugadores = categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : [];
+
+  if (!jugadores.length) return "";
+
+  const documentos = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
+  const resumenPorJugador = documentos.reduce((acc, documento) => {
+    const playerId = documento.player_id;
+    if (!playerId) return acc;
+    if (!acc[playerId]) acc[playerId] = { cargados: 0, aprobados: 0, pendientes: 0 };
+    if (documento.status === "aprobado") acc[playerId].aprobados += 1;
+    if (documento.status === "cargado") acc[playerId].cargados += 1;
+    if (!documento.status || documento.status === "pendiente") acc[playerId].pendientes += 1;
+    return acc;
+  }, {});
+
+  return `
+    <div class="doc-player-admin">
+      <div>
+        <h4>Jugadores cargados</h4>
+        <p class="note">Control administrativo de altas hechas por delegados. La baja oculta al jugador sin borrar auditoria.</p>
+      </div>
+      <table class="doc-table doc-player-admin-table">
+        <thead>
+          <tr>
+            <th>Equipo</th>
+            <th>Jugador</th>
+            <th>Documentos</th>
+            <th>Accion</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${jugadores.map((jugador) => {
+            const resumen = resumenPorJugador[jugador.id] || { cargados: 0, aprobados: 0, pendientes: 0 };
+            return `
+              <tr>
+                <td>${escapeHtml(jugador.equipo_nombre || "-")}</td>
+                <td>
+                  <strong>${escapeHtml(jugador.nombre)}</strong>
+                  <span class="doc-player-meta">${jugador.dni ? `DNI ${escapeHtml(jugador.dni)}` : ""}${jugador.dorsal ? ` #${escapeHtml(jugador.dorsal)}` : ""}</span>
+                </td>
+                <td>
+                  <span class="doc-action-muted">${resumen.aprobados} aprobados · ${resumen.cargados} para revisar · ${resumen.pendientes} pendientes</span>
+                </td>
+                <td>
+                  <button class="doc-player-remove-btn" type="button" data-player-id="${escapeHtml(jugador.id)}" data-player-name="${escapeHtml(jugador.nombre)}">
+                    Dar de baja
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
   `;
 }
 
@@ -1327,6 +1388,14 @@ function renderDocumentacionDelegado() {
 
 function renderDocumentacionJugadoresDelegado(categoria, equiposDelegado, documentosJugador) {
   if (!documentosJugador.length) return "";
+  if (categoria === "Femenino") {
+    return `
+      <div class="doc-player-section">
+        <h4>Documentos por jugador</h4>
+        <div class="empty">La carga de jugadores no esta habilitada para Femenino desde Delegados.</div>
+      </div>
+    `;
+  }
 
   return `
     <div class="doc-player-section">
@@ -2588,6 +2657,11 @@ async function agregarJugadorDelegado() {
     return;
   }
 
+  if (categoriaNombre === "Femenino") {
+    setStatus(status, "La carga de jugadores no esta habilitada para Femenino desde Delegados.", "warn");
+    return;
+  }
+
   if (!nombre) {
     setStatus(status, "Ingresá el nombre del jugador.", "warn");
     return;
@@ -3167,6 +3241,66 @@ async function verDocumentoAsociacion(event) {
   setStatus(status, "Archivo abierto en una pestaña nueva.", "ok");
 }
 
+async function darDeBajaJugadorAsociacion(event) {
+  const button = event.target.closest(".doc-player-remove-btn");
+  if (!button) return;
+
+  const status = $("asociacion-status");
+  const categoriaNombre = $("asociacion-categoria")?.value || "";
+  const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
+  const playerId = button.dataset.playerId;
+  const playerName = button.dataset.playerName || "jugador";
+
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilita Asociacion con la clave administrativa.", "warn");
+    return;
+  }
+
+  if (!categoria || !playerId) {
+    setStatus(status, "No se encontro el jugador seleccionado.", "error");
+    return;
+  }
+
+  const motivo = prompt(`Motivo de baja para ${playerName}:`, "Cargado por error en categoria/equipo incorrecto");
+  if (motivo === null) {
+    setStatus(status, "Operacion cancelada.", "warn");
+    return;
+  }
+
+  const confirmar = confirm(`Dar de baja a ${playerName}? Se ocultara de la carga operativa, conservando auditoria y documentos.`);
+  if (!confirmar) {
+    setStatus(status, "Operacion cancelada.", "warn");
+    return;
+  }
+
+  button.disabled = true;
+  setStatus(status, "Dando de baja jugador...", "");
+
+  const { error } = await supabaseClient.rpc("deactivate_team_player", {
+    p_player_id: playerId,
+    p_actor: estado.usuarioAsociacion?.display_name || "Asociacion",
+    p_reason: motivo || "Baja administrativa"
+  });
+
+  if (error) {
+    button.disabled = false;
+    setStatus(status, `No se pudo dar de baja: ${error.message}. Si la funcion no existe, corre docs/ejecutar-en-supabase-baja-jugadores.sql.`, "error");
+    return;
+  }
+
+  await cargarJugadoresCategoria(categoria.id, true);
+  await cargarDocumentosJugadoresCategoria(categoria.id, true);
+  renderDocumentacionAsociacion(categoriaNombre);
+  renderDocumentacionDelegado();
+  registrarUso("jugador_baja_administrativa", {
+    area: "asociacion",
+    categoria: categoriaNombre,
+    user: estado.usuarioAsociacion?.display_name || "Asociacion",
+    role: estado.usuarioAsociacion?.role || "asociacion"
+  });
+  setStatus(status, "Jugador dado de baja correctamente.", "ok");
+}
+
 async function verDocumentoDelegado(event) {
   const button = event.target.closest(".doc-view-delegate-btn");
   if (!button) return;
@@ -3431,6 +3565,7 @@ async function inicializarAsociacion() {
   $("asociacion-resuelve-visitante")?.addEventListener("click", () => resolverPartidoAdministrativamente("visitante"));
   $("documentacion-tabla").addEventListener("click", revisarDocumentoAsociacion);
   $("documentacion-tabla").addEventListener("click", verDocumentoAsociacion);
+  $("documentacion-tabla").addEventListener("click", darDeBajaJugadorAsociacion);
   $("documentacion-filtro-estado").addEventListener("change", () => {
     renderDocumentacionAsociacion($("asociacion-categoria").value);
   });
