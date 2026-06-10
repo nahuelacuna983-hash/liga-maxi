@@ -2053,9 +2053,9 @@ function obtenerDatosRondaPlayoffFallback(nombreCategoria, clave) {
 
   if (nombreCategoria === "Maxi +48") {
     const datos48 = {
-      clasificacion: { partidos: 1, fecha: "2026-06-03" },
-      semifinales: { partidos: 3, fechas: ["2026-06-10", "2026-06-17", "2026-06-24"] },
-      final: { partidos: 3, fechas: ["2026-07-01", "2026-07-08", "2026-07-15"] }
+      clasificacion: { partidos: 1, fecha: "2026-06-17" },
+      semifinales: { partidos: 2, fechas: ["2026-06-24", "2026-07-01"] },
+      final: { partidos: 2, fechas: ["2026-07-08", "2026-07-15"] }
     };
     return datos48[clave] || {};
   }
@@ -2157,14 +2157,14 @@ function renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos) {
     return `
       <div class="playoff-bracket playoff-bracket-three">
         <div class="playoff-round">
-          ${renderPlayoffRoundTitulo("Clasificacion", nombreCategoria, "clasificacion")}
+          ${renderPlayoffRoundTitulo("Repechaje", nombreCategoria, "clasificacion")}
           ${renderPlayoffMatch("Repechaje 1", renderPlayoffSlot(3, null), renderPlayoffSlot(6, null))}
           ${renderPlayoffMatch("Repechaje 2", renderPlayoffSlot(4, null), renderPlayoffSlot(5, null))}
         </div>
         <div class="playoff-round">
           ${renderPlayoffRoundTitulo("Semifinales", nombreCategoria, "semifinales")}
-          ${renderPlayoffMatch("Semi 1", renderPlayoffSlot(1, null, "Directo"), renderPlayoffPendiente("Ganador 4/5"))}
-          ${renderPlayoffMatch("Semi 2", renderPlayoffSlot(2, null, "Directo"), renderPlayoffPendiente("Ganador 3/6"))}
+          ${renderPlayoffMatch("Semi 1", renderPlayoffSlot(1, null, "Directo"), renderPlayoffPendiente("Peor ganador de repechaje"))}
+          ${renderPlayoffMatch("Semi 2", renderPlayoffSlot(2, null, "Directo"), renderPlayoffPendiente("Mejor ganador de repechaje"))}
         </div>
         <div class="playoff-round">
           ${renderPlayoffRoundTitulo("Final", nombreCategoria, "final")}
@@ -2219,14 +2219,14 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
     bracket = `
       <div class="playoff-bracket playoff-bracket-three">
         <div class="playoff-round">
-          ${renderPlayoffRoundTitulo("Clasificacion", nombreCategoria, "clasificacion")}
+          ${renderPlayoffRoundTitulo("Repechaje", nombreCategoria, "clasificacion")}
           ${renderPlayoffMatch("Repechaje 1", renderPlayoffSlot(3, equipo(3)), renderPlayoffSlot(6, equipo(6)))}
           ${renderPlayoffMatch("Repechaje 2", renderPlayoffSlot(4, equipo(4)), renderPlayoffSlot(5, equipo(5)))}
         </div>
         <div class="playoff-round">
           ${renderPlayoffRoundTitulo("Semifinales", nombreCategoria, "semifinales")}
-          ${renderPlayoffMatch("Semi 1", renderPlayoffSlot(1, equipo(1), "1 directo"), renderPlayoffPendiente("Ganador 4/5"))}
-          ${renderPlayoffMatch("Semi 2", renderPlayoffSlot(2, equipo(2), "2 directo"), renderPlayoffPendiente("Ganador 3/6"))}
+          ${renderPlayoffMatch("Semi 1", renderPlayoffSlot(1, equipo(1), "1 directo"), renderPlayoffPendiente("Peor ganador de repechaje"))}
+          ${renderPlayoffMatch("Semi 2", renderPlayoffSlot(2, equipo(2), "2 directo"), renderPlayoffPendiente("Mejor ganador de repechaje"))}
         </div>
         <div class="playoff-round">
           ${renderPlayoffRoundTitulo("Final", nombreCategoria, "final")}
@@ -3459,7 +3459,7 @@ async function inicializarAsociacion() {
 
   if (categoria === "Maxi +48") {
     playoffs.value = "top6";
-    final.value = "mejor-3";
+    final.value = "mejor-2";
     definicionB.value = "tabla";
     descensoA.value = "sin-descenso";
     configurarFechasPlayoffPlanner(categoria);
@@ -3552,11 +3552,11 @@ function configurarFechasPlayoffPlanner(categoria) {
 }
 
 function actualizarFechasFinalPlanner() {
-  const esMejorDeTres = document.getElementById("planner-final")?.value === "mejor-3";
-  ["planner-fecha-final-2", "planner-fecha-final-3"].forEach((id) => {
-    const input = document.getElementById(id);
-    if (input) input.disabled = !esMejorDeTres;
-  });
+  const final = document.getElementById("planner-final")?.value || "mejor-3";
+  const final2 = document.getElementById("planner-fecha-final-2");
+  const final3 = document.getElementById("planner-fecha-final-3");
+  if (final2) final2.disabled = final === "un-partido";
+  if (final3) final3.disabled = final !== "mejor-3";
 }
 
 function detalleFormatoPlanner(categoria) {
@@ -3577,6 +3577,8 @@ function detalleFormatoPlanner(categoria) {
       definicionB === "playoffs"
         ? "Campeon de playoffs asciende y subcampeon juega promocion."
         : "1ro de tabla asciende y 2do de tabla juega promocion.";
+  } else if (categoria === "Maxi +48") {
+    reglaPromocion = "Top 6: 3ro vs 6to y 4to vs 5to en repechaje. Semifinales reordenadas por merito de fase regular.";
   }
 
   return {
@@ -3586,7 +3588,7 @@ function detalleFormatoPlanner(categoria) {
     definicionBTexto: textoOpcionPlanner("planner-definicion-b"),
     descensoATexto: textoOpcionPlanner("planner-descenso-a"),
     reglaPromocion,
-    partidosFinal: final === "mejor-3" ? 3 : 1,
+    partidosFinal: final === "mejor-3" ? 3 : (final === "mejor-2" ? 2 : 1),
     fechaCuartos: document.getElementById("planner-fecha-cuartos")?.value || "",
     fechaSemis: document.getElementById("planner-fecha-semis")?.value || "",
     fechaFinal1: document.getElementById("planner-fecha-final-1")?.value || "",
@@ -3817,7 +3819,7 @@ function generarInformeTorneo() {
       <div class="rules">
         <p><strong>Playoffs:</strong> ${escapeHtml(formato.playoffsTexto)} - <strong>Final:</strong> ${escapeHtml(formato.finalTexto)}</p>
         <p><strong>Cuartos / repechaje:</strong> ${escapeHtml(fechaPlannerLabel(formato.fechaCuartos))} - <strong>Semifinales:</strong> ${escapeHtml(fechaPlannerLabel(formato.fechaSemis))}</p>
-        <p><strong>Final:</strong> ${escapeHtml(fechaPlannerLabel(formato.fechaFinal1))}${formato.partidosFinal > 1 ? `, ${escapeHtml(fechaPlannerLabel(formato.fechaFinal2))}, ${escapeHtml(fechaPlannerLabel(formato.fechaFinal3))}` : ""}</p>
+        <p><strong>Final:</strong> ${escapeHtml(fechaPlannerLabel(formato.fechaFinal1))}${formato.partidosFinal > 1 ? `, ${escapeHtml(fechaPlannerLabel(formato.fechaFinal2))}` : ""}${formato.partidosFinal > 2 ? `, ${escapeHtml(fechaPlannerLabel(formato.fechaFinal3))}` : ""}</p>
         <p><strong>Ascenso / repechaje B:</strong> ${escapeHtml(formato.definicionBTexto)} - <strong>Descenso +35 A:</strong> ${escapeHtml(formato.descensoATexto)}</p>
         <p><strong>Regla aplicada:</strong> ${escapeHtml(formato.reglaPromocion)}</p>
       </div>
@@ -3953,7 +3955,7 @@ if (fechaInicio) {
         <p><strong>Semifinales:</strong> ${fechaPlannerLabel(formato.fechaSemis)}</p>
         <p><strong>Final 1:</strong> ${fechaPlannerLabel(formato.fechaFinal1)}</p>
         ${formato.partidosFinal > 1 ? `<p><strong>Final 2:</strong> ${fechaPlannerLabel(formato.fechaFinal2)}</p>` : ""}
-        ${formato.partidosFinal > 1 ? `<p><strong>Final 3:</strong> ${fechaPlannerLabel(formato.fechaFinal3)}</p>` : ""}
+        ${formato.partidosFinal > 2 ? `<p><strong>Final 3:</strong> ${fechaPlannerLabel(formato.fechaFinal3)}</p>` : ""}
         <p><strong>Ascenso / repechaje B:</strong> ${formato.definicionBTexto}</p>
         <p><strong>Descenso +35 A:</strong> ${formato.descensoATexto}</p>
         <p><strong>Regla aplicada:</strong> ${formato.reglaPromocion}</p>
