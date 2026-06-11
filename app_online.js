@@ -612,7 +612,7 @@ async function cargarJugadoresCategoria(categoriaId, force = false) {
 
   const { data, error } = await supabaseClient
     .from("v_player_documents_admin")
-    .select("player_id, jugador_nombre, jugador_dni, jugador_dorsal, categoria_id, equipo_id, equipo_nombre")
+    .select("*")
     .eq("categoria_id", categoriaId)
     .order("equipo_nombre", { ascending: true })
     .order("jugador_nombre", { ascending: true });
@@ -636,7 +636,7 @@ async function cargarDocumentosJugadoresCategoria(categoriaId, force = false) {
 
   const { data, error } = await supabaseClient
     .from("v_player_documents_admin")
-    .select("id, player_id, jugador_nombre, jugador_dni, jugador_dorsal, requirement_id, requirement_nombre, categoria_id, equipo_id, equipo_nombre, status, vencimiento, observacion, storage_path, file_name, file_type, file_size")
+    .select("*")
     .eq("categoria_id", categoriaId);
 
   if (error) {
@@ -666,7 +666,11 @@ function normalizarJugadoresDesdeDocumentos(rows) {
       nombre: row.jugador_nombre,
       dni: row.jugador_dni,
       dorsal: row.jugador_dorsal,
-      activo: true
+      activo: true,
+      baja_solicitada: !!row.baja_solicitada,
+      baja_motivo: row.baja_motivo || "",
+      baja_solicitada_por: row.baja_solicitada_por || "",
+      baja_solicitada_en: row.baja_solicitada_en || ""
     });
   });
 
@@ -1054,7 +1058,7 @@ function renderGestionJugadoresAsociacion(nombreCategoria) {
     <div class="doc-player-admin">
       <div>
         <h4>Jugadores cargados</h4>
-        <p class="note">Control administrativo de altas hechas por delegados. La baja oculta al jugador sin borrar auditoria.</p>
+        <p class="note">Control administrativo de altas hechas por delegados. Si no tiene actividad se elimina; si tiene documentacion se da de baja conservando auditoria.</p>
       </div>
       <table class="doc-table doc-player-admin-table">
         <thead>
@@ -1079,9 +1083,11 @@ function renderGestionJugadoresAsociacion(nombreCategoria) {
                   <span class="doc-action-muted">${resumen.aprobados} aprobados · ${resumen.cargados} para revisar · ${resumen.pendientes} pendientes</span>
                 </td>
                 <td>
+                  ${jugador.baja_solicitada ? `<span class="doc-review-current doc-review-current-warn">Baja solicitada</span>` : ""}
                   <button class="doc-player-remove-btn" type="button" data-player-id="${escapeHtml(jugador.id)}" data-player-name="${escapeHtml(jugador.nombre)}">
-                    Dar de baja
+                    ${jugador.baja_solicitada ? "Aprobar baja" : "Eliminar / dar de baja"}
                   </button>
+                  ${jugador.baja_motivo ? `<span class="doc-player-meta">Motivo: ${escapeHtml(jugador.baja_motivo)}</span>` : ""}
                 </td>
               </tr>
             `;
@@ -1455,7 +1461,7 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
         </thead>
         <tbody>
           ${jugadores.map((jugador) =>
-            documentosJugador.map((requisito) => {
+            documentosJugador.map((requisito, requisitoIndex) => {
               const documento = obtenerDocumentoJugador(categoria, jugador.id, requisito);
 
               return `
@@ -1463,6 +1469,7 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
                   <td>
                     <strong>${escapeHtml(jugador.nombre)}</strong>
                     <span class="doc-player-meta">${jugador.dni ? `DNI ${escapeHtml(jugador.dni)}` : ""}${jugador.dorsal ? ` #${escapeHtml(jugador.dorsal)}` : ""}</span>
+                    ${requisitoIndex === 0 ? renderAccionBajaJugadorDelegado(jugador) : ""}
                   </td>
                   <td>${escapeHtml(requisito)}</td>
                   <td>${docStateHtml(
@@ -1854,6 +1861,27 @@ function fechaPartidoLabel(fecha) {
 
 function esResolucionAdministrativa(partido) {
   return partido?.estado_resultado === "resolucion_local" || partido?.estado_resultado === "resolucion_visitante";
+}
+
+function renderAccionBajaJugadorDelegado(jugador) {
+  if (jugador.baja_solicitada) {
+    return `
+      <span class="doc-player-meta doc-player-remove-pending">
+        Baja solicitada${jugador.baja_motivo ? `: ${escapeHtml(jugador.baja_motivo)}` : ""}
+      </span>
+    `;
+  }
+
+  return `
+    <button
+      class="doc-player-request-remove-btn"
+      type="button"
+      data-player-id="${escapeHtml(jugador.id)}"
+      data-player-name="${escapeHtml(jugador.nombre)}"
+    >
+      Solicitar baja/correccion
+    </button>
+  `;
 }
 
 function partidoTieneResultado(partido) {
@@ -2720,6 +2748,59 @@ async function agregarJugadorDelegado() {
   });
 
   setStatus(status, "Jugador agregado. Ya podés cargar sus documentos.", "ok");
+}
+
+async function solicitarBajaJugadorDelegado(event) {
+  const button = event.target.closest(".doc-player-request-remove-btn");
+  if (!button) return;
+
+  const status = $("delegado-status");
+  const categoriaNombre = $("delegado-categoria")?.value || "";
+  const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
+  const playerId = button.dataset.playerId;
+  const playerName = button.dataset.playerName || "jugador";
+
+  if (!estado.delegadoDesbloqueado || !estado.delegado) {
+    setStatus(status, "Primero habilita edicion con la clave.", "warn");
+    return;
+  }
+
+  if (!categoria || !playerId) {
+    setStatus(status, "No se encontro el jugador seleccionado.", "error");
+    return;
+  }
+
+  const motivo = prompt(`Motivo de solicitud para ${playerName}:`, "Cargado por error / corregir jugador");
+  if (motivo === null) {
+    setStatus(status, "Operacion cancelada.", "warn");
+    return;
+  }
+
+  button.disabled = true;
+  setStatus(status, "Enviando solicitud a Asociacion...", "");
+
+  const { error } = await supabaseClient.rpc("request_team_player_deactivation", {
+    p_player_id: playerId,
+    p_actor: estado.delegado.nombre,
+    p_reason: motivo || "Solicitud de baja/correccion"
+  });
+
+  if (error) {
+    button.disabled = false;
+    setStatus(status, `No se pudo enviar la solicitud: ${error.message}. Si la funcion no existe, corre docs/ejecutar-en-supabase-baja-jugadores.sql.`, "error");
+    return;
+  }
+
+  await cargarJugadoresCategoria(categoria.id, true);
+  await cargarDocumentosJugadoresCategoria(categoria.id, true);
+  renderDocumentacionDelegado();
+  registrarUso("jugador_solicitud_baja", {
+    area: "delegados",
+    categoria: categoriaNombre,
+    user: estado.delegado?.nombre || null,
+    role: estado.delegado?.rol || "delegado"
+  });
+  setStatus(status, "Solicitud enviada a Asociacion para revisar.", "ok");
 }
 
 async function subirDocumentoJugadorDelegado(event) {
@@ -4192,6 +4273,7 @@ async function inicializar() {
     $("delegado-documentacion").addEventListener("click", (event) => {
       verDocumentoDelegado(event);
       if (event.target.closest("#jugador-agregar")) agregarJugadorDelegado();
+      solicitarBajaJugadorDelegado(event);
     });
   } catch (error) {
     console.error(error);
