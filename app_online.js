@@ -2280,6 +2280,8 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
 
   const tabla = calcularTabla(partidos);
   const cantidadEquipos = tabla.length;
+  const llaveOficialActual = nombreCategoria === "Maxi +35 A" || nombreCategoria === "Maxi +48";
+  const faseRegularCerrada = partidos.length > 0 && (partidos.every(partidoTieneResultado) || llaveOficialActual);
 
   if (!cantidadEquipos) {
     container.innerHTML = "";
@@ -2340,15 +2342,16 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
 
   const bracketVacio = renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos);
   const promocionDescenso = renderPromocionDescenso(nombreCategoria, tabla);
-
-  container.innerHTML = `
-    <div class="card playoff-card">
-      <div class="playoff-head">
-        <div>
-          <h3>Playoffs</h3>
-          <p>Llave base y proyeccion segun la tabla actual de ${escapeHtml(nombreCategoria)}.</p>
-        </div>
-      </div>
+  const descripcionPlayoffs = faseRegularCerrada
+    ? `Llave oficial segun tabla final de ${escapeHtml(nombreCategoria)}.`
+    : `Llave base y proyeccion segun la tabla actual de ${escapeHtml(nombreCategoria)}.`;
+  const contenidoPlayoffs = faseRegularCerrada
+    ? `
+      <div class="playoff-empty-title">Llave de playoffs</div>
+      ${bracket}
+      ${promocionDescenso}
+    `
+    : `
       <div class="playoff-empty-title">Llave de playoffs</div>
       ${bracketVacio}
       <details class="playoff-preview">
@@ -2356,6 +2359,17 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
         ${bracket}
         ${promocionDescenso}
       </details>
+    `;
+
+  container.innerHTML = `
+    <div class="card playoff-card">
+      <div class="playoff-head">
+        <div>
+          <h3>Playoffs</h3>
+          <p>${descripcionPlayoffs}</p>
+        </div>
+      </div>
+      ${contenidoPlayoffs}
     </div>
   `;
 }
