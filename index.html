@@ -432,6 +432,99 @@
       white-space: nowrap;
     }
 
+    .playoff-result {
+      display: inline-flex;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(34, 197, 94, 0.18);
+      color: #bbf7d0;
+      font-weight: 900;
+      margin-top: 8px;
+      padding: 7px 10px;
+    }
+
+    .playoff-result.pending {
+      background: rgba(148, 163, 184, 0.12);
+      color: var(--muted);
+    }
+
+    .playoff-results-summary {
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.2);
+      margin-top: 12px;
+      padding: 10px;
+    }
+
+    .playoff-results-summary h4 {
+      color: #f8fafc;
+      margin: 0 0 8px;
+      text-transform: uppercase;
+    }
+
+    .playoff-results-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid rgba(148, 163, 184, 0.16);
+      padding: 8px 0;
+    }
+
+    .playoff-results-row:first-of-type {
+      border-top: 0;
+    }
+
+    .playoff-results-row span {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .assoc-playoff-box {
+      border-top: 1px solid var(--line);
+      margin-top: 18px;
+      padding-top: 16px;
+    }
+
+    .assoc-playoff-head h3 {
+      margin-bottom: 4px;
+    }
+
+    .assoc-playoff-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .assoc-playoff-row {
+      display: grid;
+      grid-template-columns: minmax(150px, 1.2fr) minmax(150px, 1fr) minmax(150px, 1fr) 90px 90px 110px;
+      gap: 10px;
+      align-items: end;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.24);
+      padding: 10px;
+    }
+
+    .assoc-playoff-title {
+      display: grid;
+      gap: 4px;
+      align-self: center;
+    }
+
+    .assoc-playoff-title span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .score-field input {
+      text-align: center;
+      font-weight: 900;
+    }
+
     .playoff-status-box {
       border: 1px solid var(--line);
       border-radius: 12px;
@@ -805,6 +898,18 @@
 
       .playoff-status-row {
         grid-template-columns: 1fr;
+      }
+
+      .assoc-playoff-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .assoc-playoff-title {
+        grid-column: 1 / -1;
+      }
+
+      .playoff-save-btn {
+        grid-column: 1 / -1;
       }
     }
 
@@ -1360,6 +1465,8 @@
     <h3>Detalle de carga</h3>
     <div id="asociacion-detalle" class="note">Seleccioná un partido para ver quién lo cargó y cuándo.</div>
   </div>
+
+  <div id="asociacion-playoffs" class="assoc-playoff-box"></div>
 
   </div>
 
