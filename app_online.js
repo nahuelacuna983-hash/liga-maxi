@@ -3437,11 +3437,11 @@ function renderPlayoffsAsociacion(nombreCategoria) {
             <input class="playoff-visitante" type="text" value="${escapeHtml(partido.visitante || "")}" />
           </div>
           <div class="field score-field">
-            <label>Local</label>
+            <label>Pts local</label>
             <input class="playoff-puntos-local" type="number" min="0" value="${partido.puntos_local ?? ""}" />
           </div>
           <div class="field score-field">
-            <label>Visitante</label>
+            <label>Pts visitante</label>
             <input class="playoff-puntos-visitante" type="number" min="0" value="${partido.puntos_visitante ?? ""}" />
           </div>
           <button class="secondary playoff-save-btn" type="button"

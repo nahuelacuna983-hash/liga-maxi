@@ -498,7 +498,7 @@
 
     .assoc-playoff-row {
       display: grid;
-      grid-template-columns: minmax(150px, 1.2fr) minmax(150px, 1fr) minmax(150px, 1fr) 90px 90px 110px;
+      grid-template-columns: minmax(150px, 0.9fr) minmax(170px, 1fr) minmax(170px, 1fr) 86px 86px 104px;
       gap: 10px;
       align-items: end;
       border: 1px solid rgba(148, 163, 184, 0.2);
@@ -507,10 +507,15 @@
       padding: 10px;
     }
 
+    .assoc-playoff-row .field {
+      min-width: 0;
+    }
+
     .assoc-playoff-title {
       display: grid;
       gap: 4px;
       align-self: center;
+      min-width: 0;
     }
 
     .assoc-playoff-title span {
@@ -523,6 +528,14 @@
     .score-field input {
       text-align: center;
       font-weight: 900;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+
+    .playoff-save-btn {
+      width: 100%;
+      padding-left: 10px;
+      padding-right: 10px;
     }
 
     .playoff-status-box {
@@ -909,6 +922,16 @@
       }
 
       .playoff-save-btn {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (min-width: 701px) and (max-width: 1180px) {
+      .assoc-playoff-row {
+        grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) 88px 88px 110px;
+      }
+
+      .assoc-playoff-title {
         grid-column: 1 / -1;
       }
     }
