@@ -1295,12 +1295,14 @@
     <div id="asociacion-acceso-status" class="status"></div>
   </div>
 
-  <div class="assoc-subnav" aria-label="Secciones de Asociación">
-    <button class="assoc-nav-btn activo" type="button" data-asociacion-panel="documentacion">Documentación</button>
-    <button class="assoc-nav-btn" type="button" data-asociacion-panel="resultados">Resultados</button>
-    <button class="assoc-nav-btn" type="button" data-asociacion-panel="torneo">Torneo</button>
+  <div class="assoc-subnav" aria-label="Secciones de Asociacion">
+    <button class="assoc-nav-btn activo" type="button" data-asociacion-panel="operacion">Operacion</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="documentacion">Documentacion</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="torneo">Torneos</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="programacion">Programacion</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="informes">Informes</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="permisos">Permisos</button>
-    <button class="assoc-nav-btn" type="button" data-asociacion-panel="uso">Uso</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="uso">Auditoria</button>
   </div>
 
   <div class="card assoc-context-card">
@@ -1311,7 +1313,8 @@
   </div>
 
   <div class="card assoc-panel" data-asociacion-panel-view="torneo">
-    <h3>Planificador de Torneo</h3>
+    <h3>Generador de torneos</h3>
+    <p class="note">Simulacion y configuracion deportiva antes de publicar un fixture. No modifica resultados existentes.</p>
 
     <div class="planner-grid">
 
@@ -1438,17 +1441,11 @@
 
     <div id="planner-status"></div>
 
-    <div class="planner-report-box">
-      <h4>Informes del torneo actual</h4>
-      <p>Usa la categoria seleccionada arriba para generar un documento de seguimiento del torneo que ya esta en juego.</p>
-      <button id="planner-informe" class="secondary" type="button">
-        Generar informe PDF
-      </button>
-    </div>
   </div>
 
-  <div class="card assoc-panel" data-asociacion-panel-view="resultados">
-  <h3>Resultados y correcciones</h3>
+  <div class="card assoc-panel activa" data-asociacion-panel-view="operacion">
+  <h3>Operacion deportiva</h3>
+  <p class="note">Correccion de fase regular, resoluciones administrativas y carga de resultados de playoffs.</p>
   <div class="row">
     <div class="field">
       <label for="asociacion-partido">Partido</label>
@@ -1493,7 +1490,7 @@
 
   </div>
 
-  <div class="card assoc-panel activa" data-asociacion-panel-view="documentacion">
+  <div class="card assoc-panel" data-asociacion-panel-view="documentacion">
     <h3>Control documental</h3>
     <p class="note">Control administrativo de documentos cargados por delegados.</p>
     <div class="doc-filters">
@@ -1531,6 +1528,29 @@
     <div id="documentacion-tabla" class="table-wrap"></div>
   </div>
 
+  <div class="card assoc-panel" data-asociacion-panel-view="programacion">
+    <h3>Programacion y arbitros</h3>
+    <p class="note">Modulo preparado para ordenar canchas, horarios y comunicaciones a la Asociacion/arbitros.</p>
+    <div class="assoc-permission-grid">
+      <div><strong>1. Programar</strong><span>Definir cancha, dia y horario por partido.</span></div>
+      <div><strong>2. Informar</strong><span>Generar mensaje oficial sin copiar y pegar a mano.</span></div>
+      <div><strong>3. Controlar</strong><span>Marcar enviado, pendiente, confirmado o con terna asignada.</span></div>
+      <div><strong>4. Historial</strong><span>Guardar quien informo, cuando y que partidos incluyo.</span></div>
+    </div>
+  </div>
+
+  <div class="card assoc-panel" data-asociacion-panel-view="informes">
+    <h3>Informes y cierres</h3>
+    <p class="note">Documentos de seguimiento del torneo actual: tabla, pendientes, resultados, fixture y definiciones.</p>
+    <div class="planner-report-box">
+      <h4>Informe del torneo actual</h4>
+      <p>Usa la categoria seleccionada arriba para generar un documento de seguimiento del torneo que ya esta en juego.</p>
+      <button id="planner-informe" class="secondary" type="button">
+        Generar informe PDF
+      </button>
+    </div>
+  </div>
+
   <div class="card assoc-panel" data-asociacion-panel-view="permisos">
     <h3>Usuarios y permisos</h3>
     <p class="note">Base de roles activa en Supabase. Próximo paso: edición visual de usuarios, equipos y accesos desde este panel.</p>
@@ -1543,8 +1563,8 @@
   </div>
 
   <div class="card assoc-panel" data-asociacion-panel-view="uso">
-    <h3>Uso de la app</h3>
-    <p class="note">Estadísticas privadas de actividad reciente. Solo se muestran dentro de Asociación.</p>
+    <h3>Auditoria y uso</h3>
+    <p class="note">Actividad reciente, accesos, cargas y movimientos sensibles. Solo se muestran dentro de Asociacion.</p>
     <div id="uso-resumen" class="doc-summary"></div>
     <div id="uso-detalle"></div>
     <div id="uso-status" class="status"></div>
