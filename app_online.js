@@ -16,6 +16,7 @@ const estado = {
   categorias: [],
   partidosPorCategoria: {},
   playoffsPorCategoria: {},
+  programacionPorCategoriaId: {},
   equiposPorCategoriaId: {},
   requisitosDocumentales: [],
   documentosPorCategoriaId: {},
@@ -1709,6 +1710,29 @@ async function cargarResultadosPlayoffCategoria(nombreCategoria, force = false) 
   return estado.playoffsPorCategoria[nombreCategoria];
 }
 
+async function cargarProgramacionCategoria(categoriaId, force = false) {
+  if (!categoriaId) return [];
+  if (!force && estado.programacionPorCategoriaId[categoriaId]) {
+    return estado.programacionPorCategoriaId[categoriaId];
+  }
+
+  const { data, error } = await supabaseClient
+    .from("match_schedules")
+    .select("*")
+    .eq("categoria_id", categoriaId)
+    .order("jornada", { ascending: true })
+    .order("hora", { ascending: true });
+
+  if (error) {
+    console.warn("No se pudo cargar programacion:", error.message);
+    estado.programacionPorCategoriaId[categoriaId] = [];
+    return [];
+  }
+
+  estado.programacionPorCategoriaId[categoriaId] = data || [];
+  return estado.programacionPorCategoriaId[categoriaId];
+}
+
 function calcularTabla(partidos) {
   const tabla = {};
 
@@ -2766,6 +2790,7 @@ async function refrescarCategoria(nombreCategoria, opciones = {}) {
 
   await cargarPartidosCategoria(nombreCategoria);
   await cargarResultadosPlayoffCategoria(nombreCategoria);
+  if (categoria?.id) await cargarProgramacionCategoria(categoria.id);
   if (actualizarPublico) renderPublicoCategoria(nombreCategoria);
 }
 
@@ -3659,6 +3684,297 @@ async function guardarResultadoPlayoffAsociacion(event) {
   setStatus(status, "Resultado de playoff guardado y visible en la llave publica.", "ok");
 }
 
+function obtenerFilasProgramacion(nombreCategoria) {
+  const categoria = obtenerCategoriaPorNombre(nombreCategoria);
+  if (!categoria?.id) return [];
+
+  const programacion = estado.programacionPorCategoriaId[categoria.id] || [];
+  const porPartido = new Map(programacion.map((fila) => [fila.partido_id, fila]));
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+
+  return partidos
+    .filter((partido) => partido.local && partido.visitante)
+    .map((partido) => {
+      const guardado = porPartido.get(partido.id) || {};
+      return {
+        ...guardado,
+        partido_id: partido.id,
+        categoria_id: categoria.id,
+        categoria_nombre: nombreCategoria,
+        jornada: partido.jornada,
+        local: guardado.local || partido.local,
+        visitante: guardado.visitante || partido.visitante,
+        fecha_partido: guardado.fecha_partido || partido.fecha || "",
+        hora: guardado.hora || "",
+        cancha: guardado.cancha || "",
+        estado: guardado.estado || "pendiente",
+        observacion: guardado.observacion || ""
+      };
+    })
+    .sort((a, b) => Number(a.jornada || 0) - Number(b.jornada || 0));
+}
+
+function estadoProgramacionLabel(estadoFila) {
+  const labels = {
+    pendiente: "Pendiente",
+    listo: "Listo para informar",
+    enviado: "Enviado",
+    confirmado: "Confirmado"
+  };
+  return labels[estadoFila] || labels.pendiente;
+}
+
+function filaProgramacionLista(fila) {
+  return !!fila.fecha_partido && !!fila.hora && !!fila.cancha;
+}
+
+function renderProgramacionAsociacion(nombreCategoria) {
+  const tabla = $("programacion-tabla");
+  const resumen = $("programacion-resumen");
+  if (!tabla || !resumen) return;
+
+  const filas = obtenerFilasProgramacion(nombreCategoria);
+  const listas = filas.filter(filaProgramacionLista).length;
+  const enviadas = filas.filter((fila) => fila.estado === "enviado" || fila.estado === "confirmado").length;
+  const pendientes = filas.length - listas;
+
+  resumen.innerHTML = `
+    <div class="doc-pill"><strong>${filas.length}</strong><span>Partidos</span></div>
+    <div class="doc-pill"><strong>${listas}</strong><span>Listos</span></div>
+    <div class="doc-pill"><strong>${enviadas}</strong><span>Informados</span></div>
+    <div class="doc-pill"><strong>${pendientes}</strong><span>Sin datos</span></div>
+  `;
+
+  if (!filas.length) {
+    tabla.innerHTML = `<div class="empty">No hay partidos cargados para programar en esta categoria.</div>`;
+    return;
+  }
+
+  tabla.innerHTML = `
+    <div class="programacion-list">
+      ${filas.map((fila) => `
+        <div class="programacion-row" data-partido-id="${escapeHtml(fila.partido_id)}">
+          <div class="programacion-match">
+            <strong>Fecha ${escapeHtml(fila.jornada || "-")} · ${escapeHtml(fila.local)} vs ${escapeHtml(fila.visitante)}</strong>
+            <span class="programacion-state">${escapeHtml(estadoProgramacionLabel(fila.estado))}</span>
+          </div>
+          <div class="field">
+            <label>Dia</label>
+            <input class="programacion-fecha" type="date" value="${escapeHtml(fila.fecha_partido || "")}">
+          </div>
+          <div class="field">
+            <label>Hora</label>
+            <input class="programacion-hora" type="time" value="${escapeHtml(fila.hora || "")}">
+          </div>
+          <div class="field">
+            <label>Cancha</label>
+            <input class="programacion-cancha" type="text" value="${escapeHtml(fila.cancha || "")}" placeholder="Ej: Hogar Social">
+          </div>
+          <div class="field">
+            <label>Obs.</label>
+            <input class="programacion-observacion" type="text" value="${escapeHtml(fila.observacion || "")}" placeholder="Opcional">
+          </div>
+          <div class="programacion-actions">
+            <button class="secondary programacion-save-btn" type="button">Guardar</button>
+            <button class="secondary programacion-send-btn" type="button" ${filaProgramacionLista(fila) ? "" : "disabled"}>Marcar enviado</button>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function obtenerDatosFilaProgramacion(row) {
+  return {
+    fecha_partido: row.querySelector(".programacion-fecha")?.value || null,
+    hora: row.querySelector(".programacion-hora")?.value || "",
+    cancha: row.querySelector(".programacion-cancha")?.value?.trim() || "",
+    observacion: row.querySelector(".programacion-observacion")?.value?.trim() || ""
+  };
+}
+
+async function guardarProgramacionFila(row, estadoForzado = null) {
+  const categoriaNombre = $("asociacion-categoria")?.value || "";
+  const categoria = obtenerCategoriaPorNombre(categoriaNombre);
+  const partidoId = row?.dataset?.partidoId || "";
+  const partido = (estado.partidosPorCategoria[categoriaNombre] || []).find((item) => item.id === partidoId);
+  const status = $("asociacion-status");
+
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilita Asociacion con la clave administrativa.", "warn");
+    return false;
+  }
+
+  if (!categoria || !partido) {
+    setStatus(status, "No se encontro el partido para programar.", "error");
+    return false;
+  }
+
+  const datos = obtenerDatosFilaProgramacion(row);
+  const estadoCalculado = estadoForzado || (datos.fecha_partido && datos.hora && datos.cancha ? "listo" : "pendiente");
+  const now = new Date().toISOString();
+  const payload = {
+    partido_id: partido.id,
+    categoria_id: categoria.id,
+    categoria_nombre: categoriaNombre,
+    jornada: partido.jornada || null,
+    local: partido.local,
+    visitante: partido.visitante,
+    fecha_partido: datos.fecha_partido,
+    hora: datos.hora || null,
+    cancha: datos.cancha || null,
+    estado: estadoCalculado,
+    observacion: datos.observacion || null,
+    updated_at: now
+  };
+
+  if (estadoForzado === "enviado") {
+    payload.informado_por = estado.usuarioAsociacion?.display_name || "ADMIN";
+    payload.informado_en = now;
+  }
+
+  const { error } = await supabaseClient
+    .from("match_schedules")
+    .upsert(payload, { onConflict: "partido_id" });
+
+  if (error) {
+    setStatus(status, `No se pudo guardar programacion: ${error.message}. Si la tabla no existe, corre docs/ejecutar-en-supabase-programacion.sql.`, "error");
+    return false;
+  }
+
+  await cargarProgramacionCategoria(categoria.id, true);
+  renderProgramacionAsociacion(categoriaNombre);
+  return true;
+}
+
+async function manejarProgramacionClick(event) {
+  const saveButton = event.target.closest(".programacion-save-btn");
+  const sendButton = event.target.closest(".programacion-send-btn");
+  const status = $("asociacion-status");
+
+  if (!saveButton && !sendButton) return;
+
+  const row = event.target.closest(".programacion-row");
+  const ok = await guardarProgramacionFila(row, sendButton ? "enviado" : null);
+  if (!ok) return;
+
+  registrarUso(sendButton ? "programacion_informada" : "programacion_guardada", {
+    area: "asociacion",
+    categoria: $("asociacion-categoria")?.value || "",
+    user: estado.usuarioAsociacion?.display_name || "Asociacion",
+    role: estado.usuarioAsociacion?.role || "asociacion"
+  });
+
+  setStatus(status, sendButton ? "Partido marcado como enviado." : "Programacion guardada.", "ok");
+}
+
+function generarTextoProgramacion(nombreCategoria) {
+  const filas = obtenerFilasProgramacion(nombreCategoria)
+    .filter(filaProgramacionLista)
+    .sort((a, b) => `${a.fecha_partido} ${a.hora}`.localeCompare(`${b.fecha_partido} ${b.hora}`));
+
+  if (!filas.length) return "";
+
+  const grupos = {};
+  filas.forEach((fila) => {
+    const clave = `${fila.fecha_partido}|${fila.cancha}`;
+    if (!grupos[clave]) grupos[clave] = [];
+    grupos[clave].push(fila);
+  });
+
+  const partes = [`Programacion Maxi Basquet APdB - ${nombreCategoria}`];
+  Object.entries(grupos).forEach(([clave, partidosGrupo]) => {
+    const [fecha, cancha] = clave.split("|");
+    partes.push("");
+    partes.push(`${fechaPartidoLabel(fecha)} - Cancha: ${cancha}`);
+    partidosGrupo.forEach((fila) => {
+      partes.push(`${fila.hora} - Fecha ${fila.jornada || "-"} - ${fila.local} vs ${fila.visitante}${fila.observacion ? ` (${fila.observacion})` : ""}`);
+    });
+  });
+
+  partes.push("");
+  partes.push("Por favor confirmar recepcion y asignacion arbitral.");
+  return partes.join("\n");
+}
+
+async function copiarProgramacionAsociacion() {
+  const categoria = $("asociacion-categoria")?.value || "";
+  const status = $("asociacion-status");
+  const texto = generarTextoProgramacion(categoria);
+
+  if (!texto) {
+    setStatus(status, "No hay partidos con dia, hora y cancha para copiar.", "warn");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(texto);
+    setStatus(status, "Comunicacion copiada al portapapeles.", "ok");
+  } catch (error) {
+    const salida = $("programacion-mensaje");
+    if (salida) salida.value = texto;
+    setStatus(status, "No se pudo copiar automaticamente. El texto quedo en el cuadro para copiar manualmente.", "warn");
+  }
+
+  const salida = $("programacion-mensaje");
+  if (salida) salida.value = texto;
+}
+
+async function marcarProgramacionListaEnviada() {
+  const categoriaNombre = $("asociacion-categoria")?.value || "";
+  const categoria = obtenerCategoriaPorNombre(categoriaNombre);
+  const status = $("asociacion-status");
+  const filas = obtenerFilasProgramacion(categoriaNombre).filter((fila) => filaProgramacionLista(fila) && fila.estado !== "enviado" && fila.estado !== "confirmado");
+
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilita Asociacion con la clave administrativa.", "warn");
+    return;
+  }
+
+  if (!categoria || !filas.length) {
+    setStatus(status, "No hay partidos listos pendientes de marcar como enviados.", "warn");
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const payload = filas.map((fila) => ({
+    partido_id: fila.partido_id,
+    categoria_id: categoria.id,
+    categoria_nombre: categoriaNombre,
+    jornada: fila.jornada || null,
+    local: fila.local,
+    visitante: fila.visitante,
+    fecha_partido: fila.fecha_partido,
+    hora: fila.hora,
+    cancha: fila.cancha,
+    estado: "enviado",
+    observacion: fila.observacion || null,
+    informado_por: estado.usuarioAsociacion?.display_name || "ADMIN",
+    informado_en: now,
+    updated_at: now
+  }));
+
+  const { error } = await supabaseClient
+    .from("match_schedules")
+    .upsert(payload, { onConflict: "partido_id" });
+
+  if (error) {
+    setStatus(status, `No se pudo marcar como enviado: ${error.message}`, "error");
+    return;
+  }
+
+  await cargarProgramacionCategoria(categoria.id, true);
+  renderProgramacionAsociacion(categoriaNombre);
+  registrarUso("programacion_lote_enviado", {
+    area: "asociacion",
+    categoria: categoriaNombre,
+    cantidad: filas.length,
+    user: estado.usuarioAsociacion?.display_name || "Asociacion",
+    role: estado.usuarioAsociacion?.role || "asociacion"
+  });
+  setStatus(status, "Programacion lista marcada como enviada.", "ok");
+}
+
 async function revisarDocumentoAsociacion(event) {
   const button = event.target.closest(".doc-review-btn");
   if (!button) return;
@@ -4088,6 +4404,7 @@ async function inicializarAsociacion() {
     poblarSelectPartidosAsociacion(categoriaInicial);
     renderPlayoffsAsociacion(categoriaInicial);
     renderDocumentacionAsociacion(categoriaInicial);
+    renderProgramacionAsociacion(categoriaInicial);
   }
 
   $("asociacion-categoria").addEventListener("change", async (e) => {
@@ -4096,6 +4413,7 @@ async function inicializarAsociacion() {
     poblarSelectPartidosAsociacion(categoria);
     renderPlayoffsAsociacion(categoria);
     renderDocumentacionAsociacion(categoria);
+    renderProgramacionAsociacion(categoria);
     setStatus($("asociacion-status"), "", "");
   });
 
@@ -4105,6 +4423,9 @@ async function inicializarAsociacion() {
   $("asociacion-resuelve-local")?.addEventListener("click", () => resolverPartidoAdministrativamente("local"));
   $("asociacion-resuelve-visitante")?.addEventListener("click", () => resolverPartidoAdministrativamente("visitante"));
   $("asociacion-playoffs")?.addEventListener("click", guardarResultadoPlayoffAsociacion);
+  $("programacion-tabla")?.addEventListener("click", manejarProgramacionClick);
+  $("programacion-copiar")?.addEventListener("click", copiarProgramacionAsociacion);
+  $("programacion-marcar-enviado")?.addEventListener("click", marcarProgramacionListaEnviada);
   $("documentacion-tabla").addEventListener("click", revisarDocumentoAsociacion);
   $("documentacion-tabla").addEventListener("click", verDocumentoAsociacion);
   $("documentacion-tabla").addEventListener("click", darDeBajaJugadorAsociacion);

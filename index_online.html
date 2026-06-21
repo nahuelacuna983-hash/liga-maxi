@@ -538,6 +538,69 @@
       padding-right: 10px;
     }
 
+    .programacion-actions-head {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .programacion-message {
+      min-height: 140px;
+      resize: vertical;
+      width: 100%;
+      margin-bottom: 12px;
+      line-height: 1.45;
+    }
+
+    .programacion-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .programacion-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.3fr) 145px 105px minmax(160px, 1fr) minmax(160px, 1fr) 180px;
+      gap: 10px;
+      align-items: end;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.24);
+      padding: 10px;
+    }
+
+    .programacion-row .field {
+      min-width: 0;
+    }
+
+    .programacion-match {
+      display: grid;
+      gap: 6px;
+      align-self: center;
+      min-width: 0;
+    }
+
+    .programacion-match strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .programacion-state {
+      justify-self: start;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.16);
+      color: #dbeafe;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 4px 8px;
+    }
+
+    .programacion-actions {
+      display: grid;
+      gap: 8px;
+    }
+
     .playoff-status-box {
       border: 1px solid var(--line);
       border-radius: 12px;
@@ -924,6 +987,14 @@
       .playoff-save-btn {
         grid-column: 1 / -1;
       }
+
+      .programacion-row {
+        grid-template-columns: 1fr;
+      }
+
+      .programacion-match strong {
+        white-space: normal;
+      }
     }
 
     @media (min-width: 701px) and (max-width: 1180px) {
@@ -932,6 +1003,15 @@
       }
 
       .assoc-playoff-title {
+        grid-column: 1 / -1;
+      }
+
+      .programacion-row {
+        grid-template-columns: minmax(220px, 1fr) 140px 105px minmax(180px, 1fr);
+      }
+
+      .programacion-match,
+      .programacion-actions {
         grid-column: 1 / -1;
       }
     }
@@ -1530,13 +1610,14 @@
 
   <div class="card assoc-panel" data-asociacion-panel-view="programacion">
     <h3>Programacion y arbitros</h3>
-    <p class="note">Modulo preparado para ordenar canchas, horarios y comunicaciones a la Asociacion/arbitros.</p>
-    <div class="assoc-permission-grid">
-      <div><strong>1. Programar</strong><span>Definir cancha, dia y horario por partido.</span></div>
-      <div><strong>2. Informar</strong><span>Generar mensaje oficial sin copiar y pegar a mano.</span></div>
-      <div><strong>3. Controlar</strong><span>Marcar enviado, pendiente, confirmado o con terna asignada.</span></div>
-      <div><strong>4. Historial</strong><span>Guardar quien informo, cuando y que partidos incluyo.</span></div>
+    <p class="note">Cargá día, hora y cancha; la app arma el mensaje para enviar y deja registro de lo informado.</p>
+    <div id="programacion-resumen" class="doc-summary"></div>
+    <div class="programacion-actions-head">
+      <button id="programacion-copiar" class="primary" type="button">Copiar comunicacion</button>
+      <button id="programacion-marcar-enviado" class="secondary" type="button">Marcar listos como enviados</button>
     </div>
+    <textarea id="programacion-mensaje" class="programacion-message" readonly placeholder="Aca va a quedar el texto generado para enviar a Asociacion/arbitros."></textarea>
+    <div id="programacion-tabla"></div>
   </div>
 
   <div class="card assoc-panel" data-asociacion-panel-view="informes">
