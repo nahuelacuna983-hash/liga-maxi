@@ -3,6 +3,20 @@ const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
 const TORNEO_ID = "7d0971e3-66ee-4791-bcbf-bace1d2fefb9";
 
+const APP_CONFIG = {
+  producto: {
+    nombre: "Gestor de Torneos",
+    subtitulo: "Plataforma operativa para torneos, documentación, resultados y programación.",
+    storageRoot: "gestor-torneos"
+  },
+  organizacionActiva: {
+    id: "apdb",
+    nombre: "APdB",
+    torneoLabel: "Liga Maxi",
+    storageSlug: "apdb"
+  }
+};
+
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const CATEGORIAS_BASE = [
@@ -35,6 +49,22 @@ function $(id) {
   return document.getElementById(id);
 }
 
+function aplicarConfiguracionVisual() {
+  const producto = APP_CONFIG.producto;
+  const organizacion = APP_CONFIG.organizacionActiva;
+  const titulo = `${producto.nombre} · ${organizacion.nombre}`;
+
+  document.title = titulo;
+
+  const appTitle = $("app-title");
+  if (appTitle) appTitle.textContent = titulo;
+
+  const appSubtitle = $("app-subtitle");
+  if (appSubtitle) {
+    appSubtitle.textContent = `${organizacion.torneoLabel} · ${producto.subtitulo}`;
+  }
+}
+
 function setStatus(element, text, kind = "") {
   if (!element) return;
   element.textContent = text || "";
@@ -42,7 +72,7 @@ function setStatus(element, text, kind = "") {
 }
 
 function obtenerSesionUso() {
-  const key = "apdb_usage_session_id";
+  const key = `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}_usage_session_id`;
   let sessionId = "";
 
   try {
@@ -2917,7 +2947,7 @@ async function subirDocumentoDelegado(event) {
 
   for (const file of files) {
     const storagePath = [
-      "apdb",
+      APP_CONFIG.organizacionActiva.storageSlug,
       "2026",
       slugify(categoriaNombre),
       documento.equipo_id || slugify(documento.equipo_nombre),
@@ -3172,7 +3202,7 @@ async function subirDocumentoJugadorDelegado(event) {
   setStatus(status, "Subiendo documento del jugador...", "");
 
   const storagePath = [
-    "apdb",
+    APP_CONFIG.organizacionActiva.storageSlug,
     "2026",
     slugify(categoriaNombre),
     documento.equipo_id || slugify(documento.equipo_nombre),
@@ -3882,7 +3912,7 @@ function generarTextoProgramacion(nombreCategoria) {
     grupos[clave].push(fila);
   });
 
-  const partes = [`Programacion Maxi Basquet APdB - ${nombreCategoria}`];
+  const partes = [`Programacion ${APP_CONFIG.organizacionActiva.torneoLabel} - ${APP_CONFIG.organizacionActiva.nombre} - ${nombreCategoria}`];
   Object.entries(grupos).forEach(([clave, partidosGrupo]) => {
     const [fecha, cancha] = clave.split("|");
     partes.push("");
@@ -4803,7 +4833,8 @@ function generarInformeTorneo() {
       </style>
     </head>
     <body>
-      <h1>APdB - Informe de torneo</h1>
+      <h1>${escapeHtml(APP_CONFIG.producto.nombre)} - Informe de torneo</h1>
+      <p class="muted">Organizacion: ${escapeHtml(APP_CONFIG.organizacionActiva.nombre)} - ${escapeHtml(APP_CONFIG.organizacionActiva.torneoLabel)}</p>
       <p class="muted">${escapeHtml(categoria)} - ${escapeHtml(competencia)} - Generado ${escapeHtml(fechaGeneracion)}</p>
       <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
 
@@ -4973,6 +5004,8 @@ if (fechaInicio) {
 
 async function inicializar() {
   try {
+    aplicarConfiguracionVisual();
+
     $("tab-publico").addEventListener("click", () => {
       mostrarVista("publico");
       registrarUso("vista_publico", { area: "publico", categoria: $("publico-categoria")?.value || null });
