@@ -2586,23 +2586,28 @@ function renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos) {
 }
 
 function renderPlayoffsSimple(nombreCategoria, partidos) {
-  const container = document.getElementById("publico-playoffs");
-  if (!container) return;
+  const containerPrincipal = document.getElementById("publico-playoffs-principal");
+  const containerSecundario = document.getElementById("publico-playoffs");
+  if (!containerPrincipal && !containerSecundario) return;
+
+  if (containerPrincipal) containerPrincipal.innerHTML = "";
+  if (containerSecundario) containerSecundario.innerHTML = "";
 
   const tabla = calcularTabla(partidos);
   const cantidadEquipos = tabla.length;
   const llaveOficialActual = nombreCategoria === "Maxi +35 A" || nombreCategoria === "Maxi +48";
   const faseRegularCerrada = partidos.length > 0 && (partidos.every(partidoTieneResultado) || llaveOficialActual);
+  const resultadosPlayoffGuardados = estado.playoffsPorCategoria[nombreCategoria] || [];
+  const playoffsConActividad = resultadosPlayoffGuardados.some(partidoTieneResultado);
   const partidosPlayoff = aplicarAvanceAutomaticoPlayoffs(nombreCategoria, tabla, mezclarPartidosPlayoff(
     generarPartidosPlayoff(nombreCategoria, tabla),
-    estado.playoffsPorCategoria[nombreCategoria] || []
+    resultadosPlayoffGuardados
   ));
   const buscarPlayoff = (fase, llave, partidoNumero = 1) =>
     partidosPlayoff.find((partido) => partido.fase === fase && partido.llave === llave && Number(partido.partido_numero || 1) === partidoNumero) ||
     crearPlayoffMatch(fase, llave, "", 0, partidoNumero, "", "");
 
   if (!cantidadEquipos) {
-    container.innerHTML = "";
     return;
   }
 
@@ -2668,9 +2673,16 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
   }
 
   if (!bracket) {
-    container.innerHTML = "";
     return;
   }
+
+  const playoffsProtagonistas = faseRegularCerrada || playoffsConActividad;
+  const container = playoffsProtagonistas && containerPrincipal
+    ? containerPrincipal
+    : containerSecundario || containerPrincipal;
+  const cardClass = playoffsProtagonistas
+    ? "card playoff-card playoff-card-featured"
+    : "playoff-card playoff-card-secondary";
 
   const bracketVacio = renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos);
   const promocionDescenso = renderPromocionDescenso(nombreCategoria, tabla);
@@ -2697,7 +2709,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
     `;
 
   container.innerHTML = `
-    <div class="card playoff-card">
+    <div class="${cardClass}">
       <div class="playoff-head">
         <div>
           <h3>Playoffs</h3>
@@ -2722,12 +2734,14 @@ function mostrarCargaPublico(nombreCategoria) {
   const tabla = $("publico-tabla-wrap");
   const fixture = $("publico-fixture");
   const fecha = $("fecha-destacada");
+  const playoffsPrincipal = $("publico-playoffs-principal");
   const playoffs = $("publico-playoffs");
   const mensaje = `<div class="empty">Cargando ${escapeHtml(nombreCategoria || "categoría")}...</div>`;
 
   if (tabla) tabla.innerHTML = mensaje;
   if (fixture) fixture.innerHTML = mensaje;
   if (fecha) fecha.innerHTML = `<div class="card">${mensaje}</div>`;
+  if (playoffsPrincipal) playoffsPrincipal.innerHTML = "";
   if (playoffs) playoffs.innerHTML = "";
 }
 
