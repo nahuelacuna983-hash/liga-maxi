@@ -42,7 +42,8 @@ const estado = {
   delegadoDesbloqueado: false,
   delegado: null,
   asociacionDesbloqueada: false,
-  usuarioAsociacion: null
+  usuarioAsociacion: null,
+  asociacionInicializada: false
 };
 
 function $(id) {
@@ -69,6 +70,34 @@ function setStatus(element, text, kind = "") {
   if (!element) return;
   element.textContent = text || "";
   element.className = `status${kind ? " " + kind : ""}`;
+}
+
+function claveCachePublica(tipo, nombreCategoria) {
+  return `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}_${tipo}_${slugify(nombreCategoria || "general")}`;
+}
+
+function leerCachePublica(tipo, nombreCategoria, maxEdadMs = 10 * 60 * 1000) {
+  try {
+    const raw = localStorage.getItem(claveCachePublica(tipo, nombreCategoria));
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed?.timestamp || Date.now() - parsed.timestamp > maxEdadMs) return null;
+    return parsed.data || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function guardarCachePublica(tipo, nombreCategoria, data) {
+  try {
+    localStorage.setItem(claveCachePublica(tipo, nombreCategoria), JSON.stringify({
+      timestamp: Date.now(),
+      data
+    }));
+  } catch (error) {
+    // Si el navegador no permite guardar cache, la app sigue funcionando online.
+  }
 }
 
 function obtenerSesionUso() {
@@ -234,6 +263,7 @@ async function cargarCategorias() {
   }
 
   estado.categorias = data || [];
+  guardarCachePublica("categorias", "general", estado.categorias);
   return estado.categorias;
 }
 
@@ -1709,6 +1739,7 @@ async function cargarPartidosCategoria(nombreCategoria) {
   }
 
   estado.partidosPorCategoria[nombreCategoria] = data || [];
+  guardarCachePublica("partidos", nombreCategoria, estado.partidosPorCategoria[nombreCategoria]);
   return estado.partidosPorCategoria[nombreCategoria];
 }
 
@@ -2427,6 +2458,14 @@ function obtenerCategoriaPorNombre(nombreCategoria) {
   return estado.categorias.find((cat) => cat.nombre === nombreCategoria) || null;
 }
 
+function categoriaUsaPlayoffsPublicos(nombreCategoria) {
+  const categoria = obtenerCategoriaPorNombre(nombreCategoria);
+  return nombreCategoria.includes("+35") ||
+    nombreCategoria.includes("+48") ||
+    !!categoria?.playoffs ||
+    Number(categoria?.clasificados || 0) > 0;
+}
+
 function normalizarClaveRonda(nombre) {
   return normalizarTexto(nombre).replace(/\s+/g, "_");
 }
@@ -2723,7 +2762,9 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
 
 async function renderPublicoCategoria(nombreCategoria) {
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
-  await cargarResultadosPlayoffCategoria(nombreCategoria);
+  if (categoriaUsaPlayoffsPublicos(nombreCategoria)) {
+    await cargarResultadosPlayoffCategoria(nombreCategoria);
+  }
   renderTablaSimple(nombreCategoria, partidos);
   renderFixturePublico(nombreCategoria);
   renderFechaDestacada(nombreCategoria);
@@ -2749,10 +2790,23 @@ async function refrescarPublicoCategoria(nombreCategoria) {
   if (!nombreCategoria) return;
 
   const cargaId = ++estado.publicoCargaActual;
-  mostrarCargaPublico(nombreCategoria);
+  const partidosCache = leerCachePublica("partidos", nombreCategoria);
+  if (partidosCache?.length) {
+    estado.partidosPorCategoria[nombreCategoria] = partidosCache;
+    renderTablaSimple(nombreCategoria, partidosCache);
+    renderFixturePublico(nombreCategoria);
+    renderFechaDestacada(nombreCategoria);
+    renderPlayoffsSimple(nombreCategoria, partidosCache);
+  } else {
+    mostrarCargaPublico(nombreCategoria);
+  }
 
   try {
-    await cargarPartidosCategoria(nombreCategoria);
+    const cargas = [cargarPartidosCategoria(nombreCategoria)];
+    if (categoriaUsaPlayoffsPublicos(nombreCategoria)) {
+      cargas.push(cargarResultadosPlayoffCategoria(nombreCategoria));
+    }
+    await Promise.all(cargas);
 
     const categoriaActual = $("publico-categoria")?.value || "";
     if (cargaId !== estado.publicoCargaActual || categoriaActual !== nombreCategoria) {
@@ -2823,7 +2877,13 @@ function poblarSelectPartidosDelegado(nombreCategoria) {
 }
 
 async function refrescarCategoria(nombreCategoria, opciones = {}) {
-  const { incluirDocumentacion = true, actualizarPublico = true } = opciones;
+  const {
+    incluirDocumentacion = true,
+    actualizarPublico = true,
+    incluirPartidos = true,
+    incluirPlayoffs = true,
+    incluirProgramacion = true
+  } = opciones;
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   if (categoria && incluirDocumentacion) {
     await cargarEquiposCategoria(categoria.id);
@@ -2832,9 +2892,9 @@ async function refrescarCategoria(nombreCategoria, opciones = {}) {
     await cargarDocumentosJugadoresCategoria(categoria.id);
   }
 
-  await cargarPartidosCategoria(nombreCategoria);
-  await cargarResultadosPlayoffCategoria(nombreCategoria);
-  if (categoria?.id) await cargarProgramacionCategoria(categoria.id);
+  if (incluirPartidos) await cargarPartidosCategoria(nombreCategoria);
+  if (incluirPlayoffs) await cargarResultadosPlayoffCategoria(nombreCategoria);
+  if (categoria?.id && incluirProgramacion) await cargarProgramacionCategoria(categoria.id);
   if (actualizarPublico) renderPublicoCategoria(nombreCategoria);
 }
 
@@ -4356,6 +4416,23 @@ function renderVentanaArchivosDocumento(documento, archivos) {
   `;
 }
 
+async function cargarDatosAsociacionActual() {
+  if (!estado.asociacionDesbloqueada) return;
+
+  const categoria = $("asociacion-categoria")?.value;
+  if (!categoria) return;
+
+  const status = $("asociacion-status");
+  setStatus(status, "Cargando datos de asociacion...", "");
+
+  await refrescarCategoria(categoria, { actualizarPublico: false });
+  poblarSelectPartidosAsociacion(categoria);
+  renderPlayoffsAsociacion(categoria);
+  renderDocumentacionAsociacion(categoria);
+  renderProgramacionAsociacion(categoria);
+  setStatus(status, "", "");
+}
+
 async function desbloquearAsociacion() {
   const clave = $("asociacion-clave")?.value?.trim() || "";
   const status = $("asociacion-acceso-status");
@@ -4385,6 +4462,11 @@ async function desbloquearAsociacion() {
     actualizarEstadisticasUso();
   }
   setStatus(status, accesoSupabase ? `Asociación habilitada para ${permisos[0].display_name}.` : "Asociación habilitada.", "ok");
+  try {
+    await cargarDatosAsociacionActual();
+  } catch (error) {
+    setStatus($("asociacion-status"), `No se pudieron cargar los datos de asociacion: ${error.message}`, "error");
+  }
 }
 
 function csvCell(value) {
@@ -4440,16 +4522,10 @@ function exportarDocumentacionCsv() {
 }
 
 async function inicializarAsociacion() {
-  poblarSelectCategorias("asociacion-categoria", estado.categorias);
+  if (estado.asociacionInicializada) return;
+  estado.asociacionInicializada = true;
 
-  const categoriaInicial = $("asociacion-categoria").value;
-  if (categoriaInicial) {
-    await refrescarCategoria(categoriaInicial, { actualizarPublico: false });
-    poblarSelectPartidosAsociacion(categoriaInicial);
-    renderPlayoffsAsociacion(categoriaInicial);
-    renderDocumentacionAsociacion(categoriaInicial);
-    renderProgramacionAsociacion(categoriaInicial);
-  }
+  poblarSelectCategorias("asociacion-categoria", estado.categorias);
 
   $("asociacion-categoria").addEventListener("change", async (e) => {
     const categoria = e.target.value;
@@ -5055,7 +5131,12 @@ async function inicializar() {
       refrescarPublicoCategoria(e.target.value);
     });
 
-    const categorias = await cargarCategorias();
+    const categoriasCache = leerCachePublica("categorias", "general", 60 * 60 * 1000);
+    const categorias = categoriasCache?.length ? categoriasCache : await cargarCategorias();
+    estado.categorias = categorias;
+    if (categoriasCache?.length) {
+      cargarCategorias().catch((error) => console.warn("No se pudieron refrescar categorias en segundo plano:", error.message));
+    }
     registrarUso("app_abierta", { area: "inicio" });
 
     if (!categorias.length) {
@@ -5075,7 +5156,12 @@ async function inicializar() {
 
     await refrescarPublicoCategoria(categoriaInicial);
     await cargarRequisitosDocumentales();
-    await refrescarCategoria(categoriaInicial, { actualizarPublico: false });
+    await refrescarCategoria(categoriaInicial, {
+      actualizarPublico: false,
+      incluirPartidos: false,
+      incluirPlayoffs: false,
+      incluirProgramacion: false
+    });
     $("delegado-categoria").value = categoriaInicial;
     poblarSelectPartidosDelegado(categoriaInicial);
     aplicarBloqueoDelegado();
