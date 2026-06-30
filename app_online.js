@@ -200,6 +200,41 @@ function mostrarVista(nombre) {
   });
 }
 
+function obtenerParametrosVista() {
+  const params = new URLSearchParams(window.location.search);
+  const vista = params.get("vista") || "publico";
+  return {
+    categoria: params.get("categoria") || params.get("cat") || "",
+    vista: ["publico", "fecha"].includes(vista) ? vista : "publico"
+  };
+}
+
+function normalizarCategoriaUrl(value) {
+  return normalizarTexto(value || "")
+    .replace(/\+/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function resolverCategoriaUrl(categorias, categoriaUrl) {
+  if (!categoriaUrl) return "";
+  const buscada = normalizarCategoriaUrl(categoriaUrl);
+  return (categorias || []).find((cat) => normalizarCategoriaUrl(cat.nombre) === buscada)?.nombre || "";
+}
+
+function actualizarUrlCategoria(categoria, vista = "publico") {
+  if (!window.history?.replaceState) return;
+
+  const url = new URL(window.location.href);
+  if (categoria) url.searchParams.set("categoria", categoria);
+  if (vista && vista !== "publico") {
+    url.searchParams.set("vista", vista);
+  } else {
+    url.searchParams.delete("vista");
+  }
+  window.history.replaceState({}, "", url);
+}
+
 function aplicarBloqueoDelegado() {
   const enabled = !!estado.delegadoDesbloqueado;
 
@@ -5098,6 +5133,7 @@ async function inicializar() {
 
     $("tab-publico").addEventListener("click", () => {
       mostrarVista("publico");
+      actualizarUrlCategoria($("publico-categoria")?.value || "", "publico");
       registrarUso("vista_publico", { area: "publico", categoria: $("publico-categoria")?.value || null });
     });
     $("tab-fecha").addEventListener("click", () => {
@@ -5105,6 +5141,8 @@ async function inicializar() {
       const categoria = $("fecha-categoria")?.value || $("publico-categoria")?.value || null;
       if (categoria) {
         $("publico-categoria").value = categoria;
+        if ($("fecha-categoria")) $("fecha-categoria").value = categoria;
+        actualizarUrlCategoria(categoria, "fecha");
         refrescarPublicoCategoria(categoria);
       }
       registrarUso("vista_fecha", { area: "publico", categoria });
@@ -5124,10 +5162,12 @@ async function inicializar() {
 
     $("publico-categoria").addEventListener("change", (e) => {
       if ($("fecha-categoria")) $("fecha-categoria").value = e.target.value;
+      actualizarUrlCategoria(e.target.value, "publico");
       refrescarPublicoCategoria(e.target.value);
     });
     $("fecha-categoria").addEventListener("change", (e) => {
       if ($("publico-categoria")) $("publico-categoria").value = e.target.value;
+      actualizarUrlCategoria(e.target.value, "fecha");
       refrescarPublicoCategoria(e.target.value);
     });
 
@@ -5143,7 +5183,9 @@ async function inicializar() {
       throw new Error("No se encontraron categorías cargadas en Supabase.");
     }
 
-    const categoriaPrevia = $("publico-categoria")?.value || categorias[0].nombre;
+    const parametrosVista = obtenerParametrosVista();
+    const categoriaDesdeUrl = resolverCategoriaUrl(categorias, parametrosVista.categoria);
+    const categoriaPrevia = categoriaDesdeUrl || $("publico-categoria")?.value || categorias[0].nombre;
     poblarSelectCategorias("publico-categoria", categorias);
     poblarSelectCategorias("fecha-categoria", categorias);
     poblarSelectCategorias("delegado-categoria", categorias);
@@ -5153,6 +5195,11 @@ async function inicializar() {
       : categorias[0].nombre;
     $("publico-categoria").value = categoriaInicial;
     if ($("fecha-categoria")) $("fecha-categoria").value = categoriaInicial;
+    actualizarUrlCategoria(categoriaInicial, parametrosVista.vista);
+
+    if (parametrosVista.vista === "fecha") {
+      mostrarVista("fecha");
+    }
 
     await refrescarPublicoCategoria(categoriaInicial);
     await cargarRequisitosDocumentales();
