@@ -1128,6 +1128,93 @@
       font-size: 13px;
     }
 
+    .planner-alerts {
+      display: grid;
+      gap: 6px;
+      margin: 10px 0 14px;
+    }
+
+    .planner-alerts div {
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      border-radius: 8px;
+      background: rgba(146, 64, 14, 0.28);
+      color: #fde68a;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .planner-fixture-preview {
+      border-top: 1px solid rgba(148, 163, 184, 0.26);
+      margin-top: 14px;
+      padding-top: 14px;
+    }
+
+    .planner-fixture-preview h4 {
+      margin: 0 0 4px;
+      color: #f8fafc;
+    }
+
+    .planner-fixture-preview > p {
+      color: #bfdbfe;
+      font-size: 13px;
+      margin: 0 0 12px;
+    }
+
+    .planner-round-preview {
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.25);
+      margin: 10px 0;
+      padding: 10px;
+    }
+
+    .planner-round-head {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      align-items: center;
+      color: #dbeafe;
+      margin-bottom: 8px;
+    }
+
+    .planner-round-head strong {
+      color: #fff;
+    }
+
+    .planner-bye {
+      color: #fef3c7;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .planner-match-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .planner-match-preview {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.42);
+      padding: 8px 10px;
+      color: #f8fafc;
+    }
+
+    .planner-match-preview span:first-child {
+      text-align: right;
+    }
+
+    .planner-match-preview span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .assoc-subnav {
       display: flex;
       flex-wrap: wrap;
@@ -1530,7 +1617,7 @@
     </div>
 
     <button id="planner-generar">
-      Generar torneo
+      Simular torneo
     </button>
 
     <div id="planner-status"></div>
@@ -1669,7 +1756,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260630-links"></script>
+<script src="app_online.js?v=20260730-planner-sim"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

@@ -4750,6 +4750,170 @@ function detalleFormatoPlanner(categoria) {
   };
 }
 
+function fechaLocalPlanner(fecha) {
+  if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return null;
+  const [anio, mes, dia] = fecha.split("-").map(Number);
+  return new Date(anio, mes - 1, dia, 12, 0, 0, 0);
+}
+
+function fechaKeyPlanner(fecha) {
+  if (!(fecha instanceof Date) || Number.isNaN(fecha.getTime())) return "";
+  const anio = fecha.getFullYear();
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+  const dia = String(fecha.getDate()).padStart(2, "0");
+  return `${anio}-${mes}-${dia}`;
+}
+
+function sumarDiasPlanner(fecha, dias) {
+  const copia = new Date(fecha);
+  copia.setDate(copia.getDate() + dias);
+  return copia;
+}
+
+function siguienteDiaJuegoPlanner(fechaInicio, diaJuego) {
+  const inicio = fechaLocalPlanner(fechaInicio);
+  if (!inicio) return null;
+  const objetivo = Number(diaJuego);
+  const distancia = (objetivo - inicio.getDay() + 7) % 7;
+  return sumarDiasPlanner(inicio, distancia);
+}
+
+function parsearFechasBloqueadasPlanner(texto) {
+  if (!texto?.trim()) return new Set();
+
+  return new Set(
+    texto
+      .split(",")
+      .map((item) => normalizarFechaInputPlanner(item.trim()))
+      .filter(Boolean)
+  );
+}
+
+function nombresEquiposDesdePartidos(partidos) {
+  const vistos = new Set();
+  const equipos = [];
+
+  partidos.forEach((partido) => {
+    [partido.local, partido.visitante, partido.libre].forEach((nombre) => {
+      if (!nombre || vistos.has(nombre)) return;
+      vistos.add(nombre);
+      equipos.push(nombre);
+    });
+  });
+
+  return equipos;
+}
+
+function generarRondaRobinPlanner(equiposOriginales) {
+  const equipos = [...equiposOriginales];
+  if (equipos.length % 2 !== 0) equipos.push(null);
+
+  const cantidad = equipos.length;
+  const rondas = [];
+  let rotacion = [...equipos];
+
+  for (let ronda = 0; ronda < cantidad - 1; ronda += 1) {
+    const partidos = [];
+    let libre = "";
+
+    for (let i = 0; i < cantidad / 2; i += 1) {
+      const a = rotacion[i];
+      const b = rotacion[cantidad - 1 - i];
+
+      if (!a || !b) {
+        libre = a || b || "";
+        continue;
+      }
+
+      const invierte = ronda % 2 === 1;
+      partidos.push({
+        local: invierte ? b : a,
+        visitante: invierte ? a : b
+      });
+    }
+
+    rondas.push({ partidos, libre });
+    rotacion = [rotacion[0], rotacion[cantidad - 1], ...rotacion.slice(1, cantidad - 1)];
+  }
+
+  return rondas;
+}
+
+function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, bloqueadas, fechaFin) {
+  const base = generarRondaRobinPlanner(equipos);
+  const jornadas = [];
+  const alertas = [];
+  let fecha = siguienteDiaJuegoPlanner(fechaInicio, diaJuego);
+  const limite = fechaLocalPlanner(fechaFin);
+  let bloqueosSalteados = 0;
+
+  for (let rueda = 1; rueda <= ruedas; rueda += 1) {
+    base.forEach((jornadaBase) => {
+      while (fecha && bloqueadas.has(fechaKeyPlanner(fecha))) {
+        bloqueosSalteados += 1;
+        fecha = sumarDiasPlanner(fecha, 7);
+      }
+
+      const invierteLocalia = rueda % 2 === 0;
+      const partidos = jornadaBase.partidos.map((partido) => ({
+        local: invierteLocalia ? partido.visitante : partido.local,
+        visitante: invierteLocalia ? partido.local : partido.visitante
+      }));
+
+      jornadas.push({
+        numero: jornadas.length + 1,
+        rueda,
+        fecha: fecha ? fechaKeyPlanner(fecha) : "",
+        libre: jornadaBase.libre,
+        partidos
+      });
+
+      if (fecha) fecha = sumarDiasPlanner(fecha, 7);
+    });
+  }
+
+  const ultimaFecha = jornadas[jornadas.length - 1]?.fecha || "";
+  if (bloqueosSalteados) {
+    alertas.push(`Se saltearon ${bloqueosSalteados} fecha(s) bloqueada(s).`);
+  }
+  if (limite && ultimaFecha) {
+    const ultima = fechaLocalPlanner(ultimaFecha);
+    if (ultima > limite) alertas.push("La fase regular queda fuera de la fecha limite indicada.");
+  }
+
+  return { jornadas, alertas, ultimaFecha, bloqueosSalteados };
+}
+
+function renderFixtureSimuladoPlanner(simulacion) {
+  if (!simulacion.jornadas.length) return "";
+
+  return `
+    <div class="planner-fixture-preview">
+      <h4>Vista previa del fixture</h4>
+      <p>Simulacion solamente: no crea partidos ni modifica la base online.</p>
+      ${simulacion.jornadas.map((jornada) => `
+        <div class="planner-round-preview">
+          <div class="planner-round-head">
+            <strong>Fecha ${jornada.numero}</strong>
+            <span>${escapeHtml(jornada.fecha ? fechaPartidoLabel(jornada.fecha) : "Fecha a definir")}</span>
+            <span>Rueda ${jornada.rueda}</span>
+          </div>
+          ${jornada.libre ? `<div class="planner-bye">Libre: ${escapeHtml(jornada.libre)}</div>` : ""}
+          <div class="planner-match-list">
+            ${jornada.partidos.map((partido) => `
+              <div class="planner-match-preview">
+                <span>${escapeHtml(partido.local)}</span>
+                <strong>vs</strong>
+                <span>${escapeHtml(partido.visitante)}</span>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderTablaInforme(tabla) {
   if (!tabla.length) return "<p>No hay tabla disponible.</p>";
   return `
@@ -5023,15 +5187,8 @@ const fechasBloqueadasTexto = document.getElementById("planner-bloqueadas").valu
 const status = document.getElementById("planner-status");
 const partidos = estado.partidosPorCategoria[categoria] || [];
 const formato = detalleFormatoPlanner(categoria);
-const equiposSet = new Set();
-
-partidos.forEach((p) => {
-  if (p.local) equiposSet.add(p.local);
-  if (p.visitante) equiposSet.add(p.visitante);
-  if (p.libre) equiposSet.add(p.libre);
-});
-
-const equipos = equiposSet.size;
+const equiposLista = nombresEquiposDesdePartidos(partidos);
+const equipos = equiposLista.length;
 const partidosJugados = partidos.filter(partidoTieneResultado).length;
 const partidosPendientes = partidos.length - partidosJugados;
 const jornadasReales = new Set(
@@ -5048,6 +5205,7 @@ let semanasDisponibles = "-";
 let margenCalendario = "-";
 let fechaFinalEstimada = "No definida";
 let entraEnCalendario = "Sin analizar";
+let fixtureSimulado = { jornadas: [], alertas: [], ultimaFecha: "" };
 
 if (fechasBloqueadasTexto.trim()) {
   const fechasBloqueadas = fechasBloqueadasTexto
@@ -5057,6 +5215,8 @@ if (fechasBloqueadasTexto.trim()) {
 
   bloqueadasCantidad = fechasBloqueadas.length;
 }
+
+const fechasBloqueadas = parsearFechasBloqueadasPlanner(fechasBloqueadasTexto);
 
 if (fechaInicio) {
   const inicio = new Date(fechaInicio);
@@ -5087,10 +5247,36 @@ if (fechaInicio) {
   }
 } 
 
+if (equipos >= 2) {
+  fixtureSimulado = generarFixtureSimuladoPlanner(
+    equiposLista,
+    ruedas,
+    fechaInicio,
+    dia,
+    fechasBloqueadas,
+    fechaFin
+  );
+} else {
+  fixtureSimulado.alertas.push("No hay equipos suficientes en esta categoria para simular fixture.");
+}
+
+const alertasPlanner = [
+  ...fixtureSimulado.alertas,
+  !fechaInicio ? "Sin fecha de inicio: se simulan las jornadas sin calendario." : ""
+].filter(Boolean);
+
 
         status.innerHTML = `
       <div class="card" style="margin-top:10px;">
-        <h3>Diagnóstico de torneo</h3>
+        <h3>Simulacion de torneo</h3>
+
+        <p class="note">Esta vista usa los equipos cargados hoy en la categoria. Es una prueba previa: no guarda ni publica fixture.</p>
+
+        ${alertasPlanner.length ? `
+          <div class="planner-alerts">
+            ${alertasPlanner.map((alerta) => `<div>${escapeHtml(alerta)}</div>`).join("")}
+          </div>
+        ` : ""}
 
         <p><strong>Categoría:</strong> ${categoria}</p>
         <p><strong>Competencia:</strong> ${competencia}</p>
@@ -5120,6 +5306,8 @@ if (fechaInicio) {
         <p><strong>Semanas disponibles:</strong> ${semanasDisponibles}</p>
         <p><strong>Margen calendario:</strong> ${margenCalendario}</p>
         <p><strong>Libre por fecha:</strong> ${tieneLibre ? "Sí" : "No"}</p>
+        ${fixtureSimulado.ultimaFecha ? `<p><strong>Ultima fecha simulada:</strong> ${fechaPlannerLabel(fixtureSimulado.ultimaFecha)}</p>` : ""}
+        ${renderFixtureSimuladoPlanner(fixtureSimulado)}
       </div>
     `;
   });
