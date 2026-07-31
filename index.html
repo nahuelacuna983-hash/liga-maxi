@@ -1567,6 +1567,22 @@
           </select>
         </div>
         <div>
+          <label>Cuartos / repechaje</label>
+          <select id="planner-partidos-cuartos">
+            <option value="1">1 partido</option>
+            <option value="2">2 partidos</option>
+            <option value="3">Mejor de 3</option>
+          </select>
+        </div>
+        <div>
+          <label>Semifinales</label>
+          <select id="planner-partidos-semis">
+            <option value="1">1 partido</option>
+            <option value="2">2 partidos</option>
+            <option value="3">Mejor de 3</option>
+          </select>
+        </div>
+        <div>
           <label>Final</label>
           <select id="planner-final">
             <option value="mejor-3">Mejor de 3</option>
@@ -1593,12 +1609,28 @@
         <h4>Fechas de playoffs</h4>
         <div class="planner-grid">
           <div>
-            <label>Cuartos / repechaje</label>
+            <label>Cuartos / repechaje 1</label>
             <input id="planner-fecha-cuartos" type="date">
           </div>
           <div>
-            <label>Semifinales</label>
+            <label>Cuartos / repechaje 2</label>
+            <input id="planner-fecha-cuartos-2" type="date">
+          </div>
+          <div>
+            <label>Cuartos / repechaje 3</label>
+            <input id="planner-fecha-cuartos-3" type="date">
+          </div>
+          <div>
+            <label>Semifinales 1</label>
             <input id="planner-fecha-semis" type="date">
+          </div>
+          <div>
+            <label>Semifinales 2</label>
+            <input id="planner-fecha-semis-2" type="date">
+          </div>
+          <div>
+            <label>Semifinales 3</label>
+            <input id="planner-fecha-semis-3" type="date">
           </div>
           <div>
             <label>Final 1</label>
@@ -1756,7 +1788,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260731-planner-equipos"></script>
+<script src="app_online.js?v=20260731-planner-series"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

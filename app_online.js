@@ -4604,14 +4604,18 @@ async function inicializarAsociacion() {
  function configurarDefaultsPlanner() {
   const categoria = document.getElementById("planner-categoria")?.value || "";
   const playoffs = document.getElementById("planner-playoffs");
+  const partidosCuartos = document.getElementById("planner-partidos-cuartos");
+  const partidosSemis = document.getElementById("planner-partidos-semis");
   const final = document.getElementById("planner-final");
   const definicionB = document.getElementById("planner-definicion-b");
   const descensoA = document.getElementById("planner-descenso-a");
 
-  if (!playoffs || !final || !definicionB || !descensoA) return;
+  if (!playoffs || !partidosCuartos || !partidosSemis || !final || !definicionB || !descensoA) return;
 
   if (categoria === "Maxi +48") {
     playoffs.value = "top6";
+    partidosCuartos.value = "1";
+    partidosSemis.value = "2";
     final.value = "mejor-2";
     definicionB.value = "tabla";
     descensoA.value = "sin-descenso";
@@ -4621,6 +4625,8 @@ async function inicializarAsociacion() {
 
   if (categoria === "Maxi +35 A" || categoria === "Maxi +35 B") {
     playoffs.value = "top8";
+    partidosCuartos.value = "1";
+    partidosSemis.value = "1";
     final.value = "mejor-3";
     definicionB.value = "playoffs";
     descensoA.value = categoria === "Maxi +35 A" ? "10-general" : "sin-descenso";
@@ -4629,6 +4635,8 @@ async function inicializarAsociacion() {
   }
 
   playoffs.value = "top8";
+  partidosCuartos.value = "1";
+  partidosSemis.value = "1";
   final.value = "un-partido";
   definicionB.value = "tabla";
   descensoA.value = "sin-descenso";
@@ -4686,8 +4694,24 @@ function configurarFechasPlayoffPlanner(categoria) {
     obtenerFechaSeriePlanner(datosInicial) || (es35 ? "2026-06-21" : "")
   );
   setFechaPlanner(
+    "planner-fecha-cuartos-2",
+    obtenerFechaSeriePlanner(datosInicial, 1)
+  );
+  setFechaPlanner(
+    "planner-fecha-cuartos-3",
+    obtenerFechaSeriePlanner(datosInicial, 2)
+  );
+  setFechaPlanner(
     "planner-fecha-semis",
     obtenerFechaSeriePlanner(datosSemis) || (es35 ? "2026-06-28" : "")
+  );
+  setFechaPlanner(
+    "planner-fecha-semis-2",
+    obtenerFechaSeriePlanner(datosSemis, 1)
+  );
+  setFechaPlanner(
+    "planner-fecha-semis-3",
+    obtenerFechaSeriePlanner(datosSemis, 2)
   );
   setFechaPlanner(
     "planner-fecha-final-1",
@@ -4701,19 +4725,38 @@ function configurarFechasPlayoffPlanner(categoria) {
     "planner-fecha-final-3",
     obtenerFechaSeriePlanner(datosFinal, 2) || (es35 ? "2026-07-19" : "")
   );
-  actualizarFechasFinalPlanner();
+  actualizarFechasSeriesPlanner();
 }
 
-function actualizarFechasFinalPlanner() {
+function cantidadPartidosFinalPlanner(valor) {
+  if (valor === "mejor-3") return 3;
+  if (valor === "mejor-2") return 2;
+  return 1;
+}
+
+function actualizarFechasSeriesPlanner() {
+  const partidosCuartos = Number(document.getElementById("planner-partidos-cuartos")?.value || 1);
+  const partidosSemis = Number(document.getElementById("planner-partidos-semis")?.value || 1);
   const final = document.getElementById("planner-final")?.value || "mejor-3";
+  const finalCantidad = cantidadPartidosFinalPlanner(final);
+  const cuartos2 = document.getElementById("planner-fecha-cuartos-2");
+  const cuartos3 = document.getElementById("planner-fecha-cuartos-3");
+  const semis2 = document.getElementById("planner-fecha-semis-2");
+  const semis3 = document.getElementById("planner-fecha-semis-3");
   const final2 = document.getElementById("planner-fecha-final-2");
   const final3 = document.getElementById("planner-fecha-final-3");
-  if (final2) final2.disabled = final === "un-partido";
-  if (final3) final3.disabled = final !== "mejor-3";
+  if (cuartos2) cuartos2.disabled = partidosCuartos < 2;
+  if (cuartos3) cuartos3.disabled = partidosCuartos < 3;
+  if (semis2) semis2.disabled = partidosSemis < 2;
+  if (semis3) semis3.disabled = partidosSemis < 3;
+  if (final2) final2.disabled = finalCantidad < 2;
+  if (final3) final3.disabled = finalCantidad < 3;
 }
 
 function detalleFormatoPlanner(categoria) {
   const playoffs = document.getElementById("planner-playoffs")?.value || "top8";
+  const partidosCuartos = Number(document.getElementById("planner-partidos-cuartos")?.value || 1);
+  const partidosSemis = Number(document.getElementById("planner-partidos-semis")?.value || 1);
   const final = document.getElementById("planner-final")?.value || "mejor-3";
   const definicionB = document.getElementById("planner-definicion-b")?.value || "playoffs";
   const descensoA = document.getElementById("planner-descenso-a")?.value || "10-general";
@@ -4741,13 +4784,32 @@ function detalleFormatoPlanner(categoria) {
     definicionBTexto: textoOpcionPlanner("planner-definicion-b"),
     descensoATexto: textoOpcionPlanner("planner-descenso-a"),
     reglaPromocion,
-    partidosFinal: final === "mejor-3" ? 3 : (final === "mejor-2" ? 2 : 1),
+    partidosCuartos,
+    partidosSemis,
+    partidosFinal: cantidadPartidosFinalPlanner(final),
     fechaCuartos: document.getElementById("planner-fecha-cuartos")?.value || "",
+    fechaCuartos2: document.getElementById("planner-fecha-cuartos-2")?.value || "",
+    fechaCuartos3: document.getElementById("planner-fecha-cuartos-3")?.value || "",
     fechaSemis: document.getElementById("planner-fecha-semis")?.value || "",
+    fechaSemis2: document.getElementById("planner-fecha-semis-2")?.value || "",
+    fechaSemis3: document.getElementById("planner-fecha-semis-3")?.value || "",
     fechaFinal1: document.getElementById("planner-fecha-final-1")?.value || "",
     fechaFinal2: document.getElementById("planner-fecha-final-2")?.value || "",
     fechaFinal3: document.getElementById("planner-fecha-final-3")?.value || ""
   };
+}
+
+function fechasSeriePlanner(formato, prefijo, cantidad) {
+  const claves = {
+    cuartos: ["fechaCuartos", "fechaCuartos2", "fechaCuartos3"],
+    semis: ["fechaSemis", "fechaSemis2", "fechaSemis3"],
+    final: ["fechaFinal1", "fechaFinal2", "fechaFinal3"]
+  }[prefijo] || [];
+
+  return claves
+    .slice(0, cantidad)
+    .map((clave) => fechaPlannerLabel(formato[clave]))
+    .join(", ");
 }
 
 function fechaLocalPlanner(fecha) {
@@ -5136,8 +5198,9 @@ function generarInformeTorneo() {
       <h2>Reglas y fechas</h2>
       <div class="rules">
         <p><strong>Playoffs:</strong> ${escapeHtml(formato.playoffsTexto)} - <strong>Final:</strong> ${escapeHtml(formato.finalTexto)}</p>
-        <p><strong>Cuartos / repechaje:</strong> ${escapeHtml(fechaPlannerLabel(formato.fechaCuartos))} - <strong>Semifinales:</strong> ${escapeHtml(fechaPlannerLabel(formato.fechaSemis))}</p>
-        <p><strong>Final:</strong> ${escapeHtml(fechaPlannerLabel(formato.fechaFinal1))}${formato.partidosFinal > 1 ? `, ${escapeHtml(fechaPlannerLabel(formato.fechaFinal2))}` : ""}${formato.partidosFinal > 2 ? `, ${escapeHtml(fechaPlannerLabel(formato.fechaFinal3))}` : ""}</p>
+        <p><strong>Cuartos / repechaje:</strong> ${escapeHtml(formato.partidosCuartos)} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "cuartos", formato.partidosCuartos))}</p>
+        <p><strong>Semifinales:</strong> ${escapeHtml(formato.partidosSemis)} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "semis", formato.partidosSemis))}</p>
+        <p><strong>Final:</strong> ${escapeHtml(formato.partidosFinal)} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "final", formato.partidosFinal))}</p>
         <p><strong>Ascenso / repechaje B:</strong> ${escapeHtml(formato.definicionBTexto)} - <strong>Descenso +35 A:</strong> ${escapeHtml(formato.descensoATexto)}</p>
         <p><strong>Regla aplicada:</strong> ${escapeHtml(formato.reglaPromocion)}</p>
       </div>
@@ -5160,6 +5223,8 @@ function generarInformeTorneo() {
  const plannerBtn = document.getElementById("planner-generar");
  const plannerInformeBtn = document.getElementById("planner-informe");
  const plannerCategoria = document.getElementById("planner-categoria");
+ const plannerPartidosCuartos = document.getElementById("planner-partidos-cuartos");
+ const plannerPartidosSemis = document.getElementById("planner-partidos-semis");
  const plannerFinal = document.getElementById("planner-final");
 
 if (plannerCategoria) {
@@ -5168,7 +5233,15 @@ if (plannerCategoria) {
 }
 
 if (plannerFinal) {
-  plannerFinal.addEventListener("change", actualizarFechasFinalPlanner);
+  plannerFinal.addEventListener("change", actualizarFechasSeriesPlanner);
+}
+
+if (plannerPartidosCuartos) {
+  plannerPartidosCuartos.addEventListener("change", actualizarFechasSeriesPlanner);
+}
+
+if (plannerPartidosSemis) {
+  plannerPartidosSemis.addEventListener("change", actualizarFechasSeriesPlanner);
 }
 
 if (plannerInformeBtn) {
@@ -5296,13 +5369,9 @@ const alertasPlanner = [
         <p><strong>Día:</strong> ${dia === "0" ? "Domingo" : "Miércoles"}</p>
         <p><strong>Playoffs:</strong> ${formato.playoffsTexto}</p>
         <p><strong>Clasificados:</strong> ${formato.clasificados || "No aplica"}</p>
-        <p><strong>Final:</strong> ${formato.finalTexto}</p>
-        <p><strong>Partidos de final:</strong> ${formato.partidosFinal}</p>
-        <p><strong>Cuartos / repechaje:</strong> ${fechaPlannerLabel(formato.fechaCuartos)}</p>
-        <p><strong>Semifinales:</strong> ${fechaPlannerLabel(formato.fechaSemis)}</p>
-        <p><strong>Final 1:</strong> ${fechaPlannerLabel(formato.fechaFinal1)}</p>
-        ${formato.partidosFinal > 1 ? `<p><strong>Final 2:</strong> ${fechaPlannerLabel(formato.fechaFinal2)}</p>` : ""}
-        ${formato.partidosFinal > 2 ? `<p><strong>Final 3:</strong> ${fechaPlannerLabel(formato.fechaFinal3)}</p>` : ""}
+        <p><strong>Cuartos / repechaje:</strong> ${formato.partidosCuartos} partido(s) - ${fechasSeriePlanner(formato, "cuartos", formato.partidosCuartos)}</p>
+        <p><strong>Semifinales:</strong> ${formato.partidosSemis} partido(s) - ${fechasSeriePlanner(formato, "semis", formato.partidosSemis)}</p>
+        <p><strong>Final:</strong> ${formato.finalTexto} - ${fechasSeriePlanner(formato, "final", formato.partidosFinal)}</p>
         <p><strong>Ascenso / repechaje B:</strong> ${formato.definicionBTexto}</p>
         <p><strong>Descenso +35 A:</strong> ${formato.descensoATexto}</p>
         <p><strong>Regla aplicada:</strong> ${formato.reglaPromocion}</p>
