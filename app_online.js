@@ -5176,7 +5176,7 @@ if (plannerInformeBtn) {
 }
 
 if (plannerBtn) {
-  plannerBtn.addEventListener("click", () => {
+  plannerBtn.addEventListener("click", async () => {
     const categoria = document.getElementById("planner-categoria").value;
     const competencia = document.getElementById("planner-competencia").value;
     const ruedas = Number(document.getElementById("planner-ruedas").value);
@@ -5185,9 +5185,24 @@ if (plannerBtn) {
 const fechaFin = document.getElementById("planner-fin").value;
 const fechasBloqueadasTexto = document.getElementById("planner-bloqueadas").value;
 const status = document.getElementById("planner-status");
+status.innerHTML = `<div class="card" style="margin-top:10px;"><p>Cargando equipos y partidos para simular...</p></div>`;
+
+try {
+  await refrescarCategoria(categoria, {
+    actualizarPublico: false,
+    incluirDocumentacion: true,
+    incluirPartidos: true,
+    incluirPlayoffs: false,
+    incluirProgramacion: false
+  });
+} catch (error) {
+  status.innerHTML = `<div class="card" style="margin-top:10px;"><p class="error">No se pudo cargar la categoria para simular: ${escapeHtml(error.message)}</p></div>`;
+  return;
+}
+
 const partidos = estado.partidosPorCategoria[categoria] || [];
 const formato = detalleFormatoPlanner(categoria);
-const equiposLista = nombresEquiposDesdePartidos(partidos);
+const equiposLista = obtenerEquiposCategoria(categoria);
 const equipos = equiposLista.length;
 const partidosJugados = partidos.filter(partidoTieneResultado).length;
 const partidosPendientes = partidos.length - partidosJugados;
@@ -5207,16 +5222,8 @@ let fechaFinalEstimada = "No definida";
 let entraEnCalendario = "Sin analizar";
 let fixtureSimulado = { jornadas: [], alertas: [], ultimaFecha: "" };
 
-if (fechasBloqueadasTexto.trim()) {
-  const fechasBloqueadas = fechasBloqueadasTexto
-    .split(",")
-    .map(f => f.trim())
-    .filter(Boolean);
-
-  bloqueadasCantidad = fechasBloqueadas.length;
-}
-
 const fechasBloqueadas = parsearFechasBloqueadasPlanner(fechasBloqueadasTexto);
+bloqueadasCantidad = fechasBloqueadas.size;
 
 if (fechaInicio) {
   const inicio = new Date(fechaInicio);
