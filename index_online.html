@@ -1215,6 +1215,70 @@
       white-space: nowrap;
     }
 
+    .planner-playoff-preview {
+      border-top: 1px solid rgba(148, 163, 184, 0.26);
+      margin-top: 16px;
+      padding-top: 14px;
+    }
+
+    .planner-playoff-preview h4 {
+      margin: 0 0 4px;
+      color: #f8fafc;
+    }
+
+    .planner-playoff-preview > p,
+    .planner-playoff-meta {
+      color: #bfdbfe;
+      font-size: 13px;
+    }
+
+    .planner-playoff-meta {
+      display: grid;
+      gap: 4px;
+      margin: 8px 0 12px;
+    }
+
+    .planner-playoff-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+    }
+
+    .planner-playoff-grid h5,
+    .planner-playoff-series h5 {
+      margin: 0 0 6px;
+      color: #dbeafe;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .planner-playoff-series {
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.25);
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+
+    .planner-playoff-slot {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.42);
+      color: #f8fafc;
+      margin-top: 6px;
+      padding: 8px 10px;
+    }
+
+    .planner-playoff-slot span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .assoc-subnav {
       display: flex;
       flex-wrap: wrap;
@@ -1788,7 +1852,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260731-planner-series"></script>
+<script src="app_online.js?v=20260731-planner-manual"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

@@ -4612,34 +4612,6 @@ async function inicializarAsociacion() {
 
   if (!playoffs || !partidosCuartos || !partidosSemis || !final || !definicionB || !descensoA) return;
 
-  if (categoria === "Maxi +48") {
-    playoffs.value = "top6";
-    partidosCuartos.value = "1";
-    partidosSemis.value = "2";
-    final.value = "mejor-2";
-    definicionB.value = "tabla";
-    descensoA.value = "sin-descenso";
-    configurarFechasPlayoffPlanner(categoria);
-    return;
-  }
-
-  if (categoria === "Maxi +35 A" || categoria === "Maxi +35 B") {
-    playoffs.value = "top8";
-    partidosCuartos.value = "1";
-    partidosSemis.value = "1";
-    final.value = "mejor-3";
-    definicionB.value = "playoffs";
-    descensoA.value = categoria === "Maxi +35 A" ? "10-general" : "sin-descenso";
-    configurarFechasPlayoffPlanner(categoria);
-    return;
-  }
-
-  playoffs.value = "top8";
-  partidosCuartos.value = "1";
-  partidosSemis.value = "1";
-  final.value = "un-partido";
-  definicionB.value = "tabla";
-  descensoA.value = "sin-descenso";
   configurarFechasPlayoffPlanner(categoria);
 }
 
@@ -4683,7 +4655,6 @@ function fechaPlannerLabel(fecha) {
 }
 
 function configurarFechasPlayoffPlanner(categoria) {
-  const es35 = categoria === "Maxi +35 A" || categoria === "Maxi +35 B";
   const rondaInicial = categoria === "Maxi +48" ? "clasificacion" : "cuartos";
   const datosInicial = obtenerDatosRondaPlayoff(categoria, rondaInicial);
   const datosSemis = obtenerDatosRondaPlayoff(categoria, "semifinales");
@@ -4691,7 +4662,7 @@ function configurarFechasPlayoffPlanner(categoria) {
 
   setFechaPlanner(
     "planner-fecha-cuartos",
-    obtenerFechaSeriePlanner(datosInicial) || (es35 ? "2026-06-21" : "")
+    obtenerFechaSeriePlanner(datosInicial)
   );
   setFechaPlanner(
     "planner-fecha-cuartos-2",
@@ -4703,7 +4674,7 @@ function configurarFechasPlayoffPlanner(categoria) {
   );
   setFechaPlanner(
     "planner-fecha-semis",
-    obtenerFechaSeriePlanner(datosSemis) || (es35 ? "2026-06-28" : "")
+    obtenerFechaSeriePlanner(datosSemis)
   );
   setFechaPlanner(
     "planner-fecha-semis-2",
@@ -4715,15 +4686,15 @@ function configurarFechasPlayoffPlanner(categoria) {
   );
   setFechaPlanner(
     "planner-fecha-final-1",
-    obtenerFechaSeriePlanner(datosFinal, 0) || (es35 ? "2026-07-05" : "")
+    obtenerFechaSeriePlanner(datosFinal, 0)
   );
   setFechaPlanner(
     "planner-fecha-final-2",
-    obtenerFechaSeriePlanner(datosFinal, 1) || (es35 ? "2026-07-12" : "")
+    obtenerFechaSeriePlanner(datosFinal, 1)
   );
   setFechaPlanner(
     "planner-fecha-final-3",
-    obtenerFechaSeriePlanner(datosFinal, 2) || (es35 ? "2026-07-19" : "")
+    obtenerFechaSeriePlanner(datosFinal, 2)
   );
   actualizarFechasSeriesPlanner();
 }
@@ -4735,22 +4706,20 @@ function cantidadPartidosFinalPlanner(valor) {
 }
 
 function actualizarFechasSeriesPlanner() {
-  const partidosCuartos = Number(document.getElementById("planner-partidos-cuartos")?.value || 1);
-  const partidosSemis = Number(document.getElementById("planner-partidos-semis")?.value || 1);
-  const final = document.getElementById("planner-final")?.value || "mejor-3";
-  const finalCantidad = cantidadPartidosFinalPlanner(final);
-  const cuartos2 = document.getElementById("planner-fecha-cuartos-2");
-  const cuartos3 = document.getElementById("planner-fecha-cuartos-3");
-  const semis2 = document.getElementById("planner-fecha-semis-2");
-  const semis3 = document.getElementById("planner-fecha-semis-3");
-  const final2 = document.getElementById("planner-fecha-final-2");
-  const final3 = document.getElementById("planner-fecha-final-3");
-  if (cuartos2) cuartos2.disabled = partidosCuartos < 2;
-  if (cuartos3) cuartos3.disabled = partidosCuartos < 3;
-  if (semis2) semis2.disabled = partidosSemis < 2;
-  if (semis3) semis3.disabled = partidosSemis < 3;
-  if (final2) final2.disabled = finalCantidad < 2;
-  if (final3) final3.disabled = finalCantidad < 3;
+  [
+    "planner-fecha-cuartos",
+    "planner-fecha-cuartos-2",
+    "planner-fecha-cuartos-3",
+    "planner-fecha-semis",
+    "planner-fecha-semis-2",
+    "planner-fecha-semis-3",
+    "planner-fecha-final-1",
+    "planner-fecha-final-2",
+    "planner-fecha-final-3"
+  ].forEach((id) => {
+    const input = document.getElementById(id);
+    if (input) input.disabled = false;
+  });
 }
 
 function detalleFormatoPlanner(categoria) {
@@ -4972,6 +4941,97 @@ function renderFixtureSimuladoPlanner(simulacion) {
           </div>
         </div>
       `).join("")}
+    </div>
+  `;
+}
+
+function renderNodoPlayoffPlanner(seed, texto = "Por definir") {
+  return `
+    <div class="planner-playoff-slot">
+      <strong>${escapeHtml(seed)}</strong>
+      <span>${escapeHtml(texto)}</span>
+    </div>
+  `;
+}
+
+function renderSeriePlayoffPlanner(titulo, slots) {
+  return `
+    <div class="planner-playoff-series">
+      <h5>${escapeHtml(titulo)}</h5>
+      ${slots.join("")}
+    </div>
+  `;
+}
+
+function renderPlayoffsSimuladosPlanner(formato) {
+  if (!formato.clasificados) {
+    return `
+      <div class="planner-playoff-preview">
+        <h4>Playoffs</h4>
+        <p>Sin playoffs configurados para esta simulacion.</p>
+      </div>
+    `;
+  }
+
+  let rondaInicialTitulo = "Cuartos / repechaje";
+  let rondaInicial = [];
+  let semifinales = [];
+
+  if (formato.clasificados === 8) {
+    rondaInicialTitulo = "Cuartos";
+    rondaInicial = [
+      renderSeriePlayoffPlanner("Llave A", [renderNodoPlayoffPlanner("1°"), renderNodoPlayoffPlanner("8°")]),
+      renderSeriePlayoffPlanner("Llave B", [renderNodoPlayoffPlanner("4°"), renderNodoPlayoffPlanner("5°")]),
+      renderSeriePlayoffPlanner("Llave C", [renderNodoPlayoffPlanner("2°"), renderNodoPlayoffPlanner("7°")]),
+      renderSeriePlayoffPlanner("Llave D", [renderNodoPlayoffPlanner("3°"), renderNodoPlayoffPlanner("6°")])
+    ];
+    semifinales = [
+      renderSeriePlayoffPlanner("Semi 1", [renderNodoPlayoffPlanner("-", "Ganador 1°/8°"), renderNodoPlayoffPlanner("-", "Ganador 4°/5°")]),
+      renderSeriePlayoffPlanner("Semi 2", [renderNodoPlayoffPlanner("-", "Ganador 2°/7°"), renderNodoPlayoffPlanner("-", "Ganador 3°/6°")])
+    ];
+  } else if (formato.clasificados === 6) {
+    rondaInicialTitulo = "Repechaje";
+    rondaInicial = [
+      renderSeriePlayoffPlanner("Repechaje 1", [renderNodoPlayoffPlanner("3°"), renderNodoPlayoffPlanner("6°")]),
+      renderSeriePlayoffPlanner("Repechaje 2", [renderNodoPlayoffPlanner("4°"), renderNodoPlayoffPlanner("5°")])
+    ];
+    semifinales = [
+      renderSeriePlayoffPlanner("Semi 1", [renderNodoPlayoffPlanner("1°", "Directo"), renderNodoPlayoffPlanner("-", "Peor ganador de repechaje")]),
+      renderSeriePlayoffPlanner("Semi 2", [renderNodoPlayoffPlanner("2°", "Directo"), renderNodoPlayoffPlanner("-", "Mejor ganador de repechaje")])
+    ];
+  } else {
+    rondaInicialTitulo = "Semifinales";
+    semifinales = [
+      renderSeriePlayoffPlanner("Semi 1", [renderNodoPlayoffPlanner("1°"), renderNodoPlayoffPlanner("4°")]),
+      renderSeriePlayoffPlanner("Semi 2", [renderNodoPlayoffPlanner("2°"), renderNodoPlayoffPlanner("3°")])
+    ];
+  }
+
+  return `
+    <div class="planner-playoff-preview">
+      <h4>Playoffs simulados</h4>
+      <p>Llave base segun formato seleccionado. Todavia no publica ni crea partidos.</p>
+      <div class="planner-playoff-meta">
+        ${rondaInicial.length ? `<span>${escapeHtml(rondaInicialTitulo)}: ${formato.partidosCuartos} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "cuartos", formato.partidosCuartos))}</span>` : ""}
+        <span>Semifinales: ${formato.partidosSemis} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "semis", formato.partidosSemis))}</span>
+        <span>Final: ${formato.partidosFinal} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "final", formato.partidosFinal))}</span>
+      </div>
+      <div class="planner-playoff-grid">
+        ${rondaInicial.length ? `
+          <div>
+            <h5>${escapeHtml(rondaInicialTitulo)}</h5>
+            ${rondaInicial.join("")}
+          </div>
+        ` : ""}
+        <div>
+          <h5>Semifinales</h5>
+          ${semifinales.join("")}
+        </div>
+        <div>
+          <h5>Final</h5>
+          ${renderSeriePlayoffPlanner("Final", [renderNodoPlayoffPlanner("-", "Ganador Semi 1"), renderNodoPlayoffPlanner("-", "Ganador Semi 2")])}
+        </div>
+      </div>
     </div>
   `;
 }
@@ -5384,6 +5444,7 @@ const alertasPlanner = [
         <p><strong>Libre por fecha:</strong> ${tieneLibre ? "Sí" : "No"}</p>
         ${fixtureSimulado.ultimaFecha ? `<p><strong>Ultima fecha simulada:</strong> ${fechaPlannerLabel(fixtureSimulado.ultimaFecha)}</p>` : ""}
         ${renderFixtureSimuladoPlanner(fixtureSimulado)}
+        ${renderPlayoffsSimuladosPlanner(formato)}
       </div>
     `;
   });
