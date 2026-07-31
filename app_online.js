@@ -4650,52 +4650,26 @@ function setFechaPlanner(id, valor) {
   if (input) input.value = valor || "";
 }
 
+function idsFechasPlayoffPlanner() {
+  return [
+    "planner-fecha-cuartos",
+    "planner-fecha-cuartos-2",
+    "planner-fecha-cuartos-3",
+    "planner-fecha-semis",
+    "planner-fecha-semis-2",
+    "planner-fecha-semis-3",
+    "planner-fecha-final-1",
+    "planner-fecha-final-2",
+    "planner-fecha-final-3"
+  ];
+}
+
 function fechaPlannerLabel(fecha) {
   return fecha ? fechaPartidoLabel(fecha) : "A definir";
 }
 
 function configurarFechasPlayoffPlanner(categoria) {
-  const rondaInicial = categoria === "Maxi +48" ? "clasificacion" : "cuartos";
-  const datosInicial = obtenerDatosRondaPlayoff(categoria, rondaInicial);
-  const datosSemis = obtenerDatosRondaPlayoff(categoria, "semifinales");
-  const datosFinal = obtenerDatosRondaPlayoff(categoria, "final");
-
-  setFechaPlanner(
-    "planner-fecha-cuartos",
-    obtenerFechaSeriePlanner(datosInicial)
-  );
-  setFechaPlanner(
-    "planner-fecha-cuartos-2",
-    obtenerFechaSeriePlanner(datosInicial, 1)
-  );
-  setFechaPlanner(
-    "planner-fecha-cuartos-3",
-    obtenerFechaSeriePlanner(datosInicial, 2)
-  );
-  setFechaPlanner(
-    "planner-fecha-semis",
-    obtenerFechaSeriePlanner(datosSemis)
-  );
-  setFechaPlanner(
-    "planner-fecha-semis-2",
-    obtenerFechaSeriePlanner(datosSemis, 1)
-  );
-  setFechaPlanner(
-    "planner-fecha-semis-3",
-    obtenerFechaSeriePlanner(datosSemis, 2)
-  );
-  setFechaPlanner(
-    "planner-fecha-final-1",
-    obtenerFechaSeriePlanner(datosFinal, 0)
-  );
-  setFechaPlanner(
-    "planner-fecha-final-2",
-    obtenerFechaSeriePlanner(datosFinal, 1)
-  );
-  setFechaPlanner(
-    "planner-fecha-final-3",
-    obtenerFechaSeriePlanner(datosFinal, 2)
-  );
+  idsFechasPlayoffPlanner().forEach((id) => setFechaPlanner(id, ""));
   actualizarFechasSeriesPlanner();
 }
 
@@ -4915,6 +4889,44 @@ function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, b
   return { jornadas, alertas, ultimaFecha, bloqueosSalteados };
 }
 
+function siguienteFechaLibrePlanner(fecha, bloqueadas) {
+  let proxima = sumarDiasPlanner(fecha, 7);
+  while (bloqueadas?.has(fechaKeyPlanner(proxima))) {
+    proxima = sumarDiasPlanner(proxima, 7);
+  }
+  return proxima;
+}
+
+function completarFechasPlayoffSimuladasPlanner(formato, simulacion, bloqueadas) {
+  if (!formato.clasificados || !simulacion.ultimaFecha) return;
+
+  const fechaBase = fechaLocalPlanner(simulacion.ultimaFecha);
+  if (!fechaBase) return;
+
+  let cursor = fechaBase;
+  const asignar = (id) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    cursor = siguienteFechaLibrePlanner(cursor, bloqueadas);
+    if (!input.value) input.value = fechaKeyPlanner(cursor);
+  };
+
+  const hayRondaInicial = formato.clasificados > 4;
+  if (hayRondaInicial) {
+    ["planner-fecha-cuartos", "planner-fecha-cuartos-2", "planner-fecha-cuartos-3"]
+      .slice(0, formato.partidosCuartos)
+      .forEach(asignar);
+  }
+
+  ["planner-fecha-semis", "planner-fecha-semis-2", "planner-fecha-semis-3"]
+    .slice(0, formato.partidosSemis)
+    .forEach(asignar);
+
+  ["planner-fecha-final-1", "planner-fecha-final-2", "planner-fecha-final-3"]
+    .slice(0, formato.partidosFinal)
+    .forEach(asignar);
+}
+
 function renderFixtureSimuladoPlanner(simulacion) {
   if (!simulacion.jornadas.length) return "";
 
@@ -5010,7 +5022,7 @@ function renderPlayoffsSimuladosPlanner(formato) {
   return `
     <div class="planner-playoff-preview">
       <h4>Playoffs simulados</h4>
-      <p>Llave base segun formato seleccionado. Todavia no publica ni crea partidos.</p>
+      <p>Llave base segun formato seleccionado. Las fechas se sugieren desde la ultima jornada simulada y se pueden corregir manualmente.</p>
       <div class="planner-playoff-meta">
         ${rondaInicial.length ? `<span>${escapeHtml(rondaInicialTitulo)}: ${formato.partidosCuartos} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "cuartos", formato.partidosCuartos))}</span>` : ""}
         <span>Semifinales: ${formato.partidosSemis} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "semis", formato.partidosSemis))}</span>
@@ -5334,7 +5346,7 @@ try {
 }
 
 const partidos = estado.partidosPorCategoria[categoria] || [];
-const formato = detalleFormatoPlanner(categoria);
+let formato = detalleFormatoPlanner(categoria);
 const equiposLista = obtenerEquiposCategoria(categoria);
 const equipos = equiposLista.length;
 const partidosJugados = partidos.filter(partidoTieneResultado).length;
@@ -5399,6 +5411,9 @@ if (equipos >= 2) {
 } else {
   fixtureSimulado.alertas.push("No hay equipos suficientes en esta categoria para simular fixture.");
 }
+
+completarFechasPlayoffSimuladasPlanner(formato, fixtureSimulado, fechasBloqueadas);
+formato = detalleFormatoPlanner(categoria);
 
 const alertasPlanner = [
   ...fixtureSimulado.alertas,
