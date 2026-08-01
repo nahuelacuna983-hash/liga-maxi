@@ -5295,6 +5295,25 @@ function descargarInformeHtml(html, nombreBase) {
   return nombre;
 }
 
+function mostrarCartelInforme(mensaje, tipo = "ok") {
+  const existente = document.getElementById("informe-toast");
+  if (existente) existente.remove();
+
+  const toast = document.createElement("div");
+  toast.id = "informe-toast";
+  toast.className = `informe-toast ${tipo}`;
+  toast.innerHTML = `
+    <strong>${tipo === "ok" ? "Informe generado" : "Atencion"}</strong>
+    <span>${escapeHtml(mensaje)}</span>
+    <button type="button" aria-label="Cerrar aviso">Cerrar</button>
+  `;
+
+  toast.querySelector("button")?.addEventListener("click", () => toast.remove());
+  document.body.appendChild(toast);
+  window.clearTimeout(mostrarCartelInforme.timeoutId);
+  mostrarCartelInforme.timeoutId = window.setTimeout(() => toast.remove(), 12000);
+}
+
 function abrirInformeHtml(html) {
   const ventana = window.open("", "_blank");
   if (!ventana) return false;
@@ -5388,6 +5407,7 @@ function generarInformeSimulacionTorneo(simulacion) {
       : `Informe descargado como ${nombre}. El navegador bloqueo la pestaña de vista previa.`,
     "ok"
   );
+  mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas. Si queres PDF, usa Imprimir / guardar PDF en la pestaña abierta.`);
 }
 
 function generarInformeTorneo() {
@@ -5494,6 +5514,7 @@ function generarInformeTorneo() {
       : `Informe descargado como ${nombre}. El navegador bloqueo la pestaña de vista previa.`,
     "ok"
   );
+  mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas. Si queres PDF, usa Imprimir / guardar PDF en la pestaña abierta.`);
 }
 
  const plannerBtn = document.getElementById("planner-generar");

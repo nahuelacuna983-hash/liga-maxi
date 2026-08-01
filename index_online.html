@@ -213,6 +213,43 @@
     .status.warn { color: #ffd37d; }
     .status.error { color: #ff9a9a; }
 
+    .informe-toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 9999;
+      width: min(440px, calc(100vw - 28px));
+      border: 1px solid rgba(126, 227, 155, 0.55);
+      border-radius: 12px;
+      background: #10253f;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+      color: #eaf2ff;
+      padding: 14px;
+    }
+
+    .informe-toast strong {
+      display: block;
+      color: #7ee39b;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+
+    .informe-toast span {
+      display: block;
+      line-height: 1.35;
+      margin-bottom: 10px;
+    }
+
+    .informe-toast button {
+      min-height: 34px;
+      width: auto;
+      padding: 7px 12px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: #fff;
+    }
+
     .cards {
       display: grid;
       grid-template-columns: 1fr;
@@ -1822,7 +1859,7 @@
     <p class="note">Documentos para compartir o guardar. Si primero simulaste un torneo, descarga el fixture simulado; si no, descarga el informe del torneo actual.</p>
     <div class="planner-report-box">
       <h4>Informe del torneo</h4>
-      <p>El archivo se descarga en tu carpeta de Descargas y tambien se abre en una pestaña para imprimir o guardar como PDF.</p>
+      <p>Al terminar, la app muestra un aviso y descarga el archivo en tu carpeta de Descargas. Tambien abre una pestaña para imprimir o guardar como PDF.</p>
       <button id="planner-informe" class="secondary" type="button">
         Descargar informe
       </button>
@@ -1853,7 +1890,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260801-informe-descarga"></script>
+<script src="app_online.js?v=20260801-informe-cartel"></script>
 
 <script>
   if ("serviceWorker" in navigator) {
