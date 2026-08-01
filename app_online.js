@@ -5410,6 +5410,31 @@ function generarInformeSimulacionTorneo(simulacion) {
   mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas. Si queres PDF, usa Imprimir / guardar PDF en la pestaña abierta.`);
 }
 
+function descargarUltimaSimulacionPlanner() {
+  const status = $("planner-informe-status") || $("planner-status");
+  const simulacion = estado.ultimaSimulacionPlanner;
+  if (!simulacion) {
+    const mensaje = "Primero simula el torneo. Despues vas a poder descargar el fixture generado.";
+    setStatus(status, mensaje, "warn");
+    mostrarCartelInforme(mensaje, "warn");
+    return;
+  }
+
+  const categoriaActual = document.getElementById("planner-categoria")?.value || "";
+  const competenciaActual = document.getElementById("planner-competencia")?.value || "";
+  if (simulacion.categoria !== categoriaActual || simulacion.competencia !== competenciaActual) {
+    const mensaje = "La simulacion guardada es de otra categoria o competencia. Volve a simular antes de descargar.";
+    setStatus(status, mensaje, "warn");
+    mostrarCartelInforme(mensaje, "warn");
+    return;
+  }
+
+  generarInformeSimulacionTorneo({
+    ...simulacion,
+    formato: detalleFormatoPlanner(categoriaActual)
+  });
+}
+
 function generarInformeTorneo() {
   if (estado.ultimaSimulacionPlanner) {
     const categoriaActual = document.getElementById("planner-categoria")?.value || "";
@@ -5418,13 +5443,12 @@ function generarInformeTorneo() {
       estado.ultimaSimulacionPlanner.categoria === categoriaActual &&
       estado.ultimaSimulacionPlanner.competencia === competenciaActual
     ) {
-      generarInformeSimulacionTorneo({
-        ...estado.ultimaSimulacionPlanner,
-        formato: detalleFormatoPlanner(categoriaActual)
-      });
+      descargarUltimaSimulacionPlanner();
       return;
     }
-    alert("Primero simula este torneo para generar el fixture correspondiente.");
+    const mensaje = "Primero simula este torneo para generar el fixture correspondiente.";
+    setStatus($("planner-informe-status"), mensaje, "warn");
+    mostrarCartelInforme(mensaje, "warn");
     return;
   }
 
@@ -5544,6 +5568,12 @@ if (plannerPartidosSemis) {
 if (plannerInformeBtn) {
   plannerInformeBtn.addEventListener("click", generarInformeTorneo);
 }
+
+document.addEventListener("click", (event) => {
+  const boton = event.target.closest?.(".planner-download-report");
+  if (!boton) return;
+  descargarUltimaSimulacionPlanner();
+});
 
 if (plannerBtn) {
   plannerBtn.addEventListener("click", async () => {
@@ -5676,7 +5706,12 @@ estado.ultimaSimulacionPlanner = {
       <div class="card" style="margin-top:10px;">
         <h3>Simulacion de torneo</h3>
 
-        <p class="note">Esta vista usa los equipos cargados hoy en la categoria. Es una prueba previa: no guarda ni publica fixture.</p>
+        <p class="note">Simulacion lista. No modifica datos reales ni publica el fixture. Si esta bien, descarga el informe desde el boton de abajo.</p>
+
+        <div class="planner-simulation-actions">
+          <button class="secondary planner-download-report" type="button">Descargar fixture simulado</button>
+          <span>Se baja un archivo HTML en Descargas y se abre una vista para imprimir o guardar PDF.</span>
+        </div>
 
         ${alertasPlanner.length ? `
           <div class="planner-alerts">
