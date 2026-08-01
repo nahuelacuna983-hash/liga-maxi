@@ -1208,6 +1208,41 @@
       line-height: 1.35;
     }
 
+    .planner-suggestions {
+      border: 1px solid rgba(96, 165, 250, 0.32);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.24);
+      margin: 14px 0;
+      padding: 12px;
+    }
+
+    .planner-suggestions h4 {
+      margin: 0 0 10px;
+      color: #f8fafc;
+    }
+
+    .planner-suggestions div {
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      display: grid;
+      gap: 4px;
+      padding: 9px 0;
+    }
+
+    .planner-suggestions div:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .planner-suggestions strong {
+      color: #bfdbfe;
+    }
+
+    .planner-suggestions span {
+      color: #e2e8f0;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
     .planner-fixture-preview {
       border-top: 1px solid rgba(148, 163, 184, 0.26);
       margin-top: 14px;
@@ -1662,6 +1697,13 @@
         </select>
       </div>
       <div>
+        <label>Frecuencia</label>
+        <select id="planner-frecuencia">
+          <option value="1">Todas las semanas</option>
+          <option value="2">Semana por medio</option>
+        </select>
+      </div>
+      <div>
   <label>Fecha de inicio</label>
   <input id="planner-inicio" type="date">
 </div>
@@ -1732,6 +1774,15 @@
             <option value="sin-descenso">Sin descenso</option>
           </select>
         </div>
+        <div>
+          <label>Promocion posterior</label>
+          <select id="planner-promocion">
+            <option value="0">Sin partido extra</option>
+            <option value="1">1 partido</option>
+            <option value="2">2 partidos</option>
+            <option value="3">Mejor de 3</option>
+          </select>
+        </div>
       </div>
       <div class="planner-playoff-dates">
         <h4>Fechas de playoffs</h4>
@@ -1771,6 +1822,18 @@
           <div>
             <label>Final 3</label>
             <input id="planner-fecha-final-3" type="date">
+          </div>
+          <div>
+            <label>Promocion 1</label>
+            <input id="planner-fecha-promocion-1" type="date">
+          </div>
+          <div>
+            <label>Promocion 2</label>
+            <input id="planner-fecha-promocion-2" type="date">
+          </div>
+          <div>
+            <label>Promocion 3</label>
+            <input id="planner-fecha-promocion-3" type="date">
           </div>
         </div>
       </div>
@@ -1917,7 +1980,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260801-informe-directo"></script>
+<script src="app_online.js?v=20260801-planner-sugerencias"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

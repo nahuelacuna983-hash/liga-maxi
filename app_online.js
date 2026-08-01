@@ -4610,8 +4610,9 @@ async function inicializarAsociacion() {
   const final = document.getElementById("planner-final");
   const definicionB = document.getElementById("planner-definicion-b");
   const descensoA = document.getElementById("planner-descenso-a");
+  const promocion = document.getElementById("planner-promocion");
 
-  if (!playoffs || !partidosCuartos || !partidosSemis || !final || !definicionB || !descensoA) return;
+  if (!playoffs || !partidosCuartos || !partidosSemis || !final || !definicionB || !descensoA || !promocion) return;
 
   configurarFechasPlayoffPlanner(categoria);
 }
@@ -4661,7 +4662,10 @@ function idsFechasPlayoffPlanner() {
     "planner-fecha-semis-3",
     "planner-fecha-final-1",
     "planner-fecha-final-2",
-    "planner-fecha-final-3"
+    "planner-fecha-final-3",
+    "planner-fecha-promocion-1",
+    "planner-fecha-promocion-2",
+    "planner-fecha-promocion-3"
   ];
 }
 
@@ -4690,7 +4694,10 @@ function actualizarFechasSeriesPlanner() {
     "planner-fecha-semis-3",
     "planner-fecha-final-1",
     "planner-fecha-final-2",
-    "planner-fecha-final-3"
+    "planner-fecha-final-3",
+    "planner-fecha-promocion-1",
+    "planner-fecha-promocion-2",
+    "planner-fecha-promocion-3"
   ].forEach((id) => {
     const input = document.getElementById(id);
     if (input) input.disabled = false;
@@ -4704,6 +4711,7 @@ function detalleFormatoPlanner(categoria) {
   const final = document.getElementById("planner-final")?.value || "mejor-3";
   const definicionB = document.getElementById("planner-definicion-b")?.value || "playoffs";
   const descensoA = document.getElementById("planner-descenso-a")?.value || "10-general";
+  const promocion = Number(document.getElementById("planner-promocion")?.value || 0);
   const clasificados = playoffs === "sin-playoffs" ? 0 : Number(playoffs.replace("top", ""));
 
   let reglaPromocion = "Sin regla especial";
@@ -4727,10 +4735,12 @@ function detalleFormatoPlanner(categoria) {
     finalTexto: textoOpcionPlanner("planner-final"),
     definicionBTexto: textoOpcionPlanner("planner-definicion-b"),
     descensoATexto: textoOpcionPlanner("planner-descenso-a"),
+    promocionTexto: textoOpcionPlanner("planner-promocion", "Sin partido extra"),
     reglaPromocion,
     partidosCuartos,
     partidosSemis,
     partidosFinal: cantidadPartidosFinalPlanner(final),
+    partidosPromocion: promocion,
     fechaCuartos: document.getElementById("planner-fecha-cuartos")?.value || "",
     fechaCuartos2: document.getElementById("planner-fecha-cuartos-2")?.value || "",
     fechaCuartos3: document.getElementById("planner-fecha-cuartos-3")?.value || "",
@@ -4739,7 +4749,10 @@ function detalleFormatoPlanner(categoria) {
     fechaSemis3: document.getElementById("planner-fecha-semis-3")?.value || "",
     fechaFinal1: document.getElementById("planner-fecha-final-1")?.value || "",
     fechaFinal2: document.getElementById("planner-fecha-final-2")?.value || "",
-    fechaFinal3: document.getElementById("planner-fecha-final-3")?.value || ""
+    fechaFinal3: document.getElementById("planner-fecha-final-3")?.value || "",
+    fechaPromocion1: document.getElementById("planner-fecha-promocion-1")?.value || "",
+    fechaPromocion2: document.getElementById("planner-fecha-promocion-2")?.value || "",
+    fechaPromocion3: document.getElementById("planner-fecha-promocion-3")?.value || ""
   };
 }
 
@@ -4747,7 +4760,8 @@ function fechasSeriePlanner(formato, prefijo, cantidad) {
   const claves = {
     cuartos: ["fechaCuartos", "fechaCuartos2", "fechaCuartos3"],
     semis: ["fechaSemis", "fechaSemis2", "fechaSemis3"],
-    final: ["fechaFinal1", "fechaFinal2", "fechaFinal3"]
+    final: ["fechaFinal1", "fechaFinal2", "fechaFinal3"],
+    promocion: ["fechaPromocion1", "fechaPromocion2", "fechaPromocion3"]
   }[prefijo] || [];
 
   return claves
@@ -4845,7 +4859,7 @@ function generarRondaRobinPlanner(equiposOriginales) {
   return rondas;
 }
 
-function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, bloqueadas, fechaFin) {
+function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, bloqueadas, fechaFin, frecuencia = 1) {
   const base = generarRondaRobinPlanner(equipos);
   const jornadas = [];
   const alertas = [];
@@ -4857,7 +4871,7 @@ function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, b
     base.forEach((jornadaBase) => {
       while (fecha && bloqueadas.has(fechaKeyPlanner(fecha))) {
         bloqueosSalteados += 1;
-        fecha = sumarDiasPlanner(fecha, 7);
+        fecha = sumarDiasPlanner(fecha, 7 * frecuencia);
       }
 
       const invierteLocalia = rueda % 2 === 0;
@@ -4874,7 +4888,7 @@ function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, b
         partidos
       });
 
-      if (fecha) fecha = sumarDiasPlanner(fecha, 7);
+      if (fecha) fecha = sumarDiasPlanner(fecha, 7 * frecuencia);
     });
   }
 
@@ -4890,16 +4904,16 @@ function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, b
   return { jornadas, alertas, ultimaFecha, bloqueosSalteados };
 }
 
-function siguienteFechaLibrePlanner(fecha, bloqueadas) {
-  let proxima = sumarDiasPlanner(fecha, 7);
+function siguienteFechaLibrePlanner(fecha, bloqueadas, frecuencia = 1) {
+  let proxima = sumarDiasPlanner(fecha, 7 * frecuencia);
   while (bloqueadas?.has(fechaKeyPlanner(proxima))) {
-    proxima = sumarDiasPlanner(proxima, 7);
+    proxima = sumarDiasPlanner(proxima, 7 * frecuencia);
   }
   return proxima;
 }
 
-function completarFechasPlayoffSimuladasPlanner(formato, simulacion, bloqueadas) {
-  if (!formato.clasificados || !simulacion.ultimaFecha) return;
+function completarFechasPlayoffSimuladasPlanner(formato, simulacion, bloqueadas, frecuencia = 1) {
+  if ((!formato.clasificados && !formato.partidosPromocion) || !simulacion.ultimaFecha) return;
 
   const fechaBase = fechaLocalPlanner(simulacion.ultimaFecha);
   if (!fechaBase) return;
@@ -4908,24 +4922,189 @@ function completarFechasPlayoffSimuladasPlanner(formato, simulacion, bloqueadas)
   const asignar = (id) => {
     const input = document.getElementById(id);
     if (!input) return;
-    cursor = siguienteFechaLibrePlanner(cursor, bloqueadas);
+    cursor = siguienteFechaLibrePlanner(cursor, bloqueadas, frecuencia);
     input.value = fechaKeyPlanner(cursor);
   };
 
-  const hayRondaInicial = formato.clasificados > 4;
-  if (hayRondaInicial) {
-    ["planner-fecha-cuartos", "planner-fecha-cuartos-2", "planner-fecha-cuartos-3"]
-      .slice(0, formato.partidosCuartos)
+  if (formato.clasificados) {
+    const hayRondaInicial = formato.clasificados > 4;
+    if (hayRondaInicial) {
+      ["planner-fecha-cuartos", "planner-fecha-cuartos-2", "planner-fecha-cuartos-3"]
+        .slice(0, formato.partidosCuartos)
+        .forEach(asignar);
+    }
+
+    ["planner-fecha-semis", "planner-fecha-semis-2", "planner-fecha-semis-3"]
+      .slice(0, formato.partidosSemis)
+      .forEach(asignar);
+
+    ["planner-fecha-final-1", "planner-fecha-final-2", "planner-fecha-final-3"]
+      .slice(0, formato.partidosFinal)
       .forEach(asignar);
   }
 
-  ["planner-fecha-semis", "planner-fecha-semis-2", "planner-fecha-semis-3"]
-    .slice(0, formato.partidosSemis)
+  ["planner-fecha-promocion-1", "planner-fecha-promocion-2", "planner-fecha-promocion-3"]
+    .slice(0, formato.partidosPromocion || 0)
     .forEach(asignar);
+}
 
-  ["planner-fecha-final-1", "planner-fecha-final-2", "planner-fecha-final-3"]
-    .slice(0, formato.partidosFinal)
-    .forEach(asignar);
+function fechasDisponiblesPlanner(inicioISO, finISO, diaJuego, frecuencia, bloqueadas) {
+  const inicio = siguienteDiaJuegoPlanner(inicioISO, diaJuego);
+  const fin = fechaLocalPlanner(finISO);
+  if (!inicio || !fin) return [];
+
+  const fechas = [];
+  let cursor = inicio;
+  while (cursor <= fin) {
+    const key = fechaKeyPlanner(cursor);
+    if (!bloqueadas?.has(key)) fechas.push(key);
+    cursor = sumarDiasPlanner(cursor, 7 * frecuencia);
+  }
+  return fechas;
+}
+
+function ultimaFechaFormatoPlanner(formato) {
+  const claves = [
+    "fechaPromocion3",
+    "fechaPromocion2",
+    "fechaPromocion1",
+    "fechaFinal3",
+    "fechaFinal2",
+    "fechaFinal1",
+    "fechaSemis3",
+    "fechaSemis2",
+    "fechaSemis",
+    "fechaCuartos3",
+    "fechaCuartos2",
+    "fechaCuartos"
+  ];
+  return claves.map((clave) => formato[clave]).find(Boolean) || "";
+}
+
+function contarFechasPlayoffPlanner(formato) {
+  if (!formato.clasificados) return formato.partidosPromocion || 0;
+  const rondaInicial = formato.clasificados > 4 ? formato.partidosCuartos : 0;
+  return rondaInicial + formato.partidosSemis + formato.partidosFinal + (formato.partidosPromocion || 0);
+}
+
+function calcularFechaFinalNecesariaPlanner(inicioISO, diaJuego, frecuencia, fechasNecesarias, bloqueadas) {
+  const inicio = siguienteDiaJuegoPlanner(inicioISO, diaJuego);
+  if (!inicio || !fechasNecesarias) return "";
+
+  let cursor = inicio;
+  let usadas = 0;
+  let ultima = "";
+  while (usadas < fechasNecesarias) {
+    const key = fechaKeyPlanner(cursor);
+    if (!bloqueadas?.has(key)) {
+      usadas += 1;
+      ultima = key;
+    }
+    cursor = sumarDiasPlanner(cursor, 7 * frecuencia);
+  }
+  return ultima;
+}
+
+function detectarSugerenciasPlanner({
+  fechaInicio,
+  fechaFin,
+  dia,
+  frecuencia,
+  bloqueadas,
+  jornadasTotales,
+  formato,
+  entraEnCalendario,
+  margenCalendario
+}) {
+  const sugerencias = [];
+  const fechasNecesarias = jornadasTotales + contarFechasPlayoffPlanner(formato);
+
+  if (!fechaInicio || !fechaFin) {
+    sugerencias.push({
+      titulo: "Cargar inicio y fecha limite",
+      detalle: "Con ambas fechas la app puede medir si entra la fase regular, los playoffs y una promocion posterior."
+    });
+    return sugerencias;
+  }
+
+  if (entraEnCalendario === "Si") {
+    sugerencias.push({
+      titulo: margenCalendario === 0 ? "Entra justo" : "El calendario alcanza",
+      detalle: margenCalendario === 0
+        ? "No queda margen para suspensiones. Conviene reservar una fecha alternativa."
+        : `Queda un margen de ${margenCalendario} fecha(s) disponible(s).`
+    });
+  }
+
+  const fechaFinNecesaria = calcularFechaFinalNecesariaPlanner(fechaInicio, dia, frecuencia, fechasNecesarias, bloqueadas);
+  if (entraEnCalendario !== "Si" && fechaFinNecesaria) {
+    sugerencias.push({
+      titulo: "Extender calendario",
+      detalle: `Manteniendo este formato, la fecha limite deberia llegar al menos hasta ${fechaPlannerLabel(fechaFinNecesaria)}.`
+    });
+  }
+
+  if (frecuencia > 1) {
+    const semanales = fechasDisponiblesPlanner(fechaInicio, fechaFin, dia, 1, bloqueadas);
+    if (semanales.length >= fechasNecesarias) {
+      sugerencias.push({
+        titulo: "Jugar todas las semanas",
+        detalle: "Con frecuencia semanal el torneo completo entra dentro del rango cargado."
+      });
+    }
+  }
+
+  const diaAlternativo = Number(dia) === 0 ? 3 : 0;
+  const nombresDiasPlanner = { 0: "Domingo", 3: "Miercoles" };
+  const alternativas = fechasDisponiblesPlanner(fechaInicio, fechaFin, diaAlternativo, frecuencia, bloqueadas);
+  if (alternativas.length >= fechasNecesarias) {
+    sugerencias.push({
+      titulo: `Cambiar dia a ${nombresDiasPlanner[diaAlternativo]}`,
+      detalle: `Usando ${nombresDiasPlanner[diaAlternativo]} como dia principal, el torneo completo entra en calendario.`
+    });
+  }
+
+  const fechasActuales = fechasDisponiblesPlanner(fechaInicio, fechaFin, dia, frecuencia, bloqueadas);
+  const deficit = fechasNecesarias - fechasActuales.length;
+  if (deficit > 0 && bloqueadas?.size >= deficit) {
+    sugerencias.push({
+      titulo: "Revisar fechas bloqueadas",
+      detalle: `Faltan ${deficit} fecha(s). Si la asociacion habilita esa cantidad de fechas bloqueadas, el formato podria entrar sin cambiar reglas.`
+    });
+  }
+
+  const playoffReducido = Math.max(0, formato.clasificados > 4 ? 1 : 0) + 1 + 1 + (formato.partidosPromocion ? 1 : 0);
+  const fechasMinimas = jornadasTotales + playoffReducido;
+  if (fechasActuales.length >= fechasMinimas && fechasMinimas < fechasNecesarias) {
+    sugerencias.push({
+      titulo: "Reducir series finales",
+      detalle: "Con series a partido unico en playoffs/promocion, el torneo entra sin tocar la fase regular."
+    });
+  }
+
+  if (!sugerencias.length) {
+    sugerencias.push({
+      titulo: "No alcanza con un ajuste simple",
+      detalle: "Hay que combinar opciones: ampliar fecha limite, usar otro dia, liberar fechas bloqueadas o reducir el formato."
+    });
+  }
+
+  return sugerencias;
+}
+
+function renderSugerenciasPlanner(sugerencias) {
+  if (!sugerencias?.length) return "";
+  return `
+    <div class="planner-suggestions">
+      <h4>Diagnostico y alternativas</h4>
+      ${sugerencias.map((item) => `
+        <div>
+          <strong>${escapeHtml(item.titulo)}</strong>
+          <span>${escapeHtml(item.detalle)}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
 }
 
 function renderFixtureSimuladoPlanner(simulacion) {
@@ -4980,8 +5159,19 @@ function renderPlayoffsSimuladosPlanner(formato) {
   if (!formato.clasificados) {
     return `
       <div class="planner-playoff-preview">
-        <h4>Playoffs</h4>
+        <h4>Instancias finales</h4>
         <p>Sin playoffs configurados para esta simulacion.</p>
+        ${formato.partidosPromocion ? `
+          <div class="planner-playoff-meta">
+            <span>Promocion posterior: ${formato.partidosPromocion} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "promocion", formato.partidosPromocion))}</span>
+          </div>
+          <div class="planner-playoff-grid">
+            <div>
+              <h5>Promocion</h5>
+              ${renderSeriePlayoffPlanner("Promocion", [renderNodoPlayoffPlanner("-", "Equipo A"), renderNodoPlayoffPlanner("-", "Equipo B")])}
+            </div>
+          </div>
+        ` : ""}
       </div>
     `;
   }
@@ -5028,6 +5218,7 @@ function renderPlayoffsSimuladosPlanner(formato) {
         ${rondaInicial.length ? `<span>${escapeHtml(rondaInicialTitulo)}: ${formato.partidosCuartos} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "cuartos", formato.partidosCuartos))}</span>` : ""}
         <span>Semifinales: ${formato.partidosSemis} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "semis", formato.partidosSemis))}</span>
         <span>Final: ${formato.partidosFinal} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "final", formato.partidosFinal))}</span>
+        ${formato.partidosPromocion ? `<span>Promocion posterior: ${formato.partidosPromocion} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "promocion", formato.partidosPromocion))}</span>` : ""}
       </div>
       <div class="planner-playoff-grid">
         ${rondaInicial.length ? `
@@ -5044,6 +5235,12 @@ function renderPlayoffsSimuladosPlanner(formato) {
           <h5>Final</h5>
           ${renderSeriePlayoffPlanner("Final", [renderNodoPlayoffPlanner("-", "Ganador Semi 1"), renderNodoPlayoffPlanner("-", "Ganador Semi 2")])}
         </div>
+        ${formato.partidosPromocion ? `
+          <div>
+            <h5>Promocion</h5>
+            ${renderSeriePlayoffPlanner("Promocion", [renderNodoPlayoffPlanner("-", "Equipo A"), renderNodoPlayoffPlanner("-", "Equipo B")])}
+          </div>
+        ` : ""}
       </div>
     </div>
   `;
@@ -5237,7 +5434,26 @@ function renderFixtureSimuladoInforme(simulacion) {
 
 function renderPlayoffsSimuladosInforme(formato) {
   if (!formato?.clasificados) {
-    return "<h2>Playoffs</h2><p>Sin playoffs configurados.</p>";
+    if (!formato?.partidosPromocion) return "<h2>Playoffs</h2><p>Sin playoffs configurados.</p>";
+    return `
+      <h2>Instancias finales</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Instancia</th>
+            <th>Partidos por llave</th>
+            <th>Fechas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Promocion posterior</td>
+            <td>${escapeHtml(String(formato.partidosPromocion))}</td>
+            <td>${escapeHtml(fechasSeriePlanner(formato, "promocion", formato.partidosPromocion))}</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
   }
 
   const bloques = [];
@@ -5265,6 +5481,15 @@ function renderPlayoffsSimuladosInforme(formato) {
       <td>${escapeHtml(fechasSeriePlanner(formato, "final", formato.partidosFinal))}</td>
     </tr>
   `);
+  if (formato.partidosPromocion) {
+    bloques.push(`
+      <tr>
+        <td>Promocion posterior</td>
+        <td>${escapeHtml(String(formato.partidosPromocion))}</td>
+        <td>${escapeHtml(fechasSeriePlanner(formato, "promocion", formato.partidosPromocion))}</td>
+      </tr>
+    `);
+  }
 
   return `
     <h2>Playoffs simulados</h2>
@@ -5329,6 +5554,7 @@ function generarInformeSimulacionTorneo(simulacion) {
     competencia,
     equipos,
     ruedas,
+    frecuencia,
     diaTexto,
     fechaInicio,
     fechaFin,
@@ -5338,7 +5564,8 @@ function generarInformeSimulacionTorneo(simulacion) {
     bloqueadasCantidad,
     fechaFinalEstimada,
     entraEnCalendario,
-    margenCalendario
+    margenCalendario,
+    sugerencias
   } = simulacion;
   const fechaGeneracion = new Date().toLocaleString("es-AR");
 
@@ -5361,6 +5588,8 @@ function generarInformeSimulacionTorneo(simulacion) {
         th, td { border-bottom: 1px solid #d1d5db; padding: 7px 6px; font-size: 12px; text-align: left; }
         th { background: #eef2ff; font-weight: 800; }
         .rules { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; margin-top: 12px; }
+        .suggestions { border: 1px solid #f59e0b; border-radius: 8px; padding: 10px; margin-top: 12px; background: #fffbeb; }
+        .suggestions li { margin: 6px 0; }
         .print-actions { margin: 18px 0; }
         .print-actions button { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; font-weight: 700; }
         @media print {
@@ -5386,10 +5615,21 @@ function generarInformeSimulacionTorneo(simulacion) {
 
       <div class="rules">
         <p><strong>Inicio:</strong> ${escapeHtml(fechaPlannerLabel(fechaInicio))} - <strong>Dia de juego:</strong> ${escapeHtml(diaTexto)}</p>
+        <p><strong>Frecuencia:</strong> ${escapeHtml(frecuencia === 2 ? "Semana por medio" : "Todas las semanas")}</p>
         <p><strong>Fecha limite:</strong> ${escapeHtml(fechaPlannerLabel(fechaFin))} - <strong>Entra en calendario:</strong> ${escapeHtml(entraEnCalendario)}</p>
         <p><strong>Fechas bloqueadas:</strong> ${bloqueadasCantidad} - <strong>Margen calendario:</strong> ${escapeHtml(String(margenCalendario))}</p>
         <p><strong>Formato:</strong> ${escapeHtml(formato.playoffsTexto)} - <strong>Clasificados:</strong> ${escapeHtml(String(formato.clasificados || "No aplica"))}</p>
+        <p><strong>Promocion posterior:</strong> ${escapeHtml(formato.promocionTexto || "Sin partido extra")}</p>
       </div>
+
+      ${sugerencias?.length ? `
+        <div class="suggestions">
+          <h2>Diagnostico y alternativas</h2>
+          <ul>
+            ${sugerencias.map((item) => `<li><strong>${escapeHtml(item.titulo)}:</strong> ${escapeHtml(item.detalle)}</li>`).join("")}
+          </ul>
+        </div>
+      ` : ""}
 
       ${renderFixtureSimuladoInforme(fixture)}
       ${renderPlayoffsSimuladosInforme(formato)}
@@ -5514,6 +5754,7 @@ function generarInformeTorneo() {
         <p><strong>Cuartos / repechaje:</strong> ${escapeHtml(formato.partidosCuartos)} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "cuartos", formato.partidosCuartos))}</p>
         <p><strong>Semifinales:</strong> ${escapeHtml(formato.partidosSemis)} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "semis", formato.partidosSemis))}</p>
         <p><strong>Final:</strong> ${escapeHtml(formato.partidosFinal)} partido(s) - ${escapeHtml(fechasSeriePlanner(formato, "final", formato.partidosFinal))}</p>
+        <p><strong>Promocion posterior:</strong> ${escapeHtml(formato.promocionTexto || "Sin partido extra")} ${formato.partidosPromocion ? `- ${escapeHtml(fechasSeriePlanner(formato, "promocion", formato.partidosPromocion))}` : ""}</p>
         <p><strong>Ascenso / repechaje B:</strong> ${escapeHtml(formato.definicionBTexto)} - <strong>Descenso +35 A:</strong> ${escapeHtml(formato.descensoATexto)}</p>
         <p><strong>Regla aplicada:</strong> ${escapeHtml(formato.reglaPromocion)}</p>
       </div>
@@ -5547,6 +5788,7 @@ function generarInformeTorneo() {
  const plannerPartidosCuartos = document.getElementById("planner-partidos-cuartos");
  const plannerPartidosSemis = document.getElementById("planner-partidos-semis");
  const plannerFinal = document.getElementById("planner-final");
+ const plannerPromocion = document.getElementById("planner-promocion");
 
 if (plannerCategoria) {
   configurarDefaultsPlanner();
@@ -5565,6 +5807,10 @@ if (plannerPartidosSemis) {
   plannerPartidosSemis.addEventListener("change", actualizarFechasSeriesPlanner);
 }
 
+if (plannerPromocion) {
+  plannerPromocion.addEventListener("change", actualizarFechasSeriesPlanner);
+}
+
 if (plannerInformeBtn) {
   plannerInformeBtn.addEventListener("click", generarInformeTorneo);
 }
@@ -5581,6 +5827,7 @@ if (plannerBtn) {
     const competencia = document.getElementById("planner-competencia").value;
     const ruedas = Number(document.getElementById("planner-ruedas").value);
     const dia = document.getElementById("planner-dia").value;
+    const frecuencia = Number(document.getElementById("planner-frecuencia")?.value || 1);
     const fechaInicio = document.getElementById("planner-inicio").value;
 const fechaFin = document.getElementById("planner-fin").value;
 const fechasBloqueadasTexto = document.getElementById("planner-bloqueadas").value;
@@ -5628,7 +5875,7 @@ bloqueadasCantidad = fechasBloqueadas.size;
 if (fechaInicio) {
   const inicio = new Date(fechaInicio);
 
-  const diasPorFecha = 7;
+  const diasPorFecha = 7 * frecuencia;
   const diasTotales = (jornadasTotales + bloqueadasCantidad) * diasPorFecha;
 
   const estimada = new Date(inicio);
@@ -5661,23 +5908,44 @@ if (equipos >= 2) {
     fechaInicio,
     dia,
     fechasBloqueadas,
-    fechaFin
+    fechaFin,
+    frecuencia
   );
 } else {
   fixtureSimulado.alertas.push("No hay equipos suficientes en esta categoria para simular fixture.");
 }
 
-completarFechasPlayoffSimuladasPlanner(formato, fixtureSimulado, fechasBloqueadas);
+completarFechasPlayoffSimuladasPlanner(formato, fixtureSimulado, fechasBloqueadas, frecuencia);
 formato = detalleFormatoPlanner(categoria);
 
-if (fixtureSimulado.ultimaFecha) {
-  fechaFinalEstimada = fechaPlannerLabel(fixtureSimulado.ultimaFecha);
+const ultimaFechaCompleta = ultimaFechaFormatoPlanner(formato) || fixtureSimulado.ultimaFecha;
+if (ultimaFechaCompleta) {
+  fechaFinalEstimada = fechaPlannerLabel(ultimaFechaCompleta);
   if (fechaFin) {
-    const ultimaSimulada = fechaLocalPlanner(fixtureSimulado.ultimaFecha);
+    const ultimaSimulada = fechaLocalPlanner(ultimaFechaCompleta);
     const limite = fechaLocalPlanner(fechaFin);
     entraEnCalendario = ultimaSimulada && limite && ultimaSimulada <= limite ? "Si" : "No";
   }
 }
+
+const fechasDisponibles = fechasDisponiblesPlanner(fechaInicio, fechaFin, dia, frecuencia, fechasBloqueadas);
+const fechasNecesariasCompletas = jornadasTotales + contarFechasPlayoffPlanner(formato);
+if (fechaInicio && fechaFin) {
+  semanasDisponibles = fechasDisponibles.length;
+  margenCalendario = fechasDisponibles.length - fechasNecesariasCompletas;
+}
+
+const sugerenciasPlanner = detectarSugerenciasPlanner({
+  fechaInicio,
+  fechaFin,
+  dia,
+  frecuencia,
+  bloqueadas: fechasBloqueadas,
+  jornadasTotales,
+  formato,
+  entraEnCalendario,
+  margenCalendario
+});
 
 const alertasPlanner = [
   ...fixtureSimulado.alertas,
@@ -5689,6 +5957,7 @@ estado.ultimaSimulacionPlanner = {
   competencia,
   equipos,
   ruedas,
+  frecuencia,
   diaTexto: dia === "0" ? "Domingo" : "Miercoles",
   fechaInicio,
   fechaFin,
@@ -5698,7 +5967,8 @@ estado.ultimaSimulacionPlanner = {
   bloqueadasCantidad,
   fechaFinalEstimada,
   entraEnCalendario,
-  margenCalendario
+  margenCalendario,
+  sugerencias: sugerenciasPlanner
 };
 
 
@@ -5725,23 +5995,27 @@ estado.ultimaSimulacionPlanner = {
         <p><strong>Jornadas simuladas:</strong> ${jornadasTotales}</p>
         <p><strong>Referencia actual:</strong> ${jornadasReales} jornadas cargadas, ${partidosJugados} partidos jugados y ${partidosPendientes} pendientes.</p>
         <p><strong>Ruedas:</strong> ${ruedas}</p>
+        <p><strong>Frecuencia:</strong> ${frecuencia === 2 ? "Semana por medio" : "Todas las semanas"}</p>
         <p><strong>Día:</strong> ${dia === "0" ? "Domingo" : "Miércoles"}</p>
         <p><strong>Playoffs:</strong> ${formato.playoffsTexto}</p>
         <p><strong>Clasificados:</strong> ${formato.clasificados || "No aplica"}</p>
         <p><strong>Cuartos / repechaje:</strong> ${formato.partidosCuartos} partido(s) - ${fechasSeriePlanner(formato, "cuartos", formato.partidosCuartos)}</p>
         <p><strong>Semifinales:</strong> ${formato.partidosSemis} partido(s) - ${fechasSeriePlanner(formato, "semis", formato.partidosSemis)}</p>
         <p><strong>Final:</strong> ${formato.finalTexto} - ${fechasSeriePlanner(formato, "final", formato.partidosFinal)}</p>
+        <p><strong>Promocion posterior:</strong> ${formato.promocionTexto} ${formato.partidosPromocion ? `- ${fechasSeriePlanner(formato, "promocion", formato.partidosPromocion)}` : ""}</p>
         <p><strong>Ascenso / repechaje B:</strong> ${formato.definicionBTexto}</p>
         <p><strong>Descenso +35 A:</strong> ${formato.descensoATexto}</p>
         <p><strong>Regla aplicada:</strong> ${formato.reglaPromocion}</p>
-        <p><strong>Jornadas necesarias:</strong> ${jornadasTotales}</p>
+        <p><strong>Jornadas fase regular:</strong> ${jornadasTotales}</p>
+        <p><strong>Fechas totales necesarias:</strong> ${fechasNecesariasCompletas}</p>
         <p><strong>Fecha final estimada:</strong> ${fechaFinalEstimada}</p>
         <p><strong>Fechas bloqueadas:</strong> ${bloqueadasCantidad}</p>
         <p><strong>Entra en calendario:</strong> ${entraEnCalendario}</p>
-        <p><strong>Semanas disponibles:</strong> ${semanasDisponibles}</p>
+        <p><strong>Fechas jugables disponibles:</strong> ${semanasDisponibles}</p>
         <p><strong>Margen calendario:</strong> ${margenCalendario}</p>
         <p><strong>Libre por fecha:</strong> ${tieneLibre ? "Sí" : "No"}</p>
         ${fixtureSimulado.ultimaFecha ? `<p><strong>Ultima fecha simulada:</strong> ${fechaPlannerLabel(fixtureSimulado.ultimaFecha)}</p>` : ""}
+        ${renderSugerenciasPlanner(sugerenciasPlanner)}
         ${renderFixtureSimuladoPlanner(fixtureSimulado)}
         ${renderPlayoffsSimuladosPlanner(formato)}
       </div>
