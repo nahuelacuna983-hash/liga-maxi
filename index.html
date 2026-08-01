@@ -1819,13 +1819,14 @@
 
   <div class="card assoc-panel" data-asociacion-panel-view="informes">
     <h3>Informes y cierres</h3>
-    <p class="note">Documentos de seguimiento del torneo actual: tabla, pendientes, resultados, fixture y definiciones.</p>
+    <p class="note">Documentos para compartir o guardar. Si primero simulaste un torneo, descarga el fixture simulado; si no, descarga el informe del torneo actual.</p>
     <div class="planner-report-box">
-      <h4>Informe del torneo actual</h4>
-      <p>Usa la categoria seleccionada arriba para generar un documento de seguimiento del torneo que ya esta en juego.</p>
+      <h4>Informe del torneo</h4>
+      <p>El archivo se descarga en tu carpeta de Descargas y tambien se abre en una pestaña para imprimir o guardar como PDF.</p>
       <button id="planner-informe" class="secondary" type="button">
-        Generar informe PDF
+        Descargar informe
       </button>
+      <div id="planner-informe-status" class="status"></div>
     </div>
   </div>
 
@@ -1852,7 +1853,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260801-informe-simulacion"></script>
+<script src="app_online.js?v=20260801-informe-descarga"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

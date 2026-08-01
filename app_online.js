@@ -5281,13 +5281,30 @@ function renderPlayoffsSimuladosInforme(formato) {
   `;
 }
 
-function generarInformeSimulacionTorneo(simulacion) {
-  const ventana = window.open("", "_blank");
-  if (!ventana) {
-    alert("El navegador bloqueo la ventana del informe. Habilita ventanas emergentes para esta pagina.");
-    return;
-  }
+function descargarInformeHtml(html, nombreBase) {
+  const nombre = `${slugify(nombreBase)}.html`;
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = nombre;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  return nombre;
+}
 
+function abrirInformeHtml(html) {
+  const ventana = window.open("", "_blank");
+  if (!ventana) return false;
+  ventana.document.open();
+  ventana.document.write(html);
+  ventana.document.close();
+  return true;
+}
+
+function generarInformeSimulacionTorneo(simulacion) {
   const {
     categoria,
     competencia,
@@ -5361,9 +5378,16 @@ function generarInformeSimulacionTorneo(simulacion) {
     </html>
   `;
 
-  ventana.document.open();
-  ventana.document.write(html);
-  ventana.document.close();
+  const nombre = descargarInformeHtml(html, `fixture-simulado-${categoria}-${competencia}`);
+  const abierto = abrirInformeHtml(html);
+  const status = $("planner-informe-status");
+  setStatus(
+    status,
+    abierto
+      ? `Informe descargado como ${nombre}. Tambien se abrio una pestaña para imprimir o guardar PDF.`
+      : `Informe descargado como ${nombre}. El navegador bloqueo la pestaña de vista previa.`,
+    "ok"
+  );
 }
 
 function generarInformeTorneo() {
@@ -5397,12 +5421,6 @@ function generarInformeTorneo() {
     .sort((a, b) => Number(b.jornada || 0) - Number(a.jornada || 0))
     .slice(0, 12)
     .reverse();
-
-  const ventana = window.open("", "_blank");
-  if (!ventana) {
-    alert("El navegador bloqueo la ventana del informe. Habilita ventanas emergentes para esta pagina.");
-    return;
-  }
 
   const fechaGeneracion = new Date().toLocaleString("es-AR");
   const html = `
@@ -5466,9 +5484,16 @@ function generarInformeTorneo() {
     </html>
   `;
 
-  ventana.document.open();
-  ventana.document.write(html);
-  ventana.document.close();
+  const nombre = descargarInformeHtml(html, `informe-torneo-${categoria}-${competencia}`);
+  const abierto = abrirInformeHtml(html);
+  const status = $("planner-informe-status");
+  setStatus(
+    status,
+    abierto
+      ? `Informe descargado como ${nombre}. Tambien se abrio una pestaña para imprimir o guardar PDF.`
+      : `Informe descargado como ${nombre}. El navegador bloqueo la pestaña de vista previa.`,
+    "ok"
+  );
 }
 
  const plannerBtn = document.getElementById("planner-generar");
