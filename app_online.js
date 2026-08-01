@@ -38,6 +38,7 @@ const estado = {
   documentosJugadoresPorCategoriaId: {},
   filasDocumentacionAsociacion: [],
   eventosUso: [],
+  ultimaSimulacionPlanner: null,
   publicoCargaActual: 0,
   delegadoDesbloqueado: false,
   delegado: null,
@@ -4908,7 +4909,7 @@ function completarFechasPlayoffSimuladasPlanner(formato, simulacion, bloqueadas)
     const input = document.getElementById(id);
     if (!input) return;
     cursor = siguienteFechaLibrePlanner(cursor, bloqueadas);
-    if (!input.value) input.value = fechaKeyPlanner(cursor);
+    input.value = fechaKeyPlanner(cursor);
   };
 
   const hayRondaInicial = formato.clasificados > 4;
@@ -5204,7 +5205,185 @@ function renderFixtureInforme(partidos) {
   `;
 }
 
+function renderFixtureSimuladoInforme(simulacion) {
+  if (!simulacion?.jornadas?.length) {
+    return "<h2>Fixture simulado</h2><p>No hay simulacion disponible.</p>";
+  }
+
+  return `
+    <h2>Fixture simulado</h2>
+    ${simulacion.jornadas.map((jornada) => `
+      <h3>Fecha ${jornada.numero} - ${escapeHtml(fechaPartidoLabel(jornada.fecha) || "Fecha a confirmar")}</h3>
+      ${jornada.libre ? `<p><strong>Libre:</strong> ${escapeHtml(jornada.libre)}</p>` : ""}
+      <table>
+        <thead>
+          <tr>
+            <th>Local</th>
+            <th>Visitante</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${jornada.partidos.map((partido) => `
+            <tr>
+              <td>${escapeHtml(partido.local || "-")}</td>
+              <td>${escapeHtml(partido.visitante || "-")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `).join("")}
+  `;
+}
+
+function renderPlayoffsSimuladosInforme(formato) {
+  if (!formato?.clasificados) {
+    return "<h2>Playoffs</h2><p>Sin playoffs configurados.</p>";
+  }
+
+  const bloques = [];
+  if (formato.clasificados > 4) {
+    bloques.push(`
+      <tr>
+        <td>${formato.clasificados === 6 ? "Repechaje" : "Cuartos"}</td>
+        <td>${escapeHtml(String(formato.partidosCuartos))}</td>
+        <td>${escapeHtml(fechasSeriePlanner(formato, "cuartos", formato.partidosCuartos))}</td>
+      </tr>
+    `);
+  }
+
+  bloques.push(`
+    <tr>
+      <td>Semifinales</td>
+      <td>${escapeHtml(String(formato.partidosSemis))}</td>
+      <td>${escapeHtml(fechasSeriePlanner(formato, "semis", formato.partidosSemis))}</td>
+    </tr>
+  `);
+  bloques.push(`
+    <tr>
+      <td>Final</td>
+      <td>${escapeHtml(String(formato.partidosFinal))}</td>
+      <td>${escapeHtml(fechasSeriePlanner(formato, "final", formato.partidosFinal))}</td>
+    </tr>
+  `);
+
+  return `
+    <h2>Playoffs simulados</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Instancia</th>
+          <th>Partidos por llave</th>
+          <th>Fechas</th>
+        </tr>
+      </thead>
+      <tbody>${bloques.join("")}</tbody>
+    </table>
+  `;
+}
+
+function generarInformeSimulacionTorneo(simulacion) {
+  const ventana = window.open("", "_blank");
+  if (!ventana) {
+    alert("El navegador bloqueo la ventana del informe. Habilita ventanas emergentes para esta pagina.");
+    return;
+  }
+
+  const {
+    categoria,
+    competencia,
+    equipos,
+    ruedas,
+    diaTexto,
+    fechaInicio,
+    fechaFin,
+    formato,
+    fixture,
+    jornadasTotales,
+    bloqueadasCantidad,
+    fechaFinalEstimada,
+    entraEnCalendario,
+    margenCalendario
+  } = simulacion;
+  const fechaGeneracion = new Date().toLocaleString("es-AR");
+
+  const html = `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <title>Fixture simulado ${escapeHtml(categoria)}</title>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 28px; }
+        h1 { margin: 0 0 4px; font-size: 26px; }
+        h2 { margin: 22px 0 8px; font-size: 18px; color: #1f4d78; }
+        h3 { margin: 16px 0 6px; font-size: 14px; }
+        .muted { color: #4b5563; margin: 0 0 12px; }
+        .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0; }
+        .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; }
+        .box strong { display: block; font-size: 18px; }
+        table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; }
+        th, td { border-bottom: 1px solid #d1d5db; padding: 7px 6px; font-size: 12px; text-align: left; }
+        th { background: #eef2ff; font-weight: 800; }
+        .rules { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; margin-top: 12px; }
+        .print-actions { margin: 18px 0; }
+        .print-actions button { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; font-weight: 700; }
+        @media print {
+          body { margin: 12mm; }
+          .print-actions { display: none; }
+          h2, h3 { break-after: avoid; }
+          tr { break-inside: avoid; }
+        }
+      </style>
+    </head>
+    <body>
+      <h1>${escapeHtml(APP_CONFIG.producto.nombre)} - Fixture simulado</h1>
+      <p class="muted">Organizacion: ${escapeHtml(APP_CONFIG.organizacionActiva.nombre)} - ${escapeHtml(APP_CONFIG.organizacionActiva.torneoLabel)}</p>
+      <p class="muted">${escapeHtml(categoria)} - ${escapeHtml(competencia)} - Generado ${escapeHtml(fechaGeneracion)}</p>
+      <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
+
+      <div class="summary">
+        <div class="box"><span>Equipos</span><strong>${equipos}</strong></div>
+        <div class="box"><span>Ruedas</span><strong>${ruedas}</strong></div>
+        <div class="box"><span>Jornadas</span><strong>${jornadasTotales}</strong></div>
+        <div class="box"><span>Final estimada</span><strong>${escapeHtml(fechaFinalEstimada)}</strong></div>
+      </div>
+
+      <div class="rules">
+        <p><strong>Inicio:</strong> ${escapeHtml(fechaPlannerLabel(fechaInicio))} - <strong>Dia de juego:</strong> ${escapeHtml(diaTexto)}</p>
+        <p><strong>Fecha limite:</strong> ${escapeHtml(fechaPlannerLabel(fechaFin))} - <strong>Entra en calendario:</strong> ${escapeHtml(entraEnCalendario)}</p>
+        <p><strong>Fechas bloqueadas:</strong> ${bloqueadasCantidad} - <strong>Margen calendario:</strong> ${escapeHtml(String(margenCalendario))}</p>
+        <p><strong>Formato:</strong> ${escapeHtml(formato.playoffsTexto)} - <strong>Clasificados:</strong> ${escapeHtml(String(formato.clasificados || "No aplica"))}</p>
+      </div>
+
+      ${renderFixtureSimuladoInforme(fixture)}
+      ${renderPlayoffsSimuladosInforme(formato)}
+    </body>
+    </html>
+  `;
+
+  ventana.document.open();
+  ventana.document.write(html);
+  ventana.document.close();
+}
+
 function generarInformeTorneo() {
+  if (estado.ultimaSimulacionPlanner) {
+    const categoriaActual = document.getElementById("planner-categoria")?.value || "";
+    const competenciaActual = document.getElementById("planner-competencia")?.value || "";
+    if (
+      estado.ultimaSimulacionPlanner.categoria === categoriaActual &&
+      estado.ultimaSimulacionPlanner.competencia === competenciaActual
+    ) {
+      generarInformeSimulacionTorneo({
+        ...estado.ultimaSimulacionPlanner,
+        formato: detalleFormatoPlanner(categoriaActual)
+      });
+      return;
+    }
+    alert("Primero simula este torneo para generar el fixture correspondiente.");
+    return;
+  }
+
   const categoria = document.getElementById("planner-categoria")?.value || "";
   const competencia = document.getElementById("planner-competencia")?.value || "";
   const partidos = estado.partidosPorCategoria[categoria] || [];
@@ -5415,10 +5594,36 @@ if (equipos >= 2) {
 completarFechasPlayoffSimuladasPlanner(formato, fixtureSimulado, fechasBloqueadas);
 formato = detalleFormatoPlanner(categoria);
 
+if (fixtureSimulado.ultimaFecha) {
+  fechaFinalEstimada = fechaPlannerLabel(fixtureSimulado.ultimaFecha);
+  if (fechaFin) {
+    const ultimaSimulada = fechaLocalPlanner(fixtureSimulado.ultimaFecha);
+    const limite = fechaLocalPlanner(fechaFin);
+    entraEnCalendario = ultimaSimulada && limite && ultimaSimulada <= limite ? "Si" : "No";
+  }
+}
+
 const alertasPlanner = [
   ...fixtureSimulado.alertas,
   !fechaInicio ? "Sin fecha de inicio: se simulan las jornadas sin calendario." : ""
 ].filter(Boolean);
+
+estado.ultimaSimulacionPlanner = {
+  categoria,
+  competencia,
+  equipos,
+  ruedas,
+  diaTexto: dia === "0" ? "Domingo" : "Miercoles",
+  fechaInicio,
+  fechaFin,
+  formato,
+  fixture: fixtureSimulado,
+  jornadasTotales,
+  bloqueadasCantidad,
+  fechaFinalEstimada,
+  entraEnCalendario,
+  margenCalendario
+};
 
 
         status.innerHTML = `
@@ -5436,10 +5641,8 @@ const alertasPlanner = [
         <p><strong>Categoría:</strong> ${categoria}</p>
         <p><strong>Competencia:</strong> ${competencia}</p>
         <p><strong>Equipos:</strong> ${equipos}</p>
-        <p><strong>Jornadas cargadas:</strong> ${jornadasReales}</p>
-        <p><strong>Partidos cargados:</strong> ${partidos.length}</p>
-        <p><strong>Partidos jugados:</strong> ${partidosJugados}</p>
-        <p><strong>Partidos pendientes:</strong> ${partidosPendientes}</p>
+        <p><strong>Jornadas simuladas:</strong> ${jornadasTotales}</p>
+        <p><strong>Referencia actual:</strong> ${jornadasReales} jornadas cargadas, ${partidosJugados} partidos jugados y ${partidosPendientes} pendientes.</p>
         <p><strong>Ruedas:</strong> ${ruedas}</p>
         <p><strong>Día:</strong> ${dia === "0" ? "Domingo" : "Miércoles"}</p>
         <p><strong>Playoffs:</strong> ${formato.playoffsTexto}</p>
