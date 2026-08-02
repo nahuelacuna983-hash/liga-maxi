@@ -1476,6 +1476,50 @@
       color: var(--muted);
     }
 
+    .closure-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .closure-box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.22);
+      padding: 12px;
+    }
+
+    .closure-box h4 {
+      margin: 0 0 8px;
+      color: #f8fafc;
+    }
+
+    .closure-list {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .closure-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid rgba(148, 163, 184, 0.16);
+      padding-top: 7px;
+      color: #dbeafe;
+    }
+
+    .closure-list li:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .closure-list strong {
+      color: #fff;
+    }
+
     #vista-asociacion.asociacion-locked > .card:not(#asociacion-acceso),
     #vista-asociacion.asociacion-locked > .assoc-subnav {
       display: none;
@@ -1645,6 +1689,7 @@
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="torneo">Torneos</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="programacion">Programacion</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="informes">Informes</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="cierres">Cierres</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="permisos">Permisos</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="uso">Auditoria</button>
   </div>
@@ -1957,6 +2002,17 @@
     </div>
   </div>
 
+  <div class="card assoc-panel" data-asociacion-panel-view="cierres">
+    <h3>Cierre de torneo</h3>
+    <p class="note">Vista previa administrativa. No cierra ni modifica datos: resume fase regular, playoffs, campeon posible y pendientes antes de oficializar.</p>
+    <div id="cierre-resumen" class="doc-summary"></div>
+    <div id="cierre-detalle"></div>
+    <div class="programacion-actions-head">
+      <button id="cierre-descargar-acta" class="secondary" type="button">Descargar acta de cierre</button>
+    </div>
+    <div id="cierre-status" class="status"></div>
+  </div>
+
   <div class="card assoc-panel" data-asociacion-panel-view="permisos">
     <h3>Usuarios y permisos</h3>
     <p class="note">Base de roles activa en Supabase. Próximo paso: edición visual de usuarios, equipos y accesos desde este panel.</p>
@@ -1980,7 +2036,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260801-planner-sugerencias"></script>
+<script src="app_online.js?v=20260802-cierres"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

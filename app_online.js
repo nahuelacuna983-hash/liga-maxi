@@ -271,6 +271,9 @@ function mostrarPanelAsociacion(panel = "documentacion") {
   if (panel === "uso" && estado.asociacionDesbloqueada) {
     actualizarEstadisticasUso();
   }
+  if (panel === "cierres" && estado.asociacionDesbloqueada) {
+    renderCierreAsociacion($("asociacion-categoria")?.value || "");
+  }
 }
 
 function inicializarNavegacionAsociacion() {
@@ -3812,6 +3815,7 @@ async function guardarResultadoPlayoffAsociacion(event) {
 
   await cargarResultadosPlayoffCategoria(categoriaNombre, true);
   renderPlayoffsAsociacion(categoriaNombre);
+  renderCierreAsociacion(categoriaNombre);
   if ($("publico-categoria")?.value === categoriaNombre) {
     renderPublicoCategoria(categoriaNombre);
   }
@@ -3922,6 +3926,200 @@ function renderProgramacionAsociacion(nombreCategoria) {
       `).join("")}
     </div>
   `;
+}
+
+function obtenerPartidosPlayoffConAvance(nombreCategoria) {
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  const tabla = calcularTabla(partidos);
+  const guardados = estado.playoffsPorCategoria[nombreCategoria] || [];
+  return aplicarAvanceAutomaticoPlayoffs(
+    nombreCategoria,
+    tabla,
+    mezclarPartidosPlayoff(generarPartidosPlayoff(nombreCategoria, tabla), guardados)
+  );
+}
+
+function calcularEstadoCierreTorneo(nombreCategoria) {
+  const categoria = obtenerCategoriaPorNombre(nombreCategoria);
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  const tabla = calcularTabla(partidos);
+  const equipos = obtenerEquiposCategoria(nombreCategoria);
+  const playoffs = obtenerPartidosPlayoffConAvance(nombreCategoria);
+  const partidosRegularJugados = partidos.filter(partidoTieneResultado).length;
+  const partidosRegularPendientes = partidos.length - partidosRegularJugados;
+  const playoffsJugados = playoffs.filter(partidoPlayoffTieneResultado).length;
+  const playoffsPendientes = playoffs.filter((partido) => !partidoPlayoffTieneResultado(partido)).length;
+  const finalPartidos = playoffs.filter((partido) => partido.fase === "final");
+  const campeon = ganadorSeriePlayoff(playoffs, "final");
+  const finalPendiente = finalPartidos.length > 0 && !campeon;
+  const documentosEquipo = categoria ? estado.documentosPorCategoriaId[categoria.id] || [] : [];
+  const documentosJugador = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
+  const docsEquipoPendientes = documentosEquipo.filter((doc) => (doc.status || "pendiente") !== "aprobado").length;
+  const docsJugadorPendientes = documentosJugador.filter((doc) => (doc.status || "pendiente") !== "aprobado").length;
+  const listoParaCerrar =
+    !!partidos.length &&
+    partidosRegularPendientes === 0 &&
+    (!playoffs.length || (!!campeon && !finalPendiente)) &&
+    docsEquipoPendientes === 0 &&
+    docsJugadorPendientes === 0;
+
+  const pendientes = [];
+  if (!partidos.length) pendientes.push("No hay fixture de fase regular cargado.");
+  if (partidosRegularPendientes) pendientes.push(`Quedan ${partidosRegularPendientes} partido(s) de fase regular sin resultado.`);
+  if (playoffs.length && finalPendiente) pendientes.push("Falta completar la final de playoffs para determinar campeon.");
+  if (playoffsPendientes && !campeon) pendientes.push(`Hay ${playoffsPendientes} partido(s) de playoffs sin resultado.`);
+  if (docsEquipoPendientes) pendientes.push(`Hay ${docsEquipoPendientes} documento(s) de equipo sin aprobar.`);
+  if (docsJugadorPendientes) pendientes.push(`Hay ${docsJugadorPendientes} documento(s) de jugador sin aprobar.`);
+
+  return {
+    nombreCategoria,
+    equipos,
+    tabla,
+    partidos,
+    playoffs,
+    campeon,
+    listoParaCerrar,
+    pendientes,
+    partidosRegularJugados,
+    partidosRegularPendientes,
+    playoffsJugados,
+    playoffsPendientes,
+    docsEquipoPendientes,
+    docsJugadorPendientes
+  };
+}
+
+function renderCierreAsociacion(nombreCategoria) {
+  const resumen = $("cierre-resumen");
+  const detalle = $("cierre-detalle");
+  if (!resumen || !detalle) return;
+
+  const cierre = calcularEstadoCierreTorneo(nombreCategoria);
+  const subcampeon = cierre.playoffs
+    .filter((partido) => partido.fase === "final")
+    .flatMap((partido) => [partido.local, partido.visitante])
+    .find((equipo) => equipo && !nombresEquipoCoinciden(equipo, cierre.campeon) && !esPlaceholderPlayoff(equipo)) || "";
+
+  resumen.innerHTML = `
+    <div class="doc-pill"><strong>${cierre.equipos.length}</strong><span>Equipos</span></div>
+    <div class="doc-pill"><strong>${cierre.partidosRegularPendientes}</strong><span>Pendientes fase regular</span></div>
+    <div class="doc-pill"><strong>${cierre.playoffsPendientes}</strong><span>Pendientes playoffs</span></div>
+    <div class="doc-pill"><strong>${cierre.docsEquipoPendientes + cierre.docsJugadorPendientes}</strong><span>Docs sin aprobar</span></div>
+    <div class="doc-pill ${cierre.listoParaCerrar ? "" : "doc-pill-alert"}"><strong>${cierre.listoParaCerrar ? "Si" : "No"}</strong><span>Listo para cierre</span></div>
+  `;
+
+  detalle.innerHTML = `
+    <div class="closure-grid">
+      <div class="closure-box">
+        <h4>Resultado deportivo</h4>
+        <ul class="closure-list">
+          <li><span>Categoria</span><strong>${escapeHtml(nombreCategoria)}</strong></li>
+          <li><span>Campeon</span><strong>${escapeHtml(cierre.campeon || "A definir")}</strong></li>
+          <li><span>Subcampeon</span><strong>${escapeHtml(subcampeon || "A definir")}</strong></li>
+          <li><span>1ro tabla regular</span><strong>${escapeHtml(cierre.tabla[0]?.equipo || "A definir")}</strong></li>
+          <li><span>Ultimo tabla regular</span><strong>${escapeHtml(cierre.tabla[cierre.tabla.length - 1]?.equipo || "A definir")}</strong></li>
+        </ul>
+      </div>
+
+      <div class="closure-box">
+        <h4>Control de datos</h4>
+        <ul class="closure-list">
+          <li><span>Fase regular</span><strong>${cierre.partidosRegularJugados} cargados / ${cierre.partidosRegularPendientes} pendientes</strong></li>
+          <li><span>Playoffs</span><strong>${cierre.playoffsJugados} cargados / ${cierre.playoffsPendientes} pendientes</strong></li>
+          <li><span>Documentos equipo sin aprobar</span><strong>${cierre.docsEquipoPendientes}</strong></li>
+          <li><span>Documentos jugador sin aprobar</span><strong>${cierre.docsJugadorPendientes}</strong></li>
+        </ul>
+      </div>
+
+      <div class="closure-box">
+        <h4>Pendientes antes de oficializar</h4>
+        ${cierre.pendientes.length
+          ? `<ul class="closure-list">${cierre.pendientes.map((item) => `<li><span>${escapeHtml(item)}</span></li>`).join("")}</ul>`
+          : `<p class="note">No se detectan pendientes criticos. Se puede preparar el cierre oficial.</p>`}
+      </div>
+    </div>
+  `;
+}
+
+function generarActaCierreTorneo() {
+  const categoria = $("asociacion-categoria")?.value || "";
+  const status = $("cierre-status") || $("asociacion-status");
+  if (!categoria) {
+    setStatus(status, "Selecciona una categoria para generar el acta.", "warn");
+    return;
+  }
+
+  const cierre = calcularEstadoCierreTorneo(categoria);
+  const fechaGeneracion = new Date().toLocaleString("es-AR");
+  const filasTabla = cierre.tabla.map((fila, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${escapeHtml(fila.equipo)}</td>
+      <td>${fila.pj}</td>
+      <td>${fila.pg}</td>
+      <td>${fila.pp}</td>
+      <td>${fila.pf}</td>
+      <td>${fila.pc}</td>
+      <td>${fila.dif}</td>
+      <td>${fila.pts}</td>
+    </tr>
+  `).join("");
+  const filasPlayoffs = cierre.playoffs.map((partido) => `
+    <tr>
+      <td>${escapeHtml(partido.titulo || partido.fase || "-")}</td>
+      <td>${escapeHtml(fechaPartidoLabel(partido.fecha) || "A confirmar")}</td>
+      <td>${escapeHtml(partido.local || "-")}</td>
+      <td>${escapeHtml(partido.visitante || "-")}</td>
+      <td>${partidoPlayoffTieneResultado(partido) ? `${escapeHtml(String(partido.puntos_local))} - ${escapeHtml(String(partido.puntos_visitante))}` : "Pendiente"}</td>
+    </tr>
+  `).join("");
+  const html = `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <title>Acta de cierre ${escapeHtml(categoria)}</title>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 28px; }
+        h1 { margin: 0 0 4px; font-size: 26px; }
+        h2 { margin: 22px 0 8px; font-size: 18px; color: #1f4d78; }
+        .muted { color: #4b5563; margin: 0 0 12px; }
+        .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; margin: 12px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th, td { border-bottom: 1px solid #d1d5db; padding: 7px 6px; font-size: 12px; text-align: left; }
+        th { background: #eef2ff; font-weight: 800; }
+        .print-actions { margin: 18px 0; }
+        .print-actions button { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; font-weight: 700; }
+        @media print { .print-actions { display: none; } body { margin: 12mm; } }
+      </style>
+    </head>
+    <body>
+      <h1>${escapeHtml(APP_CONFIG.producto.nombre)} - Acta de cierre</h1>
+      <p class="muted">${escapeHtml(APP_CONFIG.organizacionActiva.nombre)} - ${escapeHtml(categoria)} - Generado ${escapeHtml(fechaGeneracion)}</p>
+      <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
+      <div class="box">
+        <p><strong>Campeon:</strong> ${escapeHtml(cierre.campeon || "A definir")}</p>
+        <p><strong>Estado:</strong> ${escapeHtml(cierre.listoParaCerrar ? "Listo para cierre oficial" : "Con pendientes")}</p>
+        <p><strong>Pendientes:</strong> ${escapeHtml(cierre.pendientes.join(" | ") || "Sin pendientes criticos")}</p>
+      </div>
+      <h2>Tabla final / actual</h2>
+      <table>
+        <thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PP</th><th>PF</th><th>PC</th><th>DIF</th><th>PTS</th></tr></thead>
+        <tbody>${filasTabla || `<tr><td colspan="9">Sin tabla disponible.</td></tr>`}</tbody>
+      </table>
+      <h2>Playoffs</h2>
+      <table>
+        <thead><tr><th>Instancia</th><th>Fecha</th><th>Local</th><th>Visitante</th><th>Resultado</th></tr></thead>
+        <tbody>${filasPlayoffs || `<tr><td colspan="5">Sin playoffs cargados.</td></tr>`}</tbody>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const nombre = descargarInformeHtml(html, `acta-cierre-${categoria}`);
+  abrirInformeHtml(html);
+  setStatus(status, `Acta descargada como ${nombre}.`, "ok");
+  mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`, "ok");
 }
 
 function obtenerDatosFilaProgramacion(row) {
@@ -4466,6 +4664,7 @@ async function cargarDatosAsociacionActual() {
   renderPlayoffsAsociacion(categoria);
   renderDocumentacionAsociacion(categoria);
   renderProgramacionAsociacion(categoria);
+  renderCierreAsociacion(categoria);
   setStatus(status, "", "");
 }
 
@@ -4570,6 +4769,7 @@ async function inicializarAsociacion() {
     renderPlayoffsAsociacion(categoria);
     renderDocumentacionAsociacion(categoria);
     renderProgramacionAsociacion(categoria);
+    renderCierreAsociacion(categoria);
     setStatus($("asociacion-status"), "", "");
   });
 
@@ -4582,6 +4782,7 @@ async function inicializarAsociacion() {
   $("programacion-tabla")?.addEventListener("click", manejarProgramacionClick);
   $("programacion-copiar")?.addEventListener("click", copiarProgramacionAsociacion);
   $("programacion-marcar-enviado")?.addEventListener("click", marcarProgramacionListaEnviada);
+  $("cierre-descargar-acta")?.addEventListener("click", generarActaCierreTorneo);
   $("documentacion-tabla").addEventListener("click", revisarDocumentoAsociacion);
   $("documentacion-tabla").addEventListener("click", verDocumentoAsociacion);
   $("documentacion-tabla").addEventListener("click", darDeBajaJugadorAsociacion);
