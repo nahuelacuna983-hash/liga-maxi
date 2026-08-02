@@ -2095,7 +2095,22 @@
         <button id="documentacion-exportar" class="secondary" type="button">Exportar CSV</button>
       </div>
     </div>
+    <div class="doc-filters">
+      <div class="field">
+        <label for="habilitados-filtro-equipo">Lista arbitros por club</label>
+        <select id="habilitados-filtro-equipo">
+          <option value="">Todos los clubes</option>
+        </select>
+      </div>
+      <div class="field doc-filter-action">
+        <button id="habilitados-exportar-csv" class="secondary" type="button">Exportar habilitados CSV</button>
+      </div>
+      <div class="field doc-filter-action">
+        <button id="habilitados-descargar-html" class="secondary" type="button">Descargar lista</button>
+      </div>
+    </div>
     <div id="documentacion-resumen" class="doc-summary"></div>
+    <div id="habilitados-tabla" class="table-wrap"></div>
     <div id="documentacion-tabla" class="table-wrap"></div>
   </div>
 
@@ -2158,7 +2173,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260802-publicacion-fixture"></script>
+<script src="app_online.js?v=20260802-habilitados-arbitros"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

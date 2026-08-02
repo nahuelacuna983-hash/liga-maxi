@@ -899,6 +899,158 @@ function obtenerDocumentoJugador(nombreCategoria, playerId, requisito) {
   ) || null;
 }
 
+function buscarDocumentoEquipoPorTerminos(nombreCategoria, equipo, terminos) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const documentos = categoria ? estado.documentosPorCategoriaId[categoria.id] || [] : [];
+  const terminosNormalizados = terminos.map(normalizarTexto);
+  return documentos.find((documento) =>
+    nombresEquipoCoinciden(documento.equipo_nombre, equipo) &&
+    terminosNormalizados.some((termino) => normalizarTexto(documento.requirement_nombre).includes(termino))
+  ) || null;
+}
+
+function buscarDocumentoJugadorPorTerminos(nombreCategoria, playerId, terminos) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const documentos = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
+  const terminosNormalizados = terminos.map(normalizarTexto);
+  return documentos.find((documento) =>
+    documento.player_id === playerId &&
+    terminosNormalizados.some((termino) => normalizarTexto(documento.requirement_nombre).includes(termino))
+  ) || null;
+}
+
+function documentoAprobadoVigente(documento) {
+  if (!documento || documento.status !== "aprobado") return false;
+  return estadoVencimientoDocumento(documento) !== "vencido";
+}
+
+function siNoDocumento(documento) {
+  return documentoAprobadoVigente(documento) ? "SI" : "NO";
+}
+
+function estadoCeldaHabilitado(valor) {
+  return `<span class="doc-state doc-state-${valor === "SI" ? "aprobado" : "rechazado"}">${escapeHtml(valor)}</span>`;
+}
+
+function calcularHabilitadosCategoria(nombreCategoria) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const jugadores = categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : [];
+  const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+
+  return jugadores
+    .filter((jugador) => !equipoFiltro || nombresEquipoCoinciden(jugador.equipo_nombre, equipoFiltro))
+    .map((jugador) => {
+      const buenaFe = buscarDocumentoEquipoPorTerminos(nombreCategoria, jugador.equipo_nombre, ["buena fe"]);
+      const seguro = buscarDocumentoEquipoPorTerminos(nombreCategoria, jugador.equipo_nombre, ["seguro"]);
+      const certificado = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["certificado", "estudio"]);
+      const deslinde = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["declaracion", "deslinde"]);
+      const pase = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["pase"]);
+      const estados = {
+        buenaFe: siNoDocumento(buenaFe),
+        seguro: siNoDocumento(seguro),
+        certificado: siNoDocumento(certificado),
+        deslinde: siNoDocumento(deslinde),
+        pase: siNoDocumento(pase)
+      };
+      const faltantes = [
+        estados.buenaFe === "SI" ? "" : "Lista de buena fe",
+        estados.seguro === "SI" ? "" : "Seguro",
+        estados.certificado === "SI" ? "" : "Certificado/estudio",
+        estados.deslinde === "SI" ? "" : "Deslinde/declaracion jurada",
+        estados.pase === "SI" ? "" : "Pase"
+      ].filter(Boolean);
+
+      return {
+        categoria: nombreCategoria,
+        equipo: jugador.equipo_nombre || "",
+        apellidoNombre: jugador.nombre || "",
+        dni: jugador.dni || "",
+        dorsal: jugador.dorsal || "",
+        ...estados,
+        habilitado: faltantes.length ? "NO" : "SI",
+        faltantes: faltantes.join("; ")
+      };
+    })
+    .sort((a, b) =>
+      String(a.equipo).localeCompare(String(b.equipo)) ||
+      String(a.apellidoNombre).localeCompare(String(b.apellidoNombre))
+    );
+}
+
+function actualizarFiltroEquiposHabilitados(nombreCategoria) {
+  const select = $("habilitados-filtro-equipo");
+  if (!select) return;
+  const valorActual = select.value;
+  const equipos = obtenerEquiposCategoria(nombreCategoria);
+  select.innerHTML = `<option value="">Todos los clubes</option>${equipos.map((equipo) =>
+    `<option value="${escapeHtml(equipo)}">${escapeHtml(equipo)}</option>`
+  ).join("")}`;
+  if (equipos.some((equipo) => nombresEquipoCoinciden(equipo, valorActual))) {
+    select.value = valorActual;
+  }
+}
+
+function renderListaHabilitadosArbitros(nombreCategoria) {
+  const container = $("habilitados-tabla");
+  if (!container) return;
+
+  actualizarFiltroEquiposHabilitados(nombreCategoria);
+  const filas = calcularHabilitadosCategoria(nombreCategoria);
+  const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
+  const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+
+  if (!filas.length) {
+    container.innerHTML = `
+      <div class="card">
+        <h3>Habilitados para arbitros</h3>
+        <div class="empty">No hay jugadores cargados${equipoFiltro ? ` para ${escapeHtml(equipoFiltro)}` : ""}.</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="card">
+      <h3>Habilitados para arbitros</h3>
+      <p class="note">${habilitados} habilitado${habilitados === 1 ? "" : "s"} de ${filas.length} jugador${filas.length === 1 ? "" : "es"}${equipoFiltro ? ` - ${escapeHtml(equipoFiltro)}` : ""}. Se consideran aprobados y vigentes: buena fe, seguro, certificado/estudio, deslinde/declaracion jurada y pase.</p>
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th>Equipo</th>
+            <th>Jugador</th>
+            <th>DNI</th>
+            <th>Nro</th>
+            <th>Buena fe</th>
+            <th>Seguro</th>
+            <th>Estudio/Cert.</th>
+            <th>Deslinde</th>
+            <th>Pase</th>
+            <th>Habilitado</th>
+            <th>Faltantes</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filas.map((fila) => `
+            <tr>
+              <td>${escapeHtml(fila.equipo)}</td>
+              <td>${escapeHtml(fila.apellidoNombre)}</td>
+              <td>${escapeHtml(fila.dni)}</td>
+              <td>${escapeHtml(fila.dorsal)}</td>
+              <td>${estadoCeldaHabilitado(fila.buenaFe)}</td>
+              <td>${estadoCeldaHabilitado(fila.seguro)}</td>
+              <td>${estadoCeldaHabilitado(fila.certificado)}</td>
+              <td>${estadoCeldaHabilitado(fila.deslinde)}</td>
+              <td>${estadoCeldaHabilitado(fila.pase)}</td>
+              <td>${estadoCeldaHabilitado(fila.habilitado)}</td>
+              <td>${escapeHtml(fila.faltantes || "-")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
 function estadoDocumentoLabel(documento) {
   if (!documento) return "Pendiente";
 
@@ -1030,6 +1182,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   const documentos = equipos.flatMap((equipo) =>
     documentosRequeridos.map((requisito) => obtenerDocumentoEquipo(nombreCategoria, equipo, requisito))
   );
+  renderListaHabilitadosArbitros(nombreCategoria);
   const resumenEstados = documentos.reduce((acc, documento) => {
     const status = documento?.status || "pendiente";
     acc[status] = (acc[status] || 0) + 1;
@@ -4756,6 +4909,146 @@ function exportarDocumentacionCsv() {
   setStatus(status, "CSV documental exportado.", "ok");
 }
 
+function descargarCsv(nombreArchivo, encabezado, rows) {
+  const csv = [encabezado, ...rows]
+    .map((row) => row.map(csvCell).join(","))
+    .join("\r\n");
+  const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = nombreArchivo;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportarHabilitadosCsv() {
+  const status = $("asociacion-status");
+  const categoria = $("asociacion-categoria")?.value || "categoria";
+  const filas = calcularHabilitadosCategoria(categoria);
+
+  if (!filas.length) {
+    setStatus(status, "No hay jugadores para exportar en la lista de habilitados.", "warn");
+    return;
+  }
+
+  const encabezado = [
+    "Categoria",
+    "Equipo",
+    "Jugador",
+    "DNI",
+    "Numero",
+    "Buena fe",
+    "Seguro",
+    "Estudio medico / certificado",
+    "Deslinde / declaracion jurada",
+    "Pase",
+    "Habilitado",
+    "Faltantes"
+  ];
+  const rows = filas.map((fila) => [
+    fila.categoria,
+    fila.equipo,
+    fila.apellidoNombre,
+    fila.dni,
+    fila.dorsal,
+    fila.buenaFe,
+    fila.seguro,
+    fila.certificado,
+    fila.deslinde,
+    fila.pase,
+    fila.habilitado,
+    fila.faltantes
+  ]);
+  const fecha = new Date().toISOString().slice(0, 10);
+  descargarCsv(`habilitados-arbitros-${slugify(categoria)}-${fecha}.csv`, encabezado, rows);
+  setStatus(status, "Lista de habilitados exportada en CSV.", "ok");
+}
+
+function descargarListaHabilitadosHtml() {
+  const status = $("asociacion-status");
+  const categoria = $("asociacion-categoria")?.value || "categoria";
+  const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+  const filas = calcularHabilitadosCategoria(categoria);
+
+  if (!filas.length) {
+    setStatus(status, "No hay jugadores para descargar en la lista de habilitados.", "warn");
+    return;
+  }
+
+  const fechaGeneracion = new Date().toLocaleString("es-AR");
+  const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
+  const html = `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <title>Habilitados arbitros - ${escapeHtml(categoria)}</title>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 24px; }
+        h1 { margin: 0 0 4px; font-size: 24px; }
+        .muted { color: #4b5563; margin: 0 0 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { border: 1px solid #9ca3af; padding: 6px; font-size: 11px; text-align: left; }
+        th { background: #bbd7ad; }
+        .si { background: #11ef18; font-weight: 800; text-align: center; }
+        .no { background: #ff2020; color: #111827; font-weight: 800; text-align: center; }
+        .print-actions { margin: 16px 0; }
+        .print-actions button { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; font-weight: 700; }
+        @media print { body { margin: 10mm; } .print-actions { display: none; } }
+      </style>
+    </head>
+    <body>
+      <h1>Lista de habilitados para arbitros</h1>
+      <p class="muted">${escapeHtml(APP_CONFIG.organizacionActiva.nombre)} - ${escapeHtml(categoria)}${equipoFiltro ? ` - ${escapeHtml(equipoFiltro)}` : ""}</p>
+      <p class="muted">Generado ${escapeHtml(fechaGeneracion)} - ${habilitados} habilitado${habilitados === 1 ? "" : "s"} de ${filas.length}</p>
+      <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Equipo</th>
+            <th>Jugador</th>
+            <th>DNI</th>
+            <th>Nro</th>
+            <th>Buena fe</th>
+            <th>Seguro</th>
+            <th>Estudio/Cert.</th>
+            <th>Deslinde</th>
+            <th>Pase</th>
+            <th>Habilitado</th>
+            <th>Faltantes</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filas.map((fila) => `
+            <tr>
+              <td>${escapeHtml(fila.equipo)}</td>
+              <td>${escapeHtml(fila.apellidoNombre)}</td>
+              <td>${escapeHtml(fila.dni)}</td>
+              <td>${escapeHtml(fila.dorsal)}</td>
+              <td class="${fila.buenaFe === "SI" ? "si" : "no"}">${escapeHtml(fila.buenaFe)}</td>
+              <td class="${fila.seguro === "SI" ? "si" : "no"}">${escapeHtml(fila.seguro)}</td>
+              <td class="${fila.certificado === "SI" ? "si" : "no"}">${escapeHtml(fila.certificado)}</td>
+              <td class="${fila.deslinde === "SI" ? "si" : "no"}">${escapeHtml(fila.deslinde)}</td>
+              <td class="${fila.pase === "SI" ? "si" : "no"}">${escapeHtml(fila.pase)}</td>
+              <td class="${fila.habilitado === "SI" ? "si" : "no"}">${escapeHtml(fila.habilitado)}</td>
+              <td>${escapeHtml(fila.faltantes || "-")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const nombre = descargarInformeHtml(html, `habilitados-arbitros-${categoria}${equipoFiltro ? `-${equipoFiltro}` : ""}`);
+  abrirInformeHtml(html);
+  setStatus(status, `Lista de habilitados descargada como ${nombre}.`, "ok");
+  mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
+}
+
 async function inicializarAsociacion() {
   if (estado.asociacionInicializada) return;
   estado.asociacionInicializada = true;
@@ -4796,6 +5089,11 @@ async function inicializarAsociacion() {
     renderDocumentacionAsociacion($("asociacion-categoria").value);
   });
   $("documentacion-exportar").addEventListener("click", exportarDocumentacionCsv);
+  $("habilitados-filtro-equipo")?.addEventListener("change", () => {
+    renderListaHabilitadosArbitros($("asociacion-categoria").value);
+  });
+  $("habilitados-exportar-csv")?.addEventListener("click", exportarHabilitadosCsv);
+  $("habilitados-descargar-html")?.addEventListener("click", descargarListaHabilitadosHtml);
   $("asociacion-desbloquear").addEventListener("click", desbloquearAsociacion);
   $("asociacion-clave").addEventListener("keydown", (event) => {
     if (event.key === "Enter") desbloquearAsociacion();

@@ -310,6 +310,9 @@ Contenido:
 - botones de ver archivo
 - revision/aprobacion/observacion
 - administracion de jugadores y bajas
+- lista de habilitados para arbitros
+- exportacion CSV de habilitados
+- descarga imprimible de habilitados
 
 Funcionamiento:
 
@@ -317,6 +320,9 @@ Funcionamiento:
 - Muestra estado: pendiente, cargado, aprobado, observado/rechazado, vencido o por vencer.
 - Permite aprobar u observar documentos.
 - Permite administrar jugadores mal cargados o con baja solicitada.
+- Genera una lista de habilitados por categoria y por club.
+- La lista considera buena fe y seguro aprobados a nivel equipo, mas certificado/estudio, deslinde/declaracion jurada y pase aprobados a nivel jugador.
+- La lista permite exportar CSV o descargar una version imprimible para compartir.
 
 Incidencia por usuario:
 
@@ -586,4 +592,3 @@ Antes de publicar un torneo nuevo:
 10. Descargar constancia de publicacion.
 11. Programar horarios/canchas.
 12. Informar a arbitros y registrar envio.
-
