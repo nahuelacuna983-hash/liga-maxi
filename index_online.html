@@ -1992,6 +1992,26 @@
       <div id="planner-readiness" class="planner-readiness-list"></div>
     </div>
 
+    <div class="planner-readiness-box">
+      <div class="planner-readiness-head">
+        <div>
+          <h4>Publicacion segura</h4>
+          <p>Publica en Supabase solo si la categoria no tiene partidos cargados.</p>
+        </div>
+      </div>
+      <div class="planner-grid">
+        <div>
+          <label for="planner-confirmar-publicacion">Confirmacion</label>
+          <input id="planner-confirmar-publicacion" type="text" placeholder="Escribi PUBLICAR">
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="planner-publicar-fixture" class="secondary" type="button">Publicar fixture simulado</button>
+        </div>
+      </div>
+      <div id="planner-publicacion-status" class="status"></div>
+    </div>
+
   </div>
 
   <div class="card assoc-panel activa" data-asociacion-panel-view="operacion">
@@ -2138,7 +2158,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260802-preparacion-checklist"></script>
+<script src="app_online.js?v=20260802-publicacion-fixture"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

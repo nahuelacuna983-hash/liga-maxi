@@ -6193,10 +6193,133 @@ function generarInformePreparacionTorneo() {
   mostrarCartelInforme(mensaje);
 }
 
+function obtenerSimulacionPlannerActual() {
+  const categoria = document.getElementById("planner-categoria")?.value || "";
+  const competencia = document.getElementById("planner-competencia")?.value || "";
+  const simulacion = estado.ultimaSimulacionPlanner;
+  if (!simulacion || simulacion.categoria !== categoria || simulacion.competencia !== competencia) {
+    return null;
+  }
+  return simulacion;
+}
+
+function contarPartidosSimulados(simulacion) {
+  return (simulacion?.fixture?.jornadas || []).reduce((total, jornada) => total + (jornada.partidos || []).length, 0);
+}
+
+function armarPayloadFixtureSimulado(simulacion, categoriaId) {
+  return (simulacion.fixture?.jornadas || []).flatMap((jornada) =>
+    (jornada.partidos || []).map((partido) => ({
+      categoria_id: categoriaId,
+      local: partido.local,
+      visitante: partido.visitante,
+      jornada: jornada.numero,
+      fecha: jornada.fecha || null,
+      libre: jornada.libre || null,
+      puntos_local: null,
+      puntos_visitante: null,
+      estado_resultado: "pendiente",
+      cargado_por: null,
+      cargado_en: null
+    }))
+  );
+}
+
+async function publicarFixtureSimuladoPlanner() {
+  const status = $("planner-publicacion-status");
+  const confirmar = String($("planner-confirmar-publicacion")?.value || "").trim().toUpperCase();
+  const simulacion = obtenerSimulacionPlannerActual();
+
+  if (!simulacion) {
+    setStatus(status, "Primero simula este torneo. Solo se puede publicar la simulacion vigente de esta categoria y competencia.", "warn");
+    return;
+  }
+
+  if (confirmar !== "PUBLICAR") {
+    setStatus(status, "Para habilitar la publicacion escribi PUBLICAR en el campo de confirmacion.", "warn");
+    return;
+  }
+
+  const categoria = obtenerCategoriaPorNombre(simulacion.categoria);
+  if (!categoria?.id) {
+    setStatus(status, "No se encontro la categoria en Supabase. No se publico nada.", "error");
+    return;
+  }
+
+  const cantidadPartidos = contarPartidosSimulados(simulacion);
+  if (!cantidadPartidos) {
+    setStatus(status, "La simulacion no tiene partidos para publicar.", "warn");
+    return;
+  }
+
+  const confirmaNavegador = window.confirm(
+    `Vas a publicar ${cantidadPartidos} partidos en ${simulacion.categoria}. Esta accion crea el fixture real si la categoria esta vacia. Continuar?`
+  );
+  if (!confirmaNavegador) {
+    setStatus(status, "Publicacion cancelada. No se modifico Supabase.", "warn");
+    return;
+  }
+
+  const boton = $("planner-publicar-fixture");
+  if (boton) boton.disabled = true;
+  setStatus(status, "Verificando que la categoria no tenga partidos cargados...", "warn");
+
+  try {
+    await cargarPartidosCategoria(simulacion.categoria);
+    const existentes = estado.partidosPorCategoria[simulacion.categoria] || [];
+    if (existentes.length) {
+      setStatus(status, `Publicacion bloqueada: ${simulacion.categoria} ya tiene ${existentes.length} partidos cargados. No se publico nada.`, "error");
+      return;
+    }
+
+    const payload = armarPayloadFixtureSimulado(simulacion, categoria.id);
+    const { error } = await supabaseClient
+      .from("partidos")
+      .insert(payload);
+
+    if (error) {
+      setStatus(status, `No se pudo publicar el fixture: ${error.message}`, "error");
+      return;
+    }
+
+    await cargarPartidosCategoria(simulacion.categoria);
+    renderPreparacionTorneo();
+    if ($("publico-categoria")?.value === simulacion.categoria) {
+      renderPublicoCategoria(simulacion.categoria);
+    }
+    if ($("fecha-categoria")?.value === simulacion.categoria) {
+      renderPublicoCategoria(simulacion.categoria);
+    }
+    if ($("delegado-categoria")?.value === simulacion.categoria) {
+      poblarSelectPartidosDelegado(simulacion.categoria);
+    }
+    if ($("asociacion-categoria")?.value === simulacion.categoria) {
+      poblarSelectPartidosAsociacion(simulacion.categoria);
+      completarInputsAsociacion();
+      renderProgramacionAsociacion(simulacion.categoria);
+    }
+    registrarUso("fixture_publicado", {
+      area: "asociacion",
+      categoria: simulacion.categoria,
+      cantidad: payload.length,
+      user: estado.usuarioAsociacion?.display_name || "Asociacion",
+      role: estado.usuarioAsociacion?.role || "asociacion"
+    });
+    setStatus(status, `Fixture publicado correctamente: ${payload.length} partidos creados en ${simulacion.categoria}.`, "ok");
+    mostrarCartelInforme(`Fixture publicado: ${payload.length} partidos creados en ${simulacion.categoria}.`);
+    if ($("planner-confirmar-publicacion")) $("planner-confirmar-publicacion").value = "";
+  } catch (error) {
+    setStatus(status, `No se pudo publicar el fixture: ${error.message}`, "error");
+  } finally {
+    if (boton) boton.disabled = false;
+  }
+}
+
  const plannerBtn = document.getElementById("planner-generar");
  const plannerInformeBtn = document.getElementById("planner-informe");
  const plannerPreparacionBtn = document.getElementById("planner-evaluar-preparacion");
  const plannerDescargarPreparacionBtn = document.getElementById("planner-descargar-preparacion");
+ const plannerPublicarFixtureBtn = document.getElementById("planner-publicar-fixture");
  const plannerCategoria = document.getElementById("planner-categoria");
  const plannerPartidosCuartos = document.getElementById("planner-partidos-cuartos");
  const plannerPartidosSemis = document.getElementById("planner-partidos-semis");
@@ -6259,6 +6382,10 @@ if (plannerPreparacionBtn) {
 
 if (plannerDescargarPreparacionBtn) {
   plannerDescargarPreparacionBtn.addEventListener("click", generarInformePreparacionTorneo);
+}
+
+if (plannerPublicarFixtureBtn) {
+  plannerPublicarFixtureBtn.addEventListener("click", publicarFixtureSimuladoPlanner);
 }
 
 document.addEventListener("click", (event) => {
