@@ -1984,7 +1984,10 @@
           <h4>Preparacion de torneo</h4>
           <p>Control previo antes de publicar una competencia nueva.</p>
         </div>
-        <button id="planner-evaluar-preparacion" class="secondary" type="button">Evaluar preparacion</button>
+        <div class="planner-simulation-actions">
+          <button id="planner-evaluar-preparacion" class="secondary" type="button">Evaluar preparacion</button>
+          <button id="planner-descargar-preparacion" class="secondary" type="button">Descargar checklist</button>
+        </div>
       </div>
       <div id="planner-readiness" class="planner-readiness-list"></div>
     </div>
@@ -2135,7 +2138,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260802-preparacion"></script>
+<script src="app_online.js?v=20260802-preparacion-checklist"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

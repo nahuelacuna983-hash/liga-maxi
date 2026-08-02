@@ -6120,9 +6120,83 @@ function renderPreparacionTorneo() {
   `;
 }
 
+function generarInformePreparacionTorneo() {
+  const categoria = document.getElementById("planner-categoria")?.value || $("asociacion-categoria")?.value || "";
+  const competencia = document.getElementById("planner-competencia")?.value || "";
+  const container = $("planner-readiness");
+  if (!categoria) {
+    if (container) container.innerHTML = `<div class="planner-alerts"><div>Primero elegi una categoria.</div></div>`;
+    return;
+  }
+
+  const items = calcularPreparacionTorneo(categoria);
+  const errores = items.filter((item) => item.estado === "error").length;
+  const avisos = items.filter((item) => item.estado === "warn").length;
+  const formato = detalleFormatoPlanner(categoria);
+  const fechaGeneracion = new Date().toLocaleString("es-AR");
+  const estadoTexto = errores
+    ? `${errores} punto(s) bloqueantes`
+    : avisos
+      ? `${avisos} aviso(s) para revisar`
+      : "Listo para revision final";
+  const html = `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <title>Checklist de preparacion - ${escapeHtml(categoria)}</title>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 28px; }
+        h1 { margin: 0 0 4px; font-size: 26px; }
+        h2 { margin: 22px 0 8px; font-size: 18px; }
+        .muted { color: #4b5563; margin: 0 0 14px; }
+        .summary { border: 1px solid #d1d5db; border-radius: 10px; padding: 12px; margin: 16px 0; }
+        .summary p { margin: 6px 0; }
+        .item { border-top: 1px solid #d1d5db; padding: 10px 0; }
+        .item:first-of-type { border-top: 0; }
+        .ok { color: #047857; font-weight: 800; }
+        .warn { color: #b45309; font-weight: 800; }
+        .error { color: #b91c1c; font-weight: 800; }
+        .print-actions { margin: 18px 0; }
+        .print-actions button { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; font-weight: 700; }
+        @media print { body { margin: 12mm; } .print-actions { display: none; } }
+      </style>
+    </head>
+    <body>
+      <h1>${escapeHtml(APP_CONFIG.producto.nombre)} - Checklist de preparacion</h1>
+      <p class="muted">Organizacion: ${escapeHtml(APP_CONFIG.organizacionActiva.nombre)} - Generado ${escapeHtml(fechaGeneracion)}</p>
+      <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
+      <div class="summary">
+        <p><strong>Categoria:</strong> ${escapeHtml(categoria)}</p>
+        <p><strong>Competencia:</strong> ${escapeHtml(competencia || "Sin definir")}</p>
+        <p><strong>Estado:</strong> ${escapeHtml(estadoTexto)}</p>
+        <p><strong>Formato:</strong> ${escapeHtml(formato.playoffsTexto)} - Cuartos/repechaje ${escapeHtml(String(formato.partidosCuartos))} partido(s), semifinales ${escapeHtml(String(formato.partidosSemis))} partido(s), final ${escapeHtml(formato.finalTexto)}.</p>
+      </div>
+      <h2>Revision previa</h2>
+      ${items.map((item) => `
+        <div class="item">
+          <div class="${escapeHtml(item.estado)}">${escapeHtml(item.estado.toUpperCase())} - ${escapeHtml(item.titulo)}</div>
+          <p>${escapeHtml(item.detalle)}</p>
+        </div>
+      `).join("")}
+      <p class="muted">Este documento es informativo: no publica fixture ni modifica datos cargados.</p>
+    </body>
+    </html>
+  `;
+
+  const nombre = descargarInformeHtml(html, `checklist-preparacion-${categoria}-${competencia || "torneo"}`);
+  const abierto = abrirInformeHtml(html);
+  const mensaje = abierto
+    ? `Checklist descargado como ${nombre}. Tambien se abrio una pestaña para imprimir o guardar PDF.`
+    : `Checklist descargado como ${nombre}. El navegador bloqueo la pestaña de vista previa.`;
+  renderPreparacionTorneo();
+  mostrarCartelInforme(mensaje);
+}
+
  const plannerBtn = document.getElementById("planner-generar");
  const plannerInformeBtn = document.getElementById("planner-informe");
  const plannerPreparacionBtn = document.getElementById("planner-evaluar-preparacion");
+ const plannerDescargarPreparacionBtn = document.getElementById("planner-descargar-preparacion");
  const plannerCategoria = document.getElementById("planner-categoria");
  const plannerPartidosCuartos = document.getElementById("planner-partidos-cuartos");
  const plannerPartidosSemis = document.getElementById("planner-partidos-semis");
@@ -6181,6 +6255,10 @@ if (plannerPreparacionBtn) {
     }
     renderPreparacionTorneo();
   });
+}
+
+if (plannerDescargarPreparacionBtn) {
+  plannerDescargarPreparacionBtn.addEventListener("click", generarInformePreparacionTorneo);
 }
 
 document.addEventListener("click", (event) => {
