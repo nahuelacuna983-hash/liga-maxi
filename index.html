@@ -1173,6 +1173,94 @@
       font-size: 13px;
     }
 
+    .planner-readiness-box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.22);
+      margin-top: 14px;
+      padding: 14px;
+    }
+
+    .planner-readiness-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .planner-readiness-head h4 {
+      margin: 0 0 4px;
+      color: #f8fafc;
+    }
+
+    .planner-readiness-head p {
+      margin: 0;
+      color: #bfdbfe;
+      font-size: 13px;
+    }
+
+    .planner-readiness-head button {
+      width: auto;
+      min-width: 190px;
+    }
+
+    .planner-readiness-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .planner-readiness-item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 8px 10px;
+      border-top: 1px solid rgba(148, 163, 184, 0.18);
+      padding-top: 8px;
+    }
+
+    .planner-readiness-item:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .planner-readiness-state {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      background: rgba(148, 163, 184, 0.16);
+      color: #dbeafe;
+    }
+
+    .planner-readiness-state.ok {
+      background: rgba(34, 197, 94, 0.18);
+      color: #bbf7d0;
+    }
+
+    .planner-readiness-state.warn {
+      background: rgba(251, 191, 36, 0.18);
+      color: #fde68a;
+    }
+
+    .planner-readiness-state.error {
+      background: rgba(248, 113, 113, 0.18);
+      color: #fecaca;
+    }
+
+    .planner-readiness-item strong {
+      color: #fff;
+    }
+
+    .planner-readiness-item span {
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
     .planner-alerts {
       display: grid;
       gap: 6px;
@@ -1890,6 +1978,17 @@
 
     <div id="planner-status"></div>
 
+    <div class="planner-readiness-box">
+      <div class="planner-readiness-head">
+        <div>
+          <h4>Preparacion de torneo</h4>
+          <p>Control previo antes de publicar una competencia nueva.</p>
+        </div>
+        <button id="planner-evaluar-preparacion" class="secondary" type="button">Evaluar preparacion</button>
+      </div>
+      <div id="planner-readiness" class="planner-readiness-list"></div>
+    </div>
+
   </div>
 
   <div class="card assoc-panel activa" data-asociacion-panel-view="operacion">
@@ -2036,7 +2135,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260802-cierres"></script>
+<script src="app_online.js?v=20260802-preparacion"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

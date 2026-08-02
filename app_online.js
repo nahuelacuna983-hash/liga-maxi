@@ -5983,8 +5983,146 @@ function generarInformeTorneo() {
   mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas. Si queres PDF, usa Imprimir / guardar PDF en la pestaña abierta.`);
 }
 
+function renderItemPreparacionTorneo(item) {
+  const simbolo = item.estado === "ok" ? "✓" : item.estado === "error" ? "!" : "i";
+  return `
+    <div class="planner-readiness-item">
+      <span class="planner-readiness-state ${escapeHtml(item.estado)}">${simbolo}</span>
+      <div>
+        <strong>${escapeHtml(item.titulo)}</strong>
+        <span>${escapeHtml(item.detalle)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function contarDelegadosCategoria(nombreCategoria, equiposCategoria) {
+  const equiposNormalizados = new Set(equiposCategoria.map(normalizarTexto));
+  return Object.values(DELEGADOS).filter((delegado) => {
+    if (delegado.nombre === "ADMIN") return false;
+    const categorias = delegado.categorias || [];
+    const equipos = delegado.equipos || [];
+    return categorias.includes(nombreCategoria) && equipos.some((equipo) => equiposNormalizados.has(normalizarTexto(equipo)));
+  }).length;
+}
+
+function calcularPreparacionTorneo(nombreCategoria) {
+  const categoria = obtenerCategoriaPorNombre(nombreCategoria);
+  const competencia = document.getElementById("planner-competencia")?.value || "";
+  const fechaInicio = document.getElementById("planner-inicio")?.value || "";
+  const fechaFin = document.getElementById("planner-fin")?.value || "";
+  const formato = detalleFormatoPlanner(nombreCategoria);
+  const equipos = obtenerEquiposCategoria(nombreCategoria);
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  const partidosJugados = partidos.filter(partidoTieneResultado).length;
+  const partidosPendientes = partidos.length - partidosJugados;
+  const documentosEquipo = obtenerDocumentosEquipo();
+  const documentosJugador = obtenerDocumentosJugador();
+  const delegados = contarDelegadosCategoria(nombreCategoria, equipos);
+  const simulacion = estado.ultimaSimulacionPlanner;
+  const simulacionActual =
+    simulacion &&
+    simulacion.categoria === nombreCategoria &&
+    simulacion.competencia === competencia;
+  const cierre = categoria ? calcularEstadoCierreTorneo(nombreCategoria) : null;
+
+  return [
+    {
+      estado: APP_CONFIG.organizacionActiva?.id ? "ok" : "error",
+      titulo: "Asociacion activa",
+      detalle: APP_CONFIG.organizacionActiva?.nombre
+        ? `${APP_CONFIG.organizacionActiva.nombre} esta seleccionada como organizacion de trabajo.`
+        : "Falta seleccionar una organizacion."
+    },
+    {
+      estado: categoria ? "ok" : "error",
+      titulo: "Categoria",
+      detalle: categoria ? `${nombreCategoria} esta cargada en Supabase.` : "La categoria elegida no aparece cargada en Supabase."
+    },
+    {
+      estado: equipos.length >= 2 ? "ok" : "error",
+      titulo: "Equipos",
+      detalle: equipos.length >= 2 ? `${equipos.length} equipos detectados para simular fixture.` : "Faltan equipos reales para poder generar un torneo."
+    },
+    {
+      estado: fechaInicio && fechaFin ? "ok" : "warn",
+      titulo: "Calendario base",
+      detalle: fechaInicio && fechaFin
+        ? `Inicio ${fechaPlannerLabel(fechaInicio)} y limite ${fechaPlannerLabel(fechaFin)}.`
+        : "Carga fecha de inicio y fecha limite para medir si el torneo entra en calendario."
+    },
+    {
+      estado: simulacionActual ? "ok" : "warn",
+      titulo: "Fixture simulado",
+      detalle: simulacionActual
+        ? `Hay una simulacion vigente de ${competencia}, con final estimada ${simulacion.fechaFinalEstimada || "sin fecha"}.`
+        : "Todavia falta simular este torneo antes de descargar o comunicar el fixture."
+    },
+    {
+      estado: partidos.length && partidosPendientes ? "warn" : "ok",
+      titulo: "Datos existentes",
+      detalle: partidos.length
+        ? `${partidos.length} partidos ya existen en esta categoria: ${partidosJugados} jugados y ${partidosPendientes} pendientes. Revisar antes de publicar algo nuevo.`
+        : "No hay fixture publicado en esta categoria. Es buen escenario para preparar un torneo nuevo."
+    },
+    {
+      estado: documentosEquipo.length && documentosJugador.length ? "ok" : "warn",
+      titulo: "Documentacion",
+      detalle: `${documentosEquipo.length} requisitos por equipo y ${documentosJugador.length} por jugador configurados.`
+    },
+    {
+      estado: delegados >= Math.max(1, Math.min(equipos.length, 2)) ? "ok" : "warn",
+      titulo: "Delegados y permisos",
+      detalle: delegados ? `${delegados} delegados vinculados a equipos de esta categoria.` : "No se detectaron delegados vinculados a esta categoria en las claves actuales."
+    },
+    {
+      estado: cierre?.estado === "cerrado" ? "ok" : partidos.length ? "warn" : "ok",
+      titulo: "Cierre anterior",
+      detalle: cierre?.estado === "cerrado"
+        ? `El torneo actual figura cerrado. Campeon: ${cierre.campeon || "por confirmar"}.`
+        : partidos.length
+          ? "Hay actividad en esta categoria. Si corresponde a un torneo anterior, revisar la pestana Cierres."
+          : "No hay torneo anterior cargado para cerrar en esta categoria."
+    },
+    {
+      estado: "warn",
+      titulo: "Publicacion oficial",
+      detalle: `Formato elegido: ${formato.playoffsTexto}, ${formato.partidosCuartos} partido(s) en cuartos/repechaje, ${formato.partidosSemis} en semifinales y ${formato.finalTexto}. La publicacion real sigue pendiente de aprobacion administrativa.`
+    }
+  ];
+}
+
+function renderPreparacionTorneo() {
+  const container = $("planner-readiness");
+  if (!container) return;
+
+  const categoria = document.getElementById("planner-categoria")?.value || $("asociacion-categoria")?.value || "";
+  if (!categoria) {
+    container.innerHTML = `<div class="empty">Elegi una categoria para evaluar la preparacion.</div>`;
+    return;
+  }
+
+  const items = calcularPreparacionTorneo(categoria);
+  const errores = items.filter((item) => item.estado === "error").length;
+  const avisos = items.filter((item) => item.estado === "warn").length;
+  const resumen =
+    errores > 0
+      ? `${errores} punto(s) bloqueantes y ${avisos} aviso(s).`
+      : avisos > 0
+        ? `${avisos} aviso(s) para revisar antes de publicar.`
+        : "Todo listo para pasar a revision final.";
+
+  container.innerHTML = `
+    <div class="planner-alerts">
+      <div>${escapeHtml(resumen)} Esta evaluacion no guarda ni publica datos.</div>
+    </div>
+    ${items.map(renderItemPreparacionTorneo).join("")}
+  `;
+}
+
  const plannerBtn = document.getElementById("planner-generar");
  const plannerInformeBtn = document.getElementById("planner-informe");
+ const plannerPreparacionBtn = document.getElementById("planner-evaluar-preparacion");
  const plannerCategoria = document.getElementById("planner-categoria");
  const plannerPartidosCuartos = document.getElementById("planner-partidos-cuartos");
  const plannerPartidosSemis = document.getElementById("planner-partidos-semis");
@@ -5993,7 +6131,10 @@ function generarInformeTorneo() {
 
 if (plannerCategoria) {
   configurarDefaultsPlanner();
-  plannerCategoria.addEventListener("change", configurarDefaultsPlanner);
+  plannerCategoria.addEventListener("change", () => {
+    configurarDefaultsPlanner();
+    renderPreparacionTorneo();
+  });
 }
 
 if (plannerFinal) {
@@ -6014,6 +6155,32 @@ if (plannerPromocion) {
 
 if (plannerInformeBtn) {
   plannerInformeBtn.addEventListener("click", generarInformeTorneo);
+}
+
+if (plannerPreparacionBtn) {
+  plannerPreparacionBtn.addEventListener("click", async () => {
+    const categoria = document.getElementById("planner-categoria")?.value || "";
+    const status = $("planner-readiness");
+    if (!categoria || !status) {
+      renderPreparacionTorneo();
+      return;
+    }
+
+    status.innerHTML = `<div class="empty">Actualizando datos de ${escapeHtml(categoria)}...</div>`;
+    try {
+      await refrescarCategoria(categoria, {
+        actualizarPublico: false,
+        incluirDocumentacion: true,
+        incluirPartidos: true,
+        incluirPlayoffs: true,
+        incluirProgramacion: true
+      });
+    } catch (error) {
+      status.innerHTML = `<div class="planner-alerts"><div>No se pudo actualizar la categoria: ${escapeHtml(error.message)}</div></div>`;
+      return;
+    }
+    renderPreparacionTorneo();
+  });
 }
 
 document.addEventListener("click", (event) => {
@@ -6221,6 +6388,7 @@ estado.ultimaSimulacionPlanner = {
         ${renderPlayoffsSimuladosPlanner(formato)}
       </div>
     `;
+    renderPreparacionTorneo();
   });
   
 }
