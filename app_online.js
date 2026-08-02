@@ -6225,6 +6225,64 @@ function armarPayloadFixtureSimulado(simulacion, categoriaId) {
   );
 }
 
+function generarConstanciaPublicacionFixture(simulacion, payload) {
+  const fechaGeneracion = new Date().toLocaleString("es-AR");
+  const formato = simulacion.formato || detalleFormatoPlanner(simulacion.categoria);
+  const fixturePublicado = {
+    jornadas: (simulacion.fixture?.jornadas || []).map((jornada) => ({
+      ...jornada,
+      partidos: (jornada.partidos || []).map((partido) => ({
+        local: partido.local,
+        visitante: partido.visitante
+      }))
+    }))
+  };
+  const html = `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <title>Constancia de publicacion - ${escapeHtml(simulacion.categoria)}</title>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 28px; }
+        h1 { margin: 0 0 4px; font-size: 26px; }
+        h2 { margin: 22px 0 8px; font-size: 18px; }
+        h3 { margin: 16px 0 6px; font-size: 15px; }
+        .muted { color: #4b5563; margin: 0 0 14px; }
+        .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0; }
+        .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; }
+        .box strong { display: block; font-size: 18px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th, td { border-bottom: 1px solid #d1d5db; padding: 7px 6px; font-size: 12px; text-align: left; }
+        th { background: #eef2ff; font-weight: 800; }
+        .print-actions { margin: 18px 0; }
+        .print-actions button { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; font-weight: 700; }
+        @media print { body { margin: 12mm; } .print-actions { display: none; } }
+      </style>
+    </head>
+    <body>
+      <h1>${escapeHtml(APP_CONFIG.producto.nombre)} - Constancia de publicacion</h1>
+      <p class="muted">Organizacion: ${escapeHtml(APP_CONFIG.organizacionActiva.nombre)} - Generado ${escapeHtml(fechaGeneracion)}</p>
+      <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
+      <div class="summary">
+        <div class="box"><span>Categoria</span><strong>${escapeHtml(simulacion.categoria)}</strong></div>
+        <div class="box"><span>Competencia</span><strong>${escapeHtml(simulacion.competencia || "-")}</strong></div>
+        <div class="box"><span>Partidos publicados</span><strong>${payload.length}</strong></div>
+      </div>
+      <p><strong>Publicado por:</strong> ${escapeHtml(estado.usuarioAsociacion?.display_name || "Asociacion")}</p>
+      <p><strong>Formato:</strong> ${escapeHtml(formato.playoffsTexto)} - ${escapeHtml(formato.finalTexto)}</p>
+      <p><strong>Ruedas:</strong> ${escapeHtml(String(simulacion.ruedas || "-"))} - <strong>Frecuencia:</strong> ${escapeHtml(simulacion.frecuencia === 2 ? "Semana por medio" : "Todas las semanas")}</p>
+      ${renderFixtureSimuladoInforme(fixturePublicado)}
+      <p class="muted">Esta constancia refleja el fixture creado en Supabase. Los resultados quedan pendientes de carga.</p>
+    </body>
+    </html>
+  `;
+
+  const nombre = descargarInformeHtml(html, `constancia-publicacion-${simulacion.categoria}-${simulacion.competencia || "torneo"}`);
+  abrirInformeHtml(html);
+  return nombre;
+}
+
 async function publicarFixtureSimuladoPlanner() {
   const status = $("planner-publicacion-status");
   const confirmar = String($("planner-confirmar-publicacion")?.value || "").trim().toUpperCase();
@@ -6298,15 +6356,17 @@ async function publicarFixtureSimuladoPlanner() {
       completarInputsAsociacion();
       renderProgramacionAsociacion(simulacion.categoria);
     }
+    const constancia = generarConstanciaPublicacionFixture(simulacion, payload);
     registrarUso("fixture_publicado", {
       area: "asociacion",
       categoria: simulacion.categoria,
       cantidad: payload.length,
+      archivo: constancia,
       user: estado.usuarioAsociacion?.display_name || "Asociacion",
       role: estado.usuarioAsociacion?.role || "asociacion"
     });
-    setStatus(status, `Fixture publicado correctamente: ${payload.length} partidos creados en ${simulacion.categoria}.`, "ok");
-    mostrarCartelInforme(`Fixture publicado: ${payload.length} partidos creados en ${simulacion.categoria}.`);
+    setStatus(status, `Fixture publicado correctamente: ${payload.length} partidos creados en ${simulacion.categoria}. Constancia descargada como ${constancia}.`, "ok");
+    mostrarCartelInforme(`Fixture publicado: ${payload.length} partidos creados en ${simulacion.categoria}. Constancia descargada en Descargas.`);
     if ($("planner-confirmar-publicacion")) $("planner-confirmar-publicacion").value = "";
   } catch (error) {
     setStatus(status, `No se pudo publicar el fixture: ${error.message}`, "error");
