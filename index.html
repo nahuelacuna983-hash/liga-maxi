@@ -2102,11 +2102,22 @@
           <option value="">Todos los clubes</option>
         </select>
       </div>
+      <div class="field">
+        <label for="habilitados-filtro-estado">Estado habilitacion</label>
+        <select id="habilitados-filtro-estado">
+          <option value="">Todos</option>
+          <option value="SI">Solo habilitados</option>
+          <option value="NO">Solo no habilitados</option>
+        </select>
+      </div>
       <div class="field doc-filter-action">
         <button id="habilitados-exportar-csv" class="secondary" type="button">Exportar habilitados CSV</button>
       </div>
       <div class="field doc-filter-action">
         <button id="habilitados-descargar-html" class="secondary" type="button">Descargar lista</button>
+      </div>
+      <div class="field doc-filter-action">
+        <button id="habilitados-plan-prueba" class="secondary" type="button">Plan de prueba</button>
       </div>
     </div>
     <div id="documentacion-resumen" class="doc-summary"></div>
@@ -2173,7 +2184,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260802-habilitados-arbitros"></script>
+<script src="app_online.js?v=20260810-plan-prueba-documental"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

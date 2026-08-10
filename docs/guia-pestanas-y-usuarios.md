@@ -311,8 +311,10 @@ Contenido:
 - revision/aprobacion/observacion
 - administracion de jugadores y bajas
 - lista de habilitados para arbitros
+- filtro de habilitados/no habilitados
 - exportacion CSV de habilitados
 - descarga imprimible de habilitados
+- descarga de plan de prueba documental por club
 
 Funcionamiento:
 
@@ -322,7 +324,8 @@ Funcionamiento:
 - Permite administrar jugadores mal cargados o con baja solicitada.
 - Genera una lista de habilitados por categoria y por club.
 - La lista considera buena fe y seguro aprobados a nivel equipo, mas certificado/estudio, deslinde/declaracion jurada y pase aprobados a nivel jugador.
-- La lista permite exportar CSV o descargar una version imprimible para compartir.
+- La lista permite filtrar habilitados/no habilitados, exportar CSV o descargar una version imprimible para compartir.
+- El plan de prueba documental sirve para validar un club con datos reales: indica que debe cargar el delegado, que debe revisar Asociacion y que estado deberia verse en habilitados/auditoria.
 
 Incidencia por usuario:
 

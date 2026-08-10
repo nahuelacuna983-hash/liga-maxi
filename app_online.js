@@ -936,6 +936,7 @@ function calcularHabilitadosCategoria(nombreCategoria) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const jugadores = categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : [];
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+  const estadoFiltro = $("habilitados-filtro-estado")?.value || "";
 
   return jugadores
     .filter((jugador) => !equipoFiltro || nombresEquipoCoinciden(jugador.equipo_nombre, equipoFiltro))
@@ -971,6 +972,7 @@ function calcularHabilitadosCategoria(nombreCategoria) {
         faltantes: faltantes.join("; ")
       };
     })
+    .filter((fila) => !estadoFiltro || fila.habilitado === estadoFiltro)
     .sort((a, b) =>
       String(a.equipo).localeCompare(String(b.equipo)) ||
       String(a.apellidoNombre).localeCompare(String(b.apellidoNombre))
@@ -998,12 +1000,13 @@ function renderListaHabilitadosArbitros(nombreCategoria) {
   const filas = calcularHabilitadosCategoria(nombreCategoria);
   const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+  const estadoFiltro = $("habilitados-filtro-estado")?.value || "";
 
   if (!filas.length) {
     container.innerHTML = `
       <div class="card">
         <h3>Habilitados para arbitros</h3>
-        <div class="empty">No hay jugadores cargados${equipoFiltro ? ` para ${escapeHtml(equipoFiltro)}` : ""}.</div>
+        <div class="empty">No hay jugadores${estadoFiltro ? ` con estado ${escapeHtml(estadoFiltro)}` : ""}${equipoFiltro ? ` para ${escapeHtml(equipoFiltro)}` : ""}.</div>
       </div>
     `;
     return;
@@ -1012,7 +1015,7 @@ function renderListaHabilitadosArbitros(nombreCategoria) {
   container.innerHTML = `
     <div class="card">
       <h3>Habilitados para arbitros</h3>
-      <p class="note">${habilitados} habilitado${habilitados === 1 ? "" : "s"} de ${filas.length} jugador${filas.length === 1 ? "" : "es"}${equipoFiltro ? ` - ${escapeHtml(equipoFiltro)}` : ""}. Se consideran aprobados y vigentes: buena fe, seguro, certificado/estudio, deslinde/declaracion jurada y pase.</p>
+      <p class="note">${habilitados} habilitado${habilitados === 1 ? "" : "s"} de ${filas.length} jugador${filas.length === 1 ? "" : "es"}${equipoFiltro ? ` - ${escapeHtml(equipoFiltro)}` : ""}${estadoFiltro ? ` - filtro ${escapeHtml(estadoFiltro)}` : ""}. Se consideran aprobados y vigentes: buena fe, seguro, certificado/estudio, deslinde/declaracion jurada y pase.</p>
       <table class="doc-table">
         <thead>
           <tr>
@@ -4545,6 +4548,14 @@ async function revisarDocumentoAsociacion(event) {
   renderDocumentacionAsociacion(categoria);
   renderDocumentacionDelegado();
   setStatus(status, "Revisión documental guardada.", "ok");
+  registrarUso(scope === "player" ? "documento_jugador_revisado" : "documento_equipo_revisado", {
+    area: "asociacion",
+    categoria,
+    equipo: documento.equipo_nombre || "",
+    estado: nextStatus,
+    user: estado.usuarioAsociacion?.display_name || "Asociacion",
+    role: estado.usuarioAsociacion?.role || "asociacion"
+  });
 }
 
 async function verDocumentoAsociacion(event) {
@@ -5049,6 +5060,128 @@ function descargarListaHabilitadosHtml() {
   mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
 }
 
+function descargarPlanPruebaDocumental() {
+  const status = $("asociacion-status");
+  const categoria = $("asociacion-categoria")?.value || "";
+  const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+
+  if (!categoria) {
+    setStatus(status, "Elegí una categoría antes de generar el plan de prueba.", "warn");
+    return;
+  }
+
+  if (!equipoFiltro) {
+    setStatus(status, "Elegí un club en 'Lista arbitros por club' para generar una prueba controlada.", "warn");
+    return;
+  }
+
+  const estadoAnterior = $("habilitados-filtro-estado")?.value || "";
+  if ($("habilitados-filtro-estado")) $("habilitados-filtro-estado").value = "";
+  const filas = calcularHabilitadosCategoria(categoria).filter((fila) =>
+    nombresEquipoCoinciden(fila.equipo, equipoFiltro)
+  );
+  if ($("habilitados-filtro-estado")) $("habilitados-filtro-estado").value = estadoAnterior;
+
+  const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
+  const fechaGeneracion = new Date().toLocaleString("es-AR");
+  const faltantes = filas.filter((fila) => fila.habilitado !== "SI");
+  const jugadoresHtml = filas.length
+    ? filas.map((fila) => `
+      <tr>
+        <td>${escapeHtml(fila.apellidoNombre)}</td>
+        <td>${escapeHtml(fila.dni || "-")}</td>
+        <td>${escapeHtml(fila.dorsal || "-")}</td>
+        <td>${escapeHtml(fila.habilitado)}</td>
+        <td>${escapeHtml(fila.faltantes || "-")}</td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="5">Todavía no hay jugadores cargados para este club.</td></tr>`;
+
+  const html = `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <title>Plan de prueba documental - ${escapeHtml(equipoFiltro)}</title>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 24px; line-height: 1.4; }
+        h1 { margin: 0 0 4px; font-size: 24px; }
+        h2 { margin-top: 20px; font-size: 17px; }
+        .muted { color: #4b5563; margin: 0 0 12px; }
+        .box { border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; margin: 12px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #cbd5e1; padding: 7px; font-size: 12px; text-align: left; }
+        th { background: #e5e7eb; }
+        li { margin: 5px 0; }
+        .print-actions { margin: 16px 0; }
+        .print-actions button { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; font-weight: 700; }
+        @media print { body { margin: 10mm; } .print-actions { display: none; } }
+      </style>
+    </head>
+    <body>
+      <h1>Plan de prueba documental</h1>
+      <p class="muted">${escapeHtml(APP_CONFIG.organizacionActiva.nombre)} - ${escapeHtml(categoria)} - ${escapeHtml(equipoFiltro)}</p>
+      <p class="muted">Generado ${escapeHtml(fechaGeneracion)}. Estado inicial: ${habilitados} habilitado${habilitados === 1 ? "" : "s"} de ${filas.length} jugador${filas.length === 1 ? "" : "es"}.</p>
+      <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
+
+      <div class="box">
+        <h2>Objetivo</h2>
+        <p>Validar el flujo completo sin editar la base por fuera de la app: carga de documentos por Delegados, revisión por Asociación, auditoría y lista final para árbitros.</p>
+      </div>
+
+      <div class="box">
+        <h2>1. Delegados</h2>
+        <ol>
+          <li>Entrar a Delegados con la clave del club.</li>
+          <li>Elegir categoría ${escapeHtml(categoria)} y club ${escapeHtml(equipoFiltro)}.</li>
+          <li>Cargar documentos de equipo: lista de buena fe y seguro.</li>
+          <li>Cargar o revisar jugadores del club.</li>
+          <li>Para cada jugador, cargar certificado/estudio, declaración jurada/deslinde y pase.</li>
+        </ol>
+      </div>
+
+      <div class="box">
+        <h2>2. Asociación</h2>
+        <ol>
+          <li>Entrar con clave administrativa.</li>
+          <li>Ir a Documentación, filtrar por ${escapeHtml(equipoFiltro)}.</li>
+          <li>Abrir cada archivo, aprobarlo u observarlo.</li>
+          <li>Revisar la lista de habilitados y exportar CSV o lista imprimible.</li>
+          <li>Ir a Auditoría para confirmar que queden registrados los movimientos.</li>
+        </ol>
+      </div>
+
+      <div class="box">
+        <h2>Resultado esperado</h2>
+        <p>Un jugador queda habilitado solamente si tiene aprobados y vigentes: buena fe del equipo, seguro del equipo, certificado/estudio, declaración jurada/deslinde y pase.</p>
+      </div>
+
+      <h2>Estado actual del club</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Jugador</th>
+            <th>DNI</th>
+            <th>Nro</th>
+            <th>Habilitado</th>
+            <th>Faltantes</th>
+          </tr>
+        </thead>
+        <tbody>${jugadoresHtml}</tbody>
+      </table>
+
+      <h2>Pendientes detectados</h2>
+      <p>${faltantes.length ? `${faltantes.length} jugador${faltantes.length === 1 ? "" : "es"} con documentación pendiente.` : "No hay pendientes detectados con los datos actuales."}</p>
+    </body>
+    </html>
+  `;
+
+  const nombre = descargarInformeHtml(html, `plan-prueba-documental-${categoria}-${equipoFiltro}`);
+  abrirInformeHtml(html);
+  setStatus(status, `Plan de prueba descargado como ${nombre}.`, "ok");
+  mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
+}
+
 async function inicializarAsociacion() {
   if (estado.asociacionInicializada) return;
   estado.asociacionInicializada = true;
@@ -5092,8 +5225,12 @@ async function inicializarAsociacion() {
   $("habilitados-filtro-equipo")?.addEventListener("change", () => {
     renderListaHabilitadosArbitros($("asociacion-categoria").value);
   });
+  $("habilitados-filtro-estado")?.addEventListener("change", () => {
+    renderListaHabilitadosArbitros($("asociacion-categoria").value);
+  });
   $("habilitados-exportar-csv")?.addEventListener("click", exportarHabilitadosCsv);
   $("habilitados-descargar-html")?.addEventListener("click", descargarListaHabilitadosHtml);
+  $("habilitados-plan-prueba")?.addEventListener("click", descargarPlanPruebaDocumental);
   $("asociacion-desbloquear").addEventListener("click", desbloquearAsociacion);
   $("asociacion-clave").addEventListener("keydown", (event) => {
     if (event.key === "Enter") desbloquearAsociacion();
