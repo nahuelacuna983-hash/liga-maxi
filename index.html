@@ -2121,6 +2121,43 @@
       </div>
     </div>
     <div id="documentacion-resumen" class="doc-summary"></div>
+    <div class="drive-doc-admin">
+      <div class="drive-doc-head">
+        <div>
+          <h4>Drive documental</h4>
+          <p class="note">Bandeja admin para metadatos importados desde Drive. No descarga ni expone archivos al publico.</p>
+        </div>
+        <button id="drive-doc-refrescar" class="secondary" type="button">Actualizar Drive</button>
+      </div>
+      <div class="doc-filters">
+        <div class="field">
+          <label for="drive-doc-estado">Estado</label>
+          <select id="drive-doc-estado">
+            <option value="">Todos</option>
+            <option value="cargado">Cargado</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="revisar">Revisar</option>
+            <option value="vencido">Vencido</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="drive-doc-match">Asociacion</label>
+          <select id="drive-doc-match">
+            <option value="">Todos</option>
+            <option value="exacto">Exactos</option>
+            <option value="dudoso">Dudosos</option>
+            <option value="sin_jugador">Sin jugador</option>
+            <option value="sin_asociar">Sin asociar</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="drive-doc-buscar">Buscar Drive</label>
+          <input id="drive-doc-buscar" type="search" placeholder="Jugador, archivo, tipo o club" />
+        </div>
+      </div>
+      <div id="drive-doc-resumen" class="doc-summary"></div>
+      <div id="drive-doc-tabla" class="table-wrap"></div>
+    </div>
     <div id="habilitados-tabla" class="table-wrap"></div>
     <div id="documentacion-tabla" class="table-wrap"></div>
   </div>
@@ -2184,7 +2221,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260810-plan-prueba-documental"></script>
+<script src="app_online.js?v=20260813-drive-documentacion-admin"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

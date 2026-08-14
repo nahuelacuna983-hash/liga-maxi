@@ -36,6 +36,7 @@ const estado = {
   documentosPorCategoriaId: {},
   jugadoresPorCategoriaId: {},
   documentosJugadoresPorCategoriaId: {},
+  driveDocumentosPorCategoriaId: {},
   filasDocumentacionAsociacion: [],
   eventosUso: [],
   ultimaSimulacionPlanner: null,
@@ -753,6 +754,32 @@ async function cargarDocumentosJugadoresCategoria(categoriaId, force = false) {
   return estado.documentosJugadoresPorCategoriaId[categoriaId];
 }
 
+async function cargarDocumentosDriveCategoria(categoriaId, force = false) {
+  if (!categoriaId) return [];
+
+  if (!force && estado.driveDocumentosPorCategoriaId[categoriaId]) {
+    return estado.driveDocumentosPorCategoriaId[categoriaId];
+  }
+
+  const { data, error } = await supabaseClient
+    .from("v_drive_player_documents_admin")
+    .select("id, categoria_id, equipo_id, equipo_nombre, player_id, player_name, player_dni, player_dorsal, document_type, title, drive_file_id, drive_url, mime_type, status, observation, match_status, source_folder, reviewed_by, reviewed_at, created_at")
+    .eq("categoria_id", categoriaId)
+    .order("match_status", { ascending: false })
+    .order("player_name", { ascending: true });
+
+  if (error) {
+    console.warn("No se pudieron cargar metadatos documentales de Drive:", error.message);
+    estado.driveDocumentosPorCategoriaId[categoriaId] = [];
+    estado.driveDocumentosError = error.message;
+    return estado.driveDocumentosPorCategoriaId[categoriaId];
+  }
+
+  estado.driveDocumentosError = "";
+  estado.driveDocumentosPorCategoriaId[categoriaId] = data || [];
+  return estado.driveDocumentosPorCategoriaId[categoriaId];
+}
+
 function normalizarJugadoresDesdeDocumentos(rows) {
   const jugadoresMap = new Map();
 
@@ -1291,6 +1318,142 @@ function renderDocumentacionAsociacion(nombreCategoria) {
       </tbody>
     </table>
     ${renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugador)}
+  `;
+}
+
+function driveDocEstadoLabel(valor) {
+  const labels = {
+    cargado: "Cargado",
+    pendiente: "Pendiente",
+    revisar: "Revisar",
+    vencido: "Vencido"
+  };
+  return labels[valor] || valor || "Pendiente";
+}
+
+function driveDocMatchLabel(valor) {
+  const labels = {
+    exacto: "Exacto",
+    dudoso: "Dudoso",
+    sin_jugador: "Sin jugador",
+    sin_asociar: "Sin asociar"
+  };
+  return labels[valor] || valor || "Sin asociar";
+}
+
+function driveDocStateClass(valor) {
+  if (valor === "exacto") return "aprobado";
+  if (valor === "dudoso" || valor === "revisar" || valor === "sin_jugador") return "observado";
+  if (valor === "vencido") return "vencido";
+  return "pendiente";
+}
+
+function renderDocumentacionDriveAsociacion(nombreCategoria) {
+  const resumen = $("drive-doc-resumen");
+  const tabla = $("drive-doc-tabla");
+  if (!resumen || !tabla) return;
+
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const rows = categoria ? estado.driveDocumentosPorCategoriaId[categoria.id] || [] : [];
+  const filtroEstado = $("drive-doc-estado")?.value || "";
+  const filtroMatch = $("drive-doc-match")?.value || "";
+  const filtroTexto = normalizarTexto($("drive-doc-buscar")?.value || "");
+
+  if (estado.driveDocumentosError) {
+    resumen.innerHTML = "";
+    tabla.innerHTML = `
+      <div class="empty">
+        Todavia no esta activa la vista de Drive en Supabase. Ejecuta <strong>docs/ejecutar-en-supabase-documentacion-drive.sql</strong> y luego actualiza esta seccion.
+      </div>
+    `;
+    return;
+  }
+
+  const filtradas = rows.filter((row) => {
+    const texto = normalizarTexto([
+      row.equipo_nombre,
+      row.player_name,
+      row.document_type,
+      row.title,
+      row.observation,
+      row.match_status,
+      row.status
+    ].join(" "));
+
+    return (!filtroEstado || row.status === filtroEstado) &&
+      (!filtroMatch || row.match_status === filtroMatch) &&
+      (!filtroTexto || texto.includes(filtroTexto));
+  });
+
+  const resumenEstados = rows.reduce((acc, row) => {
+    acc[row.status || "pendiente"] = (acc[row.status || "pendiente"] || 0) + 1;
+    acc[row.match_status || "sin_asociar"] = (acc[row.match_status || "sin_asociar"] || 0) + 1;
+    return acc;
+  }, {});
+
+  resumen.innerHTML = `
+    <div class="doc-pill"><strong>${rows.length}</strong><span>Drive</span></div>
+    <div class="doc-pill"><strong>${resumenEstados.exacto || 0}</strong><span>Exactos</span></div>
+    <div class="doc-pill doc-pill-alert"><strong>${(resumenEstados.dudoso || 0) + (resumenEstados.sin_jugador || 0) + (resumenEstados.sin_asociar || 0)}</strong><span>Para revisar</span></div>
+    <div class="doc-pill"><strong>${resumenEstados.vencido || 0}</strong><span>Vencidos</span></div>
+  `;
+
+  if (!rows.length) {
+    tabla.innerHTML = `<div class="empty">No hay metadatos de Drive importados para esta categoria.</div>`;
+    return;
+  }
+
+  if (!filtradas.length) {
+    tabla.innerHTML = `<div class="empty">No hay documentos de Drive que coincidan con los filtros.</div>`;
+    return;
+  }
+
+  tabla.innerHTML = `
+    <table class="doc-table drive-doc-table">
+      <thead>
+        <tr>
+          <th>Jugador</th>
+          <th>Equipo</th>
+          <th>Tipo</th>
+          <th>Archivo Drive</th>
+          <th>Estado</th>
+          <th>Asociacion</th>
+          <th>Observacion</th>
+          <th>Accion</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtradas.map((row) => `
+          <tr>
+            <td>
+              <strong>${escapeHtml(row.player_name || "Sin jugador")}</strong>
+              ${row.player_dni ? `<small>DNI ${escapeHtml(row.player_dni)}</small>` : ""}
+            </td>
+            <td>${escapeHtml(row.equipo_nombre || "-")}</td>
+            <td>${escapeHtml(row.document_type || "-")}</td>
+            <td>
+              <span class="doc-file-name">${escapeHtml(row.title || "-")}</span>
+              <a class="drive-doc-link" href="${escapeHtml(row.drive_url)}" target="_blank" rel="noopener noreferrer">Ver</a>
+            </td>
+            <td>${docStateHtml(driveDocEstadoLabel(row.status), driveDocStateClass(row.status))}</td>
+            <td>${docStateHtml(driveDocMatchLabel(row.match_status), driveDocStateClass(row.match_status))}</td>
+            <td>${escapeHtml(row.observation || "")}</td>
+            <td>${renderAccionesDriveDocumento(row)}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderAccionesDriveDocumento(row) {
+  const disabled = estado.asociacionDesbloqueada ? "" : " disabled";
+  return `
+    <div class="doc-review-actions">
+      <button class="doc-review-btn drive-doc-review-btn doc-review-ok" type="button" data-drive-doc-id="${escapeHtml(row.id)}" data-status="cargado" data-match-status="exacto"${disabled}>Exacto</button>
+      <button class="doc-review-btn drive-doc-review-btn doc-review-warn" type="button" data-drive-doc-id="${escapeHtml(row.id)}" data-status="revisar" data-match-status="dudoso"${disabled}>Revisar</button>
+      <button class="doc-review-btn drive-doc-create-player-btn" type="button" data-drive-doc-id="${escapeHtml(row.id)}"${disabled}>Crear jugador</button>
+    </div>
   `;
 }
 
@@ -4558,6 +4721,126 @@ async function revisarDocumentoAsociacion(event) {
   });
 }
 
+function obtenerDriveDocumentoPorId(documentId) {
+  return Object.values(estado.driveDocumentosPorCategoriaId).flat()
+    .find((documento) => documento.id === documentId) || null;
+}
+
+async function revisarDocumentoDriveAsociacion(event) {
+  const button = event.target.closest(".drive-doc-review-btn");
+  if (!button) return;
+
+  const status = $("asociacion-status");
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilita Asociacion con la clave administrativa.", "warn");
+    return;
+  }
+
+  const documento = obtenerDriveDocumentoPorId(button.dataset.driveDocId);
+  const categoriaNombre = $("asociacion-categoria")?.value || "";
+  const nextStatus = button.dataset.status || "revisar";
+  const nextMatchStatus = button.dataset.matchStatus || "dudoso";
+
+  if (!documento) {
+    setStatus(status, "No se encontro el documento de Drive seleccionado.", "error");
+    return;
+  }
+
+  const observacion = prompt("Observacion admin para este documento:", documento.observation || "") || "";
+  button.disabled = true;
+  setStatus(status, "Guardando revision de Drive...", "");
+
+  const { error } = await supabaseClient.rpc("review_drive_player_document", {
+    p_document_id: documento.id,
+    p_status: nextStatus,
+    p_match_status: nextMatchStatus,
+    p_player_id: documento.player_id || null,
+    p_player_name: documento.player_name || null,
+    p_observation: observacion || null,
+    p_actor: estado.usuarioAsociacion?.display_name || "ADMIN"
+  });
+
+  if (error) {
+    button.disabled = false;
+    setStatus(status, `No se pudo revisar Drive: ${error.message}`, "error");
+    return;
+  }
+
+  const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
+  if (categoria) await cargarDocumentosDriveCategoria(categoria.id, true);
+  renderDocumentacionDriveAsociacion(categoriaNombre);
+  setStatus(status, "Revision de Drive guardada.", "ok");
+}
+
+async function crearJugadorDesdeDriveAsociacion(event) {
+  const button = event.target.closest(".drive-doc-create-player-btn");
+  if (!button) return;
+
+  const status = $("asociacion-status");
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilita Asociacion con la clave administrativa.", "warn");
+    return;
+  }
+
+  const documento = obtenerDriveDocumentoPorId(button.dataset.driveDocId);
+  const categoriaNombre = $("asociacion-categoria")?.value || "";
+  const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
+
+  if (!documento || !categoria) {
+    setStatus(status, "No se encontro el documento o la categoria para crear el jugador.", "error");
+    return;
+  }
+
+  const nombre = prompt("Nombre del jugador a crear:", documento.player_name || "");
+  if (!nombre || !nombre.trim()) {
+    setStatus(status, "Creacion cancelada: falta el nombre del jugador.", "warn");
+    return;
+  }
+
+  const equipos = await cargarEquiposCategoria(categoria.id);
+  const equipoSugerido = equipos.find((equipo) => nombresEquipoCoinciden(equipo.nombre, documento.equipo_nombre));
+  const equipoId = documento.equipo_id || equipoSugerido?.id || null;
+  const equipoNombre = documento.equipo_nombre || equipoSugerido?.nombre || prompt("Equipo del jugador:", "") || "";
+
+  if (!equipoNombre.trim()) {
+    setStatus(status, "Creacion cancelada: falta el equipo.", "warn");
+    return;
+  }
+
+  const confirmar = confirm(`Crear jugador "${nombre.trim()}" en ${equipoNombre}? No habilita documentacion automaticamente.`);
+  if (!confirmar) {
+    setStatus(status, "Creacion de jugador cancelada.", "warn");
+    return;
+  }
+
+  button.disabled = true;
+  setStatus(status, "Creando jugador desde revision admin...", "");
+
+  const { error } = await supabaseClient.rpc("create_player_from_drive_review", {
+    p_document_id: documento.id,
+    p_organizacion_id: null,
+    p_torneo_id: TORNEO_ID,
+    p_categoria_id: categoria.id,
+    p_equipo_id: equipoId,
+    p_equipo_nombre: equipoNombre,
+    p_nombre: nombre.trim(),
+    p_actor: estado.usuarioAsociacion?.display_name || "ADMIN"
+  });
+
+  if (error) {
+    button.disabled = false;
+    setStatus(status, `No se pudo crear el jugador: ${error.message}`, "error");
+    return;
+  }
+
+  await cargarJugadoresCategoria(categoria.id, true);
+  await cargarDocumentosJugadoresCategoria(categoria.id, true);
+  await cargarDocumentosDriveCategoria(categoria.id, true);
+  renderDocumentacionAsociacion(categoriaNombre);
+  renderDocumentacionDriveAsociacion(categoriaNombre);
+  setStatus(status, "Jugador creado desde revision admin. Revisar documentos antes de habilitar.", "ok");
+}
+
 async function verDocumentoAsociacion(event) {
   const button = event.target.closest(".doc-view-btn");
   if (!button) return;
@@ -4827,6 +5110,9 @@ async function cargarDatosAsociacionActual() {
   poblarSelectPartidosAsociacion(categoria);
   renderPlayoffsAsociacion(categoria);
   renderDocumentacionAsociacion(categoria);
+  const categoriaData = estado.categorias.find((cat) => cat.nombre === categoria);
+  if (categoriaData) await cargarDocumentosDriveCategoria(categoriaData.id);
+  renderDocumentacionDriveAsociacion(categoria);
   renderProgramacionAsociacion(categoria);
   renderCierreAsociacion(categoria);
   setStatus(status, "", "");
@@ -5194,6 +5480,9 @@ async function inicializarAsociacion() {
     poblarSelectPartidosAsociacion(categoria);
     renderPlayoffsAsociacion(categoria);
     renderDocumentacionAsociacion(categoria);
+    const categoriaData = estado.categorias.find((cat) => cat.nombre === categoria);
+    if (categoriaData) await cargarDocumentosDriveCategoria(categoriaData.id);
+    renderDocumentacionDriveAsociacion(categoria);
     renderProgramacionAsociacion(categoria);
     renderCierreAsociacion(categoria);
     setStatus($("asociacion-status"), "", "");
@@ -5212,6 +5501,8 @@ async function inicializarAsociacion() {
   $("documentacion-tabla").addEventListener("click", revisarDocumentoAsociacion);
   $("documentacion-tabla").addEventListener("click", verDocumentoAsociacion);
   $("documentacion-tabla").addEventListener("click", darDeBajaJugadorAsociacion);
+  $("drive-doc-tabla")?.addEventListener("click", revisarDocumentoDriveAsociacion);
+  $("drive-doc-tabla")?.addEventListener("click", crearJugadorDesdeDriveAsociacion);
   $("documentacion-filtro-estado").addEventListener("change", () => {
     renderDocumentacionAsociacion($("asociacion-categoria").value);
   });
@@ -5220,6 +5511,21 @@ async function inicializarAsociacion() {
   });
   $("documentacion-buscar").addEventListener("input", () => {
     renderDocumentacionAsociacion($("asociacion-categoria").value);
+  });
+  $("drive-doc-estado")?.addEventListener("change", () => {
+    renderDocumentacionDriveAsociacion($("asociacion-categoria").value);
+  });
+  $("drive-doc-match")?.addEventListener("change", () => {
+    renderDocumentacionDriveAsociacion($("asociacion-categoria").value);
+  });
+  $("drive-doc-buscar")?.addEventListener("input", () => {
+    renderDocumentacionDriveAsociacion($("asociacion-categoria").value);
+  });
+  $("drive-doc-refrescar")?.addEventListener("click", async () => {
+    const categoriaNombre = $("asociacion-categoria").value;
+    const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
+    if (categoria) await cargarDocumentosDriveCategoria(categoria.id, true);
+    renderDocumentacionDriveAsociacion(categoriaNombre);
   });
   $("documentacion-exportar").addEventListener("click", exportarDocumentacionCsv);
   $("habilitados-filtro-equipo")?.addEventListener("change", () => {

@@ -785,6 +785,47 @@ td:nth-child(2) {
   background: rgba(249, 115, 22, 0.12);
 }
 
+.drive-doc-admin {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.18);
+  border-radius: 8px;
+  padding: 14px;
+  margin: 16px 0;
+}
+
+.drive-doc-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.drive-doc-head h4 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.drive-doc-head .note {
+  margin: 0;
+}
+
+.drive-doc-table td strong,
+.drive-doc-table td small {
+  display: block;
+}
+
+.drive-doc-table td small {
+  color: #cbd5e1;
+  margin-top: 4px;
+}
+
+.drive-doc-link {
+  display: inline-block;
+  margin-top: 6px;
+  color: #bfdbfe;
+  font-weight: 800;
+}
+
 .assoc-subnav {
   display: flex;
   flex-wrap: wrap;
