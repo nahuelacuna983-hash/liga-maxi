@@ -1530,6 +1530,121 @@
       line-height: 1.6;
     }
 
+    .habilitados-quick {
+      margin: 14px 0 16px;
+    }
+
+    .habilitados-quick-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .habilitados-counter {
+      border: 1px solid rgba(148, 163, 184, 0.26);
+      border-radius: 8px;
+      padding: 14px;
+      background: rgba(15, 23, 42, 0.34);
+    }
+
+    .habilitados-counter strong,
+    .habilitados-counter span {
+      display: block;
+    }
+
+    .habilitados-counter strong {
+      font-size: 34px;
+      line-height: 1;
+    }
+
+    .habilitados-counter span {
+      margin-top: 5px;
+      color: #dbeafe;
+      font-weight: 800;
+    }
+
+    .habilitados-counter-ok {
+      border-color: rgba(52, 211, 153, 0.48);
+      background: rgba(16, 185, 129, 0.16);
+    }
+
+    .habilitados-counter-no {
+      border-color: rgba(248, 113, 113, 0.56);
+      background: rgba(239, 68, 68, 0.16);
+    }
+
+    .habilitados-player-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px;
+    }
+
+    .habilitados-player-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 12px;
+      align-items: center;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-left-width: 7px;
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(15, 23, 42, 0.36);
+    }
+
+    .habilitados-player-card.is-ok {
+      border-left-color: #34d399;
+    }
+
+    .habilitados-player-card.is-no {
+      border-left-color: #ef4444;
+      background: rgba(127, 29, 29, 0.18);
+    }
+
+    .habilitados-player-main strong,
+    .habilitados-player-main span {
+      display: block;
+    }
+
+    .habilitados-player-main strong {
+      font-size: 16px;
+    }
+
+    .habilitados-player-main span {
+      color: #cbd5e1;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .habilitados-player-state {
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .is-ok .habilitados-player-state {
+      background: rgba(16, 185, 129, 0.22);
+      color: #bbf7d0;
+    }
+
+    .is-no .habilitados-player-state {
+      background: rgba(239, 68, 68, 0.24);
+      color: #fecaca;
+    }
+
+    .habilitados-missing {
+      grid-column: 1 / -1;
+      color: #fecaca;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .habilitados-missing-ok {
+      color: #bbf7d0;
+    }
+
     .assoc-permission-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -2260,7 +2375,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260817-pase-no-bloqueante"></script>
+<script src="app_online.js?v=20260817-habilitados-visual"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

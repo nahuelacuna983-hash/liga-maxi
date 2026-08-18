@@ -1142,6 +1142,40 @@ function renderSelectorHabilitadosPorEquipo(filas, estadoFiltro) {
   `;
 }
 
+function renderVistaRapidaHabilitados(filas) {
+  const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
+  const noHabilitados = filas.length - habilitados;
+
+  return `
+    <div class="habilitados-quick">
+      <div class="habilitados-quick-summary">
+        <div class="habilitados-counter habilitados-counter-ok">
+          <strong>${habilitados}</strong>
+          <span>Habilitados</span>
+        </div>
+        <div class="habilitados-counter ${noHabilitados ? "habilitados-counter-no" : "habilitados-counter-ok"}">
+          <strong>${noHabilitados}</strong>
+          <span>No habilitados</span>
+        </div>
+      </div>
+      <div class="habilitados-player-grid">
+        ${filas.map((fila) => `
+          <div class="habilitados-player-card ${fila.habilitado === "SI" ? "is-ok" : "is-no"}">
+            <div class="habilitados-player-main">
+              <strong>${escapeHtml(fila.apellidoNombre)}</strong>
+              <span>${escapeHtml([fila.dorsal ? `#${fila.dorsal}` : "", fila.dni ? `DNI ${fila.dni}` : ""].filter(Boolean).join(" · ") || "Sin datos")}</span>
+            </div>
+            <div class="habilitados-player-state">${fila.habilitado === "SI" ? "HABILITADO" : "NO HABILITADO"}</div>
+            ${fila.faltantes
+              ? `<div class="habilitados-missing">${escapeHtml(fila.faltantes)}</div>`
+              : `<div class="habilitados-missing habilitados-missing-ok">Documentacion obligatoria completa</div>`}
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function renderListaHabilitadosArbitros(nombreCategoria) {
   const container = $("habilitados-tabla");
   if (!container) return;
@@ -1171,6 +1205,7 @@ function renderListaHabilitadosArbitros(nombreCategoria) {
     <div class="card habilitados-panel">
       <h3>Habilitados para arbitros</h3>
       <p class="note">${habilitados} habilitado${habilitados === 1 ? "" : "s"} de ${filas.length} jugador${filas.length === 1 ? "" : "es"}${equipoFiltro ? ` - ${escapeHtml(equipoFiltro)}` : ""}${estadoFiltro ? ` - filtro ${escapeHtml(estadoFiltro)}` : ""}. Bloquean habilitacion: buena fe, seguro, certificado/estudio y deslinde/declaracion jurada. El pase queda como control informativo para traspasos.</p>
+      ${renderVistaRapidaHabilitados(filas)}
       <table class="doc-table habilitados-table">
         <thead>
           <tr>
