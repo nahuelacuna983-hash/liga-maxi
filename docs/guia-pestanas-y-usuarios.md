@@ -137,7 +137,7 @@ Estado actual:
 Futuro posible:
 
 - acceso individual del jugador
-- carga directa de certificado, declaracion jurada y pase
+- carga directa de certificado, declaracion jurada y pase cuando corresponda por traspaso
 - consulta de estado documental propio
 
 Incidencia actual sobre datos: indirecta, a traves del delegado.
@@ -230,7 +230,7 @@ Documentacion por jugador:
 
 - certificado medico y estudio complementario
 - declaracion jurada
-- pase
+- pase, solo como control informativo para traspasos
 
 Restricciones actuales:
 
@@ -381,7 +381,8 @@ Funcionamiento:
 
 - Calcula habilitacion desde la documentacion aprobada.
 - La lista considera buena fe y seguro aprobados a nivel equipo.
-- Para cada jugador considera certificado medico/estudio complementario, declaracion jurada/deslinde y pase.
+- Para cada jugador considera certificado medico/estudio complementario y declaracion jurada/deslinde.
+- El pase no bloquea la habilitacion general; queda como control informativo para traspasos.
 - Si un documento requerido esta pendiente, observado, rechazado o vencido, el jugador queda como no habilitado.
 - No muestra archivos medicos ni enlaces sensibles.
 

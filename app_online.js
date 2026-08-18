@@ -641,6 +641,10 @@ const DOCUMENTOS_MULTIPLE_ARCHIVO = [
   "imagenes para redes"
 ];
 
+const DOCUMENTOS_JUGADOR_NO_BLOQUEANTES = [
+  "pase"
+];
+
 const ESCUDOS_EQUIPOS = {
   "astillero": "assets/escudos/astillero.png",
   "banco provincia": "assets/escudos/banco-provincia.png",
@@ -703,6 +707,11 @@ function permiteMultiplesArchivos(nombre) {
 
   const normalized = normalizarTexto(nombre);
   return DOCUMENTOS_MULTIPLE_ARCHIVO.some((documento) => normalized.includes(documento));
+}
+
+function esDocumentoJugadorBloqueante(nombre) {
+  const normalized = normalizarTexto(nombre);
+  return !DOCUMENTOS_JUGADOR_NO_BLOQUEANTES.some((documento) => normalized.includes(documento));
 }
 
 function obtenerRequisitoDocumental(nombre) {
@@ -1053,8 +1062,7 @@ function calcularHabilitadosCategoria(nombreCategoria) {
         estados.buenaFe === "SI" ? "" : "Lista de buena fe",
         estados.seguro === "SI" ? "" : "Seguro",
         estados.certificado === "SI" ? "" : "Certificado/estudio",
-        estados.deslinde === "SI" ? "" : "Deslinde/declaracion jurada",
-        estados.pase === "SI" ? "" : "Pase"
+        estados.deslinde === "SI" ? "" : "Deslinde/declaracion jurada"
       ].filter(Boolean);
 
       return {
@@ -1162,7 +1170,7 @@ function renderListaHabilitadosArbitros(nombreCategoria) {
   container.innerHTML = `
     <div class="card habilitados-panel">
       <h3>Habilitados para arbitros</h3>
-      <p class="note">${habilitados} habilitado${habilitados === 1 ? "" : "s"} de ${filas.length} jugador${filas.length === 1 ? "" : "es"}${equipoFiltro ? ` - ${escapeHtml(equipoFiltro)}` : ""}${estadoFiltro ? ` - filtro ${escapeHtml(estadoFiltro)}` : ""}. Se consideran aprobados y vigentes: buena fe, seguro, certificado/estudio, deslinde/declaracion jurada y pase.</p>
+      <p class="note">${habilitados} habilitado${habilitados === 1 ? "" : "s"} de ${filas.length} jugador${filas.length === 1 ? "" : "es"}${equipoFiltro ? ` - ${escapeHtml(equipoFiltro)}` : ""}${estadoFiltro ? ` - filtro ${escapeHtml(estadoFiltro)}` : ""}. Bloquean habilitacion: buena fe, seguro, certificado/estudio y deslinde/declaracion jurada. El pase queda como control informativo para traspasos.</p>
       <table class="doc-table habilitados-table">
         <thead>
           <tr>
@@ -5411,7 +5419,7 @@ function exportarHabilitadosCsv() {
     "Seguro",
     "Estudio medico / certificado",
     "Deslinde / declaracion jurada",
-    "Pase",
+    "Pase (no bloqueante)",
     "Habilitado",
     "Faltantes"
   ];
@@ -5611,7 +5619,7 @@ function descargarPlanPruebaDocumental() {
           <li>Elegir categoría ${escapeHtml(categoria)} y club ${escapeHtml(equipoFiltro)}.</li>
           <li>Cargar documentos de equipo: lista de buena fe y seguro.</li>
           <li>Cargar o revisar jugadores del club.</li>
-          <li>Para cada jugador, cargar certificado/estudio, declaración jurada/deslinde y pase.</li>
+          <li>Para cada jugador, cargar certificado/estudio y declaración jurada/deslinde. El pase se controla solo cuando corresponde por traspaso.</li>
         </ol>
       </div>
 
@@ -5628,7 +5636,7 @@ function descargarPlanPruebaDocumental() {
 
       <div class="box">
         <h2>Resultado esperado</h2>
-        <p>Un jugador queda habilitado solamente si tiene aprobados y vigentes: buena fe del equipo, seguro del equipo, certificado/estudio, declaración jurada/deslinde y pase.</p>
+        <p>Un jugador queda habilitado solamente si tiene aprobados y vigentes: buena fe del equipo, seguro del equipo, certificado/estudio y declaración jurada/deslinde. El pase no bloquea la habilitacion general; queda como archivo de control para traspasos.</p>
       </div>
 
       <h2>Estado actual del club</h2>
