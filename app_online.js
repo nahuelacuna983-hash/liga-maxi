@@ -78,6 +78,10 @@ function claveCachePublica(tipo, nombreCategoria) {
   return `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}_${tipo}_${slugify(nombreCategoria || "general")}`;
 }
 
+function claveProgramacionEmailDestino() {
+  return `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}_programacion_email_destino`;
+}
+
 function leerCachePublica(tipo, nombreCategoria, maxEdadMs = 10 * 60 * 1000) {
   try {
     const raw = localStorage.getItem(claveCachePublica(tipo, nombreCategoria));
@@ -4749,6 +4753,55 @@ function generarTextoProgramacion(nombreCategoria) {
   return partes.join("\n");
 }
 
+function generarAsuntoProgramacion(nombreCategoria) {
+  const filas = obtenerFilasProgramacion(nombreCategoria)
+    .filter(filaProgramacionLista)
+    .sort((a, b) => `${a.fecha_partido} ${a.hora}`.localeCompare(`${b.fecha_partido} ${b.hora}`));
+
+  const fechas = [...new Set(filas.map((fila) => fechaPartidoLabel(fila.fecha_partido)).filter(Boolean))];
+  const fechaTexto = fechas.length === 1 ? ` - ${fechas[0]}` : "";
+  return `Programacion arbitral ${APP_CONFIG.organizacionActiva.torneoLabel} - ${nombreCategoria}${fechaTexto}`;
+}
+
+function cargarEmailProgramacionDestino() {
+  const input = $("programacion-email-destino");
+  if (!input) return;
+  input.value = localStorage.getItem(claveProgramacionEmailDestino()) || "";
+}
+
+function guardarEmailProgramacionDestino() {
+  const input = $("programacion-email-destino");
+  if (!input) return;
+  localStorage.setItem(claveProgramacionEmailDestino(), input.value.trim());
+}
+
+function abrirCorreoProgramacion() {
+  const categoria = $("asociacion-categoria")?.value || "";
+  const destino = $("programacion-email-destino")?.value.trim() || "";
+  const status = $("asociacion-status");
+  const texto = generarTextoProgramacion(categoria);
+
+  if (!destino) {
+    setStatus(status, "Carga el correo destino para abrir el borrador.", "warn");
+    $("programacion-email-destino")?.focus();
+    return;
+  }
+
+  if (!texto) {
+    setStatus(status, "No hay partidos con dia, hora y cancha para enviar.", "warn");
+    return;
+  }
+
+  guardarEmailProgramacionDestino();
+  const salida = $("programacion-mensaje");
+  if (salida) salida.value = texto;
+
+  const asunto = generarAsuntoProgramacion(categoria);
+  const mailto = `mailto:${encodeURIComponent(destino)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(texto)}`;
+  window.location.href = mailto;
+  setStatus(status, "Se abrio el borrador del correo. Revisalo y envialo desde tu casilla.", "ok");
+}
+
 async function copiarProgramacionAsociacion() {
   const categoria = $("asociacion-categoria")?.value || "";
   const status = $("asociacion-status");
@@ -5729,7 +5782,10 @@ async function inicializarAsociacion() {
   $("asociacion-playoffs")?.addEventListener("click", guardarResultadoPlayoffAsociacion);
   $("programacion-tabla")?.addEventListener("click", manejarProgramacionClick);
   $("programacion-copiar")?.addEventListener("click", copiarProgramacionAsociacion);
+  $("programacion-abrir-correo")?.addEventListener("click", abrirCorreoProgramacion);
+  $("programacion-email-destino")?.addEventListener("input", guardarEmailProgramacionDestino);
   $("programacion-marcar-enviado")?.addEventListener("click", marcarProgramacionListaEnviada);
+  cargarEmailProgramacionDestino();
   $("cierre-descargar-acta")?.addEventListener("click", generarActaCierreTorneo);
   $("documentacion-tabla").addEventListener("click", revisarDocumentoAsociacion);
   $("documentacion-tabla").addEventListener("click", verDocumentoAsociacion);

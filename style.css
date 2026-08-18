@@ -1893,6 +1893,22 @@ td:nth-child(2) {
   }
 }
 
+.programacion-actions-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.programacion-actions-head button {
+  flex: 1 1 180px;
+}
+
+.programacion-message {
+  min-height: 170px;
+  resize: vertical;
+}
+
 @media (max-width: 920px) and (orientation: landscape) {
   #publico-tabla-wrap {
     overflow-x: visible;

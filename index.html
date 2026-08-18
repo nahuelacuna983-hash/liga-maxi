@@ -602,6 +602,10 @@
       margin: 12px 0;
     }
 
+    .programacion-actions-head button {
+      flex: 1 1 180px;
+    }
+
     .programacion-message {
       min-height: 140px;
       resize: vertical;
@@ -2320,8 +2324,11 @@
     <h3>Programacion y arbitros</h3>
     <p class="note">Cargá día, hora y cancha; la app arma el mensaje para enviar y deja registro de lo informado.</p>
     <div id="programacion-resumen" class="doc-summary"></div>
+    <label for="programacion-email-destino">Correo destino</label>
+    <input id="programacion-email-destino" type="email" placeholder="arbitros@asociacion.com" autocomplete="email" />
     <div class="programacion-actions-head">
       <button id="programacion-copiar" class="primary" type="button">Copiar comunicacion</button>
+      <button id="programacion-abrir-correo" class="secondary" type="button">Abrir correo</button>
       <button id="programacion-marcar-enviado" class="secondary" type="button">Marcar listos como enviados</button>
     </div>
     <textarea id="programacion-mensaje" class="programacion-message" readonly placeholder="Aca va a quedar el texto generado para enviar a Asociacion/arbitros."></textarea>
@@ -2375,7 +2382,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260817-habilitados-visual"></script>
+<script src="app_online.js?v=20260818-programacion-correo"></script>
 
 <script>
   if ("serviceWorker" in navigator) {
