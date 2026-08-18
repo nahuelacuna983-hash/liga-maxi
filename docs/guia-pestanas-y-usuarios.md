@@ -256,14 +256,46 @@ Requiere clave administrativa o permisos.
 
 Subpestanas actuales:
 
+- Inicio
 - Operacion
 - Documentacion
+- Habilitados
 - Torneos
 - Programacion
 - Informes
 - Cierres
 - Permisos
 - Auditoria
+
+## Asociacion > Inicio
+
+Objetivo: tablero rapido para no operar a ciegas.
+
+Contenido:
+
+- resumen de partidos pendientes
+- partidos sin programar
+- programacion informada
+- documentos sin aprobar
+- jugadores habilitados/no habilitados
+- estado de cierre de la categoria
+- accesos rapidos a Programacion, Documentacion, Habilitados, Operacion e Informes
+
+Funcionamiento:
+
+- Lee la categoria seleccionada en Asociacion.
+- Usa datos ya cargados en memoria por la app.
+- No modifica resultados, documentacion ni programacion.
+- Sirve como primer control antes de entrar a una tarea concreta.
+
+Incidencia por usuario:
+
+- Asociacion/Admin: consulta y navegacion operativa.
+- Delegado/Publico: no acceden.
+
+Escritura de datos: no.
+
+Riesgo operativo: bajo.
 
 ## Asociacion > Operacion
 
@@ -310,11 +342,7 @@ Contenido:
 - botones de ver archivo
 - revision/aprobacion/observacion
 - administracion de jugadores y bajas
-- lista de habilitados para arbitros
-- filtro de habilitados/no habilitados
-- exportacion CSV de habilitados
-- descarga imprimible de habilitados
-- descarga de plan de prueba documental por club
+- Drive documental para revisar metadatos importados
 
 Funcionamiento:
 
@@ -322,10 +350,7 @@ Funcionamiento:
 - Muestra estado: pendiente, cargado, aprobado, observado/rechazado, vencido o por vencer.
 - Permite aprobar u observar documentos.
 - Permite administrar jugadores mal cargados o con baja solicitada.
-- Genera una lista de habilitados por categoria y por club.
-- La lista considera buena fe y seguro aprobados a nivel equipo, mas certificado/estudio, deslinde/declaracion jurada y pase aprobados a nivel jugador.
-- La lista permite filtrar habilitados/no habilitados, exportar CSV o descargar una version imprimible para compartir.
-- El plan de prueba documental sirve para validar un club con datos reales: indica que debe cargar el delegado, que debe revisar Asociacion y que estado deberia verse en habilitados/auditoria.
+- Permite revisar documentos detectados desde Drive sin publicar enlaces sensibles.
 
 Incidencia por usuario:
 
@@ -336,6 +361,39 @@ Incidencia por usuario:
 Escritura de datos: si.
 
 Riesgo operativo: medio/alto. Afecta habilitaciones y estado documental.
+
+## Asociacion > Habilitados
+
+Objetivo: control deportivo simple para asociacion y arbitros.
+
+Contenido:
+
+- club operativo
+- filtro de habilitados/no habilitados
+- resumen por equipo
+- listado de jugadores habilitados
+- listado de faltantes por jugador
+- exportacion CSV de habilitados
+- descarga imprimible de lista
+- descarga de plan de prueba documental por club
+
+Funcionamiento:
+
+- Calcula habilitacion desde la documentacion aprobada.
+- La lista considera buena fe y seguro aprobados a nivel equipo.
+- Para cada jugador considera certificado medico/estudio complementario, declaracion jurada/deslinde y pase.
+- Si un documento requerido esta pendiente, observado, rechazado o vencido, el jugador queda como no habilitado.
+- No muestra archivos medicos ni enlaces sensibles.
+
+Incidencia por usuario:
+
+- Asociacion/Admin: consulta, exporta y comparte.
+- Arbitros futuro: deberian ver una version acotada de esta misma informacion.
+- Delegado/Publico: no acceden en el estado actual.
+
+Escritura de datos: no para consultar/exportar. El plan de prueba solo genera un archivo local descargable.
+
+Riesgo operativo: bajo/medio. No cambia datos, pero informa habilitaciones deportivas.
 
 ## Asociacion > Torneos
 
@@ -566,6 +624,7 @@ Riesgo operativo: bajo.
 | Publicar fixture | No | No | Si, con candados | Si |
 | Programar horarios/canchas | No | No | Si | Si |
 | Generar informes | No | No | Si | Si |
+| Ver habilitados | No | No | Si | Si |
 | Ver auditoria | No | No | Si | Si |
 | Administrar permisos | No | No | Parcial/futuro | Si |
 

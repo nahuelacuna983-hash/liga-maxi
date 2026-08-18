@@ -272,9 +272,71 @@ function mostrarPanelAsociacion(panel = "documentacion") {
   if (panel === "uso" && estado.asociacionDesbloqueada) {
     actualizarEstadisticasUso();
   }
+  if (panel === "inicio" && estado.asociacionDesbloqueada) {
+    renderInicioAsociacion($("asociacion-categoria")?.value || "");
+  }
+  if (panel === "habilitados" && estado.asociacionDesbloqueada) {
+    renderListaHabilitadosArbitros($("asociacion-categoria")?.value || "");
+  }
   if (panel === "cierres" && estado.asociacionDesbloqueada) {
     renderCierreAsociacion($("asociacion-categoria")?.value || "");
   }
+}
+
+function renderInicioAsociacion(nombreCategoria) {
+  const resumen = $("asociacion-inicio-resumen");
+  const alertas = $("asociacion-inicio-alertas");
+  if (!resumen || !alertas) return;
+
+  if (!nombreCategoria) {
+    resumen.innerHTML = "";
+    alertas.innerHTML = `<div class="empty">Elegi una categoria para ver el estado operativo.</div>`;
+    return;
+  }
+
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  const partidosJugados = partidos.filter(partidoTieneResultado).length;
+  const partidosPendientes = partidos.length - partidosJugados;
+  const filasProgramacion = obtenerFilasProgramacion(nombreCategoria);
+  const programacionSinDatos = filasProgramacion.filter((fila) => !filaProgramacionLista(fila)).length;
+  const programacionEnviada = filasProgramacion.filter((fila) => fila.estado === "enviado" || fila.estado === "confirmado").length;
+  const documentosEquipo = categoria ? estado.documentosPorCategoriaId[categoria.id] || [] : [];
+  const documentosJugador = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
+  const docsSinAprobar = documentosEquipo
+    .concat(documentosJugador)
+    .filter((doc) => (doc.status || "pendiente") !== "aprobado").length;
+  const habilitados = calcularHabilitadosCategoria(nombreCategoria);
+  const habilitadosSi = habilitados.filter((fila) => fila.habilitado === "SI").length;
+  const habilitadosNo = habilitados.filter((fila) => fila.habilitado !== "SI").length;
+  const cierre = calcularEstadoCierreTorneo(nombreCategoria);
+
+  resumen.innerHTML = `
+    <div class="doc-pill"><strong>${partidosPendientes}</strong><span>Partidos pendientes</span></div>
+    <div class="doc-pill ${programacionSinDatos ? "doc-pill-alert" : ""}"><strong>${programacionSinDatos}</strong><span>Sin programar</span></div>
+    <div class="doc-pill"><strong>${programacionEnviada}</strong><span>Informados</span></div>
+    <div class="doc-pill ${docsSinAprobar ? "doc-pill-alert" : ""}"><strong>${docsSinAprobar}</strong><span>Docs sin aprobar</span></div>
+    <div class="doc-pill"><strong>${habilitadosSi}</strong><span>Habilitados</span></div>
+    <div class="doc-pill ${habilitadosNo ? "doc-pill-alert" : ""}"><strong>${habilitadosNo}</strong><span>No habilitados</span></div>
+    <div class="doc-pill ${cierre.listoParaCerrar ? "" : "doc-pill-alert"}"><strong>${cierre.listoParaCerrar ? "Si" : "No"}</strong><span>Listo para cierre</span></div>
+  `;
+
+  const items = [];
+  if (partidosPendientes) items.push(`Quedan ${partidosPendientes} partido(s) de fase regular sin resultado.`);
+  if (cierre.playoffsPendientes) items.push(`Quedan ${cierre.playoffsPendientes} partido(s) de playoffs sin resultado.`);
+  if (programacionSinDatos) items.push(`Hay ${programacionSinDatos} partido(s) sin dia, hora o cancha.`);
+  if (docsSinAprobar) items.push(`Hay ${docsSinAprobar} documento(s) pendientes de aprobacion.`);
+  if (habilitadosNo) items.push(`Hay ${habilitadosNo} jugador(es) no habilitados o con requisitos faltantes.`);
+  if (!items.length) items.push("No se detectan alertas principales para esta categoria.");
+
+  alertas.innerHTML = `
+    <div class="assoc-detail-box">
+      <h3>Alertas operativas</h3>
+      <ul class="assoc-home-alerts">
+        ${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+      </ul>
+    </div>
+  `;
 }
 
 function inicializarNavegacionAsociacion() {
@@ -289,7 +351,14 @@ function inicializarNavegacionAsociacion() {
     mostrarPanelAsociacion(button.dataset.asociacionPanel || "documentacion");
   });
 
-  mostrarPanelAsociacion("documentacion");
+  view.addEventListener("click", (event) => {
+    const button = event.target.closest(".assoc-shortcut-btn");
+    if (!button) return;
+
+    mostrarPanelAsociacion(button.dataset.asociacionShortcut || "inicio");
+  });
+
+  mostrarPanelAsociacion("inicio");
 }
 
 async function cargarCategorias() {
@@ -1011,12 +1080,58 @@ function actualizarFiltroEquiposHabilitados(nombreCategoria) {
   if (!select) return;
   const valorActual = select.value;
   const equipos = obtenerEquiposCategoria(nombreCategoria);
-  select.innerHTML = `<option value="">Todos los clubes</option>${equipos.map((equipo) =>
+  select.innerHTML = `<option value="">Elegir club</option>${equipos.map((equipo) =>
     `<option value="${escapeHtml(equipo)}">${escapeHtml(equipo)}</option>`
   ).join("")}`;
   if (equipos.some((equipo) => nombresEquipoCoinciden(equipo, valorActual))) {
     select.value = valorActual;
   }
+}
+
+function equipoOperativoSeleccionado() {
+  return $("habilitados-filtro-equipo")?.value || "";
+}
+
+function resumenHabilitadosPorEquipo(filas) {
+  const mapa = new Map();
+  filas.forEach((fila) => {
+    const key = fila.equipo || "Sin equipo";
+    if (!mapa.has(key)) {
+      mapa.set(key, { equipo: key, total: 0, habilitados: 0, noHabilitados: 0 });
+    }
+    const item = mapa.get(key);
+    item.total += 1;
+    if (fila.habilitado === "SI") item.habilitados += 1;
+    else item.noHabilitados += 1;
+  });
+
+  return Array.from(mapa.values()).sort((a, b) => String(a.equipo).localeCompare(String(b.equipo)));
+}
+
+function renderSelectorHabilitadosPorEquipo(filas, estadoFiltro) {
+  const resumen = resumenHabilitadosPorEquipo(filas);
+  const totalJugadores = filas.length;
+  const totalHabilitados = filas.filter((fila) => fila.habilitado === "SI").length;
+
+  return `
+    <div class="card habilitados-panel">
+      <div class="habilitados-head">
+        <div>
+          <h3>Habilitados para arbitros</h3>
+          <p class="note">${totalHabilitados} habilitado${totalHabilitados === 1 ? "" : "s"} de ${totalJugadores} jugador${totalJugadores === 1 ? "" : "es"}${estadoFiltro ? ` - filtro ${escapeHtml(estadoFiltro)}` : ""}. Elegi un club para ver habilitados, documentos y auditoria sin mezclar equipos.</p>
+        </div>
+      </div>
+      <div class="habilitados-team-grid">
+        ${resumen.map((item) => `
+          <button class="habilitados-team-card ${item.noHabilitados ? "habilitados-team-card-warn" : "habilitados-team-card-ok"}" type="button" data-habilitados-equipo="${escapeHtml(item.equipo)}">
+            <strong>${escapeHtml(item.equipo)}</strong>
+            <span>${item.habilitados}/${item.total} habilitados</span>
+            ${item.noHabilitados ? `<small>${item.noHabilitados} con faltantes</small>` : `<small>Completo</small>`}
+          </button>
+        `).join("")}
+      </div>
+    </div>
+  `;
 }
 
 function renderListaHabilitadosArbitros(nombreCategoria) {
@@ -1026,7 +1141,7 @@ function renderListaHabilitadosArbitros(nombreCategoria) {
   actualizarFiltroEquiposHabilitados(nombreCategoria);
   const filas = calcularHabilitadosCategoria(nombreCategoria);
   const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
-  const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+  const equipoFiltro = equipoOperativoSeleccionado();
   const estadoFiltro = $("habilitados-filtro-estado")?.value || "";
 
   if (!filas.length) {
@@ -1039,14 +1154,18 @@ function renderListaHabilitadosArbitros(nombreCategoria) {
     return;
   }
 
+  if (!equipoFiltro) {
+    container.innerHTML = renderSelectorHabilitadosPorEquipo(filas, estadoFiltro);
+    return;
+  }
+
   container.innerHTML = `
-    <div class="card">
+    <div class="card habilitados-panel">
       <h3>Habilitados para arbitros</h3>
       <p class="note">${habilitados} habilitado${habilitados === 1 ? "" : "s"} de ${filas.length} jugador${filas.length === 1 ? "" : "es"}${equipoFiltro ? ` - ${escapeHtml(equipoFiltro)}` : ""}${estadoFiltro ? ` - filtro ${escapeHtml(estadoFiltro)}` : ""}. Se consideran aprobados y vigentes: buena fe, seguro, certificado/estudio, deslinde/declaracion jurada y pase.</p>
-      <table class="doc-table">
+      <table class="doc-table habilitados-table">
         <thead>
           <tr>
-            <th>Equipo</th>
             <th>Jugador</th>
             <th>DNI</th>
             <th>Nro</th>
@@ -1061,8 +1180,7 @@ function renderListaHabilitadosArbitros(nombreCategoria) {
         </thead>
         <tbody>
           ${filas.map((fila) => `
-            <tr>
-              <td>${escapeHtml(fila.equipo)}</td>
+            <tr class="${fila.habilitado === "SI" ? "habilitados-row-ok" : "habilitados-row-no"}">
               <td>${escapeHtml(fila.apellidoNombre)}</td>
               <td>${escapeHtml(fila.dni)}</td>
               <td>${escapeHtml(fila.dorsal)}</td>
@@ -1201,13 +1319,20 @@ function renderDocumentacionAsociacion(nombreCategoria) {
 
   if (!resumen || !tabla) return;
 
-  const equipos = obtenerEquiposCategoria(nombreCategoria);
+  const equipoOperativo = equipoOperativoSeleccionado();
+  const equiposCategoria = obtenerEquiposCategoria(nombreCategoria);
+  const equipos = equipoOperativo
+    ? equiposCategoria.filter((equipo) => nombresEquipoCoinciden(equipo, equipoOperativo))
+    : [];
   const documentosRequeridos = obtenerDocumentosEquipo();
   const documentosJugador = obtenerDocumentosJugador();
   const filtroEstado = $("documentacion-filtro-estado")?.value || "";
   const filtroVencimiento = $("documentacion-filtro-vencimiento")?.value || "";
   const filtroTexto = normalizarTexto($("documentacion-buscar")?.value || "");
-  const documentosJugadores = estado.documentosJugadoresPorCategoriaId[estado.categorias.find((cat) => cat.nombre === nombreCategoria)?.id] || [];
+  const documentosJugadoresTodos = estado.documentosJugadoresPorCategoriaId[estado.categorias.find((cat) => cat.nombre === nombreCategoria)?.id] || [];
+  const documentosJugadores = equipoOperativo
+    ? documentosJugadoresTodos.filter((documento) => nombresEquipoCoinciden(documento.equipo_nombre, equipoOperativo))
+    : documentosJugadoresTodos;
   const totalEsperado = equipos.length * documentosRequeridos.length;
   const documentos = equipos.flatMap((equipo) =>
     documentosRequeridos.map((requisito) => obtenerDocumentoEquipo(nombreCategoria, equipo, requisito))
@@ -1225,7 +1350,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
   }, {});
 
   resumen.innerHTML = `
-    <div class="doc-pill"><strong>${equipos.length}</strong><span>Equipos</span></div>
+    <div class="doc-pill"><strong>${equipoOperativo ? 1 : equiposCategoria.length}</strong><span>${equipoOperativo ? "Club" : "Equipos"}</span></div>
     <div class="doc-pill"><strong>${documentosRequeridos.length}</strong><span>Requisitos</span></div>
     <div class="doc-pill"><strong>${documentosJugadores.length}</strong><span>Docs jugador</span></div>
     <div class="doc-pill"><strong>${resumenEstados.pendiente || 0}</strong><span>Pendientes</span></div>
@@ -1235,6 +1360,17 @@ function renderDocumentacionAsociacion(nombreCategoria) {
     <div class="doc-pill doc-pill-alert"><strong>${(resumenVencimientos.vencido || 0) + (resumenVencimientos.por_vencer || 0)}</strong><span>Vencidos/por vencer</span></div>
     <div class="doc-pill"><strong>${totalEsperado}</strong><span>Total esperado</span></div>
   `;
+
+  if (!equipoOperativo) {
+    estado.filasDocumentacionAsociacion = [];
+    tabla.innerHTML = `
+      <div class="doc-scope-note">
+        <strong>Elegí un club operativo</strong>
+        <span>La documentación, los jugadores y la lista para árbitros se filtran por el club seleccionado para evitar mezclar planteles.</span>
+      </div>
+    `;
+    return;
+  }
 
   if (!equipos.length) {
     estado.filasDocumentacionAsociacion = [];
@@ -1355,6 +1491,7 @@ function renderDocumentacionDriveAsociacion(nombreCategoria) {
 
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const rows = categoria ? estado.driveDocumentosPorCategoriaId[categoria.id] || [] : [];
+  const equipoOperativo = equipoOperativoSeleccionado();
   const filtroEstado = $("drive-doc-estado")?.value || "";
   const filtroMatch = $("drive-doc-match")?.value || "";
   const filtroTexto = normalizarTexto($("drive-doc-buscar")?.value || "");
@@ -1369,7 +1506,11 @@ function renderDocumentacionDriveAsociacion(nombreCategoria) {
     return;
   }
 
-  const filtradas = rows.filter((row) => {
+  const rowsEquipo = equipoOperativo
+    ? rows.filter((row) => nombresEquipoCoinciden(row.equipo_nombre, equipoOperativo))
+    : rows;
+
+  const filtradas = rowsEquipo.filter((row) => {
     const texto = normalizarTexto([
       row.equipo_nombre,
       row.player_name,
@@ -1385,20 +1526,20 @@ function renderDocumentacionDriveAsociacion(nombreCategoria) {
       (!filtroTexto || texto.includes(filtroTexto));
   });
 
-  const resumenEstados = rows.reduce((acc, row) => {
+  const resumenEstados = rowsEquipo.reduce((acc, row) => {
     acc[row.status || "pendiente"] = (acc[row.status || "pendiente"] || 0) + 1;
     acc[row.match_status || "sin_asociar"] = (acc[row.match_status || "sin_asociar"] || 0) + 1;
     return acc;
   }, {});
 
   resumen.innerHTML = `
-    <div class="doc-pill"><strong>${rows.length}</strong><span>Drive</span></div>
+    <div class="doc-pill"><strong>${rowsEquipo.length}</strong><span>Drive</span></div>
     <div class="doc-pill"><strong>${resumenEstados.exacto || 0}</strong><span>Exactos</span></div>
     <div class="doc-pill doc-pill-alert"><strong>${(resumenEstados.dudoso || 0) + (resumenEstados.sin_jugador || 0) + (resumenEstados.sin_asociar || 0)}</strong><span>Para revisar</span></div>
     <div class="doc-pill"><strong>${resumenEstados.vencido || 0}</strong><span>Vencidos</span></div>
   `;
 
-  if (!rows.length) {
+  if (!rowsEquipo.length) {
     tabla.innerHTML = `<div class="empty">No hay metadatos de Drive importados para esta categoria.</div>`;
     return;
   }
@@ -1565,6 +1706,7 @@ function renderAccionRevisionAsociacion(documento, scope = "team") {
 function renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugador) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const documentos = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
+  const equipoOperativo = equipoOperativoSeleccionado();
   const filtroEstado = $("documentacion-filtro-estado")?.value || "";
   const filtroTexto = normalizarTexto($("documentacion-buscar")?.value || "");
 
@@ -1592,7 +1734,8 @@ function renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugad
       estadoDocumentoLabel(documento)
     ].join(" "));
 
-    return (!filtroEstado || status === filtroEstado) &&
+    return (!equipoOperativo || nombresEquipoCoinciden(documento.equipo_nombre, equipoOperativo)) &&
+      (!filtroEstado || status === filtroEstado) &&
       (!filtroTexto || textoFila.includes(filtroTexto));
   });
 
@@ -1953,6 +2096,15 @@ function renderBotonVerDocumentoDelegado(documento, scope = "team") {
       data-document-scope="${escapeHtml(scope)}"
     >${multiple ? "Ver archivos" : "Ver"}</button>
   `;
+}
+
+function esUrlDocumentoExterno(storagePath) {
+  return /^https?:\/\//i.test(String(storagePath || ""));
+}
+
+function abrirDocumentoExterno(documento, status) {
+  window.open(documento.storage_path, "_blank", "noopener");
+  setStatus(status, "Archivo abierto desde Drive en una pestaña nueva.", "ok");
 }
 
 function renderResumenDocumentalDelegado(categoria, equipo, documentosRequeridos) {
@@ -4866,6 +5018,11 @@ async function verDocumentoAsociacion(event) {
     return;
   }
 
+  if (esUrlDocumentoExterno(documento.storage_path)) {
+    abrirDocumentoExterno(documento, status);
+    return;
+  }
+
   setStatus(status, "Abriendo archivo...", "");
 
   const { data, error } = await supabaseClient.storage
@@ -4970,6 +5127,11 @@ async function verDocumentoDelegado(event) {
 
   if (scope === "team" && permiteMultiplesArchivos(documento.requirement_nombre)) {
     await verArchivosMultiplesDocumento(documento, status);
+    return;
+  }
+
+  if (esUrlDocumentoExterno(documento.storage_path)) {
+    abrirDocumentoExterno(documento, status);
     return;
   }
 
@@ -5115,6 +5277,7 @@ async function cargarDatosAsociacionActual() {
   renderDocumentacionDriveAsociacion(categoria);
   renderProgramacionAsociacion(categoria);
   renderCierreAsociacion(categoria);
+  renderInicioAsociacion(categoria);
   setStatus(status, "", "");
 }
 
@@ -5224,6 +5387,13 @@ function descargarCsv(nombreArchivo, encabezado, rows) {
 function exportarHabilitadosCsv() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
+  const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+
+  if (!equipoFiltro) {
+    setStatus(status, "Elegí un club antes de exportar la lista de habilitados.", "warn");
+    return;
+  }
+
   const filas = calcularHabilitadosCategoria(categoria);
 
   if (!filas.length) {
@@ -5260,7 +5430,7 @@ function exportarHabilitadosCsv() {
     fila.faltantes
   ]);
   const fecha = new Date().toISOString().slice(0, 10);
-  descargarCsv(`habilitados-arbitros-${slugify(categoria)}-${fecha}.csv`, encabezado, rows);
+  descargarCsv(`habilitados-arbitros-${slugify(categoria)}-${slugify(equipoFiltro)}-${fecha}.csv`, encabezado, rows);
   setStatus(status, "Lista de habilitados exportada en CSV.", "ok");
 }
 
@@ -5268,6 +5438,12 @@ function descargarListaHabilitadosHtml() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+
+  if (!equipoFiltro) {
+    setStatus(status, "Elegí un club antes de descargar la lista para árbitros.", "warn");
+    return;
+  }
+
   const filas = calcularHabilitadosCategoria(categoria);
 
   if (!filas.length) {
@@ -5344,6 +5520,19 @@ function descargarListaHabilitadosHtml() {
   abrirInformeHtml(html);
   setStatus(status, `Lista de habilitados descargada como ${nombre}.`, "ok");
   mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
+}
+
+function seleccionarEquipoHabilitados(event) {
+  const button = event.target.closest(".habilitados-team-card");
+  if (!button) return;
+
+  const select = $("habilitados-filtro-equipo");
+  if (!select) return;
+
+  select.value = button.dataset.habilitadosEquipo || "";
+  const categoria = $("asociacion-categoria").value;
+  renderDocumentacionAsociacion(categoria);
+  renderDocumentacionDriveAsociacion(categoria);
 }
 
 function descargarPlanPruebaDocumental() {
@@ -5485,6 +5674,7 @@ async function inicializarAsociacion() {
     renderDocumentacionDriveAsociacion(categoria);
     renderProgramacionAsociacion(categoria);
     renderCierreAsociacion(categoria);
+    renderInicioAsociacion(categoria);
     setStatus($("asociacion-status"), "", "");
   });
 
@@ -5529,11 +5719,14 @@ async function inicializarAsociacion() {
   });
   $("documentacion-exportar").addEventListener("click", exportarDocumentacionCsv);
   $("habilitados-filtro-equipo")?.addEventListener("change", () => {
-    renderListaHabilitadosArbitros($("asociacion-categoria").value);
+    const categoria = $("asociacion-categoria").value;
+    renderDocumentacionAsociacion(categoria);
+    renderDocumentacionDriveAsociacion(categoria);
   });
   $("habilitados-filtro-estado")?.addEventListener("change", () => {
     renderListaHabilitadosArbitros($("asociacion-categoria").value);
   });
+  $("habilitados-tabla")?.addEventListener("click", seleccionarEquipoHabilitados);
   $("habilitados-exportar-csv")?.addEventListener("click", exportarHabilitadosCsv);
   $("habilitados-descargar-html")?.addEventListener("click", descargarListaHabilitadosHtml);
   $("habilitados-plan-prueba")?.addEventListener("click", descargarPlanPruebaDocumental);

@@ -1512,6 +1512,24 @@
       margin-top: 0;
     }
 
+    .assoc-home-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .assoc-home-actions button {
+      min-width: 150px;
+    }
+
+    .assoc-home-alerts {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
     .assoc-permission-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -1772,8 +1790,10 @@
   </div>
 
   <div class="assoc-subnav" aria-label="Secciones de Asociacion">
-    <button class="assoc-nav-btn activo" type="button" data-asociacion-panel="operacion">Operacion</button>
+    <button class="assoc-nav-btn activo" type="button" data-asociacion-panel="inicio">Inicio</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="operacion">Operacion</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="documentacion">Documentacion</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="habilitados">Habilitados</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="torneo">Torneos</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="programacion">Programacion</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="informes">Informes</button>
@@ -1786,6 +1806,20 @@
     <div class="field">
       <label for="asociacion-categoria">Categoría</label>
       <select id="asociacion-categoria"></select>
+    </div>
+  </div>
+
+  <div class="card assoc-panel activa" data-asociacion-panel-view="inicio">
+    <h3>Inicio administrativo</h3>
+    <p class="note">Resumen rapido de la categoria seleccionada y accesos a las tareas principales.</p>
+    <div id="asociacion-inicio-resumen" class="doc-summary"></div>
+    <div id="asociacion-inicio-alertas"></div>
+    <div class="assoc-home-actions">
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="programacion">Programacion</button>
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="documentacion">Documentacion</button>
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="habilitados">Habilitados</button>
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="operacion">Operacion</button>
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="informes">Informes</button>
     </div>
   </div>
 
@@ -2014,7 +2048,7 @@
 
   </div>
 
-  <div class="card assoc-panel activa" data-asociacion-panel-view="operacion">
+  <div class="card assoc-panel" data-asociacion-panel-view="operacion">
   <h3>Operacion deportiva</h3>
   <p class="note">Correccion de fase regular, resoluciones administrativas y carga de resultados de playoffs.</p>
   <div class="row">
@@ -2095,31 +2129,6 @@
         <button id="documentacion-exportar" class="secondary" type="button">Exportar CSV</button>
       </div>
     </div>
-    <div class="doc-filters">
-      <div class="field">
-        <label for="habilitados-filtro-equipo">Lista arbitros por club</label>
-        <select id="habilitados-filtro-equipo">
-          <option value="">Todos los clubes</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="habilitados-filtro-estado">Estado habilitacion</label>
-        <select id="habilitados-filtro-estado">
-          <option value="">Todos</option>
-          <option value="SI">Solo habilitados</option>
-          <option value="NO">Solo no habilitados</option>
-        </select>
-      </div>
-      <div class="field doc-filter-action">
-        <button id="habilitados-exportar-csv" class="secondary" type="button">Exportar habilitados CSV</button>
-      </div>
-      <div class="field doc-filter-action">
-        <button id="habilitados-descargar-html" class="secondary" type="button">Descargar lista</button>
-      </div>
-      <div class="field doc-filter-action">
-        <button id="habilitados-plan-prueba" class="secondary" type="button">Plan de prueba</button>
-      </div>
-    </div>
     <div id="documentacion-resumen" class="doc-summary"></div>
     <div class="drive-doc-admin">
       <div class="drive-doc-head">
@@ -2158,8 +2167,38 @@
       <div id="drive-doc-resumen" class="doc-summary"></div>
       <div id="drive-doc-tabla" class="table-wrap"></div>
     </div>
-    <div id="habilitados-tabla" class="table-wrap"></div>
     <div id="documentacion-tabla" class="table-wrap"></div>
+  </div>
+
+  <div class="card assoc-panel" data-asociacion-panel-view="habilitados">
+    <h3>Habilitados</h3>
+    <p class="note">Listado operativo para control deportivo y arbitros. No expone archivos ni enlaces sensibles.</p>
+    <div class="doc-filters">
+      <div class="field">
+        <label for="habilitados-filtro-equipo">Club operativo</label>
+        <select id="habilitados-filtro-equipo">
+          <option value="">Elegir club</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="habilitados-filtro-estado">Estado habilitacion</label>
+        <select id="habilitados-filtro-estado">
+          <option value="">Todos</option>
+          <option value="SI">Solo habilitados</option>
+          <option value="NO">Solo no habilitados</option>
+        </select>
+      </div>
+      <div class="field doc-filter-action">
+        <button id="habilitados-exportar-csv" class="secondary" type="button">Exportar habilitados CSV</button>
+      </div>
+      <div class="field doc-filter-action">
+        <button id="habilitados-descargar-html" class="secondary" type="button">Descargar lista</button>
+      </div>
+      <div class="field doc-filter-action">
+        <button id="habilitados-plan-prueba" class="secondary" type="button">Plan de prueba</button>
+      </div>
+    </div>
+    <div id="habilitados-tabla" class="table-wrap"></div>
   </div>
 
   <div class="card assoc-panel" data-asociacion-panel-view="programacion">
@@ -2221,7 +2260,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260813-drive-documentacion-admin"></script>
+<script src="app_online.js?v=20260817-asociacion-habilitados-panel"></script>
 
 <script>
   if ("serviceWorker" in navigator) {
