@@ -1046,9 +1046,19 @@ function calcularHabilitadosCategoria(nombreCategoria) {
   const jugadores = categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : [];
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const estadoFiltro = $("habilitados-filtro-estado")?.value || "";
+  const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
+  const partidoFiltroDatos = obtenerPartidoHabilitadosSeleccionado(nombreCategoria, partidoFiltro);
+  const equiposPartido = partidoFiltroDatos
+    ? [partidoFiltroDatos.local, partidoFiltroDatos.visitante].filter(Boolean)
+    : [];
 
   return jugadores
-    .filter((jugador) => !equipoFiltro || nombresEquipoCoinciden(jugador.equipo_nombre, equipoFiltro))
+    .filter((jugador) => {
+      if (equiposPartido.length) {
+        return equiposPartido.some((equipo) => nombresEquipoCoinciden(jugador.equipo_nombre, equipo));
+      }
+      return !equipoFiltro || nombresEquipoCoinciden(jugador.equipo_nombre, equipoFiltro);
+    })
     .map((jugador) => {
       const buenaFe = buscarDocumentoEquipoPorTerminos(nombreCategoria, jugador.equipo_nombre, ["buena fe"]);
       const seguro = buscarDocumentoEquipoPorTerminos(nombreCategoria, jugador.equipo_nombre, ["seguro"]);
@@ -1085,6 +1095,33 @@ function calcularHabilitadosCategoria(nombreCategoria) {
       String(a.equipo).localeCompare(String(b.equipo)) ||
       String(a.apellidoNombre).localeCompare(String(b.apellidoNombre))
     );
+}
+
+function obtenerPartidoHabilitadosSeleccionado(nombreCategoria, partidoId = "") {
+  if (!partidoId) return null;
+  return (estado.partidosPorCategoria[nombreCategoria] || []).find((partido) => String(partido.id) === String(partidoId)) || null;
+}
+
+function actualizarFiltroPartidosHabilitados(nombreCategoria) {
+  const select = $("habilitados-filtro-partido");
+  if (!select) return;
+  const valorActual = select.value;
+  const partidos = (estado.partidosPorCategoria[nombreCategoria] || [])
+    .filter((partido) => partido.id && partido.local && partido.visitante)
+    .sort((a, b) =>
+      Number(a.jornada || 0) - Number(b.jornada || 0) ||
+      String(a.fecha || "").localeCompare(String(b.fecha || "")) ||
+      String(a.local || "").localeCompare(String(b.local || ""))
+    );
+
+  select.innerHTML = `<option value="">Todos los partidos</option>${partidos.map((partido) => {
+    const fecha = partido.fecha ? ` - ${fechaPartidoLabel(partido.fecha)}` : "";
+    return `<option value="${escapeHtml(partido.id)}">Fecha ${escapeHtml(partido.jornada || "-")}${escapeHtml(fecha)} - ${escapeHtml(partido.local)} vs ${escapeHtml(partido.visitante)}</option>`;
+  }).join("")}`;
+
+  if (partidos.some((partido) => String(partido.id) === String(valorActual))) {
+    select.value = valorActual;
+  }
 }
 
 function actualizarFiltroEquiposHabilitados(nombreCategoria) {
@@ -1180,21 +1217,62 @@ function renderVistaRapidaHabilitados(filas) {
   `;
 }
 
+function renderVistaHabilitadosPorPartido(filas, partido) {
+  const equipos = [partido.local, partido.visitante].filter(Boolean);
+
+  return `
+    <div class="habilitados-match-head">
+      <strong>Fecha ${escapeHtml(partido.jornada || "-")} - ${escapeHtml(partido.local)} vs ${escapeHtml(partido.visitante)}</strong>
+      <span>${escapeHtml(partido.fecha ? fechaPartidoLabel(partido.fecha) : "Fecha a confirmar")}</span>
+    </div>
+    <div class="habilitados-match-grid">
+      ${equipos.map((equipo) => {
+        const jugadoresEquipo = filas.filter((fila) => nombresEquipoCoinciden(fila.equipo, equipo));
+        const habilitados = jugadoresEquipo.filter((fila) => fila.habilitado === "SI").length;
+        const noHabilitados = jugadoresEquipo.length - habilitados;
+        return `
+          <section class="habilitados-match-team">
+            <div class="habilitados-match-team-title">
+              <strong>${escapeHtml(equipo)}</strong>
+              <span class="${noHabilitados ? "is-no" : "is-ok"}">${habilitados}/${jugadoresEquipo.length} habilitados</span>
+            </div>
+            ${renderVistaRapidaHabilitados(jugadoresEquipo)}
+          </section>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
 function renderListaHabilitadosArbitros(nombreCategoria) {
   const container = $("habilitados-tabla");
   if (!container) return;
 
+  actualizarFiltroPartidosHabilitados(nombreCategoria);
   actualizarFiltroEquiposHabilitados(nombreCategoria);
   const filas = calcularHabilitadosCategoria(nombreCategoria);
   const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
   const equipoFiltro = equipoOperativoSeleccionado();
   const estadoFiltro = $("habilitados-filtro-estado")?.value || "";
+  const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
+  const partidoSeleccionado = obtenerPartidoHabilitadosSeleccionado(nombreCategoria, partidoFiltro);
 
   if (!filas.length) {
     container.innerHTML = `
       <div class="card">
         <h3>Habilitados para arbitros</h3>
         <div class="empty">No hay jugadores${estadoFiltro ? ` con estado ${escapeHtml(estadoFiltro)}` : ""}${equipoFiltro ? ` para ${escapeHtml(equipoFiltro)}` : ""}.</div>
+      </div>
+    `;
+    return;
+  }
+
+  if (partidoSeleccionado) {
+    container.innerHTML = `
+      <div class="card habilitados-panel">
+        <h3>Habilitados para arbitros</h3>
+        <p class="note">${habilitados} habilitado${habilitados === 1 ? "" : "s"} de ${filas.length} jugador${filas.length === 1 ? "" : "es"} para este partido${estadoFiltro ? ` - filtro ${escapeHtml(estadoFiltro)}` : ""}. No expone archivos ni enlaces sensibles.</p>
+        ${renderVistaHabilitadosPorPartido(filas, partidoSeleccionado)}
       </div>
     `;
     return;
@@ -5480,13 +5558,40 @@ function descargarCsv(nombreArchivo, encabezado, rows) {
   URL.revokeObjectURL(url);
 }
 
+function contextoHabilitadosSeleccionado(categoria) {
+  const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+  const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
+  const partido = obtenerPartidoHabilitadosSeleccionado(categoria, partidoFiltro);
+
+  if (partido) {
+    return {
+      etiqueta: `Fecha ${partido.jornada || "-"} - ${partido.local} vs ${partido.visitante}`,
+      archivo: `fecha-${partido.jornada || "s-n"}-${partido.local}-vs-${partido.visitante}`
+    };
+  }
+
+  if (equipoFiltro) {
+    return {
+      etiqueta: equipoFiltro,
+      archivo: equipoFiltro
+    };
+  }
+
+  return {
+    etiqueta: "Categoria completa",
+    archivo: "categoria-completa"
+  };
+}
+
 function exportarHabilitadosCsv() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+  const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
+  const contexto = contextoHabilitadosSeleccionado(categoria);
 
-  if (!equipoFiltro) {
-    setStatus(status, "Elegí un club antes de exportar la lista de habilitados.", "warn");
+  if (!equipoFiltro && !partidoFiltro) {
+    setStatus(status, "Elegí un club o un partido antes de exportar la lista de habilitados.", "warn");
     return;
   }
 
@@ -5526,7 +5631,7 @@ function exportarHabilitadosCsv() {
     fila.faltantes
   ]);
   const fecha = new Date().toISOString().slice(0, 10);
-  descargarCsv(`habilitados-arbitros-${slugify(categoria)}-${slugify(equipoFiltro)}-${fecha}.csv`, encabezado, rows);
+  descargarCsv(`habilitados-arbitros-${slugify(categoria)}-${slugify(contexto.archivo)}-${fecha}.csv`, encabezado, rows);
   setStatus(status, "Lista de habilitados exportada en CSV.", "ok");
 }
 
@@ -5534,8 +5639,10 @@ function descargarListaHabilitadosHtml() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+  const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
+  const contexto = contextoHabilitadosSeleccionado(categoria);
 
-  if (!equipoFiltro) {
+  if (!equipoFiltro && !partidoFiltro) {
     setStatus(status, "Elegí un club antes de descargar la lista para árbitros.", "warn");
     return;
   }
@@ -5571,7 +5678,7 @@ function descargarListaHabilitadosHtml() {
     </head>
     <body>
       <h1>Lista de habilitados para arbitros</h1>
-      <p class="muted">${escapeHtml(APP_CONFIG.organizacionActiva.nombre)} - ${escapeHtml(categoria)}${equipoFiltro ? ` - ${escapeHtml(equipoFiltro)}` : ""}</p>
+      <p class="muted">${escapeHtml(APP_CONFIG.organizacionActiva.nombre)} - ${escapeHtml(categoria)} - ${escapeHtml(contexto.etiqueta)}</p>
       <p class="muted">Generado ${escapeHtml(fechaGeneracion)} - ${habilitados} habilitado${habilitados === 1 ? "" : "s"} de ${filas.length}</p>
       <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
       <table>
@@ -5612,7 +5719,7 @@ function descargarListaHabilitadosHtml() {
     </html>
   `;
 
-  const nombre = descargarInformeHtml(html, `habilitados-arbitros-${categoria}${equipoFiltro ? `-${equipoFiltro}` : ""}`);
+  const nombre = descargarInformeHtml(html, `habilitados-arbitros-${categoria}-${contexto.archivo}`);
   abrirInformeHtml(html);
   setStatus(status, `Lista de habilitados descargada como ${nombre}.`, "ok");
   mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
@@ -5627,8 +5734,7 @@ function seleccionarEquipoHabilitados(event) {
 
   select.value = button.dataset.habilitadosEquipo || "";
   const categoria = $("asociacion-categoria").value;
-  renderDocumentacionAsociacion(categoria);
-  renderDocumentacionDriveAsociacion(categoria);
+  renderListaHabilitadosArbitros(categoria);
 }
 
 function descargarPlanPruebaDocumental() {
@@ -5771,6 +5877,9 @@ async function inicializarAsociacion() {
     renderProgramacionAsociacion(categoria);
     renderCierreAsociacion(categoria);
     renderInicioAsociacion(categoria);
+    if (document.querySelector('.assoc-nav-btn.activo')?.dataset.asociacionPanel === "habilitados") {
+      renderListaHabilitadosArbitros(categoria);
+    }
     setStatus($("asociacion-status"), "", "");
   });
 
@@ -5818,11 +5927,15 @@ async function inicializarAsociacion() {
   });
   $("documentacion-exportar").addEventListener("click", exportarDocumentacionCsv);
   $("habilitados-filtro-equipo")?.addEventListener("change", () => {
+    if ($("habilitados-filtro-partido")) $("habilitados-filtro-partido").value = "";
     const categoria = $("asociacion-categoria").value;
-    renderDocumentacionAsociacion(categoria);
-    renderDocumentacionDriveAsociacion(categoria);
+    renderListaHabilitadosArbitros(categoria);
   });
   $("habilitados-filtro-estado")?.addEventListener("change", () => {
+    renderListaHabilitadosArbitros($("asociacion-categoria").value);
+  });
+  $("habilitados-filtro-partido")?.addEventListener("change", () => {
+    if ($("habilitados-filtro-equipo")) $("habilitados-filtro-equipo").value = "";
     renderListaHabilitadosArbitros($("asociacion-categoria").value);
   });
   $("habilitados-tabla")?.addEventListener("click", seleccionarEquipoHabilitados);

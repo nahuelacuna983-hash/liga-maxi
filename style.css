@@ -1909,6 +1909,62 @@ td:nth-child(2) {
   resize: vertical;
 }
 
+.habilitados-match-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  background: rgba(15, 23, 42, 0.28);
+}
+
+.habilitados-match-head span {
+  color: #dbeafe;
+  font-weight: 800;
+}
+
+.habilitados-match-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.habilitados-match-team {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.2);
+}
+
+.habilitados-match-team-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.habilitados-match-team-title span {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.habilitados-match-team-title span.is-ok {
+  background: rgba(16, 185, 129, 0.22);
+  color: #bbf7d0;
+}
+
+.habilitados-match-team-title span.is-no {
+  background: rgba(239, 68, 68, 0.24);
+  color: #fecaca;
+}
+
 @media (max-width: 920px) and (orientation: landscape) {
   #publico-tabla-wrap {
     overflow-x: visible;
