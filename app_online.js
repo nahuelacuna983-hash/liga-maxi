@@ -6171,6 +6171,50 @@ function nombresEquiposDesdePartidos(partidos) {
   return equipos;
 }
 
+function parsearEquiposPlanner(texto) {
+  const vistos = new Set();
+  const equipos = [];
+
+  String(texto || "")
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .forEach((nombre) => {
+      const key = normalizarTexto(nombre);
+      if (vistos.has(key)) return;
+      vistos.add(key);
+      equipos.push(nombre.toUpperCase());
+    });
+
+  return equipos;
+}
+
+function actualizarResumenEquiposPlanner(equipos = null) {
+  const resumen = $("planner-equipos-resumen");
+  const textarea = $("planner-equipos-manual");
+  if (!resumen) return;
+  const lista = equipos || parsearEquiposPlanner(textarea?.value || "");
+  resumen.textContent = lista.length
+    ? `${lista.length} equipo${lista.length === 1 ? "" : "s"} en la simulacion.`
+    : "Sin lista cargada.";
+}
+
+function cargarEquiposActualesPlanner(forzar = false) {
+  const textarea = $("planner-equipos-manual");
+  if (!textarea) return [];
+  if (textarea.value.trim() && !forzar) {
+    const existentes = parsearEquiposPlanner(textarea.value);
+    actualizarResumenEquiposPlanner(existentes);
+    return existentes;
+  }
+
+  const categoria = $("planner-categoria")?.value || "";
+  const equipos = obtenerEquiposCategoria(categoria);
+  textarea.value = equipos.join("\n");
+  actualizarResumenEquiposPlanner(equipos);
+  return equipos;
+}
+
 function generarRondaRobinPlanner(equiposOriginales) {
   const equipos = [...equiposOriginales];
   if (equipos.length % 2 !== 0) equipos.push(null);
@@ -6900,6 +6944,7 @@ function generarInformeSimulacionTorneo(simulacion) {
     categoria,
     competencia,
     equipos,
+    equiposLista,
     ruedas,
     frecuencia,
     diaTexto,
@@ -6968,6 +7013,23 @@ function generarInformeSimulacionTorneo(simulacion) {
         <p><strong>Formato:</strong> ${escapeHtml(formato.playoffsTexto)} - <strong>Clasificados:</strong> ${escapeHtml(String(formato.clasificados || "No aplica"))}</p>
         <p><strong>Promocion posterior:</strong> ${escapeHtml(formato.promocionTexto || "Sin partido extra")}</p>
       </div>
+
+      ${equiposLista?.length ? `
+        <h2>Equipos incluidos</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Equipo</th></tr>
+          </thead>
+          <tbody>
+            ${equiposLista.map((equipo, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${escapeHtml(equipo)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      ` : ""}
 
       ${sugerencias?.length ? `
         <div class="suggestions">
@@ -7531,13 +7593,42 @@ async function publicarFixtureSimuladoPlanner() {
  const plannerPartidosSemis = document.getElementById("planner-partidos-semis");
  const plannerFinal = document.getElementById("planner-final");
  const plannerPromocion = document.getElementById("planner-promocion");
+ const plannerCargarEquipos = document.getElementById("planner-cargar-equipos");
+ const plannerEquiposManual = document.getElementById("planner-equipos-manual");
 
 if (plannerCategoria) {
   configurarDefaultsPlanner();
+  cargarEquiposActualesPlanner(true);
   plannerCategoria.addEventListener("change", () => {
     configurarDefaultsPlanner();
+    cargarEquiposActualesPlanner(true);
     renderPreparacionTorneo();
   });
+}
+
+if (plannerCargarEquipos) {
+  plannerCargarEquipos.addEventListener("click", async () => {
+    const categoria = $("planner-categoria")?.value || "";
+    const status = $("planner-status");
+    if (status) status.innerHTML = `<div class="card" style="margin-top:10px;"><p>Cargando equipos actuales...</p></div>`;
+    try {
+      await refrescarCategoria(categoria, {
+        actualizarPublico: false,
+        incluirDocumentacion: false,
+        incluirPartidos: true,
+        incluirPlayoffs: false,
+        incluirProgramacion: false
+      });
+      cargarEquiposActualesPlanner(true);
+      if (status) status.innerHTML = `<div class="card" style="margin-top:10px;"><p class="ok">Equipos actuales cargados. Ahora podes ajustar ascensos y descensos antes de simular.</p></div>`;
+    } catch (error) {
+      if (status) status.innerHTML = `<div class="card" style="margin-top:10px;"><p class="error">No se pudieron cargar equipos: ${escapeHtml(error.message)}</p></div>`;
+    }
+  });
+}
+
+if (plannerEquiposManual) {
+  plannerEquiposManual.addEventListener("input", () => actualizarResumenEquiposPlanner());
 }
 
 if (plannerFinal) {
@@ -7628,7 +7719,8 @@ try {
 
 const partidos = estado.partidosPorCategoria[categoria] || [];
 let formato = detalleFormatoPlanner(categoria);
-const equiposLista = obtenerEquiposCategoria(categoria);
+let equiposLista = parsearEquiposPlanner($("planner-equipos-manual")?.value || "");
+if (!equiposLista.length) equiposLista = cargarEquiposActualesPlanner(true);
 const equipos = equiposLista.length;
 const partidosJugados = partidos.filter(partidoTieneResultado).length;
 const partidosPendientes = partidos.length - partidosJugados;
@@ -7735,6 +7827,7 @@ estado.ultimaSimulacionPlanner = {
   categoria,
   competencia,
   equipos,
+  equiposLista,
   ruedas,
   frecuencia,
   diaTexto: dia === "0" ? "Domingo" : "Miercoles",

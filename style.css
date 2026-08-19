@@ -1909,6 +1909,33 @@ td:nth-child(2) {
   resize: vertical;
 }
 
+.planner-team-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.planner-team-tools button {
+  width: auto;
+  min-width: 180px;
+}
+
+.planner-team-tools span {
+  color: #dbeafe;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.planner-team-list {
+  min-height: 150px;
+  resize: vertical;
+  line-height: 1.45;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .habilitados-match-head {
   display: flex;
   flex-wrap: wrap;

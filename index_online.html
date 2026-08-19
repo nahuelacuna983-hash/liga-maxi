@@ -1152,6 +1152,33 @@
       font-size: 13px;
     }
 
+    .planner-team-tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .planner-team-tools button {
+      width: auto;
+      min-width: 180px;
+    }
+
+    .planner-team-tools span {
+      color: #dbeafe;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .planner-team-list {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.45;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
     .planner-playoff-dates {
       border-top: 1px solid rgba(148, 163, 184, 0.2);
       margin-top: 12px;
@@ -2061,8 +2088,18 @@
     type="text"
     placeholder="Ej: 25-5-2026, 9-8-2026"
   >
-</div>
+      </div>
 
+    </div>
+
+    <div class="planner-rules-box">
+      <h4>Equipos para simular</h4>
+      <p>Usa una linea por equipo. Podes ajustar ascensos, descensos, bajas o invitados sin modificar la categoria real hasta publicar.</p>
+      <div class="planner-team-tools">
+        <button id="planner-cargar-equipos" class="secondary" type="button">Cargar equipos actuales</button>
+        <span id="planner-equipos-resumen">Sin lista cargada.</span>
+      </div>
+      <textarea id="planner-equipos-manual" class="planner-team-list" placeholder="Ej:&#10;UNION VECINAL&#10;SUD AMERICA&#10;GONNET"></textarea>
     </div>
 
     <div class="planner-rules-box">
@@ -2444,7 +2481,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260818-habilitados-partido"></script>
+<script src="app_online.js?v=20260819-planner-equipos"></script>
 
 <script>
   if ("serviceWorker" in navigator) {
