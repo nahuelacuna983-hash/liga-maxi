@@ -82,6 +82,10 @@ function claveProgramacionEmailDestino() {
   return `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}_programacion_email_destino`;
 }
 
+function claveSimulacionesPlanner() {
+  return `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}_planner_simulaciones`;
+}
+
 function leerCachePublica(tipo, nombreCategoria, maxEdadMs = 10 * 60 * 1000) {
   try {
     const raw = localStorage.getItem(claveCachePublica(tipo, nombreCategoria));
@@ -7059,6 +7063,104 @@ function generarInformeSimulacionTorneo(simulacion) {
   mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas. Si queres PDF, usa Imprimir / guardar PDF en la pestaña abierta.`);
 }
 
+function claveItemSimulacionPlanner(simulacion) {
+  return `${slugify(simulacion?.categoria || "categoria")}__${slugify(simulacion?.competencia || "competencia")}`;
+}
+
+function leerSimulacionesPlannerGuardadas() {
+  try {
+    const raw = localStorage.getItem(claveSimulacionesPlanner());
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    console.warn("No se pudieron leer simulaciones guardadas:", error.message);
+    return {};
+  }
+}
+
+function escribirSimulacionesPlannerGuardadas(simulaciones) {
+  localStorage.setItem(claveSimulacionesPlanner(), JSON.stringify(simulaciones || {}));
+}
+
+function guardarSimulacionPlanner(simulacion) {
+  if (!simulacion?.categoria || !simulacion?.competencia) return;
+  const simulaciones = leerSimulacionesPlannerGuardadas();
+  const key = claveItemSimulacionPlanner(simulacion);
+  simulaciones[key] = {
+    ...simulacion,
+    guardadaEn: new Date().toISOString()
+  };
+  escribirSimulacionesPlannerGuardadas(simulaciones);
+  renderSimulacionesPlannerGuardadas();
+}
+
+function renderSimulacionesPlannerGuardadas() {
+  const container = $("planner-simulaciones-guardadas");
+  if (!container) return;
+
+  const simulaciones = Object.entries(leerSimulacionesPlannerGuardadas())
+    .map(([key, simulacion]) => ({ key, simulacion }))
+    .sort((a, b) => String(b.simulacion.guardadaEn || "").localeCompare(String(a.simulacion.guardadaEn || "")));
+
+  if (!simulaciones.length) {
+    container.innerHTML = `<div class="empty">Todavia no hay simulaciones guardadas en este navegador.</div>`;
+    return;
+  }
+
+  container.innerHTML = simulaciones.map(({ key, simulacion }) => {
+    const fecha = simulacion.guardadaEn ? new Date(simulacion.guardadaEn).toLocaleString("es-AR") : "Sin fecha";
+    return `
+      <div class="planner-saved-item" data-simulacion-key="${escapeHtml(key)}">
+        <div>
+          <strong>${escapeHtml(simulacion.categoria)} - ${escapeHtml(simulacion.competencia)}</strong>
+          <span>${escapeHtml(fecha)} · ${escapeHtml(String(simulacion.equipos || 0))} equipos · ${escapeHtml(String(simulacion.jornadasTotales || 0))} jornadas · Final estimada ${escapeHtml(simulacion.fechaFinalEstimada || "-")}</span>
+        </div>
+        <div class="planner-saved-actions">
+          <button class="secondary planner-saved-download" type="button">Descargar</button>
+          <button class="secondary planner-saved-restore" type="button">Recuperar</button>
+          <button class="secondary planner-saved-delete" type="button">Borrar</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function manejarSimulacionesPlannerGuardadas(event) {
+  const item = event.target.closest?.(".planner-saved-item");
+  if (!item) return;
+  const key = item.dataset.simulacionKey || "";
+  const simulaciones = leerSimulacionesPlannerGuardadas();
+  const simulacion = simulaciones[key];
+  const status = $("planner-informe-status") || $("planner-status");
+  if (!simulacion) {
+    setStatus(status, "No se encontro esa simulacion guardada.", "warn");
+    renderSimulacionesPlannerGuardadas();
+    return;
+  }
+
+  if (event.target.closest(".planner-saved-delete")) {
+    delete simulaciones[key];
+    escribirSimulacionesPlannerGuardadas(simulaciones);
+    renderSimulacionesPlannerGuardadas();
+    setStatus(status, "Simulacion guardada borrada de este navegador.", "ok");
+    return;
+  }
+
+  if (event.target.closest(".planner-saved-restore")) {
+    estado.ultimaSimulacionPlanner = simulacion;
+    if ($("planner-categoria")) $("planner-categoria").value = simulacion.categoria;
+    if ($("planner-competencia")) $("planner-competencia").value = simulacion.competencia;
+    if ($("planner-equipos-manual")) $("planner-equipos-manual").value = (simulacion.equiposLista || []).join("\n");
+    actualizarResumenEquiposPlanner(simulacion.equiposLista || []);
+    setStatus(status, `Simulacion recuperada: ${simulacion.categoria} - ${simulacion.competencia}.`, "ok");
+    mostrarCartelInforme("Simulacion recuperada. Ya podes descargarla o usarla como referencia.", "ok");
+    return;
+  }
+
+  if (event.target.closest(".planner-saved-download")) {
+    generarInformeSimulacionTorneo(simulacion);
+  }
+}
+
 function descargarUltimaSimulacionPlanner() {
   const status = $("planner-informe-status") || $("planner-status");
   const simulacion = estado.ultimaSimulacionPlanner;
@@ -7631,6 +7733,9 @@ if (plannerEquiposManual) {
   plannerEquiposManual.addEventListener("input", () => actualizarResumenEquiposPlanner());
 }
 
+$("planner-simulaciones-guardadas")?.addEventListener("click", manejarSimulacionesPlannerGuardadas);
+renderSimulacionesPlannerGuardadas();
+
 if (plannerFinal) {
   plannerFinal.addEventListener("change", actualizarFechasSeriesPlanner);
 }
@@ -7842,6 +7947,7 @@ estado.ultimaSimulacionPlanner = {
   margenCalendario,
   sugerencias: sugerenciasPlanner
 };
+guardarSimulacionPlanner(estado.ultimaSimulacionPlanner);
 
 
         status.innerHTML = `

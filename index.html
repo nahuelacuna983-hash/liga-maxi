@@ -1308,6 +1308,45 @@
       font-weight: 700;
     }
 
+    .planner-saved-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .planner-saved-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(15, 23, 42, 0.28);
+    }
+
+    .planner-saved-item strong,
+    .planner-saved-item span {
+      display: block;
+    }
+
+    .planner-saved-item span {
+      color: #cbd5e1;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .planner-saved-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .planner-saved-actions button {
+      width: auto;
+      padding: 8px 12px;
+    }
+
     .planner-simulation-actions {
       display: flex;
       flex-wrap: wrap;
@@ -2227,6 +2266,16 @@
     <div class="planner-readiness-box">
       <div class="planner-readiness-head">
         <div>
+          <h4>Simulaciones guardadas</h4>
+          <p>Historial local de fixtures simulados. No publica ni modifica la base online.</p>
+        </div>
+      </div>
+      <div id="planner-simulaciones-guardadas" class="planner-saved-list"></div>
+    </div>
+
+    <div class="planner-readiness-box">
+      <div class="planner-readiness-head">
+        <div>
           <h4>Preparacion de torneo</h4>
           <p>Control previo antes de publicar una competencia nueva.</p>
         </div>
@@ -2481,7 +2530,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260819-planner-equipos"></script>
+<script src="app_online.js?v=20260819-planner-simulaciones"></script>
 
 <script>
   if ("serviceWorker" in navigator) {
