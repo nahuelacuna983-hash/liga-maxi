@@ -1916,6 +1916,32 @@ td:nth-child(2) {
   align-items: stretch;
 }
 
+.auth-session-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  padding-top: 12px;
+  color: #dbeafe;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.auth-session-bar.is-off {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.auth-session-bar button {
+  width: auto;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
 .access-link-box {
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1967,6 +1993,19 @@ td:nth-child(2) {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
   margin-top: 14px;
+}
+
+.auth-login-box {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.25);
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.auth-login-box h4 {
+  margin: 0 0 8px;
+  color: #fff;
 }
 
 .install-step {

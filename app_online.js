@@ -47,6 +47,9 @@ const estado = {
   delegado: null,
   asociacionDesbloqueada: false,
   usuarioAsociacion: null,
+  authSession: null,
+  authUser: null,
+  permisosAuth: [],
   asociacionInicializada: false
 };
 
@@ -637,6 +640,16 @@ async function cargarPermisosPorClave(clave) {
 
   if (error) {
     console.warn("No se pudieron cargar permisos de usuario:", error.message);
+    return [];
+  }
+
+  return (data || []).filter((permiso) => permiso.active !== false);
+}
+
+async function cargarPermisosUsuarioActual() {
+  const { data, error } = await supabaseClient.rpc("get_current_app_user_permissions");
+  if (error) {
+    console.warn("No se pudieron cargar permisos por Auth:", error.message);
     return [];
   }
 
@@ -4604,6 +4617,137 @@ function obtenerPartidosPlayoffConAvance(nombreCategoria) {
   );
 }
 
+function renderSesionAuth() {
+  const bar = $("auth-session-bar");
+  if (!bar) return;
+
+  const permiso = estado.permisosAuth?.[0];
+  if (!estado.authUser) {
+    bar.className = "auth-session-bar is-off";
+    bar.innerHTML = `<span>Sin usuario iniciado. El acceso por claves sigue disponible durante la migracion.</span>`;
+    if ($("auth-logout")) $("auth-logout").disabled = true;
+    return;
+  }
+
+  bar.className = "auth-session-bar";
+  bar.innerHTML = `
+    <span>Usuario: ${escapeHtml(permiso?.display_name || estado.authUser.email || "Usuario")} · Rol: ${escapeHtml(permiso?.role || "sin permisos")}</span>
+    <button class="secondary" type="button" onclick="document.getElementById('auth-logout')?.click()">Cerrar sesion</button>
+  `;
+  if ($("auth-logout")) $("auth-logout").disabled = false;
+}
+
+function aplicarPermisosAutenticados(permisos) {
+  estado.permisosAuth = permisos || [];
+  const status = $("auth-status");
+
+  if (!estado.authUser) {
+    renderSesionAuth();
+    return;
+  }
+
+  if (!permisos.length) {
+    setStatus(status, "Usuario iniciado, pero todavia no tiene permisos vinculados en la app.", "warn");
+    renderSesionAuth();
+    return;
+  }
+
+  const accesoAsociacion = puedeAccederAsociacion(permisos);
+  if (accesoAsociacion) {
+    estado.asociacionDesbloqueada = true;
+    estado.usuarioAsociacion = permisos[0];
+    aplicarBloqueoAsociacion();
+    cargarDatosAsociacionActual().catch((error) => {
+      setStatus($("asociacion-status"), `No se pudieron cargar datos de asociacion: ${error.message}`, "error");
+    });
+  }
+
+  const delegado = delegadoDesdePermisos(permisos, null);
+  if (delegado && !accesoAsociacion) {
+    estado.delegado = delegado;
+    estado.delegadoDesbloqueado = true;
+    aplicarBloqueoDelegado();
+    poblarSelectCategorias(
+      "delegado-categoria",
+      estado.categorias.filter((cat) => delegado.categorias.includes(cat.nombre))
+    );
+    const primeraCategoria = $("delegado-categoria")?.value;
+    if (primeraCategoria) {
+      refrescarCategoria(primeraCategoria, { actualizarPublico: false }).then(() => {
+        poblarSelectPartidosDelegado(primeraCategoria);
+        renderDocumentacionDelegado();
+      });
+    }
+    const info = $("delegado-info");
+    if (info) {
+      info.innerHTML = `
+        Delegado: ${escapeHtml(delegado.nombre)}<br>
+        Categorías: ${escapeHtml(delegado.categorias.join(", "))}
+      `;
+    }
+  }
+
+  setStatus(status, `Ingreso correcto: ${permisos[0].display_name}.`, "ok");
+  renderSesionAuth();
+}
+
+async function iniciarSesionAuth() {
+  const email = $("auth-email")?.value.trim() || "";
+  const password = $("auth-password")?.value || "";
+  const status = $("auth-status");
+
+  if (!email || !password) {
+    setStatus(status, "Cargá email y contraseña.", "warn");
+    return;
+  }
+
+  setStatus(status, "Validando usuario...", "");
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    setStatus(status, `No se pudo ingresar: ${error.message}`, "error");
+    return;
+  }
+
+  estado.authSession = data.session || null;
+  estado.authUser = data.user || null;
+  const permisos = await cargarPermisosUsuarioActual();
+  aplicarPermisosAutenticados(permisos);
+}
+
+async function cerrarSesionAuth() {
+  await supabaseClient.auth.signOut();
+  estado.authSession = null;
+  estado.authUser = null;
+  estado.permisosAuth = [];
+  setStatus($("auth-status"), "Sesion cerrada.", "ok");
+  renderSesionAuth();
+}
+
+async function inicializarSesionAuth() {
+  const { data } = await supabaseClient.auth.getSession();
+  estado.authSession = data?.session || null;
+  estado.authUser = data?.session?.user || null;
+
+  supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+    estado.authSession = session || null;
+    estado.authUser = session?.user || null;
+    if (estado.authUser) {
+      const permisos = await cargarPermisosUsuarioActual();
+      aplicarPermisosAutenticados(permisos);
+    } else {
+      estado.permisosAuth = [];
+      renderSesionAuth();
+    }
+  });
+
+  if (estado.authUser) {
+    const permisos = await cargarPermisosUsuarioActual();
+    aplicarPermisosAutenticados(permisos);
+  } else {
+    renderSesionAuth();
+  }
+}
+
 function calcularEstadoCierreTorneo(nombreCategoria) {
   const categoria = obtenerCategoriaPorNombre(nombreCategoria);
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
@@ -8111,6 +8255,11 @@ async function inicializar() {
     $("access-copy-link")?.addEventListener("click", copiarLinkAccesoApp);
     $("access-open-link")?.addEventListener("click", abrirLinkAccesoApp);
     $("access-install-app")?.addEventListener("click", instalarAccesoApp);
+    $("auth-login")?.addEventListener("click", iniciarSesionAuth);
+    $("auth-logout")?.addEventListener("click", cerrarSesionAuth);
+    $("auth-password")?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") iniciarSesionAuth();
+    });
 
     poblarSelectCategorias("publico-categoria", CATEGORIAS_BASE);
     poblarSelectCategorias("fecha-categoria", CATEGORIAS_BASE);
@@ -8152,6 +8301,7 @@ async function inicializar() {
     $("publico-categoria").value = categoriaInicial;
     if ($("fecha-categoria")) $("fecha-categoria").value = categoriaInicial;
     actualizarUrlCategoria(categoriaInicial, parametrosVista.vista);
+    await inicializarSesionAuth();
 
     if (parametrosVista.vista === "fecha") {
       mostrarVista("fecha");
