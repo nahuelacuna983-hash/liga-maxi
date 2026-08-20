@@ -80,6 +80,84 @@
       background: var(--accent);
     }
 
+    .access-grid {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) minmax(220px, 320px);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .access-link-box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.25);
+      padding: 14px;
+      word-break: break-word;
+    }
+
+    .access-link-box strong,
+    .access-link-box span {
+      display: block;
+    }
+
+    .access-link-box span {
+      color: #dbeafe;
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+
+    .access-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .access-actions button {
+      width: auto;
+      min-width: 150px;
+    }
+
+    .access-qr {
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 14px;
+    }
+
+    .access-qr img {
+      width: min(220px, 100%);
+      height: auto;
+      display: block;
+    }
+
+    .install-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .install-step {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.25);
+      padding: 14px;
+    }
+
+    .install-step h4 {
+      margin: 0 0 8px;
+      color: #fff;
+    }
+
+    .install-step p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
     .view {
       display: none;
       background: rgba(255,255,255,0.06);
@@ -93,6 +171,12 @@
 
     .view.activa {
       display: block;
+    }
+
+    @media (max-width: 720px) {
+      .access-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     .row {
@@ -1925,8 +2009,45 @@
     <div class="tabs">
       <button id="tab-publico" class="tab activo" type="button">Público</button>
       <button id="tab-fecha" class="tab" type="button">Fecha</button>
+      <button id="tab-acceso" class="tab" type="button">Acceso</button>
       <button id="tab-delegados" class="tab" type="button">Delegados</button>
       <button id="tab-asociacion" class="tab" type="button">Asociación</button>
+    </div>
+
+    <div id="vista-acceso" class="view">
+      <div class="card">
+        <h3>Acceso e instalacion</h3>
+        <p class="note">Compartí este link o QR para que jugadores, delegados y público entren a la app. No hace falta descargar desde una tienda.</p>
+        <div class="access-grid">
+          <div class="access-link-box">
+            <strong>Link de la app</strong>
+            <span id="access-app-url">Cargando link...</span>
+            <div class="access-actions">
+              <button id="access-copy-link" class="secondary" type="button">Copiar link</button>
+              <button id="access-open-link" class="secondary" type="button">Abrir link</button>
+              <button id="access-install-app" class="primary" type="button">Instalar app</button>
+            </div>
+            <div id="access-status" class="status"></div>
+          </div>
+          <div class="access-qr">
+            <img id="access-qr" alt="QR de acceso a la app" />
+          </div>
+        </div>
+        <div class="install-steps">
+          <div class="install-step">
+            <h4>Android</h4>
+            <p>Abrí el link en Chrome y tocá Instalar app. Si no aparece, usá el menú de tres puntos y Agregar a pantalla principal.</p>
+          </div>
+          <div class="install-step">
+            <h4>iPhone</h4>
+            <p>Abrí el link en Safari, tocá Compartir y elegí Agregar a inicio.</p>
+          </div>
+          <div class="install-step">
+            <h4>PC</h4>
+            <p>Abrí el link en Chrome o Edge y usá Instalar app desde el botón, la barra del navegador o el menú.</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="vista-publico" class="view activa">
@@ -2530,7 +2651,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260819-planner-simulaciones"></script>
+<script src="app_online.js?v=20260819-acceso-instalacion"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

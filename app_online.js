@@ -2,6 +2,8 @@ console.log("APP ONLINE NUEVA CARGADA");
 const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
 const TORNEO_ID = "7d0971e3-66ee-4791-bcbf-bace1d2fefb9";
+const APP_PUBLIC_URL = "https://nahuelacuna983-hash.github.io/liga-maxi/";
+let deferredInstallPrompt = null;
 
 const APP_CONFIG = {
   producto: {
@@ -186,10 +188,14 @@ function mostrarVista(nombre) {
   if (nombre === "asociacion") {
     inicializarNavegacionAsociacion();
   }
+  if (nombre === "acceso") {
+    renderAccesoApp();
+  }
 
   const tabs = {
     publico: $("tab-publico"),
     fecha: $("tab-fecha"),
+    acceso: $("tab-acceso"),
     delegados: $("tab-delegados"),
     asociacion: $("tab-asociacion")
   };
@@ -197,6 +203,7 @@ function mostrarVista(nombre) {
   const views = {
     publico: $("vista-publico"),
     fecha: $("vista-fecha"),
+    acceso: $("vista-acceso"),
     delegados: $("vista-delegados"),
     asociacion: $("vista-asociacion")
   };
@@ -208,6 +215,64 @@ function mostrarVista(nombre) {
   Object.entries(views).forEach(([key, view]) => {
     if (view) view.classList.toggle("activa", key === nombre);
   });
+}
+
+function urlPublicaApp() {
+  if (location.protocol === "http:" || location.protocol === "https:") {
+    return APP_PUBLIC_URL;
+  }
+  return APP_PUBLIC_URL;
+}
+
+function renderAccesoApp() {
+  const url = urlPublicaApp();
+  const link = $("access-app-url");
+  const qr = $("access-qr");
+  const installButton = $("access-install-app");
+
+  if (link) link.textContent = url;
+  if (qr) {
+    qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(url)}`;
+  }
+  if (installButton) {
+    installButton.disabled = !deferredInstallPrompt;
+    installButton.textContent = deferredInstallPrompt ? "Instalar app" : "Instalar desde navegador";
+  }
+}
+
+async function copiarLinkAccesoApp() {
+  const status = $("access-status");
+  const url = urlPublicaApp();
+  try {
+    await navigator.clipboard.writeText(url);
+    setStatus(status, "Link copiado. Ya podés pegarlo en WhatsApp, mail o redes.", "ok");
+  } catch (error) {
+    setStatus(status, `No se pudo copiar automaticamente. Link: ${url}`, "warn");
+  }
+}
+
+function abrirLinkAccesoApp() {
+  window.open(urlPublicaApp(), "_blank", "noopener");
+}
+
+async function instalarAccesoApp() {
+  const status = $("access-status");
+  if (!deferredInstallPrompt) {
+    setStatus(status, "Si el botón no instala, usá el menú del navegador: Agregar a pantalla principal o Instalar app.", "warn");
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+  const resultado = await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  renderAccesoApp();
+  setStatus(
+    status,
+    resultado?.outcome === "accepted"
+      ? "Instalacion iniciada."
+      : "Instalacion cancelada. Podés intentarlo de nuevo desde el navegador.",
+    resultado?.outcome === "accepted" ? "ok" : "warn"
+  );
 }
 
 function obtenerParametrosVista() {
@@ -8007,6 +8072,13 @@ guardarSimulacionPlanner(estado.ultimaSimulacionPlanner);
 async function inicializar() {
   try {
     aplicarConfiguracionVisual();
+    renderAccesoApp();
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      renderAccesoApp();
+    });
 
     $("tab-publico").addEventListener("click", () => {
       mostrarVista("publico");
@@ -8020,9 +8092,13 @@ async function inicializar() {
         $("publico-categoria").value = categoria;
         if ($("fecha-categoria")) $("fecha-categoria").value = categoria;
         actualizarUrlCategoria(categoria, "fecha");
-        refrescarPublicoCategoria(categoria);
+      refrescarPublicoCategoria(categoria);
       }
       registrarUso("vista_fecha", { area: "publico", categoria });
+    });
+    $("tab-acceso")?.addEventListener("click", () => {
+      mostrarVista("acceso");
+      registrarUso("vista_acceso", { area: "acceso" });
     });
     $("tab-delegados").addEventListener("click", () => {
       mostrarVista("delegados");
@@ -8032,6 +8108,9 @@ async function inicializar() {
       mostrarVista("asociacion");
       registrarUso("vista_asociacion", { area: "asociacion" });
     });
+    $("access-copy-link")?.addEventListener("click", copiarLinkAccesoApp);
+    $("access-open-link")?.addEventListener("click", abrirLinkAccesoApp);
+    $("access-install-app")?.addEventListener("click", instalarAccesoApp);
 
     poblarSelectCategorias("publico-categoria", CATEGORIAS_BASE);
     poblarSelectCategorias("fecha-categoria", CATEGORIAS_BASE);
