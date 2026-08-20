@@ -31,6 +31,7 @@ const CATEGORIAS_BASE = [
 
 const estado = {
   torneoActivo: null,
+  torneoTrabajo: null,
   categorias: [],
   partidosPorCategoria: {},
   playoffsPorCategoria: {},
@@ -118,33 +119,31 @@ function guardarCachePublica(tipo, nombreCategoria, data) {
 }
 
 async function cargarTorneoActivo() {
-  const { data: activos, error: errorActivos } = await supabaseClient
+  const { data: torneosTrabajo, error: errorTrabajo } = await supabaseClient
     .from("torneos")
     .select("id, nombre, temporada, tipo, estado")
     .eq("estado", "activo")
     .order("created_at", { ascending: false })
     .limit(1);
 
-  if (errorActivos) {
-    console.warn("No se pudo cargar torneo activo:", errorActivos.message);
+  if (errorTrabajo) {
+    console.warn("No se pudo cargar torneo de trabajo:", errorTrabajo.message);
   }
 
-  let torneo = activos?.[0] || null;
-  if (torneo?.id) {
-    const { data: partidosActivos, error: errorPartidosActivos } = await supabaseClient
-      .from("partidos")
-      .select("id, categorias!inner(torneo_id)")
-      .eq("categorias.torneo_id", torneo.id)
-      .limit(1);
+  estado.torneoTrabajo = torneosTrabajo?.[0] || null;
 
-    if (errorPartidosActivos) {
-      console.warn("No se pudo verificar fixture del torneo activo:", errorPartidosActivos.message);
-    } else if (!partidosActivos?.length) {
-      console.warn("El torneo activo no tiene fixture publicado; se mantiene el torneo base visible.");
-      torneo = null;
-    }
+  const { data: torneosVisibles, error: errorVisibles } = await supabaseClient
+    .from("torneos")
+    .select("id, nombre, temporada, tipo, estado")
+    .in("estado", ["publicado", "en_juego"])
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (errorVisibles) {
+    console.warn("No se pudo cargar torneo visible:", errorVisibles.message);
   }
 
+  let torneo = torneosVisibles?.[0] || null;
   if (!torneo) {
     const { data: fallback, error: errorFallback } = await supabaseClient
       .from("torneos")
@@ -7840,6 +7839,41 @@ function armarPayloadFixtureSimulado(simulacion, categoriaId) {
   );
 }
 
+async function obtenerCategoriaPublicacionPlanner(nombreCategoria) {
+  const torneoTrabajoId = estado.torneoTrabajo?.id;
+  if (torneoTrabajoId) {
+    const { data, error } = await supabaseClient
+      .from("categorias")
+      .select("id, nombre, torneo_id")
+      .eq("torneo_id", torneoTrabajoId)
+      .eq("nombre", nombreCategoria)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`No se pudo buscar la categoria de trabajo: ${error.message}`);
+    }
+
+    if (data?.id) return data;
+  }
+
+  return obtenerCategoriaPorNombre(nombreCategoria);
+}
+
+async function contarPartidosCategoriaId(categoriaId) {
+  if (!categoriaId) return 0;
+
+  const { count, error } = await supabaseClient
+    .from("partidos")
+    .select("id", { count: "exact", head: true })
+    .eq("categoria_id", categoriaId);
+
+  if (error) {
+    throw new Error(`No se pudo verificar si la categoria tiene partidos: ${error.message}`);
+  }
+
+  return count || 0;
+}
+
 function generarConstanciaPublicacionFixture(simulacion, payload) {
   const fechaGeneracion = new Date().toLocaleString("es-AR");
   const formato = simulacion.formato || detalleFormatoPlanner(simulacion.categoria);
@@ -7913,9 +7947,16 @@ async function publicarFixtureSimuladoPlanner() {
     return;
   }
 
-  const categoria = obtenerCategoriaPorNombre(simulacion.categoria);
+  let categoria = null;
+  try {
+    categoria = await obtenerCategoriaPublicacionPlanner(simulacion.categoria);
+  } catch (error) {
+    setStatus(status, error.message, "error");
+    return;
+  }
+
   if (!categoria?.id) {
-    setStatus(status, "No se encontro la categoria en Supabase. No se publico nada.", "error");
+    setStatus(status, "No se encontro la categoria de publicacion en Supabase. No se publico nada.", "error");
     return;
   }
 
@@ -7938,10 +7979,10 @@ async function publicarFixtureSimuladoPlanner() {
   setStatus(status, "Verificando que la categoria no tenga partidos cargados...", "warn");
 
   try {
-    await cargarPartidosCategoria(simulacion.categoria);
-    const existentes = estado.partidosPorCategoria[simulacion.categoria] || [];
-    if (existentes.length) {
-      setStatus(status, `Publicacion bloqueada: ${simulacion.categoria} ya tiene ${existentes.length} partidos cargados. No se publico nada.`, "error");
+    const existentes = await contarPartidosCategoriaId(categoria.id);
+    if (existentes) {
+      const torneoDestino = categoria.torneo_id === estado.torneoTrabajo?.id ? "torneo de trabajo" : "torneo visible";
+      setStatus(status, `Publicacion bloqueada: ${simulacion.categoria} ya tiene ${existentes} partidos cargados en el ${torneoDestino}. No se publico nada.`, "error");
       return;
     }
 
