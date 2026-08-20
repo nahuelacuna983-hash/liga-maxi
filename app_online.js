@@ -130,6 +130,21 @@ async function cargarTorneoActivo() {
   }
 
   let torneo = activos?.[0] || null;
+  if (torneo?.id) {
+    const { data: partidosActivos, error: errorPartidosActivos } = await supabaseClient
+      .from("partidos")
+      .select("id, categorias!inner(torneo_id)")
+      .eq("categorias.torneo_id", torneo.id)
+      .limit(1);
+
+    if (errorPartidosActivos) {
+      console.warn("No se pudo verificar fixture del torneo activo:", errorPartidosActivos.message);
+    } else if (!partidosActivos?.length) {
+      console.warn("El torneo activo no tiene fixture publicado; se mantiene el torneo base visible.");
+      torneo = null;
+    }
+  }
+
   if (!torneo) {
     const { data: fallback, error: errorFallback } = await supabaseClient
       .from("torneos")
