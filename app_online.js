@@ -1,7 +1,8 @@
 console.log("APP ONLINE NUEVA CARGADA");
 const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
-const TORNEO_ID = "7d0971e3-66ee-4791-bcbf-bace1d2fefb9";
+const TORNEO_ID_FALLBACK = "7d0971e3-66ee-4791-bcbf-bace1d2fefb9";
+let TORNEO_ID = TORNEO_ID_FALLBACK;
 const APP_PUBLIC_URL = "https://nahuelacuna983-hash.github.io/liga-maxi/";
 let deferredInstallPrompt = null;
 
@@ -29,6 +30,7 @@ const CATEGORIAS_BASE = [
 ];
 
 const estado = {
+  torneoActivo: null,
   categorias: [],
   partidosPorCategoria: {},
   playoffsPorCategoria: {},
@@ -113,6 +115,42 @@ function guardarCachePublica(tipo, nombreCategoria, data) {
   } catch (error) {
     // Si el navegador no permite guardar cache, la app sigue funcionando online.
   }
+}
+
+async function cargarTorneoActivo() {
+  const { data: activos, error: errorActivos } = await supabaseClient
+    .from("torneos")
+    .select("id, nombre, temporada, tipo, estado")
+    .eq("estado", "activo")
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (errorActivos) {
+    console.warn("No se pudo cargar torneo activo:", errorActivos.message);
+  }
+
+  let torneo = activos?.[0] || null;
+  if (!torneo) {
+    const { data: fallback, error: errorFallback } = await supabaseClient
+      .from("torneos")
+      .select("id, nombre, temporada, tipo, estado")
+      .eq("id", TORNEO_ID_FALLBACK)
+      .maybeSingle();
+
+    if (errorFallback) {
+      console.warn("No se pudo cargar torneo fallback:", errorFallback.message);
+    }
+    torneo = fallback || null;
+  }
+
+  if (torneo?.id) {
+    TORNEO_ID = torneo.id;
+    estado.torneoActivo = torneo;
+    APP_CONFIG.organizacionActiva.torneoLabel = [torneo.nombre, torneo.temporada].filter(Boolean).join(" · ");
+    actualizarMarcaProducto();
+  }
+
+  return estado.torneoActivo;
 }
 
 function obtenerSesionUso() {
@@ -440,16 +478,28 @@ function inicializarNavegacionAsociacion() {
 async function cargarCategorias() {
   const { data, error } = await supabaseClient
     .from("categorias")
-    .select("id, nombre, playoffs, clasificados, fecha_inicio, fecha_fin, series_playoff")
+    .select("id, nombre, torneo_id, playoffs, clasificados, fecha_inicio, fecha_fin, series_playoff")
+    .eq("torneo_id", TORNEO_ID)
     .order("nombre", { ascending: true });
 
   if (error) {
     throw new Error(`No se pudieron cargar las categorías: ${error.message}`);
   }
 
-  estado.categorias = data || [];
-  guardarCachePublica("categorias", "general", estado.categorias);
+  estado.categorias = deduplicarCategoriasPorNombre(data || []);
+  guardarCachePublica("categorias", TORNEO_ID, estado.categorias);
   return estado.categorias;
+}
+
+function deduplicarCategoriasPorNombre(categorias) {
+  const vistas = new Set();
+
+  return (categorias || []).filter((cat) => {
+    const key = normalizarTexto(cat.nombre || "");
+    if (!key || vistas.has(key)) return false;
+    vistas.add(key);
+    return true;
+  });
 }
 
 function poblarSelectCategorias(selectId, categorias) {
@@ -458,7 +508,7 @@ function poblarSelectCategorias(selectId, categorias) {
 
   select.innerHTML = "";
 
-  (categorias || []).forEach((cat) => {
+  deduplicarCategoriasPorNombre(categorias || []).forEach((cat) => {
     const option = document.createElement("option");
     option.value = cat.nombre;
     option.textContent = cat.nombre;
@@ -2446,9 +2496,10 @@ async function cargarPartidosCategoria(nombreCategoria) {
       cargado_por,
       cargado_en,
       categoria_id,
-      categorias!inner(nombre)
+      categorias!inner(nombre, torneo_id)
     `)
     .eq("categorias.nombre", nombreCategoria)
+    .eq("categorias.torneo_id", TORNEO_ID)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -2456,7 +2507,7 @@ async function cargarPartidosCategoria(nombreCategoria) {
   }
 
   estado.partidosPorCategoria[nombreCategoria] = data || [];
-  guardarCachePublica("partidos", nombreCategoria, estado.partidosPorCategoria[nombreCategoria]);
+  guardarCachePublica("partidos", `${TORNEO_ID}_${nombreCategoria}`, estado.partidosPorCategoria[nombreCategoria]);
   return estado.partidosPorCategoria[nombreCategoria];
 }
 
@@ -3507,7 +3558,7 @@ async function refrescarPublicoCategoria(nombreCategoria) {
   if (!nombreCategoria) return;
 
   const cargaId = ++estado.publicoCargaActual;
-  const partidosCache = leerCachePublica("partidos", nombreCategoria);
+  const partidosCache = leerCachePublica("partidos", `${TORNEO_ID}_${nombreCategoria}`);
   if (partidosCache?.length) {
     estado.partidosPorCategoria[nombreCategoria] = partidosCache;
     renderTablaSimple(nombreCategoria, partidosCache);
@@ -6369,6 +6420,25 @@ function parsearFechasBloqueadasPlanner(texto) {
   );
 }
 
+function parsearFechasEspecialesPlanner(texto) {
+  const especiales = new Map();
+  if (!texto?.trim()) return especiales;
+
+  String(texto)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .forEach((item) => {
+      const partes = item.split(/\s*(?:=|>|->)\s*/);
+      if (partes.length !== 2) return;
+      const desde = normalizarFechaInputPlanner(partes[0]);
+      const hacia = normalizarFechaInputPlanner(partes[1]);
+      if (desde && hacia) especiales.set(desde, hacia);
+    });
+
+  return especiales;
+}
+
 function nombresEquiposDesdePartidos(partidos) {
   const vistos = new Set();
   const equipos = [];
@@ -6463,7 +6533,7 @@ function generarRondaRobinPlanner(equiposOriginales) {
   return rondas;
 }
 
-function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, bloqueadas, fechaFin, frecuencia = 1) {
+function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, bloqueadas, fechaFin, frecuencia = 1, especiales = new Map()) {
   const base = generarRondaRobinPlanner(equipos);
   const jornadas = [];
   const alertas = [];
@@ -6473,11 +6543,13 @@ function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, b
 
   for (let rueda = 1; rueda <= ruedas; rueda += 1) {
     base.forEach((jornadaBase) => {
-      while (fecha && bloqueadas.has(fechaKeyPlanner(fecha))) {
+      while (fecha && bloqueadas.has(fechaKeyPlanner(fecha)) && !especiales.has(fechaKeyPlanner(fecha))) {
         bloqueosSalteados += 1;
         fecha = sumarDiasPlanner(fecha, 7 * frecuencia);
       }
 
+      const fechaOriginal = fecha ? fechaKeyPlanner(fecha) : "";
+      const fechaJornada = fechaOriginal ? especiales.get(fechaOriginal) || fechaOriginal : "";
       const invierteLocalia = rueda % 2 === 0;
       const partidos = jornadaBase.partidos.map((partido) => ({
         local: invierteLocalia ? partido.visitante : partido.local,
@@ -6487,7 +6559,8 @@ function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, b
       jornadas.push({
         numero: jornadas.length + 1,
         rueda,
-        fecha: fecha ? fechaKeyPlanner(fecha) : "",
+        fecha: fechaJornada,
+        fechaOriginal: fechaOriginal !== fechaJornada ? fechaOriginal : "",
         libre: jornadaBase.libre,
         partidos
       });
@@ -6499,6 +6572,9 @@ function generarFixtureSimuladoPlanner(equipos, ruedas, fechaInicio, diaJuego, b
   const ultimaFecha = jornadas[jornadas.length - 1]?.fecha || "";
   if (bloqueosSalteados) {
     alertas.push(`Se saltearon ${bloqueosSalteados} fecha(s) bloqueada(s).`);
+  }
+  if (especiales.size) {
+    alertas.push(`Se aplicaron ${especiales.size} fecha(s) especial(es) de calendario.`);
   }
   if (limite && ultimaFecha) {
     const ultima = fechaLocalPlanner(ultimaFecha);
@@ -7359,6 +7435,11 @@ function manejarSimulacionesPlannerGuardadas(event) {
     if ($("planner-categoria")) $("planner-categoria").value = simulacion.categoria;
     if ($("planner-competencia")) $("planner-competencia").value = simulacion.competencia;
     if ($("planner-equipos-manual")) $("planner-equipos-manual").value = (simulacion.equiposLista || []).join("\n");
+    if ($("planner-fechas-especiales")) {
+      $("planner-fechas-especiales").value = (simulacion.fechasEspeciales || [])
+        .map(([desde, hacia]) => `${fechaPlannerLabel(desde)}=${fechaPlannerLabel(hacia)}`)
+        .join(", ");
+    }
     actualizarResumenEquiposPlanner(simulacion.equiposLista || []);
     setStatus(status, `Simulacion recuperada: ${simulacion.categoria} - ${simulacion.competencia}.`, "ok");
     mostrarCartelInforme("Simulacion recuperada. Ya podes descargarla o usarla como referencia.", "ok");
@@ -8015,6 +8096,7 @@ if (plannerBtn) {
     const fechaInicio = document.getElementById("planner-inicio").value;
 const fechaFin = document.getElementById("planner-fin").value;
 const fechasBloqueadasTexto = document.getElementById("planner-bloqueadas").value;
+const fechasEspecialesTexto = document.getElementById("planner-fechas-especiales")?.value || "";
 const status = document.getElementById("planner-status");
 status.innerHTML = `<div class="card" style="margin-top:10px;"><p>Cargando equipos y partidos para simular...</p></div>`;
 
@@ -8055,6 +8137,7 @@ let entraEnCalendario = "Sin analizar";
 let fixtureSimulado = { jornadas: [], alertas: [], ultimaFecha: "" };
 
 const fechasBloqueadas = parsearFechasBloqueadasPlanner(fechasBloqueadasTexto);
+const fechasEspeciales = parsearFechasEspecialesPlanner(fechasEspecialesTexto);
 bloqueadasCantidad = fechasBloqueadas.size;
 
 if (fechaInicio) {
@@ -8094,7 +8177,8 @@ if (equipos >= 2) {
     dia,
     fechasBloqueadas,
     fechaFin,
-    frecuencia
+    frecuencia,
+    fechasEspeciales
   );
 } else {
   fixtureSimulado.alertas.push("No hay equipos suficientes en esta categoria para simular fixture.");
@@ -8151,6 +8235,7 @@ estado.ultimaSimulacionPlanner = {
   fixture: fixtureSimulado,
   jornadasTotales,
   bloqueadasCantidad,
+  fechasEspeciales: Array.from(fechasEspeciales.entries()),
   fechaFinalEstimada,
   entraEnCalendario,
   margenCalendario,
@@ -8276,7 +8361,9 @@ async function inicializar() {
       refrescarPublicoCategoria(e.target.value);
     });
 
-    const categoriasCache = leerCachePublica("categorias", "general", 60 * 60 * 1000);
+    await cargarTorneoActivo();
+
+    const categoriasCache = leerCachePublica("categorias", TORNEO_ID, 60 * 60 * 1000);
     const categorias = categoriasCache?.length ? categoriasCache : await cargarCategorias();
     estado.categorias = categorias;
     if (categoriasCache?.length) {
