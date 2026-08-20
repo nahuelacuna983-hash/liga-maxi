@@ -162,7 +162,7 @@ async function cargarTorneoActivo() {
     TORNEO_ID = torneo.id;
     estado.torneoActivo = torneo;
     APP_CONFIG.organizacionActiva.torneoLabel = [torneo.nombre, torneo.temporada].filter(Boolean).join(" · ");
-    actualizarMarcaProducto();
+    aplicarConfiguracionVisual();
   }
 
   return estado.torneoActivo;
