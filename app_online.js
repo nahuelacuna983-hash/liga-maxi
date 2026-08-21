@@ -7877,6 +7877,9 @@ async function contarPartidosCategoriaId(categoriaId) {
 function generarConstanciaPublicacionFixture(simulacion, payload) {
   const fechaGeneracion = new Date().toLocaleString("es-AR");
   const formato = simulacion.formato || detalleFormatoPlanner(simulacion.categoria);
+  const fechasEspeciales = (simulacion.fechasEspeciales || [])
+    .map(([desde, hacia]) => `${fechaPlannerLabel(desde)} a ${fechaPlannerLabel(hacia)}`)
+    .join(", ");
   const fixturePublicado = {
     jornadas: (simulacion.fixture?.jornadas || []).map((jornada) => ({
       ...jornada,
@@ -7898,9 +7901,13 @@ function generarConstanciaPublicacionFixture(simulacion, payload) {
         h2 { margin: 22px 0 8px; font-size: 18px; }
         h3 { margin: 16px 0 6px; font-size: 15px; }
         .muted { color: #4b5563; margin: 0 0 14px; }
-        .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0; }
+        .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0; }
         .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; }
         .box strong { display: block; font-size: 18px; }
+        .rules { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; margin: 14px 0; }
+        .rules p { margin: 6px 0; }
+        .suggestions { border: 1px solid #f59e0b; border-radius: 8px; padding: 10px; margin-top: 12px; background: #fffbeb; }
+        .suggestions li { margin: 6px 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 8px; }
         th, td { border-bottom: 1px solid #d1d5db; padding: 7px 6px; font-size: 12px; text-align: left; }
         th { background: #eef2ff; font-weight: 800; }
@@ -7917,11 +7924,47 @@ function generarConstanciaPublicacionFixture(simulacion, payload) {
         <div class="box"><span>Categoria</span><strong>${escapeHtml(simulacion.categoria)}</strong></div>
         <div class="box"><span>Competencia</span><strong>${escapeHtml(simulacion.competencia || "-")}</strong></div>
         <div class="box"><span>Partidos publicados</span><strong>${payload.length}</strong></div>
+        <div class="box"><span>Final estimada</span><strong>${escapeHtml(simulacion.fechaFinalEstimada || "-")}</strong></div>
       </div>
       <p><strong>Publicado por:</strong> ${escapeHtml(estado.usuarioAsociacion?.display_name || "Asociacion")}</p>
-      <p><strong>Formato:</strong> ${escapeHtml(formato.playoffsTexto)} - ${escapeHtml(formato.finalTexto)}</p>
-      <p><strong>Ruedas:</strong> ${escapeHtml(String(simulacion.ruedas || "-"))} - <strong>Frecuencia:</strong> ${escapeHtml(simulacion.frecuencia === 2 ? "Semana por medio" : "Todas las semanas")}</p>
+
+      <div class="rules">
+        <p><strong>Inicio:</strong> ${escapeHtml(fechaPlannerLabel(simulacion.fechaInicio))} - <strong>Dia de juego:</strong> ${escapeHtml(simulacion.diaTexto || "-")}</p>
+        <p><strong>Fecha limite:</strong> ${escapeHtml(fechaPlannerLabel(simulacion.fechaFin))} - <strong>Entra en calendario:</strong> ${escapeHtml(simulacion.entraEnCalendario || "-")}</p>
+        <p><strong>Ruedas:</strong> ${escapeHtml(String(simulacion.ruedas || "-"))} - <strong>Frecuencia:</strong> ${escapeHtml(simulacion.frecuencia === 2 ? "Semana por medio" : "Todas las semanas")}</p>
+        <p><strong>Jornadas fase regular:</strong> ${escapeHtml(String(simulacion.jornadasTotales || "-"))} - <strong>Margen calendario:</strong> ${escapeHtml(String(simulacion.margenCalendario ?? "-"))}</p>
+        <p><strong>Fechas bloqueadas:</strong> ${escapeHtml(String(simulacion.bloqueadasCantidad || 0))} - <strong>Fechas especiales:</strong> ${escapeHtml(fechasEspeciales || "No")}</p>
+        <p><strong>Formato:</strong> ${escapeHtml(formato.playoffsTexto)} - <strong>Final:</strong> ${escapeHtml(formato.finalTexto)} - <strong>Promocion:</strong> ${escapeHtml(formato.promocionTexto || "Sin partido extra")}</p>
+      </div>
+
+      ${simulacion.equiposLista?.length ? `
+        <h2>Equipos incluidos</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Equipo</th></tr>
+          </thead>
+          <tbody>
+            ${simulacion.equiposLista.map((equipo, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${escapeHtml(equipo)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      ` : ""}
+
+      ${simulacion.sugerencias?.length ? `
+        <div class="suggestions">
+          <h2>Diagnostico y alternativas</h2>
+          <ul>
+            ${simulacion.sugerencias.map((item) => `<li><strong>${escapeHtml(item.titulo)}:</strong> ${escapeHtml(item.detalle)}</li>`).join("")}
+          </ul>
+        </div>
+      ` : ""}
+
       ${renderFixtureSimuladoInforme(fixturePublicado)}
+      ${renderPlayoffsSimuladosInforme(formato)}
       <p class="muted">Esta constancia refleja el fixture creado en Supabase. Los resultados quedan pendientes de carga.</p>
     </body>
     </html>
