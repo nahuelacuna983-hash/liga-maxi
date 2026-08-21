@@ -535,7 +535,7 @@ function inicializarNavegacionAsociacion() {
 async function cargarCategorias() {
   const { data, error } = await supabaseClient
     .from("categorias")
-    .select("id, nombre, torneo_id, playoffs, clasificados, fecha_inicio, fecha_fin, series_playoff")
+    .select("id, nombre, torneo_id, estado, formato, playoffs, clasificados, dia_juego, fecha_inicio, fecha_fin, frecuencia, fechas_bloqueadas, series_playoff")
     .eq("torneo_id", TORNEO_ID)
     .order("nombre", { ascending: true });
 
@@ -3021,7 +3021,9 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
 
   let html = `<div class="card"><h3>Playoffs</h3>`;
 
-  if (nombreCategoria.includes("+35") && cantidadEquipos >= 8) {
+  const clasificados = clasificadosPlayoffCategoria(nombreCategoria);
+
+  if (clasificados === 8 && cantidadEquipos >= 8) {
     html += `
       <div class="match"><div class="teams"><span>1°</span><span class="vs">vs</span><span>8°</span></div></div>
       <div class="match"><div class="teams"><span>4°</span><span class="vs">vs</span><span>5°</span></div></div>
@@ -3030,7 +3032,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
     `;
   }
 
-  if (nombreCategoria.includes("+48") && cantidadEquipos >= 6) {
+  if (clasificados === 6 && cantidadEquipos >= 6) {
     html += `
       <div class="match"><div class="teams"><span>1°</span><span class="vs">directo a semifinal</span></div></div>
       <div class="match"><div class="teams"><span>2°</span><span class="vs">directo a semifinal</span></div></div>
@@ -3111,8 +3113,9 @@ function crearPlayoffMatch(fase, llave, titulo, orden, partidoNumero, local, vis
 function generarPartidosPlayoff(nombreCategoria, tabla) {
   const equipo = (posicion) => tabla[posicion - 1]?.equipo || "";
   const partidos = [];
+  const clasificados = clasificadosPlayoffCategoria(nombreCategoria);
 
-  if (nombreCategoria.includes("+35") && tabla.length >= 8) {
+  if (clasificados === 8 && tabla.length >= 8) {
     const datosCuartos = obtenerDatosRondaPlayoff(nombreCategoria, "cuartos");
     const datosSemis = obtenerDatosRondaPlayoff(nombreCategoria, "semifinales");
     const datosFinal = obtenerDatosRondaPlayoff(nombreCategoria, "final");
@@ -3128,7 +3131,7 @@ function generarPartidosPlayoff(nombreCategoria, tabla) {
     });
   }
 
-  if (nombreCategoria.includes("+48") && tabla.length >= 6) {
+  if (clasificados === 6 && tabla.length >= 6) {
     const datosRepechaje = obtenerDatosRondaPlayoff(nombreCategoria, "clasificacion");
     const datosSemis = obtenerDatosRondaPlayoff(nombreCategoria, "semifinales");
     const datosFinal = obtenerDatosRondaPlayoff(nombreCategoria, "final");
@@ -3219,7 +3222,9 @@ function aplicarAvanceAutomaticoPlayoffs(nombreCategoria, tabla, partidosPlayoff
     if (esPlaceholderPlayoff(partido[lado])) partido[lado] = equipo;
   };
 
-  if (nombreCategoria.includes("+35")) {
+  const clasificados = clasificadosPlayoffCategoria(nombreCategoria);
+
+  if (clasificados === 8) {
     const ganadorA = ganadorPartidoPlayoff(buscar("cuartos", "llave_a"));
     const ganadorB = ganadorPartidoPlayoff(buscar("cuartos", "llave_b"));
     const ganadorC = ganadorPartidoPlayoff(buscar("cuartos", "llave_c"));
@@ -3239,7 +3244,7 @@ function aplicarAvanceAutomaticoPlayoffs(nombreCategoria, tabla, partidosPlayoff
     actualizarEquipo(final, "visitante", ganadorSemi2);
   }
 
-  if (nombreCategoria.includes("+48")) {
+  if (clasificados === 6) {
     const ganadoresRepechaje = [
       ganadorPartidoPlayoff(buscar("repechaje", "repechaje_1")),
       ganadorPartidoPlayoff(buscar("repechaje", "repechaje_2"))
@@ -3308,10 +3313,15 @@ function obtenerCategoriaPorNombre(nombreCategoria) {
 
 function categoriaUsaPlayoffsPublicos(nombreCategoria) {
   const categoria = obtenerCategoriaPorNombre(nombreCategoria);
-  return nombreCategoria.includes("+35") ||
-    nombreCategoria.includes("+48") ||
-    !!categoria?.playoffs ||
-    Number(categoria?.clasificados || 0) > 0;
+  const resultadosPlayoffGuardados = estado.playoffsPorCategoria[nombreCategoria] || [];
+  return !!categoria?.playoffs ||
+    Number(categoria?.clasificados || 0) > 0 ||
+    resultadosPlayoffGuardados.some(partidoPlayoffTieneResultado);
+}
+
+function clasificadosPlayoffCategoria(nombreCategoria) {
+  const categoria = obtenerCategoriaPorNombre(nombreCategoria);
+  return Number(categoria?.clasificados || 0);
 }
 
 function normalizarClaveRonda(nombre) {
@@ -3425,7 +3435,9 @@ function renderPromocionDescenso(nombreCategoria, tabla) {
 }
 
 function renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos) {
-  if (nombreCategoria.includes("+35") && cantidadEquipos >= 8) {
+  const clasificados = clasificadosPlayoffCategoria(nombreCategoria);
+
+  if (clasificados === 8 && cantidadEquipos >= 8) {
     return `
       <div class="playoff-bracket playoff-bracket-three">
         <div class="playoff-round">
@@ -3448,7 +3460,7 @@ function renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos) {
     `;
   }
 
-  if (nombreCategoria.includes("+48") && cantidadEquipos >= 6) {
+  if (clasificados === 6 && cantidadEquipos >= 6) {
     return `
       <div class="playoff-bracket playoff-bracket-three">
         <div class="playoff-round">
@@ -3482,10 +3494,16 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
 
   const tabla = calcularTabla(partidos);
   const cantidadEquipos = tabla.length;
-  const llaveOficialActual = nombreCategoria === "Maxi +35 A" || nombreCategoria === "Maxi +48";
-  const faseRegularCerrada = partidos.length > 0 && (partidos.every(partidoTieneResultado) || llaveOficialActual);
+  const categoria = obtenerCategoriaPorNombre(nombreCategoria);
+  const llaveConfigurada = !!categoria?.playoffs || Number(categoria?.clasificados || 0) > 0;
   const resultadosPlayoffGuardados = estado.playoffsPorCategoria[nombreCategoria] || [];
   const playoffsConActividad = resultadosPlayoffGuardados.some(partidoTieneResultado);
+  const faseRegularCerrada = partidos.length > 0 && (partidos.every(partidoTieneResultado) || playoffsConActividad);
+
+  if (!llaveConfigurada && !playoffsConActividad) {
+    return;
+  }
+
   const partidosPlayoff = aplicarAvanceAutomaticoPlayoffs(nombreCategoria, tabla, mezclarPartidosPlayoff(
     generarPartidosPlayoff(nombreCategoria, tabla),
     resultadosPlayoffGuardados
@@ -3501,7 +3519,9 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
   const equipo = (posicion) => tabla[posicion - 1] || null;
   let bracket = "";
 
-  if (nombreCategoria.includes("+35") && cantidadEquipos >= 8) {
+  const clasificados = clasificadosPlayoffCategoria(nombreCategoria);
+
+  if (clasificados === 8 && cantidadEquipos >= 8) {
     const qfA = buscarPlayoff("cuartos", "llave_a");
     const qfB = buscarPlayoff("cuartos", "llave_b");
     const qfC = buscarPlayoff("cuartos", "llave_c");
@@ -3532,7 +3552,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
     `;
   }
 
-  if (nombreCategoria.includes("+48") && cantidadEquipos >= 6) {
+  if (clasificados === 6 && cantidadEquipos >= 6) {
     const repechaje1 = buscarPlayoff("repechaje", "repechaje_1");
     const repechaje2 = buscarPlayoff("repechaje", "repechaje_2");
     const semi1p1 = buscarPlayoff("semifinales", "semi_1", 1);
@@ -7735,10 +7755,7 @@ function descargarUltimaSimulacionPlanner() {
     return;
   }
 
-  generarInformeSimulacionTorneo({
-    ...simulacion,
-    formato: detalleFormatoPlanner(categoriaActual)
-  });
+  generarInformeSimulacionTorneo(simulacion);
 }
 
 function generarInformeTorneo() {
@@ -8072,6 +8089,89 @@ function contarPartidosSimulados(simulacion) {
   return (simulacion?.fixture?.jornadas || []).reduce((total, jornada) => total + (jornada.partidos || []).length, 0);
 }
 
+function fechasSerieValoresPlanner(formato, prefijo, cantidad) {
+  const claves = {
+    cuartos: ["fechaCuartos", "fechaCuartos2", "fechaCuartos3"],
+    semis: ["fechaSemis", "fechaSemis2", "fechaSemis3"],
+    final: ["fechaFinal1", "fechaFinal2", "fechaFinal3"],
+    promocion: ["fechaPromocion1", "fechaPromocion2", "fechaPromocion3"]
+  }[prefijo] || [];
+
+  return claves
+    .slice(0, cantidad)
+    .map((clave) => formato?.[clave])
+    .filter(Boolean);
+}
+
+function crearDatosSeriePlayoffPlanner(partidos, fechas) {
+  const limpio = (fechas || []).filter(Boolean);
+  return {
+    partidos,
+    fecha: limpio[0] || null,
+    fechas: limpio
+  };
+}
+
+function armarSeriesPlayoffCategoriaPlanner(formato) {
+  const series = {};
+
+  if (formato?.clasificados && formato.clasificados > 4) {
+    const fechasIniciales = fechasSerieValoresPlanner(formato, "cuartos", formato.partidosCuartos);
+    const datosIniciales = crearDatosSeriePlayoffPlanner(formato.partidosCuartos, fechasIniciales);
+    if (formato.clasificados === 6) {
+      series.clasificacion = datosIniciales;
+      series.repechaje = datosIniciales;
+    } else {
+      series.cuartos = datosIniciales;
+    }
+  }
+
+  if (formato?.clasificados) {
+    series.semifinales = crearDatosSeriePlayoffPlanner(
+      formato.partidosSemis,
+      fechasSerieValoresPlanner(formato, "semis", formato.partidosSemis)
+    );
+    series.final = crearDatosSeriePlayoffPlanner(
+      formato.partidosFinal,
+      fechasSerieValoresPlanner(formato, "final", formato.partidosFinal)
+    );
+  }
+
+  if (formato?.partidosPromocion) {
+    series.promocion = crearDatosSeriePlayoffPlanner(
+      formato.partidosPromocion,
+      fechasSerieValoresPlanner(formato, "promocion", formato.partidosPromocion)
+    );
+  }
+
+  return series;
+}
+
+async function guardarFormatoCategoriaPublicadaPlanner(categoria, simulacion) {
+  const formato = simulacion?.formato || {};
+  const payload = {
+    estado: "publicada",
+    formato: formato.playoffsTexto || null,
+    playoffs: Number(formato.clasificados || 0) > 0,
+    clasificados: formato.clasificados || null,
+    dia_juego: simulacion.dia === "" || simulacion.dia == null ? null : Number(simulacion.dia),
+    fecha_inicio: simulacion.fechaInicio || null,
+    fecha_fin: simulacion.fechaFin || null,
+    frecuencia: simulacion.frecuencia || null,
+    fechas_bloqueadas: simulacion.fechasBloqueadas || [],
+    series_playoff: armarSeriesPlayoffCategoriaPlanner(formato)
+  };
+
+  const { error } = await supabaseClient
+    .from("categorias")
+    .update(payload)
+    .eq("id", categoria.id);
+
+  if (error) {
+    throw new Error(`El fixture se publico, pero no se pudo guardar el formato de la categoria: ${error.message}`);
+  }
+}
+
 function armarPayloadFixtureSimulado(simulacion, categoriaId) {
   return (simulacion.fixture?.jornadas || []).flatMap((jornada) =>
     (jornada.partidos || []).map((partido) => ({
@@ -8295,6 +8395,8 @@ async function publicarFixtureSimuladoPlanner() {
       setStatus(status, `No se pudo publicar el fixture: ${error.message}`, "error");
       return;
     }
+
+    await guardarFormatoCategoriaPublicadaPlanner(categoria, simulacion);
 
     await cargarTorneoActivo();
     const categoriasActualizadas = await cargarCategorias();
@@ -8602,6 +8704,7 @@ estado.ultimaSimulacionPlanner = {
   equiposLista,
   ruedas,
   frecuencia,
+  dia,
   diaTexto: dia === "0" ? "Domingo" : "Miercoles",
   fechaInicio,
   fechaFin,
@@ -8609,6 +8712,7 @@ estado.ultimaSimulacionPlanner = {
   fixture: fixtureSimulado,
   jornadasTotales,
   bloqueadasCantidad,
+  fechasBloqueadas: Array.from(fechasBloqueadas),
   fechasEspeciales: Array.from(fechasEspeciales.entries()),
   fechaFinalEstimada,
   entraEnCalendario,
