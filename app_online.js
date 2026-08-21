@@ -46,6 +46,7 @@ const estado = {
   eventosUso: [],
   ultimaSimulacionPlanner: null,
   publicoCargaActual: 0,
+  publicacionFixtureEnCurso: false,
   delegadoDesbloqueado: false,
   delegado: null,
   asociacionDesbloqueada: false,
@@ -165,8 +166,14 @@ async function cargarTorneoActivo() {
   }
 
   if (torneo?.id) {
+    const torneoAnterior = TORNEO_ID;
     TORNEO_ID = torneo.id;
     estado.torneoActivo = torneo;
+    if (torneoAnterior !== TORNEO_ID) {
+      estado.partidosPorCategoria = {};
+      estado.playoffsPorCategoria = {};
+      estado.programacionPorCategoriaId = {};
+    }
     APP_CONFIG.organizacionActiva.torneoLabel = [torneo.nombre, torneo.temporada].filter(Boolean).join(" · ");
     aplicarConfiguracionVisual();
   }
@@ -3604,7 +3611,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
 async function renderPublicoCategoria(nombreCategoria) {
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
   if (categoriaUsaPlayoffsPublicos(nombreCategoria)) {
-    await cargarResultadosPlayoffCategoria(nombreCategoria);
+    await cargarResultadosPlayoffCategoria(nombreCategoria, true);
   }
   renderTablaSimple(nombreCategoria, partidos);
   renderFixturePublico(nombreCategoria);
@@ -3645,7 +3652,7 @@ async function refrescarPublicoCategoria(nombreCategoria) {
   try {
     const cargas = [cargarPartidosCategoria(nombreCategoria)];
     if (categoriaUsaPlayoffsPublicos(nombreCategoria)) {
-      cargas.push(cargarResultadosPlayoffCategoria(nombreCategoria));
+      cargas.push(cargarResultadosPlayoffCategoria(nombreCategoria, true));
     }
     await Promise.all(cargas);
 
@@ -3734,7 +3741,7 @@ async function refrescarCategoria(nombreCategoria, opciones = {}) {
   }
 
   if (incluirPartidos) await cargarPartidosCategoria(nombreCategoria);
-  if (incluirPlayoffs) await cargarResultadosPlayoffCategoria(nombreCategoria);
+  if (incluirPlayoffs) await cargarResultadosPlayoffCategoria(nombreCategoria, true);
   if (categoria?.id && incluirProgramacion) await cargarProgramacionCategoria(categoria.id);
   if (actualizarPublico) renderPublicoCategoria(nombreCategoria);
 }
@@ -8224,6 +8231,11 @@ async function publicarFixtureSimuladoPlanner() {
   const confirmar = String($("planner-confirmar-publicacion")?.value || "").trim().toUpperCase();
   const simulacion = obtenerSimulacionPlannerActual();
 
+  if (estado.publicacionFixtureEnCurso) {
+    setStatus(status, "Ya hay una publicacion en curso. Espera a que termine antes de volver a tocar el boton.", "warn");
+    return;
+  }
+
   if (!simulacion) {
     setStatus(status, "Primero simula este torneo. Solo se puede publicar la simulacion vigente de esta categoria y competencia.", "warn");
     return;
@@ -8262,6 +8274,7 @@ async function publicarFixtureSimuladoPlanner() {
   }
 
   const boton = $("planner-publicar-fixture");
+  estado.publicacionFixtureEnCurso = true;
   if (boton) boton.disabled = true;
   setStatus(status, "Verificando que la categoria no tenga partidos cargados...", "warn");
 
@@ -8325,6 +8338,7 @@ async function publicarFixtureSimuladoPlanner() {
   } catch (error) {
     setStatus(status, `No se pudo publicar el fixture: ${error.message}`, "error");
   } finally {
+    estado.publicacionFixtureEnCurso = false;
     if (boton) boton.disabled = false;
   }
 }
