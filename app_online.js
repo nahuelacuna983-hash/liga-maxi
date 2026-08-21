@@ -144,6 +144,13 @@ async function cargarTorneoActivo() {
   }
 
   let torneo = torneosVisibles?.[0] || null;
+  if (!torneo && estado.torneoTrabajo?.id) {
+    const partidosTrabajo = await contarPartidosTorneo(estado.torneoTrabajo.id);
+    if (partidosTrabajo > 0) {
+      torneo = estado.torneoTrabajo;
+    }
+  }
+
   if (!torneo) {
     const { data: fallback, error: errorFallback } = await supabaseClient
       .from("torneos")
@@ -165,6 +172,35 @@ async function cargarTorneoActivo() {
   }
 
   return estado.torneoActivo;
+}
+
+async function contarPartidosTorneo(torneoId) {
+  if (!torneoId) return 0;
+
+  const { data: categorias, error: errorCategorias } = await supabaseClient
+    .from("categorias")
+    .select("id")
+    .eq("torneo_id", torneoId);
+
+  if (errorCategorias) {
+    console.warn("No se pudieron contar categorias del torneo:", errorCategorias.message);
+    return 0;
+  }
+
+  const ids = (categorias || []).map((cat) => cat.id).filter(Boolean);
+  if (!ids.length) return 0;
+
+  const { count, error } = await supabaseClient
+    .from("partidos")
+    .select("id", { count: "exact", head: true })
+    .in("categoria_id", ids);
+
+  if (error) {
+    console.warn("No se pudieron contar partidos del torneo:", error.message);
+    return 0;
+  }
+
+  return count || 0;
 }
 
 function obtenerSesionUso() {
@@ -500,9 +536,32 @@ async function cargarCategorias() {
     throw new Error(`No se pudieron cargar las categorías: ${error.message}`);
   }
 
-  estado.categorias = deduplicarCategoriasPorNombre(data || []);
+  const categorias = deduplicarCategoriasPorNombre(data || []);
+  const conteoPartidos = await contarPartidosPorCategoria(categorias.map((cat) => cat.id));
+  const categoriasConPartidos = categorias.filter((cat) => (conteoPartidos[cat.id] || 0) > 0);
+  estado.categorias = categoriasConPartidos.length ? categoriasConPartidos : categorias;
   guardarCachePublica("categorias", TORNEO_ID, estado.categorias);
   return estado.categorias;
+}
+
+async function contarPartidosPorCategoria(categoriaIds) {
+  const ids = (categoriaIds || []).filter(Boolean);
+  if (!ids.length) return {};
+
+  const { data, error } = await supabaseClient
+    .from("partidos")
+    .select("categoria_id")
+    .in("categoria_id", ids);
+
+  if (error) {
+    console.warn("No se pudieron contar partidos por categoria:", error.message);
+    return {};
+  }
+
+  return (data || []).reduce((acc, partido) => {
+    acc[partido.categoria_id] = (acc[partido.categoria_id] || 0) + 1;
+    return acc;
+  }, {});
 }
 
 function deduplicarCategoriasPorNombre(categorias) {
