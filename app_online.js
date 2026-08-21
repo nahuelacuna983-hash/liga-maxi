@@ -7362,6 +7362,191 @@ function generarInformeSimulacionTorneo(simulacion) {
   mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas. Si queres PDF, usa Imprimir / guardar PDF en la pestaña abierta.`);
 }
 
+function renderFormatoDefinicionInstitucional(formato, categoria) {
+  const filas = [];
+  if (formato?.clasificados) {
+    filas.push(`
+      <tr>
+        <td>Playoffs</td>
+        <td>${escapeHtml(formato.playoffsTexto || "-")}</td>
+      </tr>
+    `);
+    if (formato.clasificados > 4) {
+      filas.push(`
+        <tr>
+          <td>${formato.clasificados === 6 ? "Repechaje" : "Cuartos de final"}</td>
+          <td>${escapeHtml(String(formato.partidosCuartos || "-"))} partido(s) por llave - ${escapeHtml(fechasSeriePlanner(formato, "cuartos", formato.partidosCuartos))}</td>
+        </tr>
+      `);
+    }
+    filas.push(`
+      <tr>
+        <td>Semifinales</td>
+        <td>${escapeHtml(String(formato.partidosSemis || "-"))} partido(s) por llave - ${escapeHtml(fechasSeriePlanner(formato, "semis", formato.partidosSemis))}</td>
+      </tr>
+    `);
+    filas.push(`
+      <tr>
+        <td>Final</td>
+        <td>${escapeHtml(formato.finalTexto || "-")} - ${escapeHtml(fechasSeriePlanner(formato, "final", formato.partidosFinal))}</td>
+      </tr>
+    `);
+  } else {
+    filas.push(`
+      <tr>
+        <td>Playoffs</td>
+        <td>Sin playoffs configurados.</td>
+      </tr>
+    `);
+  }
+
+  if (formato?.partidosPromocion) {
+    filas.push(`
+      <tr>
+        <td>Promocion posterior</td>
+        <td>${escapeHtml(formato.promocionTexto || "-")} - ${escapeHtml(fechasSeriePlanner(formato, "promocion", formato.partidosPromocion))}</td>
+      </tr>
+    `);
+  }
+
+  if (categoria === "Maxi +35 A" || categoria === "Maxi +35 B") {
+    filas.push(`
+      <tr>
+        <td>Ascenso / descenso</td>
+        <td>${escapeHtml(formato?.reglaPromocion || "Regla a confirmar por la organizacion.")}</td>
+      </tr>
+    `);
+  }
+
+  return `
+    <h2>Formato de definicion</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Instancia</th>
+          <th>Detalle</th>
+        </tr>
+      </thead>
+      <tbody>${filas.join("")}</tbody>
+    </table>
+  `;
+}
+
+function renderFixtureInstitucional(simulacion) {
+  const jornadas = simulacion?.fixture?.jornadas || [];
+  if (!jornadas.length) return "<h2>Fixture</h2><p>No hay fixture disponible.</p>";
+
+  return `
+    <h2>Fixture</h2>
+    ${jornadas.map((jornada) => `
+      <h3>Fecha ${escapeHtml(String(jornada.numero))} - ${escapeHtml(fechaPartidoLabel(jornada.fecha) || "Fecha a confirmar")}</h3>
+      ${jornada.libre ? `<p><strong>Libre:</strong> ${escapeHtml(jornada.libre)}</p>` : ""}
+      <table>
+        <thead>
+          <tr>
+            <th>Local</th>
+            <th>Visitante</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(jornada.partidos || []).map((partido) => `
+            <tr>
+              <td>${escapeHtml(partido.local || "-")}</td>
+              <td>${escapeHtml(partido.visitante || "-")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `).join("")}
+  `;
+}
+
+function generarDocumentoOficialFixture() {
+  const simulacion = obtenerSimulacionPlannerActual();
+  const status = $("planner-informe-status") || $("planner-status");
+  if (!simulacion) {
+    const mensaje = "Primero simula la categoria y competencia que queres documentar. El documento oficial sale de esa simulacion vigente.";
+    setStatus(status, mensaje, "warn");
+    mostrarCartelInforme(mensaje, "warn");
+    return;
+  }
+
+  const fechaGeneracion = new Date().toLocaleString("es-AR");
+  const formato = simulacion.formato || detalleFormatoPlanner(simulacion.categoria);
+  const torneo = [simulacion.competencia, APP_CONFIG.organizacionActiva.torneoLabel].filter(Boolean).join(" - ");
+  const fechasEspeciales = (simulacion.fechasEspeciales || [])
+    .map(([desde, hacia]) => `${fechaPlannerLabel(desde)} a ${fechaPlannerLabel(hacia)}`)
+    .join(", ");
+  const html = `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <title>Fixture ${escapeHtml(simulacion.categoria)} ${escapeHtml(simulacion.competencia || "")}</title>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; color: #111; margin: 28px 42px; line-height: 1.35; }
+        header { margin-bottom: 24px; text-align: center; }
+        h1 { margin: 0; font-size: 24px; text-transform: uppercase; }
+        .subtitulo { margin: 6px 0 0; font-size: 15px; }
+        .fecha { margin: 22px 0 18px; text-align: right; }
+        h2 { margin: 22px 0 8px; font-size: 17px; text-transform: uppercase; }
+        h3 { margin: 16px 0 6px; font-size: 14px; }
+        p { margin: 6px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 7px 0 14px; }
+        th, td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; text-align: left; vertical-align: top; }
+        th { background: #eeeeee; font-weight: 700; }
+        .resumen td:first-child { width: 32%; font-weight: 700; }
+        .print-actions { margin: 18px 0; text-align: left; }
+        .print-actions button { padding: 10px 14px; border: 1px solid #111; border-radius: 4px; background: #fff; color: #111; font-weight: 700; cursor: pointer; }
+        footer { margin-top: 28px; text-align: center; font-size: 12px; }
+        @media print {
+          body { margin: 12mm; }
+          .print-actions { display: none; }
+          h2, h3 { break-after: avoid; }
+          tr, table { break-inside: avoid; }
+        }
+      </style>
+    </head>
+    <body>
+      <header>
+        <h1>${escapeHtml(APP_CONFIG.organizacionActiva.nombre)}</h1>
+        <p class="subtitulo">Fixture ${escapeHtml(simulacion.categoria)} - Torneo ${escapeHtml(torneo || "Clausura 2026")}</p>
+      </header>
+      <p class="fecha">Fecha de emision: ${escapeHtml(fechaGeneracion)}</p>
+      <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
+
+      <h2>Resumen</h2>
+      <table class="resumen">
+        <tbody>
+          <tr><td>Categoria</td><td>${escapeHtml(simulacion.categoria)}</td></tr>
+          <tr><td>Competencia</td><td>${escapeHtml(simulacion.competencia || "-")}</td></tr>
+          <tr><td>Equipos</td><td>${escapeHtml(String(simulacion.equipos || simulacion.equiposLista?.length || "-"))}</td></tr>
+          <tr><td>Fechas de fase regular</td><td>${escapeHtml(String(simulacion.jornadasTotales || "-"))}</td></tr>
+          <tr><td>Partidos de fase regular</td><td>${escapeHtml(String(contarPartidosSimulados(simulacion)))}</td></tr>
+          <tr><td>Inicio</td><td>${escapeHtml(fechaPlannerLabel(simulacion.fechaInicio))}</td></tr>
+          <tr><td>Dia de juego</td><td>${escapeHtml(simulacion.diaTexto || "-")}</td></tr>
+          <tr><td>Fecha final estimada</td><td>${escapeHtml(simulacion.fechaFinalEstimada || "-")}</td></tr>
+          <tr><td>Fechas especiales</td><td>${escapeHtml(fechasEspeciales || "No")}</td></tr>
+        </tbody>
+      </table>
+
+      ${renderFormatoDefinicionInstitucional(formato, simulacion.categoria)}
+      ${renderFixtureInstitucional(simulacion)}
+
+      <footer>${escapeHtml(APP_CONFIG.organizacionActiva.nombre)}</footer>
+    </body>
+    </html>
+  `;
+
+  const nombre = descargarInformeHtml(html, `fixture-oficial-${simulacion.categoria}-${simulacion.competencia || "torneo"}`);
+  const abierto = abrirInformeHtml(html);
+  const mensaje = abierto
+    ? `Documento oficial descargado como ${nombre}. Tambien se abrio una pestaña para imprimir o guardar PDF.`
+    : `Documento oficial descargado como ${nombre}. El navegador bloqueo la vista previa para imprimir.`;
+  setStatus(status, mensaje, "ok");
+  mostrarCartelInforme(mensaje);
+}
+
 function claveItemSimulacionPlanner(simulacion) {
   return `${slugify(simulacion?.categoria || "categoria")}__${slugify(simulacion?.competencia || "competencia")}`;
 }
@@ -8185,6 +8370,12 @@ document.addEventListener("click", (event) => {
   descargarUltimaSimulacionPlanner();
 });
 
+document.addEventListener("click", (event) => {
+  const boton = event.target.closest?.(".planner-download-official");
+  if (!boton) return;
+  generarDocumentoOficialFixture();
+});
+
 if (plannerBtn) {
   plannerBtn.addEventListener("click", async () => {
     const categoria = document.getElementById("planner-categoria").value;
@@ -8351,6 +8542,7 @@ guardarSimulacionPlanner(estado.ultimaSimulacionPlanner);
 
         <div class="planner-simulation-actions">
           <button class="secondary planner-download-report" type="button">Descargar fixture simulado</button>
+          <button class="secondary planner-download-official" type="button">Documento oficial del fixture</button>
           <span>Se baja un archivo HTML en Descargas y se abre una vista para imprimir o guardar PDF.</span>
         </div>
 
