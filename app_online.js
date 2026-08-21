@@ -8283,6 +8283,17 @@ async function publicarFixtureSimuladoPlanner() {
       return;
     }
 
+    await cargarTorneoActivo();
+    const categoriasActualizadas = await cargarCategorias();
+    poblarSelectCategorias("publico-categoria", categoriasActualizadas);
+    poblarSelectCategorias("fecha-categoria", categoriasActualizadas);
+    poblarSelectCategorias("delegado-categoria", categoriasActualizadas);
+    if (categoriasActualizadas.some((cat) => cat.nombre === simulacion.categoria)) {
+      if ($("publico-categoria")) $("publico-categoria").value = simulacion.categoria;
+      if ($("fecha-categoria")) $("fecha-categoria").value = simulacion.categoria;
+      if ($("delegado-categoria")) $("delegado-categoria").value = simulacion.categoria;
+    }
+
     await cargarPartidosCategoria(simulacion.categoria);
     renderPreparacionTorneo();
     if ($("publico-categoria")?.value === simulacion.categoria) {
@@ -8713,12 +8724,8 @@ async function inicializar() {
 
     await cargarTorneoActivo();
 
-    const categoriasCache = leerCachePublica("categorias", TORNEO_ID, 60 * 60 * 1000);
-    const categorias = categoriasCache?.length ? categoriasCache : await cargarCategorias();
+    const categorias = await cargarCategorias();
     estado.categorias = categorias;
-    if (categoriasCache?.length) {
-      cargarCategorias().catch((error) => console.warn("No se pudieron refrescar categorias en segundo plano:", error.message));
-    }
     registrarUso("app_abierta", { area: "inicio" });
 
     if (!categorias.length) {
