@@ -431,9 +431,21 @@ function aplicarBloqueoAsociacion() {
   });
 }
 
+function panelPrincipalAsociacion(panel = "documentacion") {
+  if (panel === "habilitados") return "documentacion";
+  if (panel === "informes" || panel === "cierres") return "operacion";
+  if (panel === "uso") return "permisos";
+  return panel;
+}
+
+function panelActualAsociacion() {
+  return document.querySelector(".assoc-panel.activa")?.dataset.asociacionPanelView || "";
+}
+
 function mostrarPanelAsociacion(panel = "documentacion") {
+  const panelPrincipal = panelPrincipalAsociacion(panel);
   document.querySelectorAll(".assoc-nav-btn").forEach((button) => {
-    button.classList.toggle("activo", button.dataset.asociacionPanel === panel);
+    button.classList.toggle("activo", button.dataset.asociacionPanel === panelPrincipal);
   });
 
   document.querySelectorAll(".assoc-panel").forEach((section) => {
@@ -5844,7 +5856,7 @@ async function desbloquearAsociacion() {
     user: estado.usuarioAsociacion.display_name,
     role: estado.usuarioAsociacion.role
   });
-  if (document.querySelector('.assoc-nav-btn.activo')?.dataset.asociacionPanel === "uso") {
+  if (panelActualAsociacion() === "uso") {
     actualizarEstadisticasUso();
   }
   setStatus(status, accesoSupabase ? `Asociación habilitada para ${permisos[0].display_name}.` : "Asociación habilitada.", "ok");
@@ -6241,7 +6253,7 @@ async function inicializarAsociacion() {
     renderProgramacionAsociacion(categoria);
     renderCierreAsociacion(categoria);
     renderInicioAsociacion(categoria);
-    if (document.querySelector('.assoc-nav-btn.activo')?.dataset.asociacionPanel === "habilitados") {
+    if (panelActualAsociacion() === "habilitados") {
       renderListaHabilitadosArbitros(categoria);
     }
     setStatus($("asociacion-status"), "", "");

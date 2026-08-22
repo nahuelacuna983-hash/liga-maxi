@@ -2214,15 +2214,11 @@
 
   <div class="assoc-subnav" aria-label="Secciones de Asociacion">
     <button class="assoc-nav-btn activo" type="button" data-asociacion-panel="inicio">Inicio</button>
-    <button class="assoc-nav-btn" type="button" data-asociacion-panel="operacion">Operacion</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="operacion">Competencia</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="documentacion">Documentacion</button>
-    <button class="assoc-nav-btn" type="button" data-asociacion-panel="habilitados">Habilitados</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="torneo">Torneos</button>
     <button class="assoc-nav-btn" type="button" data-asociacion-panel="programacion">Programacion</button>
-    <button class="assoc-nav-btn" type="button" data-asociacion-panel="informes">Informes</button>
-    <button class="assoc-nav-btn" type="button" data-asociacion-panel="cierres">Cierres</button>
-    <button class="assoc-nav-btn" type="button" data-asociacion-panel="permisos">Permisos</button>
-    <button class="assoc-nav-btn" type="button" data-asociacion-panel="uso">Auditoria</button>
+    <button class="assoc-nav-btn" type="button" data-asociacion-panel="permisos">Administracion</button>
   </div>
 
   <div class="card assoc-context-card">
@@ -2238,11 +2234,11 @@
     <div id="asociacion-inicio-resumen" class="doc-summary"></div>
     <div id="asociacion-inicio-alertas"></div>
     <div class="assoc-home-actions">
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="operacion">Competencia</button>
       <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="programacion">Programacion</button>
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="torneo">Torneos</button>
       <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="documentacion">Documentacion</button>
-      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="habilitados">Habilitados</button>
-      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="operacion">Operacion</button>
-      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="informes">Informes</button>
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="permisos">Administracion</button>
     </div>
   </div>
 
@@ -2500,8 +2496,13 @@
   </div>
 
   <div class="card assoc-panel" data-asociacion-panel-view="operacion">
-  <h3>Operacion deportiva</h3>
-  <p class="note">Correccion de fase regular, resoluciones administrativas y carga de resultados de playoffs.</p>
+  <h3>Competencia</h3>
+  <p class="note">Resultados, playoffs, resoluciones administrativas, informes deportivos y cierre de torneo.</p>
+  <div class="assoc-home-actions">
+    <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="operacion">Resultados</button>
+    <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="cierres">Cierre</button>
+    <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="informes">Informes</button>
+  </div>
   <div class="row">
     <div class="field">
       <label for="asociacion-partido">Partido</label>
@@ -2549,6 +2550,10 @@
   <div class="card assoc-panel" data-asociacion-panel-view="documentacion">
     <h3>Control documental</h3>
     <p class="note">Control administrativo de documentos cargados por delegados.</p>
+    <div class="assoc-home-actions">
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="documentacion">Control documental</button>
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="habilitados">Lista para arbitros</button>
+    </div>
     <div class="doc-filters">
       <div class="field">
         <label for="documentacion-filtro-estado">Estado</label>
@@ -2701,8 +2706,12 @@
   </div>
 
   <div class="card assoc-panel" data-asociacion-panel-view="permisos">
-    <h3>Usuarios y permisos</h3>
-    <p class="note">Base de roles activa en Supabase. Próximo paso: edición visual de usuarios, equipos y accesos desde este panel.</p>
+    <h3>Administracion</h3>
+    <p class="note">Usuarios, permisos, auditoria y acciones de control interno.</p>
+    <div class="assoc-home-actions">
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="permisos">Usuarios y permisos</button>
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="uso">Auditoria</button>
+    </div>
     <div class="assoc-permission-grid">
       <div><strong>Admin general</strong><span>Acceso total y modo socorro.</span></div>
       <div><strong>Asociación</strong><span>Torneos, correcciones, documentación y socorro.</span></div>
@@ -2723,7 +2732,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260821-formato-fixture"></script>
+<script src="app_online.js?v=20260821-nav-asociacion"></script>
 
 <script>
   if ("serviceWorker" in navigator) {
