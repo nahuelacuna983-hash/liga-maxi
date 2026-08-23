@@ -7298,6 +7298,65 @@ function renderPlayoffsSimuladosInforme(formato) {
   `;
 }
 
+function datosSerieFormatoCategoria(categoria, claves) {
+  const series = categoria?.series_playoff || {};
+  for (const clave of claves) {
+    if (series[clave]) return series[clave];
+  }
+  return {};
+}
+
+function formatoInformeCategoria(categoriaNombre) {
+  const categoria = obtenerCategoriaPorNombre(categoriaNombre);
+  if (!categoria?.playoffs && !Number(categoria?.clasificados || 0)) {
+    return detalleFormatoPlanner(categoriaNombre);
+  }
+
+  const clasificados = Number(categoria.clasificados || 0);
+  const rondaInicial = datosSerieFormatoCategoria(categoria, ["cuartos", "clasificacion", "repechaje"]);
+  const semifinales = datosSerieFormatoCategoria(categoria, ["semifinales"]);
+  const final = datosSerieFormatoCategoria(categoria, ["final"]);
+  const promocion = datosSerieFormatoCategoria(categoria, ["promocion"]);
+  const fechasRondaInicial = Array.isArray(rondaInicial.fechas) ? rondaInicial.fechas : [rondaInicial.fecha].filter(Boolean);
+  const fechasSemis = Array.isArray(semifinales.fechas) ? semifinales.fechas : [semifinales.fecha].filter(Boolean);
+  const fechasFinal = Array.isArray(final.fechas) ? final.fechas : [final.fecha].filter(Boolean);
+  const fechasPromocion = Array.isArray(promocion.fechas) ? promocion.fechas : [promocion.fecha].filter(Boolean);
+  const partidosFinal = Number(final.partidos || final.cantidad_partidos || final.juegos || final.mejor_de || 1);
+  const finalTexto = partidosFinal === 3 ? "Mejor de 3" : partidosFinal === 2 ? "Mejor de 2" : "1 partido";
+
+  return {
+    clasificados,
+    playoffsTexto: categoria.formato || (clasificados ? `Top ${clasificados}` : "Sin playoffs"),
+    finalTexto,
+    definicionBTexto: categoriaNombre === "Maxi +35 B" ? "Por playoffs" : "-",
+    descensoATexto: categoriaNombre === "Maxi +35 A" ? "10mo directo" : "-",
+    promocionTexto: promocion.partidos ? `${promocion.partidos} partido(s)` : "Sin partido extra",
+    reglaPromocion: categoriaNombre === "Maxi +35 A"
+      ? "9no juega promocion y 10mo desciende directo."
+      : categoriaNombre === "Maxi +35 B"
+        ? "Campeon de playoffs asciende y subcampeon juega promocion."
+        : clasificados === 6
+          ? "Top 6: 3ro vs 6to y 4to vs 5to en repechaje."
+          : "Regla configurada por la organizacion.",
+    partidosCuartos: Number(rondaInicial.partidos || rondaInicial.cantidad_partidos || rondaInicial.juegos || 1),
+    partidosSemis: Number(semifinales.partidos || semifinales.cantidad_partidos || semifinales.juegos || 1),
+    partidosFinal,
+    partidosPromocion: Number(promocion.partidos || promocion.cantidad_partidos || promocion.juegos || 0),
+    fechaCuartos: fechasRondaInicial[0] || "",
+    fechaCuartos2: fechasRondaInicial[1] || "",
+    fechaCuartos3: fechasRondaInicial[2] || "",
+    fechaSemis: fechasSemis[0] || "",
+    fechaSemis2: fechasSemis[1] || "",
+    fechaSemis3: fechasSemis[2] || "",
+    fechaFinal1: fechasFinal[0] || "",
+    fechaFinal2: fechasFinal[1] || "",
+    fechaFinal3: fechasFinal[2] || "",
+    fechaPromocion1: fechasPromocion[0] || "",
+    fechaPromocion2: fechasPromocion[1] || "",
+    fechaPromocion3: fechasPromocion[2] || ""
+  };
+}
+
 function descargarInformeHtml(html, nombreBase) {
   const nombre = `${slugify(nombreBase)}.html`;
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
@@ -7771,30 +7830,15 @@ function descargarUltimaSimulacionPlanner() {
 }
 
 function generarInformeTorneo() {
-  if (estado.ultimaSimulacionPlanner) {
-    const categoriaActual = document.getElementById("planner-categoria")?.value || "";
-    const competenciaActual = document.getElementById("planner-competencia")?.value || "";
-    if (
-      estado.ultimaSimulacionPlanner.categoria === categoriaActual &&
-      estado.ultimaSimulacionPlanner.competencia === competenciaActual
-    ) {
-      descargarUltimaSimulacionPlanner();
-      return;
-    }
-    const mensaje = "Primero simula este torneo para generar el fixture correspondiente.";
-    setStatus($("planner-informe-status"), mensaje, "warn");
-    mostrarCartelInforme(mensaje, "warn");
-    return;
-  }
-
-  const categoria = document.getElementById("planner-categoria")?.value || "";
-  const competencia = document.getElementById("planner-competencia")?.value || "";
+  const categoria = $("asociacion-categoria")?.value || document.getElementById("planner-categoria")?.value || "";
+  const competencia = estado.torneoActivo?.nombre || APP_CONFIG.organizacionActiva.torneoLabel || "Torneo actual";
   const partidos = estado.partidosPorCategoria[categoria] || [];
   const tabla = calcularTabla(partidos);
-  const formato = detalleFormatoPlanner(categoria);
+  const formato = formatoInformeCategoria(categoria);
   const pendientes = partidos
     .filter((p) => !partidoTieneResultado(p))
     .sort((a, b) => Number(a.jornada || 0) - Number(b.jornada || 0));
+  const resultadosCargados = partidos.filter(partidoTieneResultado);
   const ultimosResultados = partidos
     .filter(partidoTieneResultado)
     .sort((a, b) => Number(b.jornada || 0) - Number(a.jornada || 0))
@@ -7813,7 +7857,7 @@ function generarInformeTorneo() {
         h1 { margin: 0 0 4px; font-size: 26px; }
         h2 { margin: 22px 0 8px; font-size: 18px; }
         .muted { color: #4b5563; margin: 0 0 16px; }
-        .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0; }
+        .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0; }
         .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; }
         .box strong { display: block; font-size: 18px; }
         table { width: 100%; border-collapse: collapse; margin-top: 8px; }
@@ -7839,8 +7883,9 @@ function generarInformeTorneo() {
 
       <div class="summary">
         <div class="box"><span>Equipos</span><strong>${tabla.length}</strong></div>
+        <div class="box"><span>Partidos del fixture</span><strong>${partidos.length}</strong></div>
+        <div class="box"><span>Resultados cargados</span><strong>${resultadosCargados.length}</strong></div>
         <div class="box"><span>Partidos pendientes</span><strong>${pendientes.length}</strong></div>
-        <div class="box"><span>Partidos cargados</span><strong>${partidos.length}</strong></div>
       </div>
 
       <h2>Reglas y fechas</h2>
