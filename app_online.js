@@ -7306,7 +7306,49 @@ function datosSerieFormatoCategoria(categoria, claves) {
   return {};
 }
 
-function formatoInformeCategoria(categoriaNombre) {
+function siguienteFechaISO(fechaISO, semanas = 1) {
+  const fecha = fechaLocalPlanner(fechaISO);
+  if (!fecha) return "";
+  fecha.setDate(fecha.getDate() + (7 * semanas));
+  return fechaKeyPlanner(fecha);
+}
+
+function completarFechasFaltantesFormatoInforme(formato, partidos) {
+  const copia = { ...formato };
+  const fechasFixture = (partidos || [])
+    .map((partido) => partido.fecha)
+    .filter(Boolean)
+    .sort();
+  let cursor = fechasFixture[fechasFixture.length - 1] || "";
+  if (!cursor || !copia.clasificados) return copia;
+
+  const completar = (claves, cantidad) => {
+    const existentes = claves.filter((clave) => copia[clave]);
+    if (existentes.length >= cantidad) return;
+    for (const clave of claves.slice(0, cantidad)) {
+      if (copia[clave]) {
+        cursor = copia[clave];
+        continue;
+      }
+      cursor = siguienteFechaISO(cursor);
+      copia[clave] = cursor;
+      copia.fechasInferidas = true;
+    }
+  };
+
+  if (copia.clasificados > 4) {
+    completar(["fechaCuartos", "fechaCuartos2", "fechaCuartos3"], copia.partidosCuartos || 1);
+  }
+  completar(["fechaSemis", "fechaSemis2", "fechaSemis3"], copia.partidosSemis || 1);
+  completar(["fechaFinal1", "fechaFinal2", "fechaFinal3"], copia.partidosFinal || 1);
+  if (copia.partidosPromocion) {
+    completar(["fechaPromocion1", "fechaPromocion2", "fechaPromocion3"], copia.partidosPromocion);
+  }
+
+  return copia;
+}
+
+function formatoInformeCategoria(categoriaNombre, partidos = []) {
   const categoria = obtenerCategoriaPorNombre(categoriaNombre);
   if (!categoria?.playoffs && !Number(categoria?.clasificados || 0)) {
     return detalleFormatoPlanner(categoriaNombre);
@@ -7324,7 +7366,7 @@ function formatoInformeCategoria(categoriaNombre) {
   const partidosFinal = Number(final.partidos || final.cantidad_partidos || final.juegos || final.mejor_de || 1);
   const finalTexto = partidosFinal === 3 ? "Mejor de 3" : partidosFinal === 2 ? "Mejor de 2" : "1 partido";
 
-  return {
+  return completarFechasFaltantesFormatoInforme({
     clasificados,
     playoffsTexto: categoria.formato || (clasificados ? `Top ${clasificados}` : "Sin playoffs"),
     finalTexto,
@@ -7354,7 +7396,7 @@ function formatoInformeCategoria(categoriaNombre) {
     fechaPromocion1: fechasPromocion[0] || "",
     fechaPromocion2: fechasPromocion[1] || "",
     fechaPromocion3: fechasPromocion[2] || ""
-  };
+  }, partidos);
 }
 
 function descargarInformeHtml(html, nombreBase) {
@@ -7834,7 +7876,7 @@ function generarInformeTorneo() {
   const competencia = estado.torneoActivo?.nombre || APP_CONFIG.organizacionActiva.torneoLabel || "Torneo actual";
   const partidos = estado.partidosPorCategoria[categoria] || [];
   const tabla = calcularTabla(partidos);
-  const formato = formatoInformeCategoria(categoria);
+  const formato = formatoInformeCategoria(categoria, partidos);
   const pendientes = partidos
     .filter((p) => !partidoTieneResultado(p))
     .sort((a, b) => Number(a.jornada || 0) - Number(b.jornada || 0));
@@ -7897,6 +7939,7 @@ function generarInformeTorneo() {
         <p><strong>Promocion posterior:</strong> ${escapeHtml(formato.promocionTexto || "Sin partido extra")} ${formato.partidosPromocion ? `- ${escapeHtml(fechasSeriePlanner(formato, "promocion", formato.partidosPromocion))}` : ""}</p>
         <p><strong>Ascenso / repechaje B:</strong> ${escapeHtml(formato.definicionBTexto)} - <strong>Descenso +35 A:</strong> ${escapeHtml(formato.descensoATexto)}</p>
         <p><strong>Regla aplicada:</strong> ${escapeHtml(formato.reglaPromocion)}</p>
+        ${formato.fechasInferidas ? `<p><strong>Nota:</strong> Las fechas de playoffs se estiman automaticamente desde la ultima fecha de fase regular porque la categoria no las tiene guardadas como dato oficial.</p>` : ""}
       </div>
 
       <h2>Tabla actual</h2>
