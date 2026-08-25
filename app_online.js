@@ -3708,6 +3708,30 @@ async function refrescarPublicoCategoria(nombreCategoria) {
   }
 }
 
+function inicializarDatosInternosEnSegundoPlano(categoriaInicial) {
+  window.setTimeout(async () => {
+    try {
+      await inicializarSesionAuth();
+      await cargarRequisitosDocumentales();
+      await refrescarCategoria(categoriaInicial, {
+        actualizarPublico: false,
+        incluirPartidos: false,
+        incluirPlayoffs: false,
+        incluirProgramacion: false
+      });
+
+      if ($("delegado-categoria")) $("delegado-categoria").value = categoriaInicial;
+      poblarSelectPartidosDelegado(categoriaInicial);
+      aplicarBloqueoDelegado();
+      renderDocumentacionDelegado();
+
+      await inicializarAsociacion();
+    } catch (error) {
+      console.warn("No se pudieron cargar datos internos iniciales:", error);
+    }
+  }, 0);
+}
+
 function completarInputsPartidoSeleccionado() {
   const categoria = $("delegado-categoria").value;
   const partidoId = $("delegado-partido").value;
@@ -8963,26 +8987,14 @@ async function inicializar() {
     $("publico-categoria").value = categoriaInicial;
     if ($("fecha-categoria")) $("fecha-categoria").value = categoriaInicial;
     actualizarUrlCategoria(categoriaInicial, parametrosVista.vista);
-    await inicializarSesionAuth();
 
     if (parametrosVista.vista === "fecha") {
       mostrarVista("fecha");
     }
 
-    await refrescarPublicoCategoria(categoriaInicial);
-    await cargarRequisitosDocumentales();
-    await refrescarCategoria(categoriaInicial, {
-      actualizarPublico: false,
-      incluirPartidos: false,
-      incluirPlayoffs: false,
-      incluirProgramacion: false
-    });
-    $("delegado-categoria").value = categoriaInicial;
-    poblarSelectPartidosDelegado(categoriaInicial);
-    aplicarBloqueoDelegado();
-    renderDocumentacionDelegado();
-
-    await inicializarAsociacion();
+    const cargaPublicaInicial = refrescarPublicoCategoria(categoriaInicial);
+    inicializarDatosInternosEnSegundoPlano(categoriaInicial);
+    await cargaPublicaInicial;
 
     $("delegado-categoria").addEventListener("change", async (e) => {
       const categoria = e.target.value;
