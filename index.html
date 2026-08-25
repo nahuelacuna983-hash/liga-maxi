@@ -1071,6 +1071,17 @@
       min-width: 220px;
     }
 
+    .audit-table td strong,
+    .audit-table td small {
+      display: block;
+    }
+
+    .audit-table td small {
+      margin-top: 4px;
+      color: #bfdbfe;
+      font-weight: 700;
+    }
+
     @media (max-width: 700px) {
       .app {
         width: min(100%, calc(100% - 14px));
@@ -2557,6 +2568,7 @@
     <div class="assoc-home-actions">
       <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="documentacion">Control documental</button>
       <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="habilitados">Lista para arbitros</button>
+      <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="auditoria-documental">Auditoria planilla</button>
     </div>
     <div class="doc-filters">
       <div class="field">
@@ -2628,6 +2640,38 @@
       <div id="drive-doc-tabla" class="table-wrap"></div>
     </div>
     <div id="documentacion-tabla" class="table-wrap"></div>
+  </div>
+
+  <div class="card assoc-panel" data-asociacion-panel-view="auditoria-documental">
+    <h3>Auditoria documental</h3>
+    <p class="note">Lectura administrativa importada desde planillas de control. No cambia habilitaciones ni expone informacion al publico.</p>
+    <div class="doc-filters">
+      <div class="field">
+        <label for="auditoria-filtro-equipo">Club</label>
+        <select id="auditoria-filtro-equipo">
+          <option value="">Todos los clubes</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="auditoria-filtro-prioridad">Prioridad</label>
+        <select id="auditoria-filtro-prioridad">
+          <option value="">Todas</option>
+          <option value="critica">Criticas</option>
+          <option value="alta">Altas</option>
+          <option value="media">Medias</option>
+          <option value="validado">Validadas</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="auditoria-buscar">Buscar</label>
+        <input id="auditoria-buscar" type="search" placeholder="Jugador, club, documento o motivo" />
+      </div>
+      <div class="field doc-filter-action">
+        <button id="auditoria-refrescar" class="secondary" type="button">Actualizar auditoria</button>
+      </div>
+    </div>
+    <div id="auditoria-resumen" class="doc-summary"></div>
+    <div id="auditoria-tabla" class="table-wrap"></div>
   </div>
 
   <div class="card assoc-panel" data-asociacion-panel-view="habilitados">

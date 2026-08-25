@@ -1503,6 +1503,17 @@ td:nth-child(2) {
   vertical-align: top;
 }
 
+.audit-table td strong,
+.audit-table td small {
+  display: block;
+}
+
+.audit-table td small {
+  margin-top: 4px;
+  color: #bfdbfe;
+  font-weight: 700;
+}
+
 .doc-team-start td {
   border-top: 2px solid rgba(96, 165, 250, 0.28);
 }

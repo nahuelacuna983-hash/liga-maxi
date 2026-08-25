@@ -42,6 +42,7 @@ const estado = {
   jugadoresPorCategoriaId: {},
   documentosJugadoresPorCategoriaId: {},
   driveDocumentosPorCategoriaId: {},
+  auditoriaDocumentalPorCategoriaId: {},
   filasDocumentacionAsociacion: [],
   eventosUso: [],
   ultimaSimulacionPlanner: null,
@@ -433,6 +434,7 @@ function aplicarBloqueoAsociacion() {
 
 function panelPrincipalAsociacion(panel = "documentacion") {
   if (panel === "habilitados") return "documentacion";
+  if (panel === "auditoria-documental") return "documentacion";
   if (panel === "informes" || panel === "cierres") return "operacion";
   if (panel === "uso") return "permisos";
   return panel;
@@ -460,6 +462,9 @@ function mostrarPanelAsociacion(panel = "documentacion") {
   }
   if (panel === "habilitados" && estado.asociacionDesbloqueada) {
     renderListaHabilitadosArbitros($("asociacion-categoria")?.value || "");
+  }
+  if (panel === "auditoria-documental" && estado.asociacionDesbloqueada) {
+    renderAuditoriaDocumentalAsociacion($("asociacion-categoria")?.value || "");
   }
   if (panel === "cierres" && estado.asociacionDesbloqueada) {
     renderCierreAsociacion($("asociacion-categoria")?.value || "");
@@ -1084,6 +1089,33 @@ async function cargarDocumentosDriveCategoria(categoriaId, force = false) {
   estado.driveDocumentosError = "";
   estado.driveDocumentosPorCategoriaId[categoriaId] = data || [];
   return estado.driveDocumentosPorCategoriaId[categoriaId];
+}
+
+async function cargarAuditoriaDocumentalCategoria(categoriaId, force = false) {
+  if (!categoriaId) return [];
+
+  if (!force && estado.auditoriaDocumentalPorCategoriaId[categoriaId]) {
+    return estado.auditoriaDocumentalPorCategoriaId[categoriaId];
+  }
+
+  const { data, error } = await supabaseClient
+    .from("v_document_audit_results_admin")
+    .select("id, categoria_id, categoria_nombre, equipo_nombre, player_name, alcance, planilla_arbitro, document_type, declared_status, located_status, validated_status, valid_until, audit_status, risk_level, risk_order, observation, evidence_url, source_sheet, cutoff_date, created_at")
+    .eq("categoria_id", categoriaId)
+    .order("risk_order", { ascending: true })
+    .order("equipo_nombre", { ascending: true })
+    .order("player_name", { ascending: true });
+
+  if (error) {
+    console.warn("No se pudo cargar auditoria documental:", error.message);
+    estado.auditoriaDocumentalPorCategoriaId[categoriaId] = [];
+    estado.auditoriaDocumentalError = error.message;
+    return estado.auditoriaDocumentalPorCategoriaId[categoriaId];
+  }
+
+  estado.auditoriaDocumentalError = "";
+  estado.auditoriaDocumentalPorCategoriaId[categoriaId] = data || [];
+  return estado.auditoriaDocumentalPorCategoriaId[categoriaId];
 }
 
 function normalizarJugadoresDesdeDocumentos(rows) {
@@ -1929,6 +1961,136 @@ function renderDocumentacionDriveAsociacion(nombreCategoria) {
             <td>${docStateHtml(driveDocMatchLabel(row.match_status), driveDocStateClass(row.match_status))}</td>
             <td>${escapeHtml(row.observation || "")}</td>
             <td>${renderAccionesDriveDocumento(row)}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function auditoriaPrioridadClase(valor) {
+  const normalized = normalizarTexto(valor);
+  if (normalized.includes("critica") || normalized.includes("crítica")) return "rechazado";
+  if (normalized.includes("alta")) return "observado";
+  if (normalized.includes("media")) return "cargado";
+  if (normalized.includes("validado") || normalized.includes("conforme")) return "aprobado";
+  return "pendiente";
+}
+
+function poblarFiltroAuditoriaEquipos(rows) {
+  const select = $("auditoria-filtro-equipo");
+  if (!select) return;
+
+  const valorActual = select.value || "";
+  const equipos = Array.from(new Set((rows || []).map((row) => row.equipo_nombre).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b));
+
+  select.innerHTML = `<option value="">Todos los clubes</option>${equipos.map((equipo) =>
+    `<option value="${escapeHtml(equipo)}">${escapeHtml(equipo)}</option>`
+  ).join("")}`;
+
+  if (equipos.includes(valorActual)) select.value = valorActual;
+}
+
+function renderAuditoriaDocumentalAsociacion(nombreCategoria) {
+  const resumen = $("auditoria-resumen");
+  const tabla = $("auditoria-tabla");
+  if (!resumen || !tabla) return;
+
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const rows = categoria ? estado.auditoriaDocumentalPorCategoriaId[categoria.id] || [] : [];
+
+  if (estado.auditoriaDocumentalError) {
+    resumen.innerHTML = "";
+    tabla.innerHTML = `
+      <div class="empty">
+        Todavia no esta activa la tabla de auditoria documental. Ejecuta <strong>docs/ejecutar-en-supabase-auditoria-documental.sql</strong> y luego importa los datos de la planilla.
+      </div>
+    `;
+    return;
+  }
+
+  poblarFiltroAuditoriaEquipos(rows);
+
+  const filtroEquipo = $("auditoria-filtro-equipo")?.value || "";
+  const filtroPrioridad = $("auditoria-filtro-prioridad")?.value || "";
+  const filtroTexto = normalizarTexto($("auditoria-buscar")?.value || "");
+  const filtradas = rows.filter((row) => {
+    const texto = normalizarTexto([
+      row.equipo_nombre,
+      row.player_name,
+      row.alcance,
+      row.document_type,
+      row.audit_status,
+      row.risk_level,
+      row.observation
+    ].join(" "));
+
+    return (!filtroEquipo || nombresEquipoCoinciden(row.equipo_nombre, filtroEquipo)) &&
+      (!filtroPrioridad || normalizarTexto(row.risk_level || row.audit_status).includes(normalizarTexto(filtroPrioridad))) &&
+      (!filtroTexto || texto.includes(filtroTexto));
+  });
+
+  const criticas = rows.filter((row) => auditoriaPrioridadClase(row.risk_level || row.audit_status) === "rechazado").length;
+  const altas = rows.filter((row) => auditoriaPrioridadClase(row.risk_level || row.audit_status) === "observado").length;
+  const medias = rows.filter((row) => auditoriaPrioridadClase(row.risk_level || row.audit_status) === "cargado").length;
+  const validadas = rows.filter((row) => auditoriaPrioridadClase(row.risk_level || row.audit_status) === "aprobado").length;
+
+  resumen.innerHTML = `
+    <div class="doc-pill"><strong>${rows.length}</strong><span>Registros</span></div>
+    <div class="doc-pill doc-pill-alert"><strong>${criticas}</strong><span>Criticas</span></div>
+    <div class="doc-pill doc-pill-alert"><strong>${altas}</strong><span>Altas</span></div>
+    <div class="doc-pill"><strong>${medias}</strong><span>Medias</span></div>
+    <div class="doc-pill"><strong>${validadas}</strong><span>Validadas</span></div>
+    <div class="doc-pill"><strong>${filtradas.length}</strong><span>Filtradas</span></div>
+  `;
+
+  if (!rows.length) {
+    tabla.innerHTML = `
+      <div class="empty">
+        No hay auditoria importada para ${escapeHtml(nombreCategoria || "esta categoria")}. La pantalla ya esta lista para recibir los datos de la planilla.
+      </div>
+    `;
+    return;
+  }
+
+  if (!filtradas.length) {
+    tabla.innerHTML = `<div class="empty">No hay hallazgos que coincidan con los filtros.</div>`;
+    return;
+  }
+
+  tabla.innerHTML = `
+    <table class="doc-table audit-table">
+      <thead>
+        <tr>
+          <th>Prioridad</th>
+          <th>Club</th>
+          <th>Jugador / alcance</th>
+          <th>Documento</th>
+          <th>Declarado</th>
+          <th>Localizado</th>
+          <th>Validado</th>
+          <th>Vigencia</th>
+          <th>Motivo</th>
+          <th>Evidencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtradas.map((row) => `
+          <tr>
+            <td>${docStateHtml(row.risk_level || row.audit_status || "Pendiente", auditoriaPrioridadClase(row.risk_level || row.audit_status))}</td>
+            <td>${escapeHtml(row.equipo_nombre || "")}</td>
+            <td>
+              <strong>${escapeHtml(row.player_name || row.alcance || "Plantel")}</strong>
+              ${row.planilla_arbitro ? `<small>Planilla arbitro: ${escapeHtml(row.planilla_arbitro)}</small>` : ""}
+            </td>
+            <td>${escapeHtml(row.document_type || "")}</td>
+            <td>${escapeHtml(row.declared_status || "")}</td>
+            <td>${escapeHtml(row.located_status || "")}</td>
+            <td>${escapeHtml(row.validated_status || "")}</td>
+            <td>${escapeHtml(row.valid_until || "")}</td>
+            <td>${escapeHtml(row.observation || row.audit_status || "")}</td>
+            <td>${row.evidence_url ? `<a class="drive-doc-link" href="${escapeHtml(row.evidence_url)}" target="_blank" rel="noopener noreferrer">Ver</a>` : `<span class="doc-action-muted">Sin enlace</span>`}</td>
           </tr>
         `).join("")}
       </tbody>
@@ -3786,7 +3948,8 @@ async function refrescarCategoria(nombreCategoria, opciones = {}) {
     actualizarPublico = true,
     incluirPartidos = true,
     incluirPlayoffs = true,
-    incluirProgramacion = true
+    incluirProgramacion = true,
+    incluirAuditoria = true
   } = opciones;
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   if (categoria && incluirDocumentacion) {
@@ -3795,6 +3958,7 @@ async function refrescarCategoria(nombreCategoria, opciones = {}) {
     await cargarJugadoresCategoria(categoria.id);
     await cargarDocumentosJugadoresCategoria(categoria.id);
   }
+  if (categoria?.id && incluirAuditoria) await cargarAuditoriaDocumentalCategoria(categoria.id);
 
   if (incluirPartidos) await cargarPartidosCategoria(nombreCategoria);
   if (incluirPlayoffs) await cargarResultadosPlayoffCategoria(nombreCategoria, true);
@@ -5849,6 +6013,7 @@ async function cargarDatosAsociacionActual() {
   const categoriaData = estado.categorias.find((cat) => cat.nombre === categoria);
   if (categoriaData) await cargarDocumentosDriveCategoria(categoriaData.id);
   renderDocumentacionDriveAsociacion(categoria);
+  renderAuditoriaDocumentalAsociacion(categoria);
   renderProgramacionAsociacion(categoria);
   renderCierreAsociacion(categoria);
   renderInicioAsociacion(categoria);
@@ -6274,11 +6439,15 @@ async function inicializarAsociacion() {
     const categoriaData = estado.categorias.find((cat) => cat.nombre === categoria);
     if (categoriaData) await cargarDocumentosDriveCategoria(categoriaData.id);
     renderDocumentacionDriveAsociacion(categoria);
+    renderAuditoriaDocumentalAsociacion(categoria);
     renderProgramacionAsociacion(categoria);
     renderCierreAsociacion(categoria);
     renderInicioAsociacion(categoria);
     if (panelActualAsociacion() === "habilitados") {
       renderListaHabilitadosArbitros(categoria);
+    }
+    if (panelActualAsociacion() === "auditoria-documental") {
+      renderAuditoriaDocumentalAsociacion(categoria);
     }
     setStatus($("asociacion-status"), "", "");
   });
@@ -6324,6 +6493,21 @@ async function inicializarAsociacion() {
     const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
     if (categoria) await cargarDocumentosDriveCategoria(categoria.id, true);
     renderDocumentacionDriveAsociacion(categoriaNombre);
+  });
+  $("auditoria-filtro-equipo")?.addEventListener("change", () => {
+    renderAuditoriaDocumentalAsociacion($("asociacion-categoria").value);
+  });
+  $("auditoria-filtro-prioridad")?.addEventListener("change", () => {
+    renderAuditoriaDocumentalAsociacion($("asociacion-categoria").value);
+  });
+  $("auditoria-buscar")?.addEventListener("input", () => {
+    renderAuditoriaDocumentalAsociacion($("asociacion-categoria").value);
+  });
+  $("auditoria-refrescar")?.addEventListener("click", async () => {
+    const categoriaNombre = $("asociacion-categoria").value;
+    const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
+    if (categoria) await cargarAuditoriaDocumentalCategoria(categoria.id, true);
+    renderAuditoriaDocumentalAsociacion(categoriaNombre);
   });
   $("documentacion-exportar").addEventListener("click", exportarDocumentacionCsv);
   $("habilitados-filtro-equipo")?.addEventListener("change", () => {
