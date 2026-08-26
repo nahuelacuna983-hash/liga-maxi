@@ -989,6 +989,17 @@
       margin-bottom: 2px;
     }
 
+    .doc-pill span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .doc-pill-alert {
+      border-color: rgba(251, 146, 60, 0.44);
+      background: rgba(249, 115, 22, 0.14);
+    }
+
     .doc-state {
       display: inline-flex;
       padding: 5px 8px;
@@ -1065,6 +1076,30 @@
       margin-top: 6px;
       color: #fde68a;
       font-weight: 800;
+    }
+
+    .doc-scope-note {
+      border: 1px solid rgba(96, 165, 250, 0.32);
+      background: rgba(37, 99, 235, 0.12);
+      border-radius: 12px;
+      margin: 12px 0 14px;
+      padding: 12px;
+    }
+
+    .doc-scope-note strong,
+    .doc-scope-note span {
+      display: block;
+    }
+
+    .doc-scope-note span {
+      color: #dbeafe;
+      font-size: 13px;
+      line-height: 1.35;
+      margin-top: 5px;
+    }
+
+    .doc-scope-note .doc-table {
+      margin-top: 10px;
     }
 
     .doc-table td:nth-child(2) {
@@ -2780,7 +2815,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260823-informes-fechas"></script>
+<script src="app_online.js?v=20260826-alertas-delegado"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

@@ -2428,6 +2428,7 @@ function renderDocumentacionDelegado() {
     <div class="doc-delegate-summary">
       ${equiposDelegado.map((equipo) => renderResumenDocumentalDelegado(categoria, equipo, documentosEquipo)).join("")}
     </div>
+    ${renderAlertasVencimientoDelegado(categoria, equiposDelegado, documentosEquipo, documentosJugador)}
     ${renderAvisoDocumentosJugador(documentosJugador)}
     <table class="doc-table">
       <thead>
@@ -2463,6 +2464,125 @@ function renderDocumentacionDelegado() {
       </tbody>
     </table>
     ${renderDocumentacionJugadoresDelegado(categoria, equiposDelegado, documentosJugador)}
+  `;
+}
+
+function obtenerAlertasVencimientoDelegado(categoria, equiposDelegado, documentosEquipo, documentosJugador) {
+  const alertas = [];
+
+  equiposDelegado.forEach((equipo) => {
+    documentosEquipo.forEach((requisitoNombre) => {
+      const requisito = obtenerRequisitoDocumental(requisitoNombre);
+      if (!requisito?.requiere_vencimiento) return;
+
+      const documento = obtenerDocumentoEquipo(categoria, equipo, requisitoNombre);
+      const estadoVencimiento = estadoVencimientoDocumento(documento);
+      if (!["vencido", "por_vencer", "sin_fecha"].includes(estadoVencimiento)) return;
+
+      alertas.push({
+        tipo: "equipo",
+        entidad: equipo,
+        requisito: requisitoNombre,
+        estado: estadoVencimiento,
+        dias: diasHastaFecha(documento?.vencimiento),
+        vencimiento: documento?.vencimiento || ""
+      });
+    });
+
+    const jugadores = obtenerJugadoresEquipo(categoria, equipo);
+    jugadores.forEach((jugador) => {
+      documentosJugador.forEach((requisitoNombre) => {
+        const requisito = obtenerRequisitoDocumental(requisitoNombre);
+        if (!requisito?.requiere_vencimiento) return;
+
+        const documento = obtenerDocumentoJugador(categoria, jugador.id, requisitoNombre);
+        const estadoVencimiento = estadoVencimientoDocumento(documento);
+        if (!["vencido", "por_vencer", "sin_fecha"].includes(estadoVencimiento)) return;
+
+        alertas.push({
+          tipo: "jugador",
+          entidad: jugador.nombre,
+          requisito: requisitoNombre,
+          estado: estadoVencimiento,
+          dias: diasHastaFecha(documento?.vencimiento),
+          vencimiento: documento?.vencimiento || ""
+        });
+      });
+    });
+  });
+
+  return alertas.sort((a, b) => {
+    const prioridad = { vencido: 0, sin_fecha: 1, por_vencer: 2 };
+    return (prioridad[a.estado] ?? 9) - (prioridad[b.estado] ?? 9) ||
+      (a.dias ?? 9999) - (b.dias ?? 9999) ||
+      String(a.entidad).localeCompare(String(b.entidad));
+  });
+}
+
+function renderAlertasVencimientoDelegado(categoria, equiposDelegado, documentosEquipo, documentosJugador) {
+  const alertas = obtenerAlertasVencimientoDelegado(categoria, equiposDelegado, documentosEquipo, documentosJugador);
+
+  if (!alertas.length) {
+    return `
+      <div class="doc-scope-note">
+        <strong>Alertas para el delegado</strong>
+        <span>No hay vencimientos detectados en los próximos 30 días para tu equipo.</span>
+      </div>
+    `;
+  }
+
+  const resumen = alertas.reduce((acc, alerta) => {
+    acc[alerta.estado] = (acc[alerta.estado] || 0) + 1;
+    return acc;
+  }, {});
+
+  const estadoLabel = {
+    vencido: "Vencido",
+    por_vencer: "Por vencer",
+    sin_fecha: "Falta fecha"
+  };
+
+  const detalleLabel = (alerta) => {
+    if (alerta.estado === "vencido") {
+      return `Venció el ${formatearFecha(alerta.vencimiento)}`;
+    }
+    if (alerta.estado === "por_vencer") {
+      return `Vence el ${formatearFecha(alerta.vencimiento)} (${alerta.dias} día${alerta.dias === 1 ? "" : "s"})`;
+    }
+    return "Tiene vencimiento obligatorio sin fecha cargada";
+  };
+
+  return `
+    <div class="doc-scope-note">
+      <strong>Alertas para el delegado</strong>
+      <span>La app marca vencidos, documentos por vencer dentro de 30 días y fechas obligatorias faltantes.</span>
+      <div class="doc-summary">
+        <div class="doc-pill doc-pill-alert"><strong>${resumen.vencido || 0}</strong><span>Vencidos</span></div>
+        <div class="doc-pill doc-pill-alert"><strong>${resumen.por_vencer || 0}</strong><span>Por vencer</span></div>
+        <div class="doc-pill"><strong>${resumen.sin_fecha || 0}</strong><span>Sin fecha</span></div>
+      </div>
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th>Alcance</th>
+            <th>Documento</th>
+            <th>Estado</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${alertas.slice(0, 12).map((alerta) => `
+            <tr>
+              <td>${escapeHtml(alerta.tipo === "jugador" ? `Jugador: ${alerta.entidad}` : `Equipo: ${alerta.entidad}`)}</td>
+              <td>${escapeHtml(alerta.requisito)}</td>
+              <td>${docStateHtml(estadoLabel[alerta.estado] || alerta.estado, alerta.estado === "por_vencer" ? "observado" : "rechazado")}</td>
+              <td>${escapeHtml(detalleLabel(alerta))}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+      ${alertas.length > 12 ? `<p class="note">Hay ${alertas.length - 12} alerta(s) más. Revisá el detalle documental completo del equipo.</p>` : ""}
+    </div>
   `;
 }
 
