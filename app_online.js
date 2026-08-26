@@ -5552,6 +5552,12 @@ function generarAsuntoProgramacion(nombreCategoria) {
   return `Programacion arbitral ${APP_CONFIG.organizacionActiva.torneoLabel} - ${nombreCategoria}${fechaTexto}`;
 }
 
+function generarAsuntoProgramacionLibre(nombreCategoria, texto) {
+  const fechaMatch = String(texto || "").match(/(?:lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo)?\s*\d{1,2}\/\d{1,2}\/\d{4}/i);
+  const fechaTexto = fechaMatch ? ` - ${fechaMatch[0].trim()}` : "";
+  return `Programacion arbitral ${APP_CONFIG.organizacionActiva.torneoLabel} - ${nombreCategoria || "Categoria"}${fechaTexto}`;
+}
+
 function normalizarLineaProgramacionLibre(linea) {
   return String(linea || "")
     .trim()
@@ -5690,7 +5696,9 @@ function abrirCorreoProgramacion() {
   const categoria = $("asociacion-categoria")?.value || "";
   const destino = $("programacion-email-destino")?.value.trim() || "";
   const status = $("asociacion-status");
-  const texto = generarTextoProgramacion(categoria);
+  const salida = $("programacion-mensaje");
+  const textoPreparado = salida?.value?.trim() || "";
+  const texto = textoPreparado || generarTextoProgramacion(categoria);
 
   if (!destino) {
     setStatus(status, "Carga el correo destino para abrir el borrador.", "warn");
@@ -5699,15 +5707,16 @@ function abrirCorreoProgramacion() {
   }
 
   if (!texto) {
-    setStatus(status, "No hay partidos con dia, hora y cancha para enviar.", "warn");
+    setStatus(status, "No hay texto preparado ni partidos con dia, hora y cancha para enviar.", "warn");
     return;
   }
 
   guardarEmailProgramacionDestino();
-  const salida = $("programacion-mensaje");
   if (salida) salida.value = texto;
 
-  const asunto = generarAsuntoProgramacion(categoria);
+  const asunto = textoPreparado
+    ? generarAsuntoProgramacionLibre(categoria, textoPreparado)
+    : generarAsuntoProgramacion(categoria);
   const mailto = `mailto:${encodeURIComponent(destino)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(texto)}`;
   window.location.href = mailto;
   setStatus(status, "Se abrio el borrador del correo. Revisalo y envialo desde tu casilla.", "ok");
