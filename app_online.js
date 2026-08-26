@@ -1297,6 +1297,33 @@ function estadoCeldaHabilitado(valor) {
   return `<span class="doc-state doc-state-${valor === "SI" ? "aprobado" : "rechazado"}">${escapeHtml(valor)}</span>`;
 }
 
+function calcularEstadoHabilitacionJugador(nombreCategoria, jugador) {
+  const buenaFe = buscarDocumentoEquipoPorTerminos(nombreCategoria, jugador.equipo_nombre, ["buena fe"]);
+  const seguro = buscarDocumentoEquipoPorTerminos(nombreCategoria, jugador.equipo_nombre, ["seguro"]);
+  const certificado = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["certificado", "estudio"]);
+  const deslinde = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["declaracion", "deslinde"]);
+  const pase = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["pase"]);
+  const estados = {
+    buenaFe: siNoDocumento(buenaFe),
+    seguro: siNoDocumento(seguro),
+    certificado: siNoDocumento(certificado),
+    deslinde: siNoDocumento(deslinde),
+    pase: siNoDocumento(pase)
+  };
+  const faltantes = [
+    estados.buenaFe === "SI" ? "" : "Lista de buena fe",
+    estados.seguro === "SI" ? "" : "Seguro",
+    estados.certificado === "SI" ? "" : "Certificado/estudio",
+    estados.deslinde === "SI" ? "" : "Deslinde/declaracion jurada"
+  ].filter(Boolean);
+
+  return {
+    ...estados,
+    habilitado: faltantes.length ? "NO" : "SI",
+    faltantes: faltantes.join("; ")
+  };
+}
+
 function calcularHabilitadosCategoria(nombreCategoria) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const jugadores = categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : [];
@@ -1316,24 +1343,7 @@ function calcularHabilitadosCategoria(nombreCategoria) {
       return !equipoFiltro || nombresEquipoCoinciden(jugador.equipo_nombre, equipoFiltro);
     })
     .map((jugador) => {
-      const buenaFe = buscarDocumentoEquipoPorTerminos(nombreCategoria, jugador.equipo_nombre, ["buena fe"]);
-      const seguro = buscarDocumentoEquipoPorTerminos(nombreCategoria, jugador.equipo_nombre, ["seguro"]);
-      const certificado = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["certificado", "estudio"]);
-      const deslinde = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["declaracion", "deslinde"]);
-      const pase = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["pase"]);
-      const estados = {
-        buenaFe: siNoDocumento(buenaFe),
-        seguro: siNoDocumento(seguro),
-        certificado: siNoDocumento(certificado),
-        deslinde: siNoDocumento(deslinde),
-        pase: siNoDocumento(pase)
-      };
-      const faltantes = [
-        estados.buenaFe === "SI" ? "" : "Lista de buena fe",
-        estados.seguro === "SI" ? "" : "Seguro",
-        estados.certificado === "SI" ? "" : "Certificado/estudio",
-        estados.deslinde === "SI" ? "" : "Deslinde/declaracion jurada"
-      ].filter(Boolean);
+      const estadoHabilitacion = calcularEstadoHabilitacionJugador(nombreCategoria, jugador);
 
       return {
         categoria: nombreCategoria,
@@ -1341,9 +1351,7 @@ function calcularHabilitadosCategoria(nombreCategoria) {
         apellidoNombre: jugador.nombre || "",
         dni: jugador.dni || "",
         dorsal: jugador.dorsal || "",
-        ...estados,
-        habilitado: faltantes.length ? "NO" : "SI",
-        faltantes: faltantes.join("; ")
+        ...estadoHabilitacion
       };
     })
     .filter((fila) => !estadoFiltro || fila.habilitado === estadoFiltro)
@@ -2647,6 +2655,8 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
         <thead>
           <tr>
             <th>Jugador</th>
+            <th>Pre-habilitación</th>
+            <th>Falta</th>
             <th>Documento</th>
             <th>Estado</th>
             <th>Observación</th>
@@ -2657,6 +2667,7 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
           ${jugadores.map((jugador) =>
             documentosJugador.map((requisito, requisitoIndex) => {
               const documento = obtenerDocumentoJugador(categoria, jugador.id, requisito);
+              const estadoHabilitacion = calcularEstadoHabilitacionJugador(categoria, jugador);
 
               return `
                 <tr>
@@ -2665,6 +2676,13 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
                     <span class="doc-player-meta">${jugador.dni ? `DNI ${escapeHtml(jugador.dni)}` : ""}${jugador.dorsal ? ` #${escapeHtml(jugador.dorsal)}` : ""}</span>
                     ${requisitoIndex === 0 ? renderAccionBajaJugadorDelegado(jugador) : ""}
                   </td>
+                  <td>${requisitoIndex === 0 ? docStateHtml(
+                    estadoHabilitacion.habilitado === "SI" ? "Pre-habilitado" : "Pendiente",
+                    estadoHabilitacion.habilitado === "SI" ? "aprobado" : "observado"
+                  ) : ""}</td>
+                  <td>${requisitoIndex === 0
+                    ? `<span class="doc-action-muted">${escapeHtml(estadoHabilitacion.faltantes || "OK documental, sujeto a aprobación final")}</span>`
+                    : ""}</td>
                   <td>${escapeHtml(requisito)}</td>
                   <td>${docStateHtml(
                     estadoDocumentoLabel(documento),
