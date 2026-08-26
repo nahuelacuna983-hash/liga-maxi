@@ -2617,6 +2617,9 @@ function renderDocumentacionJugadoresDelegado(categoria, equiposDelegado, docume
   return `
     <div class="doc-player-section">
       <h4>Documentos por jugador</h4>
+      <div class="programacion-actions-head">
+        <button id="delegado-descargar-lista" class="secondary" type="button">Descargar lista del equipo</button>
+      </div>
       <div class="doc-player-create">
         <div class="field">
           <label for="jugador-equipo">Equipo</label>
@@ -4442,6 +4445,114 @@ async function solicitarBajaJugadorDelegado(event) {
     role: estado.delegado?.rol || "delegado"
   });
   setStatus(status, "Solicitud enviada a Asociacion para revisar.", "ok");
+}
+
+function obtenerEquiposDelegadoCategoria(categoriaNombre) {
+  if (!estado.delegado) return [];
+
+  const equiposCategoria = obtenerEquiposCategoria(categoriaNombre);
+  const equipoPrincipal = equiposCategoria.find((equipo) => nombresEquipoCoinciden(equipo, estado.delegado.nombre));
+  const equiposPermitidos = estado.delegado.equipos || [];
+
+  return equipoPrincipal
+    ? [equipoPrincipal]
+    : equiposCategoria.filter((equipo) =>
+        equiposPermitidos.some((equipoPermitido) => nombresEquipoCoinciden(equipo, equipoPermitido))
+      );
+}
+
+function descargarListaEquipoDelegado() {
+  const status = $("delegado-status");
+  const categoria = $("delegado-categoria")?.value || "";
+
+  if (!estado.delegadoDesbloqueado || !estado.delegado) {
+    setStatus(status, "Primero habilitá edición con tu clave.", "warn");
+    return;
+  }
+
+  const equiposDelegado = obtenerEquiposDelegadoCategoria(categoria);
+  const filas = equiposDelegado.flatMap((equipo) =>
+    obtenerJugadoresEquipo(categoria, equipo).map((jugador) => {
+      const estadoHabilitacion = calcularEstadoHabilitacionJugador(categoria, jugador);
+      return {
+        equipo,
+        nombre: jugador.nombre || "",
+        dni: jugador.dni || "",
+        dorsal: jugador.dorsal || "",
+        habilitado: estadoHabilitacion.habilitado,
+        faltantes: estadoHabilitacion.faltantes || ""
+      };
+    })
+  ).sort((a, b) =>
+    String(a.equipo).localeCompare(String(b.equipo)) ||
+    String(a.nombre).localeCompare(String(b.nombre))
+  );
+
+  if (!filas.length) {
+    setStatus(status, "Todavía no hay jugadores cargados para descargar la lista.", "warn");
+    return;
+  }
+
+  const fechaGeneracion = new Date().toLocaleString("es-AR");
+  const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
+  const html = `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Lista del equipo - ${escapeHtml(categoria)}</title>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 24px; }
+        h1 { margin: 0 0 4px; font-size: 24px; }
+        .muted { color: #4b5563; margin: 0 0 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { border: 1px solid #9ca3af; padding: 7px; font-size: 12px; text-align: left; }
+        th { background: #dbeafe; }
+        .si { background: #bbf7d0; font-weight: 800; text-align: center; }
+        .no { background: #fed7aa; font-weight: 800; text-align: center; }
+        .print-actions { margin: 16px 0; }
+        .print-actions button { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; font-weight: 700; }
+        @media print { body { margin: 10mm; } .print-actions { display: none; } }
+      </style>
+    </head>
+    <body>
+      <h1>Lista del equipo</h1>
+      <p class="muted">${escapeHtml(APP_CONFIG.organizacionActiva.nombre)} - ${escapeHtml(categoria)} - ${escapeHtml(equiposDelegado.join(", "))}</p>
+      <p class="muted">Generado ${escapeHtml(fechaGeneracion)} - ${habilitados} pre-habilitado${habilitados === 1 ? "" : "s"} de ${filas.length}</p>
+      <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Equipo</th>
+            <th>Jugador</th>
+            <th>DNI</th>
+            <th>Nro</th>
+            <th>Pre-habilitado</th>
+            <th>Faltantes</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filas.map((fila) => `
+            <tr>
+              <td>${escapeHtml(fila.equipo)}</td>
+              <td>${escapeHtml(fila.nombre)}</td>
+              <td>${escapeHtml(fila.dni)}</td>
+              <td>${escapeHtml(fila.dorsal)}</td>
+              <td class="${fila.habilitado === "SI" ? "si" : "no"}">${escapeHtml(fila.habilitado)}</td>
+              <td>${escapeHtml(fila.faltantes || "OK documental, sujeto a aprobación final")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const nombre = descargarInformeHtml(html, `lista-equipo-${categoria}-${equiposDelegado.join("-")}`);
+  abrirInformeHtml(html);
+  setStatus(status, `Lista descargada como ${nombre}.`, "ok");
+  mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
 }
 
 async function subirDocumentoJugadorDelegado(event) {
@@ -9478,6 +9589,7 @@ async function inicializar() {
     $("delegado-documentacion").addEventListener("change", subirDocumentoJugadorDelegado);
     $("delegado-documentacion").addEventListener("click", (event) => {
       verDocumentoDelegado(event);
+      if (event.target.closest("#delegado-descargar-lista")) descargarListaEquipoDelegado();
       if (event.target.closest("#jugador-agregar")) agregarJugadorDelegado();
       solicitarBajaJugadorDelegado(event);
     });
