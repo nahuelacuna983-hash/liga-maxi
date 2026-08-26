@@ -5552,6 +5552,128 @@ function generarAsuntoProgramacion(nombreCategoria) {
   return `Programacion arbitral ${APP_CONFIG.organizacionActiva.torneoLabel} - ${nombreCategoria}${fechaTexto}`;
 }
 
+function normalizarLineaProgramacionLibre(linea) {
+  return String(linea || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\s+vs\.?\s+/i, " vs. ");
+}
+
+function formatearTextoProgramacionLibre(texto, nombreCategoria) {
+  const lineas = String(texto || "")
+    .split(/\r?\n/)
+    .map(normalizarLineaProgramacionLibre)
+    .filter(Boolean);
+  const bloques = [];
+  const revisar = [];
+  let fechaActual = "";
+  let canchaActual = "";
+
+  lineas.forEach((linea) => {
+    const fechaMatch = linea.match(/^(?:(lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo)\s+)?(\d{1,2}\/\d{1,2}\/\d{4})$/i);
+    if (fechaMatch) {
+      fechaActual = fechaMatch[1] ? `${fechaMatch[1]} ${fechaMatch[2]}` : fechaMatch[2];
+      canchaActual = "";
+      bloques.push({ tipo: "fecha", texto: fechaActual });
+      return;
+    }
+
+    const canchaMatch = linea.match(/^cancha\s*:\s*(.+)$/i);
+    if (canchaMatch) {
+      canchaActual = canchaMatch[1].trim();
+      bloques.push({ tipo: "cancha", texto: canchaActual });
+      return;
+    }
+
+    const partidoMatch = linea.match(/^(\d{1,2}:\d{2})\s*(?:hs?\.?)?\s*(.+)$/i);
+    if (partidoMatch) {
+      bloques.push({
+        tipo: "partido",
+        fecha: fechaActual,
+        cancha: canchaActual,
+        hora: partidoMatch[1],
+        partido: partidoMatch[2].trim()
+      });
+      return;
+    }
+
+    revisar.push(linea);
+  });
+
+  const partidos = bloques.filter((bloque) => bloque.tipo === "partido");
+  if (!partidos.length) return { texto: "", revisar: lineas };
+
+  const partes = [`Programacion arbitral ${APP_CONFIG.organizacionActiva.torneoLabel} - ${APP_CONFIG.organizacionActiva.nombre}${nombreCategoria ? ` - ${nombreCategoria}` : ""}`];
+  let ultimaFecha = "";
+  let ultimaCancha = "";
+
+  partidos.forEach((partido) => {
+    if (partido.fecha !== ultimaFecha) {
+      partes.push("");
+      partes.push(partido.fecha || "Fecha a confirmar");
+      ultimaFecha = partido.fecha;
+      ultimaCancha = "";
+    }
+    if (partido.cancha !== ultimaCancha) {
+      partes.push(`Cancha: ${partido.cancha || "A confirmar"}`);
+      ultimaCancha = partido.cancha;
+    }
+    partes.push(`${partido.hora} hs. ${partido.partido}`);
+  });
+
+  if (revisar.length) {
+    partes.push("");
+    partes.push("Revisar:");
+    revisar.forEach((linea) => partes.push(`- ${linea}`));
+  }
+
+  partes.push("");
+  partes.push("Por favor confirmar recepcion y asignacion arbitral.");
+  return { texto: partes.join("\n"), revisar };
+}
+
+function formatearProgramacionTextoLibre() {
+  const input = $("programacion-texto-libre");
+  const salida = $("programacion-mensaje");
+  const status = $("asociacion-status");
+  const categoria = $("asociacion-categoria")?.value || "";
+  const resultado = formatearTextoProgramacionLibre(input?.value || "", categoria);
+
+  if (!resultado.texto) {
+    setStatus(status, "Pegá al menos una línea con horario y partido para formatear la programación.", "warn");
+    return;
+  }
+
+  if (salida) salida.value = resultado.texto;
+  setStatus(
+    status,
+    resultado.revisar.length
+      ? "Texto formateado con líneas para revisar antes de enviar."
+      : "Texto formateado listo para copiar o enviar.",
+    resultado.revisar.length ? "warn" : "ok"
+  );
+}
+
+async function copiarTextoProgramacionSalida() {
+  const salida = $("programacion-mensaje");
+  const status = $("asociacion-status");
+  const texto = salida?.value || "";
+
+  if (!texto.trim()) {
+    setStatus(status, "No hay texto formateado para copiar.", "warn");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(texto);
+    setStatus(status, "Texto del cuadro copiado al portapapeles.", "ok");
+  } catch (error) {
+    salida?.focus();
+    salida?.select();
+    setStatus(status, "No se pudo copiar automaticamente. Seleccioné el texto para copiarlo manualmente.", "warn");
+  }
+}
+
 function cargarEmailProgramacionDestino() {
   const input = $("programacion-email-destino");
   if (!input) return;
@@ -6608,6 +6730,8 @@ async function inicializarAsociacion() {
   $("programacion-tabla")?.addEventListener("click", manejarProgramacionClick);
   $("programacion-copiar")?.addEventListener("click", copiarProgramacionAsociacion);
   $("programacion-abrir-correo")?.addEventListener("click", abrirCorreoProgramacion);
+  $("programacion-formatear-texto")?.addEventListener("click", formatearProgramacionTextoLibre);
+  $("programacion-copiar-texto")?.addEventListener("click", copiarTextoProgramacionSalida);
   $("programacion-email-destino")?.addEventListener("input", guardarEmailProgramacionDestino);
   $("programacion-marcar-enviado")?.addEventListener("click", marcarProgramacionListaEnviada);
   cargarEmailProgramacionDestino();
