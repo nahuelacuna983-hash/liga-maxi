@@ -1483,11 +1483,18 @@ function renderVistaRapidaHabilitados(filas) {
 
 function renderVistaHabilitadosPorPartido(filas, partido) {
   const equipos = [partido.local, partido.visitante].filter(Boolean);
+  const totalHabilitados = filas.filter((fila) => fila.habilitado === "SI").length;
+  const totalNoHabilitados = filas.length - totalHabilitados;
 
   return `
     <div class="habilitados-match-head">
       <strong>Fecha ${escapeHtml(partido.jornada || "-")} - ${escapeHtml(partido.local)} vs ${escapeHtml(partido.visitante)}</strong>
       <span>${escapeHtml(partido.fecha ? fechaPartidoLabel(partido.fecha) : "Fecha a confirmar")}</span>
+    </div>
+    <div class="doc-summary">
+      <div class="doc-pill"><strong>${filas.length}</strong><span>Jugadores del partido</span></div>
+      <div class="doc-pill"><strong>${totalHabilitados}</strong><span>Habilitados</span></div>
+      <div class="doc-pill ${totalNoHabilitados ? "doc-pill-alert" : ""}"><strong>${totalNoHabilitados}</strong><span>No habilitados</span></div>
     </div>
     <div class="habilitados-match-grid">
       ${equipos.map((equipo) => {
@@ -1500,7 +1507,9 @@ function renderVistaHabilitadosPorPartido(filas, partido) {
               <strong>${escapeHtml(equipo)}</strong>
               <span class="${noHabilitados ? "is-no" : "is-ok"}">${habilitados}/${jugadoresEquipo.length} habilitados</span>
             </div>
-            ${renderVistaRapidaHabilitados(jugadoresEquipo)}
+            ${jugadoresEquipo.length
+              ? renderVistaRapidaHabilitados(jugadoresEquipo)
+              : `<div class="empty">Todavía no hay jugadores cargados para este equipo.</div>`}
           </section>
         `;
       }).join("")}
@@ -6346,7 +6355,7 @@ function descargarListaHabilitadosHtml() {
   const contexto = contextoHabilitadosSeleccionado(categoria);
 
   if (!equipoFiltro && !partidoFiltro) {
-    setStatus(status, "Elegí un club antes de descargar la lista para árbitros.", "warn");
+    setStatus(status, "Elegí un club o un partido antes de descargar la lista para árbitros.", "warn");
     return;
   }
 
