@@ -1821,6 +1821,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
       <strong>Revisión de Asociación</strong>
       <span>Aprobar un documento valida ese archivo para el control documental. La habilitación final del jugador surge de tener completos y vigentes los requisitos obligatorios.</span>
     </div>
+    ${renderImpactoHabilitacionDocumental(nombreCategoria, equipoOperativo)}
     ${renderGestionJugadoresAsociacion(nombreCategoria)}
     <table class="doc-table">
       <thead>
@@ -1856,6 +1857,50 @@ function renderDocumentacionAsociacion(nombreCategoria) {
       </tbody>
     </table>
     ${renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugador)}
+  `;
+}
+
+function renderImpactoHabilitacionDocumental(nombreCategoria, equipo) {
+  if (!equipo) return "";
+
+  const jugadores = obtenerJugadoresEquipo(nombreCategoria, equipo);
+  if (!jugadores.length) {
+    return `
+      <div class="doc-scope-note">
+        <strong>Impacto en habilitación</strong>
+        <span>Todavía no hay jugadores cargados para calcular habilitados de este club.</span>
+      </div>
+    `;
+  }
+
+  const filas = jugadores.map((jugador) => ({
+    jugador,
+    estado: calcularEstadoHabilitacionJugador(nombreCategoria, jugador)
+  }));
+  const habilitados = filas.filter((fila) => fila.estado.habilitado === "SI").length;
+  const faltantes = filas
+    .filter((fila) => fila.estado.habilitado !== "SI")
+    .flatMap((fila) => String(fila.estado.faltantes || "Revisar documentacion").split(";").map((item) => item.trim()).filter(Boolean));
+  const resumenFaltantes = faltantes.reduce((acc, item) => {
+    acc[item] = (acc[item] || 0) + 1;
+    return acc;
+  }, {});
+  const faltantesTexto = Object.entries(resumenFaltantes)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([nombre, cantidad]) => `${nombre}: ${cantidad}`)
+    .join(" · ");
+
+  return `
+    <div class="doc-scope-note">
+      <strong>Impacto en habilitación</strong>
+      <span>Resumen operativo del club seleccionado, calculado con buena fe, seguro, certificado/estudio y deslinde. El pase no bloquea.</span>
+      <div class="doc-summary">
+        <div class="doc-pill"><strong>${jugadores.length}</strong><span>Jugadores</span></div>
+        <div class="doc-pill"><strong>${habilitados}</strong><span>Pre-habilitados</span></div>
+        <div class="doc-pill ${jugadores.length - habilitados ? "doc-pill-alert" : ""}"><strong>${jugadores.length - habilitados}</strong><span>No habilitados</span></div>
+      </div>
+      <span>${escapeHtml(faltantesTexto || "Sin faltantes documentales bloqueantes detectados.")}</span>
+    </div>
   `;
 }
 
