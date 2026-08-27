@@ -6809,6 +6809,63 @@ function descargarListaHabilitadosHtml() {
   mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
 }
 
+function generarResumenHabilitadosArbitros(categoria, contexto, filas) {
+  const habilitados = filas.filter((fila) => fila.habilitado === "SI");
+  const noHabilitados = filas.filter((fila) => fila.habilitado !== "SI");
+  const partes = [
+    `Habilitados para arbitros - ${APP_CONFIG.organizacionActiva.nombre}`,
+    `Categoria: ${categoria}`,
+    `Filtro: ${contexto.etiqueta}`,
+    `Total: ${filas.length} - Habilitados: ${habilitados.length} - No habilitados: ${noHabilitados.length}`,
+    "",
+    "Habilitados:"
+  ];
+
+  if (habilitados.length) {
+    habilitados.forEach((fila) => {
+      partes.push(`- ${fila.equipo}: ${fila.apellidoNombre}${fila.dorsal ? ` #${fila.dorsal}` : ""}${fila.dni ? ` - DNI ${fila.dni}` : ""}`);
+    });
+  } else {
+    partes.push("- Sin jugadores habilitados.");
+  }
+
+  if (noHabilitados.length) {
+    partes.push("");
+    partes.push("No habilitados / observados:");
+    noHabilitados.forEach((fila) => {
+      partes.push(`- ${fila.equipo}: ${fila.apellidoNombre}${fila.dorsal ? ` #${fila.dorsal}` : ""}${fila.dni ? ` - DNI ${fila.dni}` : ""} - Falta: ${fila.faltantes || "Revisar documentacion"}`);
+    });
+  }
+
+  return partes.join("\n");
+}
+
+async function copiarResumenHabilitadosArbitros() {
+  const status = $("asociacion-status");
+  const categoria = $("asociacion-categoria")?.value || "categoria";
+  const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+  const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
+  const contexto = contextoHabilitadosSeleccionado(categoria);
+
+  if (!equipoFiltro && !partidoFiltro) {
+    setStatus(status, "Elegí un club o un partido antes de copiar el resumen.", "warn");
+    return;
+  }
+
+  const filas = calcularHabilitadosCategoria(categoria);
+  if (!filas.length) {
+    setStatus(status, "No hay jugadores para copiar en la lista de habilitados.", "warn");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(generarResumenHabilitadosArbitros(categoria, contexto, filas));
+    setStatus(status, "Resumen de habilitados copiado al portapapeles.", "ok");
+  } catch (error) {
+    setStatus(status, "No se pudo copiar automaticamente. Usá Descargar lista o Exportar CSV.", "warn");
+  }
+}
+
 function seleccionarEquipoHabilitados(event) {
   const button = event.target.closest(".habilitados-team-card");
   if (!button) return;
@@ -7046,6 +7103,7 @@ async function inicializarAsociacion() {
   $("habilitados-tabla")?.addEventListener("click", seleccionarEquipoHabilitados);
   $("habilitados-exportar-csv")?.addEventListener("click", exportarHabilitadosCsv);
   $("habilitados-descargar-html")?.addEventListener("click", descargarListaHabilitadosHtml);
+  $("habilitados-copiar-resumen")?.addEventListener("click", copiarResumenHabilitadosArbitros);
   $("habilitados-plan-prueba")?.addEventListener("click", descargarPlanPruebaDocumental);
   $("asociacion-desbloquear").addEventListener("click", desbloquearAsociacion);
   $("asociacion-clave").addEventListener("keydown", (event) => {
