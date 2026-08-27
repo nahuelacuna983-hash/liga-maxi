@@ -2620,6 +2620,7 @@ function renderDocumentacionJugadoresDelegado(categoria, equiposDelegado, docume
       <div class="programacion-actions-head">
         <button id="delegado-descargar-lista" class="secondary" type="button">Descargar lista del equipo</button>
         <button id="delegado-exportar-lista-csv" class="secondary" type="button">Exportar CSV</button>
+        <button id="delegado-copiar-lista" class="secondary" type="button">Copiar resumen</button>
       </div>
       <div class="doc-player-create">
         <div class="field">
@@ -4600,6 +4601,49 @@ function exportarListaEquipoDelegadoCsv() {
 
   descargarCsv(`lista-equipo-${slugify(categoria)}-${slugify(equiposDelegado.join("-"))}-${fecha}.csv`, encabezado, rows);
   setStatus(status, "Lista del equipo exportada en CSV.", "ok");
+}
+
+function generarTextoListaEquipoDelegado(lista) {
+  const { categoria, equiposDelegado, filas } = lista;
+  const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
+  const partes = [
+    `Lista de equipo - ${APP_CONFIG.organizacionActiva.nombre}`,
+    `Categoria: ${categoria}`,
+    `Equipo: ${equiposDelegado.join(", ")}`,
+    `Jugadores: ${filas.length} - Pre-habilitados: ${habilitados}`,
+    "",
+    "Detalle:"
+  ];
+
+  filas.forEach((fila, index) => {
+    const datos = [
+      `${index + 1}. ${fila.nombre}`,
+      fila.dni ? `DNI ${fila.dni}` : "",
+      fila.dorsal ? `Nro ${fila.dorsal}` : "",
+      `Pre-habilitado: ${fila.habilitado}`,
+      fila.faltantes ? `Faltantes: ${fila.faltantes}` : "Documentacion obligatoria completa, sujeto a aprobacion final"
+    ].filter(Boolean);
+    partes.push(datos.join(" - "));
+  });
+
+  partes.push("");
+  partes.push("Listado generado desde la carga documental del delegado.");
+  return partes.join("\n");
+}
+
+async function copiarListaEquipoDelegado() {
+  const status = $("delegado-status");
+  const lista = validarListaEquipoDelegado();
+  if (!lista) return;
+
+  const texto = generarTextoListaEquipoDelegado(lista);
+
+  try {
+    await navigator.clipboard.writeText(texto);
+    setStatus(status, "Resumen del equipo copiado al portapapeles.", "ok");
+  } catch (error) {
+    setStatus(status, "No se pudo copiar automaticamente. Descargá la lista o exportá CSV.", "warn");
+  }
 }
 
 async function subirDocumentoJugadorDelegado(event) {
@@ -9638,6 +9682,7 @@ async function inicializar() {
       verDocumentoDelegado(event);
       if (event.target.closest("#delegado-descargar-lista")) descargarListaEquipoDelegado();
       if (event.target.closest("#delegado-exportar-lista-csv")) exportarListaEquipoDelegadoCsv();
+      if (event.target.closest("#delegado-copiar-lista")) copiarListaEquipoDelegado();
       if (event.target.closest("#jugador-agregar")) agregarJugadorDelegado();
       solicitarBajaJugadorDelegado(event);
     });
