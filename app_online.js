@@ -2577,6 +2577,9 @@ function renderAlertasVencimientoDelegado(categoria, equiposDelegado, documentos
     <div class="doc-scope-note">
       <strong>Alertas para el delegado</strong>
       <span>La app marca vencidos, documentos por vencer dentro de 30 días y fechas obligatorias faltantes.</span>
+      <div class="programacion-actions-head">
+        <button id="delegado-copiar-alertas" class="secondary" type="button">Copiar alertas</button>
+      </div>
       <div class="doc-summary">
         <div class="doc-pill doc-pill-alert"><strong>${resumen.vencido || 0}</strong><span>Vencidos</span></div>
         <div class="doc-pill doc-pill-alert"><strong>${resumen.por_vencer || 0}</strong><span>Por vencer</span></div>
@@ -2605,6 +2608,58 @@ function renderAlertasVencimientoDelegado(categoria, equiposDelegado, documentos
       ${alertas.length > 12 ? `<p class="note">Hay ${alertas.length - 12} alerta(s) más. Revisá el detalle documental completo del equipo.</p>` : ""}
     </div>
   `;
+}
+
+function detalleAlertaVencimientoTexto(alerta) {
+  if (alerta.estado === "vencido") {
+    return `Vencio el ${formatearFecha(alerta.vencimiento)}`;
+  }
+  if (alerta.estado === "por_vencer") {
+    return `Vence el ${formatearFecha(alerta.vencimiento)} (${alerta.dias} dia${alerta.dias === 1 ? "" : "s"})`;
+  }
+  return "Vencimiento obligatorio sin fecha cargada";
+}
+
+function generarTextoAlertasVencimientoDelegado(categoria, equiposDelegado, alertas) {
+  const partes = [
+    `Alertas documentales - ${APP_CONFIG.organizacionActiva.nombre}`,
+    `Categoria: ${categoria}`,
+    `Equipo: ${equiposDelegado.join(", ")}`,
+    `Total alertas: ${alertas.length}`,
+    ""
+  ];
+
+  alertas.forEach((alerta, index) => {
+    const alcance = alerta.tipo === "jugador" ? `Jugador: ${alerta.entidad}` : `Equipo: ${alerta.entidad}`;
+    partes.push(`${index + 1}. ${alcance} - ${alerta.requisito} - ${detalleAlertaVencimientoTexto(alerta)}`);
+  });
+
+  return partes.join("\n");
+}
+
+async function copiarAlertasVencimientoDelegado() {
+  const status = $("delegado-status");
+  const categoria = $("delegado-categoria")?.value || "";
+
+  if (!estado.delegadoDesbloqueado || !estado.delegado) {
+    setStatus(status, "Primero habilitá edición con tu clave.", "warn");
+    return;
+  }
+
+  const equiposDelegado = obtenerEquiposDelegadoCategoria(categoria);
+  const alertas = obtenerAlertasVencimientoDelegado(categoria, equiposDelegado, obtenerDocumentosEquipo(), obtenerDocumentosJugador());
+
+  if (!alertas.length) {
+    setStatus(status, "No hay alertas documentales para copiar.", "ok");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(generarTextoAlertasVencimientoDelegado(categoria, equiposDelegado, alertas));
+    setStatus(status, "Alertas documentales copiadas al portapapeles.", "ok");
+  } catch (error) {
+    setStatus(status, "No se pudieron copiar las alertas automaticamente.", "warn");
+  }
 }
 
 function renderDocumentacionJugadoresDelegado(categoria, equiposDelegado, documentosJugador) {
@@ -9777,6 +9832,7 @@ async function inicializar() {
     $("delegado-documentacion").addEventListener("change", subirDocumentoJugadorDelegado);
     $("delegado-documentacion").addEventListener("click", (event) => {
       verDocumentoDelegado(event);
+      if (event.target.closest("#delegado-copiar-alertas")) copiarAlertasVencimientoDelegado();
       if (event.target.closest("#delegado-descargar-lista")) descargarListaEquipoDelegado();
       if (event.target.closest("#delegado-exportar-lista-csv")) exportarListaEquipoDelegadoCsv();
       if (event.target.closest("#delegado-exportar-poliza-csv")) exportarPolizaEquipoDelegadoCsv();
