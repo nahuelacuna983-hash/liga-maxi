@@ -2620,6 +2620,7 @@ function renderDocumentacionJugadoresDelegado(categoria, equiposDelegado, docume
       <div class="programacion-actions-head">
         <button id="delegado-descargar-lista" class="secondary" type="button">Descargar lista del equipo</button>
         <button id="delegado-exportar-lista-csv" class="secondary" type="button">Exportar CSV</button>
+        <button id="delegado-exportar-poliza-csv" class="secondary" type="button">CSV póliza APdB</button>
         <button id="delegado-copiar-lista" class="secondary" type="button">Copiar resumen</button>
       </div>
       <div class="doc-player-create">
@@ -4601,6 +4602,40 @@ function exportarListaEquipoDelegadoCsv() {
 
   descargarCsv(`lista-equipo-${slugify(categoria)}-${slugify(equiposDelegado.join("-"))}-${fecha}.csv`, encabezado, rows);
   setStatus(status, "Lista del equipo exportada en CSV.", "ok");
+}
+
+function exportarPolizaEquipoDelegadoCsv() {
+  const status = $("delegado-status");
+  const lista = validarListaEquipoDelegado();
+  if (!lista) return;
+
+  const { categoria, equiposDelegado, filas } = lista;
+  const fecha = new Date().toISOString().slice(0, 10);
+  const encabezado = [
+    "Asociacion",
+    "Torneo",
+    "Categoria",
+    "Club",
+    "Apellido y nombre",
+    "DNI",
+    "Numero",
+    "Estado documental",
+    "Observaciones"
+  ];
+  const rows = filas.map((fila) => [
+    APP_CONFIG.organizacionActiva.nombre,
+    APP_CONFIG.organizacionActiva.torneoLabel,
+    categoria,
+    fila.equipo,
+    fila.nombre,
+    fila.dni,
+    fila.dorsal,
+    fila.habilitado === "SI" ? "Pre-habilitado" : "Pendiente",
+    fila.faltantes || "Documentacion obligatoria completa, sujeto a aprobacion final"
+  ]);
+
+  descargarCsv(`poliza-apdb-${slugify(categoria)}-${slugify(equiposDelegado.join("-"))}-${fecha}.csv`, encabezado, rows);
+  setStatus(status, "CSV para póliza APdB exportado.", "ok");
 }
 
 function generarTextoListaEquipoDelegado(lista) {
@@ -9682,6 +9717,7 @@ async function inicializar() {
       verDocumentoDelegado(event);
       if (event.target.closest("#delegado-descargar-lista")) descargarListaEquipoDelegado();
       if (event.target.closest("#delegado-exportar-lista-csv")) exportarListaEquipoDelegadoCsv();
+      if (event.target.closest("#delegado-exportar-poliza-csv")) exportarPolizaEquipoDelegadoCsv();
       if (event.target.closest("#delegado-copiar-lista")) copiarListaEquipoDelegado();
       if (event.target.closest("#jugador-agregar")) agregarJugadorDelegado();
       solicitarBajaJugadorDelegado(event);
