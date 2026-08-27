@@ -7229,6 +7229,100 @@ function descargarListaHabilitadosHtml() {
   mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
 }
 
+function descargarControlHabilitadosCanchaHtml() {
+  const status = $("asociacion-status");
+  const categoria = $("asociacion-categoria")?.value || "categoria";
+  const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
+  const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
+  const contexto = contextoHabilitadosSeleccionado(categoria);
+
+  if (!equipoFiltro && !partidoFiltro) {
+    setStatus(status, "Elegí un club o un partido antes de descargar el control de cancha.", "warn");
+    return;
+  }
+
+  const filas = calcularHabilitadosCategoria(categoria);
+
+  if (!filas.length) {
+    setStatus(status, "No hay jugadores para descargar en el control de cancha.", "warn");
+    return;
+  }
+
+  const equipos = Array.from(new Set(filas.map((fila) => fila.equipo))).sort((a, b) => a.localeCompare(b));
+  const fechaGeneracion = new Date().toLocaleString("es-AR");
+  const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
+  const html = `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <title>Control cancha - ${escapeHtml(categoria)}</title>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 18px; background: #f8fafc; }
+        h1 { margin: 0 0 4px; font-size: 28px; }
+        h2 { margin: 18px 0 10px; font-size: 20px; }
+        .muted { color: #475467; margin: 0 0 8px; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 16px 0; }
+        .pill { border-radius: 12px; padding: 12px; background: white; border: 1px solid #d0d5dd; }
+        .pill strong { display: block; font-size: 26px; }
+        .team { break-inside: avoid; page-break-inside: avoid; background: white; border: 1px solid #d0d5dd; border-radius: 14px; padding: 12px; margin: 14px 0; }
+        .player { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; border-radius: 12px; padding: 12px; margin: 8px 0; }
+        .player.ok { background: #dcfae6; border: 2px solid #079455; }
+        .player.no { background: #fee4e2; border: 2px solid #d92d20; }
+        .name { font-size: 18px; font-weight: 800; }
+        .details { color: #344054; font-size: 13px; margin-top: 3px; }
+        .state { font-size: 22px; font-weight: 900; }
+        .state.ok { color: #067647; }
+        .state.no { color: #b42318; }
+        .missing { grid-column: 1 / -1; color: #7a271a; font-weight: 700; }
+        .print-actions { margin: 16px 0; }
+        .print-actions button { padding: 11px 16px; border: 0; border-radius: 8px; background: #2563eb; color: white; font-weight: 800; }
+        @media print {
+          body { margin: 10mm; background: white; }
+          .print-actions { display: none; }
+          .player { padding: 8px; margin: 5px 0; }
+        }
+      </style>
+    </head>
+    <body>
+      <h1>Control de cancha</h1>
+      <p class="muted">${escapeHtml(APP_CONFIG.organizacionActiva.nombre)} - ${escapeHtml(categoria)} - ${escapeHtml(contexto.etiqueta)}</p>
+      <p class="muted">Generado ${escapeHtml(fechaGeneracion)}</p>
+      <div class="print-actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
+      <div class="summary">
+        <div class="pill"><strong>${filas.length}</strong><span>Jugadores</span></div>
+        <div class="pill"><strong>${habilitados}</strong><span>Habilitados</span></div>
+        <div class="pill"><strong>${filas.length - habilitados}</strong><span>No habilitados</span></div>
+      </div>
+      ${equipos.map((equipo) => {
+        const jugadores = filas.filter((fila) => nombresEquipoCoinciden(fila.equipo, equipo));
+        const habilitadosEquipo = jugadores.filter((fila) => fila.habilitado === "SI").length;
+        return `
+          <section class="team">
+            <h2>${escapeHtml(equipo)} - ${habilitadosEquipo}/${jugadores.length} habilitados</h2>
+            ${jugadores.map((fila) => `
+              <div class="player ${fila.habilitado === "SI" ? "ok" : "no"}">
+                <div>
+                  <div class="name">${escapeHtml(fila.apellidoNombre)}</div>
+                  <div class="details">DNI ${escapeHtml(fila.dni || "-")} ${fila.dorsal ? `- Nro ${escapeHtml(fila.dorsal)}` : ""}</div>
+                </div>
+                <div class="state ${fila.habilitado === "SI" ? "ok" : "no"}">${escapeHtml(fila.habilitado)}</div>
+                ${fila.faltantes ? `<div class="missing">Falta: ${escapeHtml(fila.faltantes)}</div>` : ""}
+              </div>
+            `).join("")}
+          </section>
+        `;
+      }).join("")}
+    </body>
+    </html>
+  `;
+
+  const nombre = descargarInformeHtml(html, `control-cancha-${categoria}-${contexto.archivo}`);
+  abrirInformeHtml(html);
+  setStatus(status, `Control de cancha descargado como ${nombre}.`, "ok");
+  mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
+}
+
 function generarResumenHabilitadosArbitros(categoria, contexto, filas) {
   const habilitados = filas.filter((fila) => fila.habilitado === "SI");
   const noHabilitados = filas.filter((fila) => fila.habilitado !== "SI");
@@ -7526,6 +7620,7 @@ async function inicializarAsociacion() {
   $("habilitados-tabla")?.addEventListener("click", seleccionarEquipoHabilitados);
   $("habilitados-exportar-csv")?.addEventListener("click", exportarHabilitadosCsv);
   $("habilitados-descargar-html")?.addEventListener("click", descargarListaHabilitadosHtml);
+  $("habilitados-control-html")?.addEventListener("click", descargarControlHabilitadosCanchaHtml);
   $("habilitados-copiar-resumen")?.addEventListener("click", copiarResumenHabilitadosArbitros);
   $("habilitados-plan-prueba")?.addEventListener("click", descargarPlanPruebaDocumental);
   $("asociacion-desbloquear").addEventListener("click", desbloquearAsociacion);
