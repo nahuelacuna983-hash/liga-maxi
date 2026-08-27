@@ -6682,6 +6682,108 @@ function exportarDocumentacionCsv() {
   setStatus(status, "CSV documental exportado.", "ok");
 }
 
+function filasDocumentacionPendientesAsociacion() {
+  return (estado.filasDocumentacionAsociacion || []).filter((fila) =>
+    fila.status !== "aprobado" ||
+    fila.vencimientoStatus === "vencido" ||
+    fila.vencimientoStatus === "por_vencer" ||
+    fila.vencimientoStatus === "sin_fecha"
+  );
+}
+
+function exportarPendientesDocumentacionCsv() {
+  const status = $("asociacion-status");
+  const categoria = $("asociacion-categoria")?.value || "categoria";
+  const equipo = equipoOperativoSeleccionado();
+  const filas = filasDocumentacionPendientesAsociacion();
+
+  if (!equipo) {
+    setStatus(status, "Elegí un club operativo antes de exportar pendientes.", "warn");
+    return;
+  }
+
+  if (!filas.length) {
+    setStatus(status, "No hay pendientes documentales con los filtros actuales.", "ok");
+    return;
+  }
+
+  const encabezado = [
+    "Categoria",
+    "Equipo",
+    "Documento",
+    "Estado",
+    "Archivo",
+    "Vencimiento",
+    "Estado vencimiento",
+    "Observacion"
+  ];
+  const rows = filas.map((fila) => [
+    categoria,
+    fila.equipo,
+    fila.requisito,
+    estadoDocumentoLabel(fila.documento),
+    fila.documento?.file_name || "",
+    fila.documento?.vencimiento ? formatearFecha(fila.documento.vencimiento) : "",
+    fila.vencimientoStatus,
+    fila.documento?.observacion || ""
+  ]);
+  const fecha = new Date().toISOString().slice(0, 10);
+
+  descargarCsv(`pendientes-documentacion-${slugify(categoria)}-${slugify(equipo)}-${fecha}.csv`, encabezado, rows);
+  setStatus(status, "CSV de pendientes documentales exportado.", "ok");
+}
+
+function generarResumenDocumentacionAsociacion(categoria, equipo, filas, pendientes) {
+  const aprobados = filas.filter((fila) => fila.status === "aprobado").length;
+  const paraRevisar = filas.filter((fila) => fila.status === "cargado").length;
+  const observados = filas.filter((fila) => fila.status === "observado" || fila.status === "rechazado").length;
+  const partes = [
+    `Resumen documental - ${APP_CONFIG.organizacionActiva.nombre}`,
+    `Categoria: ${categoria}`,
+    `Club: ${equipo}`,
+    `Documentos: ${filas.length} - Aprobados: ${aprobados} - Para revisar: ${paraRevisar} - Observados/Rechazados: ${observados} - Pendientes operativos: ${pendientes.length}`,
+    ""
+  ];
+
+  if (pendientes.length) {
+    partes.push("Pendientes / revisar:");
+    pendientes.forEach((fila, index) => {
+      const vencimiento = fila.documento?.vencimiento ? ` - Vence: ${formatearFecha(fila.documento.vencimiento)}` : "";
+      const observacion = fila.documento?.observacion ? ` - Obs: ${fila.documento.observacion}` : "";
+      partes.push(`${index + 1}. ${fila.requisito} - ${estadoDocumentoLabel(fila.documento)}${vencimiento}${observacion}`);
+    });
+  } else {
+    partes.push("No hay pendientes documentales con los filtros actuales.");
+  }
+
+  return partes.join("\n");
+}
+
+async function copiarResumenDocumentacionAsociacion() {
+  const status = $("asociacion-status");
+  const categoria = $("asociacion-categoria")?.value || "categoria";
+  const equipo = equipoOperativoSeleccionado();
+  const filas = estado.filasDocumentacionAsociacion || [];
+  const pendientes = filasDocumentacionPendientesAsociacion();
+
+  if (!equipo) {
+    setStatus(status, "Elegí un club operativo antes de copiar el resumen documental.", "warn");
+    return;
+  }
+
+  if (!filas.length) {
+    setStatus(status, "No hay documentos visibles para copiar con los filtros actuales.", "warn");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(generarResumenDocumentacionAsociacion(categoria, equipo, filas, pendientes));
+    setStatus(status, "Resumen documental copiado al portapapeles.", "ok");
+  } catch (error) {
+    setStatus(status, "No se pudo copiar automaticamente. Probá exportar CSV.", "warn");
+  }
+}
+
 function descargarCsv(nombreArchivo, encabezado, rows) {
   const csv = [encabezado, ...rows]
     .map((row) => row.map(csvCell).join(","))
@@ -7143,6 +7245,8 @@ async function inicializarAsociacion() {
     renderAuditoriaDocumentalAsociacion(categoriaNombre);
   });
   $("documentacion-exportar").addEventListener("click", exportarDocumentacionCsv);
+  $("documentacion-exportar-pendientes")?.addEventListener("click", exportarPendientesDocumentacionCsv);
+  $("documentacion-copiar-resumen")?.addEventListener("click", copiarResumenDocumentacionAsociacion);
   $("habilitados-filtro-equipo")?.addEventListener("change", () => {
     if ($("habilitados-filtro-partido")) $("habilitados-filtro-partido").value = "";
     const categoria = $("asociacion-categoria").value;
