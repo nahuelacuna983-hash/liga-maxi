@@ -6829,6 +6829,224 @@ async function copiarResumenDocumentacionAsociacion() {
   }
 }
 
+function estadoVencimientoLabel(valor) {
+  const labels = {
+    vencido: "Vencido",
+    por_vencer: "Por vencer",
+    sin_fecha: "Sin fecha",
+    vigente: "Vigente",
+    no_aplica: "No aplica"
+  };
+  return labels[valor] || valor || "No aplica";
+}
+
+function filasDocumentacionEquipoCompleta(categoria, equipo) {
+  return obtenerDocumentosEquipo().map((requisito) => {
+    const documento = obtenerDocumentoEquipo(categoria, equipo, requisito);
+    return {
+      equipo,
+      requisito,
+      documento,
+      status: documento?.status || "pendiente",
+      vencimientoStatus: estadoVencimientoDocumento(documento)
+    };
+  });
+}
+
+function filasDocumentacionJugadorInforme(categoria, equipo) {
+  const requisitos = obtenerDocumentosJugador();
+  const jugadores = obtenerJugadoresEquipo(categoria, equipo);
+
+  return jugadores.map((jugador) => {
+    const documentos = requisitos.map((requisito) => {
+      const documento = obtenerDocumentoJugador(categoria, jugador.id, requisito);
+      return {
+        requisito,
+        documento,
+        status: documento?.status || "pendiente",
+        vencimientoStatus: estadoVencimientoDocumento(documento)
+      };
+    });
+
+    return {
+      jugador,
+      habilitacion: calcularEstadoHabilitacionJugador(categoria, jugador),
+      documentos
+    };
+  });
+}
+
+function documentoArchivoInforme(documento) {
+  if (!documento) return "Sin archivo";
+
+  const nombre = documento.file_name || documento.title || documento.drive_file_id || "Archivo cargado";
+  if (documento.drive_url) {
+    return `<a href="${escapeHtml(documento.drive_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(nombre)}</a>`;
+  }
+
+  return escapeHtml(nombre);
+}
+
+function descargarInformeDocumentalClubAsociacion() {
+  const status = $("asociacion-status");
+  const categoria = $("asociacion-categoria")?.value || "categoria";
+  const equipo = equipoOperativoSeleccionado();
+
+  if (!equipo) {
+    setStatus(status, "Elegí un club operativo antes de generar el informe documental.", "warn");
+    return;
+  }
+
+  const filasEquipo = filasDocumentacionEquipoCompleta(categoria, equipo);
+  const filasJugadores = filasDocumentacionJugadorInforme(categoria, equipo);
+  const pendientesEquipo = filasEquipo.filter((fila) =>
+    fila.status !== "aprobado" ||
+    fila.vencimientoStatus === "vencido" ||
+    fila.vencimientoStatus === "por_vencer" ||
+    fila.vencimientoStatus === "sin_fecha"
+  );
+  const pendientesJugadores = filasJugadores.flatMap((fila) =>
+    fila.documentos
+      .filter((doc) =>
+        doc.status !== "aprobado" ||
+        doc.vencimientoStatus === "vencido" ||
+        doc.vencimientoStatus === "por_vencer" ||
+        doc.vencimientoStatus === "sin_fecha"
+      )
+      .map((doc) => ({ ...doc, jugador: fila.jugador }))
+  );
+  const aprobadosEquipo = filasEquipo.filter((fila) => fila.status === "aprobado").length;
+  const paraRevisarEquipo = filasEquipo.filter((fila) => fila.status === "cargado").length;
+  const observadosEquipo = filasEquipo.filter((fila) => fila.status === "observado" || fila.status === "rechazado").length;
+  const prehabilitados = filasJugadores.filter((fila) => fila.habilitacion.habilitado === "SI").length;
+  const fechaGeneracion = new Date().toLocaleString("es-AR");
+  const nombreBase = `informe-documental-${categoria}-${equipo}-${new Date().toISOString().slice(0, 10)}`;
+  const html = `
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>Informe documental - ${escapeHtml(equipo)}</title>
+      <style>
+        body { font-family: Arial, sans-serif; color: #172033; margin: 28px; line-height: 1.35; }
+        h1 { margin: 0 0 4px; font-size: 26px; }
+        h2 { margin: 26px 0 10px; font-size: 18px; border-bottom: 1px solid #d6dbe7; padding-bottom: 6px; }
+        .meta { color: #526071; margin-bottom: 18px; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 18px 0; }
+        .pill { border: 1px solid #d6dbe7; border-radius: 8px; padding: 10px; background: #f7f9fc; }
+        .pill strong { display: block; font-size: 22px; }
+        .pill.alert strong { color: #b42318; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+        th, td { border-bottom: 1px solid #d6dbe7; padding: 8px; text-align: left; vertical-align: top; }
+        th { background: #eef2f8; }
+        .ok { color: #067647; font-weight: 700; }
+        .warn { color: #b54708; font-weight: 700; }
+        .bad { color: #b42318; font-weight: 700; }
+        .muted { color: #667085; }
+        .actions { margin: 18px 0 24px; }
+        button { border: 0; border-radius: 8px; padding: 10px 14px; background: #2563eb; color: white; font-weight: 700; cursor: pointer; }
+        @media print { .actions { display: none; } body { margin: 16px; } }
+      </style>
+    </head>
+    <body>
+      <h1>Informe documental del club</h1>
+      <div class="meta">
+        <strong>${escapeHtml(APP_CONFIG.organizacionActiva.nombre)}</strong><br />
+        Categoria: ${escapeHtml(categoria)}<br />
+        Club: ${escapeHtml(equipo)}<br />
+        Generado: ${escapeHtml(fechaGeneracion)}
+      </div>
+      <div class="actions"><button type="button" onclick="window.print()">Imprimir / guardar PDF</button></div>
+
+      <div class="summary">
+        <div class="pill"><strong>${filasEquipo.length}</strong><span>Requisitos de club</span></div>
+        <div class="pill"><strong>${aprobadosEquipo}</strong><span>Aprobados</span></div>
+        <div class="pill ${paraRevisarEquipo ? "alert" : ""}"><strong>${paraRevisarEquipo}</strong><span>Para revisar</span></div>
+        <div class="pill ${observadosEquipo ? "alert" : ""}"><strong>${observadosEquipo}</strong><span>Observados/Rechazados</span></div>
+        <div class="pill"><strong>${filasJugadores.length}</strong><span>Jugadores</span></div>
+        <div class="pill ${filasJugadores.length - prehabilitados ? "alert" : ""}"><strong>${prehabilitados}/${filasJugadores.length}</strong><span>Pre-habilitados</span></div>
+      </div>
+
+      <h2>Documentos del club</h2>
+      <table>
+        <thead>
+          <tr><th>Documento</th><th>Estado</th><th>Archivo</th><th>Vencimiento</th><th>Control</th><th>Observacion</th></tr>
+        </thead>
+        <tbody>
+          ${filasEquipo.map((fila) => `
+            <tr>
+              <td>${escapeHtml(fila.requisito)}</td>
+              <td>${escapeHtml(estadoDocumentoLabel(fila.documento))}</td>
+              <td>${documentoArchivoInforme(fila.documento)}</td>
+              <td>${fila.documento?.vencimiento ? escapeHtml(formatearFecha(fila.documento.vencimiento)) : "-"}</td>
+              <td>${escapeHtml(estadoVencimientoLabel(fila.vencimientoStatus))}</td>
+              <td>${escapeHtml(fila.documento?.observacion || "")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+
+      <h2>Jugadores e impacto en habilitacion</h2>
+      <table>
+        <thead>
+          <tr><th>Jugador</th><th>DNI</th><th>Nro</th><th>Pre-habilitado</th><th>Faltantes bloqueantes</th></tr>
+        </thead>
+        <tbody>
+          ${filasJugadores.map((fila) => `
+            <tr>
+              <td>${escapeHtml(fila.jugador.nombre || fila.jugador.jugador_nombre || "")}</td>
+              <td>${escapeHtml(fila.jugador.dni || fila.jugador.player_dni || "-")}</td>
+              <td>${escapeHtml(fila.jugador.dorsal || fila.jugador.player_dorsal || "-")}</td>
+              <td class="${fila.habilitacion.habilitado === "SI" ? "ok" : "bad"}">${escapeHtml(fila.habilitacion.habilitado)}</td>
+              <td>${escapeHtml(fila.habilitacion.faltantes || "Sin faltantes bloqueantes")}</td>
+            </tr>
+          `).join("") || `<tr><td colspan="5" class="muted">No hay jugadores cargados para este club.</td></tr>`}
+        </tbody>
+      </table>
+
+      <h2>Pendientes y revisiones</h2>
+      <table>
+        <thead>
+          <tr><th>Alcance</th><th>Nombre</th><th>Documento</th><th>Estado</th><th>Control</th><th>Observacion</th></tr>
+        </thead>
+        <tbody>
+          ${[
+            ...pendientesEquipo.map((fila) => ({
+              alcance: "Club",
+              nombre: equipo,
+              requisito: fila.requisito,
+              documento: fila.documento,
+              vencimientoStatus: fila.vencimientoStatus
+            })),
+            ...pendientesJugadores.map((fila) => ({
+              alcance: "Jugador",
+              nombre: fila.jugador.nombre || fila.jugador.jugador_nombre || "",
+              requisito: fila.requisito,
+              documento: fila.documento,
+              vencimientoStatus: fila.vencimientoStatus
+            }))
+          ].map((fila) => `
+            <tr>
+              <td>${escapeHtml(fila.alcance)}</td>
+              <td>${escapeHtml(fila.nombre)}</td>
+              <td>${escapeHtml(fila.requisito)}</td>
+              <td class="${fila.documento?.status === "aprobado" ? "ok" : "warn"}">${escapeHtml(estadoDocumentoLabel(fila.documento))}</td>
+              <td>${escapeHtml(estadoVencimientoLabel(fila.vencimientoStatus))}</td>
+              <td>${escapeHtml(fila.documento?.observacion || "")}</td>
+            </tr>
+          `).join("") || `<tr><td colspan="6" class="muted">No hay pendientes documentales detectados para este club.</td></tr>`}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const nombre = descargarInformeHtml(html, nombreBase);
+  abrirInformeHtml(html);
+  setStatus(status, `Informe documental generado: ${nombre}.`, "ok");
+  mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
+}
+
 function descargarCsv(nombreArchivo, encabezado, rows) {
   const csv = [encabezado, ...rows]
     .map((row) => row.map(csvCell).join(","))
@@ -7292,6 +7510,7 @@ async function inicializarAsociacion() {
   $("documentacion-exportar").addEventListener("click", exportarDocumentacionCsv);
   $("documentacion-exportar-pendientes")?.addEventListener("click", exportarPendientesDocumentacionCsv);
   $("documentacion-copiar-resumen")?.addEventListener("click", copiarResumenDocumentacionAsociacion);
+  $("documentacion-informe-club")?.addEventListener("click", descargarInformeDocumentalClubAsociacion);
   $("habilitados-filtro-equipo")?.addEventListener("change", () => {
     if ($("habilitados-filtro-partido")) $("habilitados-filtro-partido").value = "";
     const categoria = $("asociacion-categoria").value;
