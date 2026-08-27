@@ -1817,6 +1817,10 @@ function renderDocumentacionAsociacion(nombreCategoria) {
 
   tabla.innerHTML = `
     ${renderAvisoDocumentosJugador(documentosJugador)}
+    <div class="doc-scope-note">
+      <strong>Revisión de Asociación</strong>
+      <span>Aprobar un documento valida ese archivo para el control documental. La habilitación final del jugador surge de tener completos y vigentes los requisitos obligatorios.</span>
+    </div>
     ${renderGestionJugadoresAsociacion(nombreCategoria)}
     <table class="doc-table">
       <thead>
@@ -2224,9 +2228,9 @@ function renderAccionRevisionAsociacion(documento, scope = "team") {
   return `
     <div class="doc-review-actions">
       <button class="doc-view-btn" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}">${verLabel}</button>
-      <button class="doc-review-btn doc-review-ok" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="aprobado">Aprobar</button>
-      ${documento.status !== "observado" ? `<button class="doc-review-btn doc-review-warn" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="observado">Observar</button>` : `<span class="doc-review-current doc-review-current-warn">Observado</span>`}
-      ${documento.status !== "rechazado" ? `<button class="doc-review-btn doc-review-danger" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="rechazado">Rechazar</button>` : `<span class="doc-review-current doc-review-current-danger">Rechazado</span>`}
+      <button class="doc-review-btn doc-review-ok" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="aprobado">Aprobar documento</button>
+      ${documento.status !== "observado" ? `<button class="doc-review-btn doc-review-warn" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="observado">Observar documento</button>` : `<span class="doc-review-current doc-review-current-warn">Observado</span>`}
+      ${documento.status !== "rechazado" ? `<button class="doc-review-btn doc-review-danger" type="button" data-document-id="${documentId}" data-document-scope="${scopeAttr}" data-status="rechazado">Rechazar documento</button>` : `<span class="doc-review-current doc-review-current-danger">Rechazado</span>`}
     </div>
   `;
 }
