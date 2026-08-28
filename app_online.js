@@ -3,7 +3,6 @@ const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
 const TORNEO_ID_FALLBACK = "7d0971e3-66ee-4791-bcbf-bace1d2fefb9";
 let TORNEO_ID = TORNEO_ID_FALLBACK;
-const APP_PUBLIC_URL = "https://nahuelacuna983-hash.github.io/liga-maxi/";
 let deferredInstallPrompt = null;
 
 const APP_CONFIG = {
@@ -317,10 +316,7 @@ function mostrarVista(nombre) {
 }
 
 function urlPublicaApp() {
-  if (location.protocol === "http:" || location.protocol === "https:") {
-    return APP_PUBLIC_URL;
-  }
-  return APP_PUBLIC_URL;
+  return location.origin + location.pathname.replace(/[^/]*$/, "");
 }
 
 function renderAccesoApp() {
