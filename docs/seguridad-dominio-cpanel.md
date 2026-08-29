@@ -32,6 +32,10 @@ Archivo preparado:
 
 `docs/verificar-rls-antes-dominio.sql`
 
+Archivo complementario:
+
+`docs/verificar-grants-anon.sql`
+
 Uso:
 
 1. Abrir Supabase.
@@ -60,6 +64,13 @@ Tablas sensibles a revisar:
 - `match_schedules`
 - `app_usage_events`
 - tablas o vistas de permisos/usuarios
+
+Hallazgo read-only del 28/08/2026:
+
+- varias tablas/vistas administrativas responden con anon;
+- algunas funciones `security definer` historicas tienen grant a anon;
+- no ejecutar revokes de golpe porque puede romper el flujo legacy de claves;
+- antes de venta conviene migrar funciones sensibles a Auth real y validacion de permisos.
 
 RPC sensibles a revisar:
 
@@ -177,4 +188,3 @@ Cuando se cambie de GitHub Pages a dominio propio:
 - Redimensionar `icon-512.png` a 512x512 real.
 - Optimizar escudos pesados, especialmente `universal.png`, `mayo.png`, `banco-provincia.png`, `astillero.png`.
 - Evaluar separar JS en modulos cuando la app crezca mas.
-
