@@ -1033,7 +1033,42 @@ async function cargarJugadoresCategoria(categoriaId, force = false) {
   }
 
   estado.jugadoresPorCategoriaId[categoriaId] = normalizarJugadoresDesdeDocumentos(data || []);
+  if (!estado.jugadoresPorCategoriaId[categoriaId].length) {
+    estado.jugadoresPorCategoriaId[categoriaId] = await cargarJugadoresDirectosCategoria(categoriaId);
+  }
   return estado.jugadoresPorCategoriaId[categoriaId];
+}
+
+async function cargarJugadoresDirectosCategoria(categoriaId) {
+  if (!categoriaId) return [];
+
+  const { data, error } = await supabaseClient
+    .from("team_players")
+    .select("id, categoria_id, equipo_id, equipo_nombre, nombre, dni, dorsal, activo, baja_solicitada, baja_motivo, baja_solicitada_por, baja_solicitada_en")
+    .eq("categoria_id", categoriaId)
+    .eq("activo", true)
+    .order("equipo_nombre", { ascending: true })
+    .order("nombre", { ascending: true });
+
+  if (error) {
+    console.warn("No se pudieron cargar jugadores directos:", error.message);
+    return [];
+  }
+
+  return (data || []).map((row) => ({
+    id: row.id,
+    categoria_id: row.categoria_id,
+    equipo_id: row.equipo_id,
+    equipo_nombre: row.equipo_nombre,
+    nombre: row.nombre,
+    dni: row.dni,
+    dorsal: row.dorsal,
+    activo: row.activo !== false,
+    baja_solicitada: !!row.baja_solicitada,
+    baja_motivo: row.baja_motivo || "",
+    baja_solicitada_por: row.baja_solicitada_por || "",
+    baja_solicitada_en: row.baja_solicitada_en || ""
+  }));
 }
 
 async function cargarDocumentosJugadoresCategoria(categoriaId, force = false) {
@@ -1057,6 +1092,9 @@ async function cargarDocumentosJugadoresCategoria(categoriaId, force = false) {
   estado.documentosJugadoresPorCategoriaId[categoriaId] = data || [];
   if (!estado.jugadoresPorCategoriaId[categoriaId]?.length) {
     estado.jugadoresPorCategoriaId[categoriaId] = normalizarJugadoresDesdeDocumentos(data || []);
+    if (!estado.jugadoresPorCategoriaId[categoriaId].length) {
+      estado.jugadoresPorCategoriaId[categoriaId] = await cargarJugadoresDirectosCategoria(categoriaId);
+    }
   }
   return estado.documentosJugadoresPorCategoriaId[categoriaId];
 }
@@ -4198,6 +4236,7 @@ function poblarSelectPartidosDelegado(nombreCategoria) {
 async function refrescarCategoria(nombreCategoria, opciones = {}) {
   const {
     incluirDocumentacion = true,
+    forzarDocumentacion = false,
     actualizarPublico = true,
     incluirPartidos = true,
     incluirPlayoffs = true,
@@ -4206,10 +4245,10 @@ async function refrescarCategoria(nombreCategoria, opciones = {}) {
   } = opciones;
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   if (categoria && incluirDocumentacion) {
-    await cargarEquiposCategoria(categoria.id);
-    await cargarDocumentosCategoria(categoria.id);
-    await cargarJugadoresCategoria(categoria.id);
-    await cargarDocumentosJugadoresCategoria(categoria.id);
+    await cargarEquiposCategoria(categoria.id, forzarDocumentacion);
+    await cargarDocumentosCategoria(categoria.id, forzarDocumentacion);
+    await cargarJugadoresCategoria(categoria.id, forzarDocumentacion);
+    await cargarDocumentosJugadoresCategoria(categoria.id, forzarDocumentacion);
   }
   if (categoria?.id && incluirAuditoria) await cargarAuditoriaDocumentalCategoria(categoria.id);
 
@@ -4920,10 +4959,11 @@ async function desbloquearDelegado() {
 
   const primeraCategoria = $("delegado-categoria").value;
   if (primeraCategoria) {
-    refrescarCategoria(primeraCategoria, { actualizarPublico: false }).then(() => {
-      poblarSelectPartidosDelegado(primeraCategoria);
-      renderDocumentacionDelegado();
+    await refrescarCategoria(primeraCategoria, {
+      actualizarPublico: false,
+      forzarDocumentacion: true
     });
+    poblarSelectPartidosDelegado(primeraCategoria);
   }
 
   setStatus(status, `Edición habilitada para ${delegado.nombre}.`, "ok");
@@ -10277,7 +10317,9 @@ async function inicializar() {
       const categoria = e.target.value;
       $("publico-categoria").value = categoria;
       if ($("fecha-categoria")) $("fecha-categoria").value = categoria;
-      await refrescarCategoria(categoria);
+      await refrescarCategoria(categoria, {
+        forzarDocumentacion: estado.delegadoDesbloqueado
+      });
       poblarSelectPartidosDelegado(categoria);
       setStatus($("delegado-status"), "", "");
       aplicarBloqueoDelegado();
