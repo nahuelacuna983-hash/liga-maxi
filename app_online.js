@@ -966,10 +966,10 @@ async function cargarRequisitosDocumentales() {
   return estado.requisitosDocumentales;
 }
 
-async function cargarEquiposCategoria(categoriaId) {
+async function cargarEquiposCategoria(categoriaId, force = false) {
   if (!categoriaId) return [];
 
-  if (estado.equiposPorCategoriaId[categoriaId]) {
+  if (!force && estado.equiposPorCategoriaId[categoriaId]) {
     return estado.equiposPorCategoriaId[categoriaId];
   }
 
