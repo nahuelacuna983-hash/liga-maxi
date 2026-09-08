@@ -44,6 +44,8 @@ const estado = {
   auditoriaDocumentalPorCategoriaId: {},
   filasDocumentacionAsociacion: [],
   eventosUso: [],
+  cambiosResultados: [],
+  cambiosResultadosError: "",
   ultimaSimulacionPlanner: null,
   publicoCargaActual: 0,
   publicacionFixtureEnCurso: false,
@@ -2622,6 +2624,76 @@ async function cargarEventosUso() {
   return estado.eventosUso;
 }
 
+async function cargarCambiosResultados() {
+  const { data, error } = await supabaseClient
+    .from("v_result_change_logs_admin")
+    .select("created_at, accion, actor, torneo_nombre, temporada, categoria_nombre, fase, jornada, fecha, local, visitante, puntos_local_anterior, puntos_visitante_anterior, estado_resultado_anterior, puntos_local_nuevo, puntos_visitante_nuevo, estado_resultado_nuevo")
+    .order("created_at", { ascending: false })
+    .limit(120);
+
+  if (error) {
+    estado.cambiosResultados = [];
+    estado.cambiosResultadosError = error.message;
+    return estado.cambiosResultados;
+  }
+
+  estado.cambiosResultadosError = "";
+  estado.cambiosResultados = data || [];
+  return estado.cambiosResultados;
+}
+
+function resultadoAuditadoLabel(local, visitante, estadoResultado) {
+  if (local == null && visitante == null) return estadoResultado || "pendiente";
+  return `${local ?? "-"} - ${visitante ?? "-"}${estadoResultado ? ` (${estadoResultado})` : ""}`;
+}
+
+function renderCambiosResultadosAuditoria() {
+  const filas = estado.cambiosResultados || [];
+
+  if (estado.cambiosResultadosError) {
+    return `
+      <div class="usage-audit-box">
+        <h4>Historial de resultados</h4>
+        <p class="note">Todavía falta ejecutar el SQL de auditoría de cambios de resultados.</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="usage-audit-box">
+      <h4>Historial de resultados</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Acción</th>
+              <th>Categoría</th>
+              <th>Partido</th>
+              <th>Anterior</th>
+              <th>Nuevo</th>
+              <th>Actor</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filas.slice(0, 40).map((fila) => `
+              <tr>
+                <td>${fechaLocalCorta(fila.created_at)}</td>
+                <td>${escapeHtml(fila.accion || "")}</td>
+                <td>${escapeHtml(fila.categoria_nombre || "")}</td>
+                <td>Fecha ${escapeHtml(fila.jornada || "-")} · ${escapeHtml(fila.local || "")} vs ${escapeHtml(fila.visitante || "")}</td>
+                <td>${escapeHtml(resultadoAuditadoLabel(fila.puntos_local_anterior, fila.puntos_visitante_anterior, fila.estado_resultado_anterior))}</td>
+                <td>${escapeHtml(resultadoAuditadoLabel(fila.puntos_local_nuevo, fila.puntos_visitante_nuevo, fila.estado_resultado_nuevo))}</td>
+                <td>${escapeHtml(fila.actor || "")}</td>
+              </tr>
+            `).join("") || `<tr><td colspan="7">Todavía no hay cambios de resultados registrados.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
 function renderEstadisticasUso() {
   const resumen = $("uso-resumen");
   const detalle = $("uso-detalle");
@@ -2645,6 +2717,7 @@ function renderEstadisticasUso() {
     <div class="doc-pill"><strong>${sesiones.size}</strong><span>Dispositivos aprox.</span></div>
     <div class="doc-pill"><strong>${contarEventos(filas, (fila) => fila.event_type === "resultado_cargado")}</strong><span>Resultados</span></div>
     <div class="doc-pill"><strong>${contarEventos(filas, (fila) => fila.event_type === "documento_cargado" || fila.event_type === "documento_jugador_cargado")}</strong><span>Documentos</span></div>
+    <div class="doc-pill"><strong>${estado.cambiosResultados.length}</strong><span>Cambios auditados</span></div>
   `;
 
   detalle.innerHTML = `
@@ -2682,6 +2755,7 @@ function renderEstadisticasUso() {
         </tbody>
       </table>
     </div>
+    ${renderCambiosResultadosAuditoria()}
   `;
 }
 
@@ -2691,6 +2765,7 @@ async function actualizarEstadisticasUso() {
   try {
     if (status) setStatus(status, "Cargando estadísticas...", "");
     await cargarEventosUso();
+    await cargarCambiosResultados();
     renderEstadisticasUso();
     if (status) setStatus(status, "Estadísticas actualizadas.", "ok");
   } catch (error) {
