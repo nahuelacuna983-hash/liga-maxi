@@ -1323,6 +1323,138 @@ function documentoAprobadoVigente(documento) {
   return estadoVencimientoDocumento(documento) !== "vencido";
 }
 
+function documentoTieneArchivo(documento) {
+  return !!(documento?.file_name || documento?.storage_path || documento?.drive_url || documento?.drive_file_id);
+}
+
+function observacionDocumentoNormalizada(documento) {
+  return normalizarTexto([documento?.observacion, documento?.observation, documento?.title, documento?.file_name].filter(Boolean).join(" "));
+}
+
+function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
+  const requerido = opciones.requerido !== false;
+  const vencimiento = estadoVencimientoDocumento(documento);
+  const status = normalizarTexto(documento?.status || "pendiente");
+  const observacion = observacionDocumentoNormalizada(documento);
+  const tieneArchivo = documentoTieneArchivo(documento);
+
+  if (!requerido) {
+    return {
+      estado: documento ? "informativo" : "no_aplica",
+      label: documento ? "Informativo" : "No aplica",
+      detalle: documento ? `${etiqueta}: no bloquea habilitación general.` : `${etiqueta}: solo corresponde si aplica.`,
+      bloquea: false
+    };
+  }
+
+  if (!documento || (!tieneArchivo && status === "pendiente")) {
+    return {
+      estado: "faltante",
+      label: "Falta cargar",
+      detalle: `${etiqueta}: falta documentación.`,
+      bloquea: true
+    };
+  }
+
+  if (status === "vencido" || vencimiento === "vencido") {
+    return {
+      estado: "vencido",
+      label: "Vencido",
+      detalle: `${etiqueta}: documento vencido.`,
+      bloquea: true
+    };
+  }
+
+  if (["rechazado", "observado", "no_validable"].includes(status) || /rechaz|observ|no valid|no localiz|falta/.test(observacion)) {
+    return {
+      estado: status === "rechazado" ? "rechazado" : "revision",
+      label: status === "rechazado" ? "Rechazado" : "Revisar",
+      detalle: `${etiqueta}: requiere revisión administrativa.`,
+      bloquea: true
+    };
+  }
+
+  if (vencimiento === "sin_fecha") {
+    return {
+      estado: "revision",
+      label: "Revisar fecha",
+      detalle: `${etiqueta}: falta fecha de vencimiento o vigencia.`,
+      bloquea: true
+    };
+  }
+
+  if (status === "aprobado") {
+    return {
+      estado: "aprobado",
+      label: "Aprobado",
+      detalle: `${etiqueta}: aprobado${vencimiento === "por_vencer" ? ", próximo a vencer" : ""}.`,
+      bloquea: false
+    };
+  }
+
+  if (tieneArchivo && ["cargado", "pendiente"].includes(status)) {
+    return {
+      estado: "preaprobado",
+      label: "Pre-auditoría OK",
+      detalle: `${etiqueta}: archivo cargado, falta aprobación final.`,
+      bloquea: true
+    };
+  }
+
+  return {
+    estado: "revision",
+    label: "Revisar",
+    detalle: `${etiqueta}: no se pudo determinar el estado.`,
+    bloquea: true
+  };
+}
+
+function combinarPreauditoriaDocumental(items) {
+  const bloqueantes = items.filter((item) => item.bloquea);
+  const faltantes = items.filter((item) => item.estado === "faltante");
+  const vencidos = items.filter((item) => item.estado === "vencido");
+  const revision = items.filter((item) => ["revision", "rechazado"].includes(item.estado));
+  const preaprobados = items.filter((item) => item.estado === "preaprobado");
+
+  if (vencidos.length) {
+    return {
+      estado: "vencido",
+      label: "Vencido",
+      detalle: vencidos.map((item) => item.detalle).join(" ")
+    };
+  }
+
+  if (faltantes.length) {
+    return {
+      estado: "pendiente",
+      label: "Pendiente",
+      detalle: faltantes.map((item) => item.detalle).join(" ")
+    };
+  }
+
+  if (revision.length) {
+    return {
+      estado: "revision",
+      label: "Revisar",
+      detalle: revision.map((item) => item.detalle).join(" ")
+    };
+  }
+
+  if (preaprobados.length || bloqueantes.length) {
+    return {
+      estado: "preaprobado",
+      label: "Pre-auditoría OK",
+      detalle: preaprobados.map((item) => item.detalle).join(" ") || "Documentación cargada, falta aprobación final."
+    };
+  }
+
+  return {
+    estado: "aprobado",
+    label: "Aprobado documental",
+    detalle: "Requisitos documentales obligatorios aprobados."
+  };
+}
+
 function siNoDocumento(documento) {
   return documentoAprobadoVigente(documento) ? "SI" : "NO";
 }
@@ -1337,6 +1469,14 @@ function calcularEstadoHabilitacionJugador(nombreCategoria, jugador) {
   const certificado = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["certificado", "estudio"]);
   const deslinde = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["declaracion", "deslinde"]);
   const pase = buscarDocumentoJugadorPorTerminos(nombreCategoria, jugador.id, ["pase"]);
+  const preauditoriaItems = [
+    evaluarDocumentoPreauditoria(buenaFe, "Lista de buena fe"),
+    evaluarDocumentoPreauditoria(seguro, "Seguro"),
+    evaluarDocumentoPreauditoria(certificado, "Certificado/estudio medico"),
+    evaluarDocumentoPreauditoria(deslinde, "Declaracion jurada de responsabilidad"),
+    evaluarDocumentoPreauditoria(pase, "Pase", { requerido: false })
+  ];
+  const preauditoria = combinarPreauditoriaDocumental(preauditoriaItems);
   const estados = {
     buenaFe: siNoDocumento(buenaFe),
     seguro: siNoDocumento(seguro),
@@ -1354,7 +1494,9 @@ function calcularEstadoHabilitacionJugador(nombreCategoria, jugador) {
   return {
     ...estados,
     habilitado: faltantes.length ? "NO" : "SI",
-    faltantes: faltantes.join("; ")
+    faltantes: faltantes.join("; "),
+    preauditoria,
+    preauditoriaDetalle: preauditoria.detalle
   };
 }
 
@@ -2367,6 +2509,7 @@ function renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugad
           <tr>
             <th>Equipo</th>
             <th>Jugador</th>
+            <th>Pre-auditoría</th>
             <th>Estado</th>
             <th>Documento</th>
             <th>Archivo</th>
@@ -2375,23 +2518,41 @@ function renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugad
           </tr>
         </thead>
         <tbody>
-          ${filas.map((documento) => `
-            <tr>
-              <td>${escapeHtml(documento.equipo_nombre)}</td>
-              <td>
-                <strong>${escapeHtml(documento.jugador_nombre)}</strong>
-                <span class="doc-player-meta">${documento.jugador_dni ? `DNI ${escapeHtml(documento.jugador_dni)}` : ""}${documento.jugador_dorsal ? ` #${escapeHtml(documento.jugador_dorsal)}` : ""}</span>
-              </td>
-              <td>${docStateHtml(
-                estadoDocumentoLabel(documento),
-                estadoDocumentoClase(documento)
-              )}</td>
-              <td>${escapeHtml(documento.requirement_nombre)}</td>
-              <td>${documento.file_name ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>` : `<span class="doc-action-muted">Sin archivo</span>`}</td>
-              <td>${escapeHtml(documento.observacion || "")}</td>
-              <td>${renderAccionRevisionAsociacion(documento, "player")}</td>
-            </tr>
-          `).join("")}
+          ${filas.map((documento) => {
+            const jugador = {
+              id: documento.player_id,
+              equipo_nombre: documento.equipo_nombre,
+              nombre: documento.jugador_nombre,
+              dni: documento.jugador_dni,
+              dorsal: documento.jugador_dorsal
+            };
+            const estadoHabilitacion = calcularEstadoHabilitacionJugador(nombreCategoria, jugador);
+
+            return `
+              <tr>
+                <td>${escapeHtml(documento.equipo_nombre)}</td>
+                <td>
+                  <strong>${escapeHtml(documento.jugador_nombre)}</strong>
+                  <span class="doc-player-meta">${documento.jugador_dni ? `DNI ${escapeHtml(documento.jugador_dni)}` : ""}${documento.jugador_dorsal ? ` #${escapeHtml(documento.jugador_dorsal)}` : ""}</span>
+                </td>
+                <td>
+                  ${docStateHtml(
+                    estadoHabilitacion.preauditoria?.label || "Pendiente",
+                    estadoHabilitacion.preauditoria?.estado || "pendiente"
+                  )}
+                  <span class="doc-player-meta">${escapeHtml(estadoHabilitacion.preauditoriaDetalle || "")}</span>
+                </td>
+                <td>${docStateHtml(
+                  estadoDocumentoLabel(documento),
+                  estadoDocumentoClase(documento)
+                )}</td>
+                <td>${escapeHtml(documento.requirement_nombre)}</td>
+                <td>${documento.file_name ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>` : `<span class="doc-action-muted">Sin archivo</span>`}</td>
+                <td>${escapeHtml(documento.observacion || "")}</td>
+                <td>${renderAccionRevisionAsociacion(documento, "player")}</td>
+              </tr>
+            `;
+          }).join("")}
         </tbody>
       </table>
     </div>
@@ -2808,7 +2969,7 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
         <thead>
           <tr>
             <th>Jugador</th>
-            <th>Pre-habilitación</th>
+            <th>Pre-auditoría</th>
             <th>Falta</th>
             <th>Documento</th>
             <th>Estado</th>
@@ -2830,11 +2991,11 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
                     ${requisitoIndex === 0 ? renderAccionBajaJugadorDelegado(jugador) : ""}
                   </td>
                   <td>${requisitoIndex === 0 ? docStateHtml(
-                    estadoHabilitacion.habilitado === "SI" ? "Pre-habilitado" : "Pendiente",
-                    estadoHabilitacion.habilitado === "SI" ? "aprobado" : "observado"
+                    estadoHabilitacion.preauditoria?.label || (estadoHabilitacion.habilitado === "SI" ? "Aprobado documental" : "Pendiente"),
+                    estadoHabilitacion.preauditoria?.estado || (estadoHabilitacion.habilitado === "SI" ? "aprobado" : "observado")
                   ) : ""}</td>
                   <td>${requisitoIndex === 0
-                    ? `<span class="doc-action-muted">${escapeHtml(estadoHabilitacion.faltantes || "OK documental, sujeto a aprobación final")}</span>`
+                    ? `<span class="doc-action-muted">${escapeHtml(estadoHabilitacion.preauditoriaDetalle || estadoHabilitacion.faltantes || "OK documental, sujeto a aprobación final")}</span>`
                     : ""}</td>
                   <td>${escapeHtml(requisito)}</td>
                   <td>${docStateHtml(
