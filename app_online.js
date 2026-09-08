@@ -2435,7 +2435,7 @@ function renderGestionJugadoresAsociacion(nombreCategoria) {
                 <td>${escapeHtml(jugador.equipo_nombre || "-")}</td>
                 <td>
                   <strong>${escapeHtml(jugador.nombre)}</strong>
-                  <span class="doc-player-meta">${jugador.dni ? `DNI ${escapeHtml(jugador.dni)}` : ""}${jugador.dorsal ? ` #${escapeHtml(jugador.dorsal)}` : ""}</span>
+                  <span class="doc-player-meta">${[jugador.dni ? `DNI ${escapeHtml(jugador.dni)}` : "", jugador.dorsal ? `N° ${escapeHtml(jugador.dorsal)}` : ""].filter(Boolean).join(" · ")}</span>
                 </td>
                 <td>
                   <span class="doc-action-muted">${resumen.aprobados} aprobados · ${resumen.cargados} para revisar · ${resumen.pendientes} pendientes</span>
@@ -3018,7 +3018,7 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
               <div class="doc-player-card-head">
                 <div>
                   <strong>${escapeHtml(jugador.nombre)}</strong>
-                  <span class="doc-player-meta">${jugador.dni ? `DNI ${escapeHtml(jugador.dni)}` : ""}${jugador.dorsal ? ` #${escapeHtml(jugador.dorsal)}` : ""}</span>
+                  <span class="doc-player-meta">${[jugador.dni ? `DNI ${escapeHtml(jugador.dni)}` : "", jugador.dorsal ? `N° ${escapeHtml(jugador.dorsal)}` : ""].filter(Boolean).join(" · ")}</span>
                 </div>
                 <div class="doc-player-card-state">
                   ${docStateHtml(
