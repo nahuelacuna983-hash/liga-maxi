@@ -1011,11 +1011,87 @@
       white-space: nowrap;
     }
 
+    .doc-state-cargado {
+      background: rgba(59, 130, 246, 0.14);
+      color: #bfdbfe;
+    }
+
+    .doc-state-preaprobado {
+      background: rgba(20, 184, 166, 0.14);
+      color: #99f6e4;
+    }
+
+    .doc-state-aprobado {
+      background: rgba(16, 185, 129, 0.14);
+      color: #bbf7d0;
+    }
+
+    .doc-state-revision,
+    .doc-state-observado,
+    .doc-state-vencido {
+      background: rgba(249, 115, 22, 0.14);
+      color: #fed7aa;
+    }
+
+    .doc-state-rechazado {
+      background: rgba(239, 68, 68, 0.14);
+      color: #fecaca;
+    }
+
     .doc-action-muted {
       color: var(--muted);
       font-size: 13px;
       font-weight: 700;
-      white-space: nowrap;
+    }
+
+    .doc-upload-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      border-radius: 8px;
+      border: 1px solid rgba(96, 165, 250, 0.5);
+      background: rgba(37, 99, 235, 0.2);
+      color: #dbeafe;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 5px 10px;
+    }
+
+    .player-doc-upload-input,
+    .doc-upload-input {
+      display: none;
+    }
+
+    .doc-file-name {
+      display: block;
+      max-width: 220px;
+      margin-top: 6px;
+      color: #bfdbfe;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .doc-uploaded-mark {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #bbf7d0;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 9px;
+    }
+
+    .doc-observation {
+      display: block;
+      max-width: 280px;
+      color: #dbeafe;
+      font-size: 13px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
     }
 
     .doc-player-admin {
@@ -1078,6 +1154,101 @@
       font-weight: 800;
     }
 
+    .doc-player-team {
+      margin-top: 14px;
+    }
+
+    .doc-player-team h5 {
+      margin: 0 0 12px;
+    }
+
+    .doc-player-meta {
+      display: block;
+      color: #bfdbfe;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .doc-player-card-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .doc-player-card-delegate {
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.24);
+      padding: 12px;
+    }
+
+    .doc-player-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+      padding-bottom: 10px;
+    }
+
+    .doc-player-card-head strong {
+      display: block;
+    }
+
+    .doc-player-card-state {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .doc-player-card-note {
+      margin: 10px 0;
+      color: #dbeafe;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .doc-player-doc-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .doc-player-doc-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 1.2fr) minmax(120px, auto) minmax(180px, 1fr);
+      gap: 10px;
+      align-items: center;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.3);
+      padding: 10px;
+    }
+
+    .doc-player-doc-name strong,
+    .doc-player-doc-name span {
+      display: block;
+    }
+
+    .doc-player-doc-name span {
+      margin-top: 4px;
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .doc-player-doc-action {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .doc-player-doc-action .doc-file-name {
+      max-width: 100%;
+      margin-top: 0;
+    }
+
     .doc-scope-note {
       border: 1px solid rgba(96, 165, 250, 0.32);
       background: rgba(37, 99, 235, 0.12);
@@ -1129,6 +1300,20 @@
 
       .card {
         padding: 12px;
+      }
+
+      .doc-player-card-head,
+      .doc-player-card-state {
+        display: grid;
+        justify-content: stretch;
+      }
+
+      .doc-player-doc-row {
+        grid-template-columns: 1fr;
+      }
+
+      .doc-player-doc-action {
+        justify-content: flex-start;
       }
 
       .match {
@@ -2836,7 +3021,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260907-delegados-jugadores"></script>
+<script src="app_online.js?v=20260908-preauditoria-fichas"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

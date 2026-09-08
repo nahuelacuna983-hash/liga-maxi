@@ -905,11 +905,26 @@ const ESCUDOS_EQUIPOS = {
 };
 
 function obtenerDocumentosRequeridos() {
-  if (estado.requisitosDocumentales.length) {
-    return estado.requisitosDocumentales.map((requisito) => requisito.nombre);
-  }
+  const requisitos = estado.requisitosDocumentales.length
+    ? estado.requisitosDocumentales
+    : DOCUMENTOS_REQUERIDOS.map((nombre) => ({ nombre }));
+  const unicos = new Map();
 
-  return DOCUMENTOS_REQUERIDOS;
+  requisitos.forEach((requisito) => {
+    const nombre = requisito.nombre || requisito;
+    const clave = claveRequisitoDocumental(nombre);
+    const score =
+      (requisito.torneo_id === TORNEO_ID ? 100 : 0) +
+      (requisito.categoria_id ? 20 : 0) +
+      String(nombre).length / 100;
+    const actual = unicos.get(clave);
+
+    if (!actual || score > actual.score) {
+      unicos.set(clave, { nombre, score });
+    }
+  });
+
+  return Array.from(unicos.values()).map((item) => item.nombre);
 }
 
 function esDocumentoPorJugador(nombre) {
@@ -928,6 +943,16 @@ function obtenerDocumentosJugador() {
   return obtenerDocumentosRequeridos().filter(esDocumentoPorJugador);
 }
 
+function claveRequisitoDocumental(nombre) {
+  const normalized = normalizarTexto(nombre);
+  if (normalized.includes("buena fe")) return "lista_buena_fe";
+  if (normalized.includes("seguro")) return "seguro";
+  if (normalized.includes("certificado") || normalized.includes("estudio")) return "estudios_medicos";
+  if (normalized.includes("declaracion") || normalized.includes("deslinde")) return "djdr";
+  if (normalized.includes("pase")) return "pase";
+  return normalized;
+}
+
 function permiteMultiplesArchivos(nombre) {
   const requisito = obtenerRequisitoDocumental(nombre);
   if (typeof requisito?.allows_multiple_files === "boolean") {
@@ -944,9 +969,14 @@ function esDocumentoJugadorBloqueante(nombre) {
 }
 
 function obtenerRequisitoDocumental(nombre) {
-  return estado.requisitosDocumentales.find((requisito) =>
-    normalizarTexto(requisito.nombre) === normalizarTexto(nombre)
-  ) || null;
+  const clave = claveRequisitoDocumental(nombre);
+  return estado.requisitosDocumentales
+    .filter((requisito) => claveRequisitoDocumental(requisito.nombre) === clave)
+    .sort((a, b) => {
+      const scoreA = (a.torneo_id === TORNEO_ID ? 100 : 0) + (a.categoria_id ? 20 : 0) + String(a.nombre || "").length / 100;
+      const scoreB = (b.torneo_id === TORNEO_ID ? 100 : 0) + (b.categoria_id ? 20 : 0) + String(b.nombre || "").length / 100;
+      return scoreB - scoreA;
+    })[0] || null;
 }
 
 async function cargarRequisitosDocumentales() {
@@ -1290,12 +1320,26 @@ function obtenerDocumentoJugadorPorId(documentId) {
 function obtenerDocumentoJugador(nombreCategoria, playerId, requisito) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const documentos = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
-  const requisitoNormalizado = normalizarTexto(requisito);
+  const clave = claveRequisitoDocumental(requisito);
 
-  return documentos.find((documento) =>
-    documento.player_id === playerId &&
-    normalizarTexto(documento.requirement_nombre) === requisitoNormalizado
-  ) || null;
+  return documentos
+    .filter((documento) =>
+      documento.player_id === playerId &&
+      claveRequisitoDocumental(documento.requirement_nombre) === clave
+    )
+    .sort((a, b) => prioridadDocumento(b) - prioridadDocumento(a))[0] || null;
+}
+
+function prioridadDocumento(documento) {
+  const estados = {
+    aprobado: 50,
+    cargado: 40,
+    observado: 30,
+    vencido: 20,
+    rechazado: 10,
+    pendiente: 0
+  };
+  return (estados[normalizarTexto(documento?.status)] ?? 0) + (documentoTieneArchivo(documento) ? 5 : 0);
 }
 
 function buscarDocumentoEquipoPorTerminos(nombreCategoria, equipo, terminos) {
@@ -2965,51 +3009,48 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
   return `
     <div class="doc-player-team">
       <h5>${escapeHtml(equipo)}</h5>
-      <table class="doc-table">
-        <thead>
-          <tr>
-            <th>Jugador</th>
-            <th>Pre-auditoría</th>
-            <th>Falta</th>
-            <th>Documento</th>
-            <th>Estado</th>
-            <th>Observación</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${jugadores.map((jugador) =>
-            documentosJugador.map((requisito, requisitoIndex) => {
-              const documento = obtenerDocumentoJugador(categoria, jugador.id, requisito);
-              const estadoHabilitacion = calcularEstadoHabilitacionJugador(categoria, jugador);
+      <div class="doc-player-card-list">
+        ${jugadores.map((jugador) => {
+          const estadoHabilitacion = calcularEstadoHabilitacionJugador(categoria, jugador);
 
-              return `
-                <tr>
-                  <td>
-                    <strong>${escapeHtml(jugador.nombre)}</strong>
-                    <span class="doc-player-meta">${jugador.dni ? `DNI ${escapeHtml(jugador.dni)}` : ""}${jugador.dorsal ? ` #${escapeHtml(jugador.dorsal)}` : ""}</span>
-                    ${requisitoIndex === 0 ? renderAccionBajaJugadorDelegado(jugador) : ""}
-                  </td>
-                  <td>${requisitoIndex === 0 ? docStateHtml(
+          return `
+            <article class="doc-player-card-delegate">
+              <div class="doc-player-card-head">
+                <div>
+                  <strong>${escapeHtml(jugador.nombre)}</strong>
+                  <span class="doc-player-meta">${jugador.dni ? `DNI ${escapeHtml(jugador.dni)}` : ""}${jugador.dorsal ? ` #${escapeHtml(jugador.dorsal)}` : ""}</span>
+                </div>
+                <div class="doc-player-card-state">
+                  ${docStateHtml(
                     estadoHabilitacion.preauditoria?.label || (estadoHabilitacion.habilitado === "SI" ? "Aprobado documental" : "Pendiente"),
                     estadoHabilitacion.preauditoria?.estado || (estadoHabilitacion.habilitado === "SI" ? "aprobado" : "observado")
-                  ) : ""}</td>
-                  <td>${requisitoIndex === 0
-                    ? `<span class="doc-action-muted">${escapeHtml(estadoHabilitacion.preauditoriaDetalle || estadoHabilitacion.faltantes || "OK documental, sujeto a aprobación final")}</span>`
-                    : ""}</td>
-                  <td>${escapeHtml(requisito)}</td>
-                  <td>${docStateHtml(
-                    estadoDocumentoLabel(documento),
-                    estadoDocumentoClase(documento)
-                  )}</td>
-                  <td>${renderObservacionDocumento(documento)}</td>
-                  <td>${renderAccionDocumentoJugadorDelegado(documento)}</td>
-                </tr>
-              `;
-            }).join("")
-          ).join("")}
-        </tbody>
-      </table>
+                  )}
+                  ${renderAccionBajaJugadorDelegado(jugador)}
+                </div>
+              </div>
+              <p class="doc-player-card-note">${escapeHtml(estadoHabilitacion.preauditoriaDetalle || estadoHabilitacion.faltantes || "OK documental, sujeto a aprobación final")}</p>
+              <div class="doc-player-doc-grid">
+                ${documentosJugador.map((requisito) => {
+                  const documento = obtenerDocumentoJugador(categoria, jugador.id, requisito);
+                  return `
+                    <div class="doc-player-doc-row">
+                      <div class="doc-player-doc-name">
+                        <strong>${escapeHtml(requisito)}</strong>
+                        <span>${renderObservacionDocumento(documento)}</span>
+                      </div>
+                      <div>${docStateHtml(
+                        estadoDocumentoLabel(documento),
+                        estadoDocumentoClase(documento)
+                      )}</div>
+                      <div class="doc-player-doc-action">${renderAccionDocumentoJugadorDelegado(documento)}</div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            </article>
+          `;
+        }).join("")}
+      </div>
     </div>
   `;
 }
