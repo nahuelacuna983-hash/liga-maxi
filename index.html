@@ -1016,7 +1016,8 @@
       color: #bfdbfe;
     }
 
-    .doc-state-preaprobado {
+    .doc-state-preaprobado,
+    .doc-state-listo_aprobar {
       background: rgba(20, 184, 166, 0.14);
       color: #99f6e4;
     }
@@ -1027,6 +1028,7 @@
     }
 
     .doc-state-revision,
+    .doc-state-revision_contenido,
     .doc-state-observado,
     .doc-state-vencido {
       background: rgba(249, 115, 22, 0.14);
@@ -2856,6 +2858,9 @@
       </div>
       <div class="field doc-filter-action">
         <button id="documentacion-informe-club" class="secondary" type="button">Informe club</button>
+      </div>
+      <div class="field doc-filter-action">
+        <button id="documentacion-aprobar-listos" class="primary" type="button">Aprobar listos del club</button>
       </div>
     </div>
     <div id="documentacion-resumen" class="doc-summary"></div>

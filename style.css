@@ -1557,7 +1557,8 @@ td:nth-child(2) {
   color: #bfdbfe;
 }
 
-.doc-state-preaprobado {
+.doc-state-preaprobado,
+.doc-state-listo_aprobar {
   border-color: rgba(45, 212, 191, 0.42);
   background: rgba(20, 184, 166, 0.14);
   color: #99f6e4;
@@ -1570,6 +1571,7 @@ td:nth-child(2) {
 }
 
 .doc-state-revision,
+.doc-state-revision_contenido,
 .doc-state-observado,
 .doc-state-vencido {
   border-color: rgba(251, 146, 60, 0.42);
