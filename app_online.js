@@ -1387,8 +1387,8 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
   if (!requerido) {
     return {
       estado: documento ? "informativo" : "no_aplica",
-      label: documento ? "Informativo" : "No aplica",
-      detalle: documento ? `${etiqueta}: no bloquea habilitación general.` : `${etiqueta}: solo corresponde si aplica.`,
+      label: documento ? "Para archivo" : "No aplica",
+      detalle: documento ? `${etiqueta}: registrado como antecedente, no bloquea habilitación general.` : `${etiqueta}: no es necesario salvo caso puntual.`,
       bloquea: false
     };
   }
@@ -1396,7 +1396,7 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
   if (!documento || (!tieneArchivo && status === "pendiente")) {
     return {
       estado: "faltante",
-      label: "Falta cargar",
+      label: "Falta documentación",
       detalle: `${etiqueta}: falta documentación.`,
       bloquea: true
     };
@@ -1414,7 +1414,7 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
   if (["rechazado", "observado", "no_validable"].includes(status) || /rechaz|observ|no valid|no localiz|falta/.test(observacion)) {
     return {
       estado: status === "rechazado" ? "rechazado" : "revision",
-      label: status === "rechazado" ? "Rechazado" : "Revisar",
+      label: status === "rechazado" ? "Rechazado" : "Falta revisar",
       detalle: `${etiqueta}: requiere revisión administrativa.`,
       bloquea: true
     };
@@ -1423,7 +1423,7 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
   if (vencimiento === "sin_fecha") {
     return {
       estado: "revision",
-      label: "Revisar fecha",
+      label: "Falta revisar",
       detalle: `${etiqueta}: falta fecha de vencimiento o vigencia.`,
       bloquea: true
     };
@@ -1441,7 +1441,7 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
   if (tieneArchivo && ["cargado", "pendiente"].includes(status)) {
     return {
       estado: "preaprobado",
-      label: "Pre-auditoría OK",
+      label: "Listo para revisión final",
       detalle: `${etiqueta}: archivo cargado, falta aprobación final.`,
       bloquea: true
     };
@@ -1449,7 +1449,7 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
 
   return {
     estado: "revision",
-    label: "Revisar",
+    label: "Falta revisar",
     detalle: `${etiqueta}: no se pudo determinar el estado.`,
     bloquea: true
   };
@@ -1472,8 +1472,8 @@ function combinarPreauditoriaDocumental(items) {
 
   if (faltantes.length) {
     return {
-      estado: "pendiente",
-      label: "Pendiente",
+      estado: "faltante",
+      label: "Falta documentación",
       detalle: faltantes.map((item) => item.detalle).join(" ")
     };
   }
@@ -1481,7 +1481,7 @@ function combinarPreauditoriaDocumental(items) {
   if (revision.length) {
     return {
       estado: "revision",
-      label: "Revisar",
+      label: "Falta revisar",
       detalle: revision.map((item) => item.detalle).join(" ")
     };
   }
@@ -1489,14 +1489,14 @@ function combinarPreauditoriaDocumental(items) {
   if (preaprobados.length || bloqueantes.length) {
     return {
       estado: "preaprobado",
-      label: "Pre-auditoría OK",
+      label: "Listo para revisión final",
       detalle: preaprobados.map((item) => item.detalle).join(" ") || "Documentación cargada, falta aprobación final."
     };
   }
 
   return {
     estado: "aprobado",
-    label: "Aprobado documental",
+    label: "Documentación aprobada",
     detalle: "Requisitos documentales obligatorios aprobados."
   };
 }
@@ -3107,15 +3107,18 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
               <div class="doc-player-doc-grid">
                 ${documentosJugador.map((requisito) => {
                   const documento = obtenerDocumentoJugador(categoria, jugador.id, requisito);
+                  const estadoDocumento = evaluarDocumentoPreauditoria(documento, requisito, {
+                    requerido: esDocumentoJugadorBloqueante(requisito)
+                  });
                   return `
                     <div class="doc-player-doc-row">
                       <div class="doc-player-doc-name">
                         <strong>${escapeHtml(requisito)}</strong>
-                        <span>${renderObservacionDocumento(documento)}</span>
+                        <span>${escapeHtml(estadoDocumento.detalle)}</span>
                       </div>
                       <div>${docStateHtml(
-                        estadoDocumentoLabel(documento),
-                        estadoDocumentoClase(documento)
+                        estadoDocumento.label,
+                        estadoDocumento.estado
                       )}</div>
                       <div class="doc-player-doc-action">${renderAccionDocumentoJugadorDelegado(documento)}</div>
                     </div>

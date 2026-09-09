@@ -1583,6 +1583,13 @@ td:nth-child(2) {
   color: #fde68a;
 }
 
+.doc-state-no_aplica,
+.doc-state-informativo {
+  border-color: rgba(148, 163, 184, 0.34);
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+}
+
 .doc-state-rechazado {
   border-color: rgba(248, 113, 113, 0.42);
   background: rgba(239, 68, 68, 0.14);
