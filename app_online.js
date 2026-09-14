@@ -780,15 +780,16 @@ async function cargarPermisosPorClave(clave) {
 
   const { data, error } = await supabaseClient
     .from("v_app_user_permissions")
-    .select("display_name, role, legacy_key, active, emergency_access, categoria_nombre, equipo_nombre, can_load_results, can_load_documents, can_review_documents, can_correct_results, can_manage_tournaments, can_manage_users, can_emergency_override")
-    .eq("legacy_key", claveLimpia);
+    .select("display_name, role, legacy_key, active, emergency_access, torneo_id, categoria_nombre, equipo_nombre, can_load_results, can_load_documents, can_review_documents, can_correct_results, can_manage_tournaments, can_manage_users, can_emergency_override")
+    .eq("legacy_key", claveLimpia)
+    .eq("torneo_id", TORNEO_ID);
 
   if (error) {
     console.warn("No se pudieron cargar permisos de usuario:", error.message);
     return [];
   }
 
-  return (data || []).filter((permiso) => permiso.active !== false);
+  return (data || []).filter((permiso) => permiso.active !== false && (!permiso.torneo_id || permiso.torneo_id === TORNEO_ID));
 }
 
 async function cargarPermisosUsuarioActual() {
@@ -798,7 +799,7 @@ async function cargarPermisosUsuarioActual() {
     return [];
   }
 
-  return (data || []).filter((permiso) => permiso.active !== false);
+  return (data || []).filter((permiso) => permiso.active !== false && (!permiso.torneo_id || permiso.torneo_id === TORNEO_ID));
 }
 
 function delegadoDesdePermisos(permisos, respaldo = null) {
