@@ -700,7 +700,7 @@ const DELEGADOS = {
   },
   "estudiantes123": {
     nombre: "ESTUDIANTES",
-    categorias: ["Maxi +35 B", "Maxi +48"],
+    categorias: ["Maxi +35 A", "Maxi +48"],
     equipos: ["ESTUDIANTES"]
   },
   "max123": {
@@ -725,7 +725,7 @@ const DELEGADOS = {
   },
   "estrella123": {
     nombre: "ESTRELLA DE BERISSO",
-    categorias: ["Maxi +35 B"],
+    categorias: ["Maxi +35 A"],
     equipos: ["ESTRELLA DE BERISSO"]
   },
   "macabi123": {
@@ -838,13 +838,12 @@ async function reconciliarDelegadoConCategoriasActuales(delegado) {
   if (!delegado?.equipos?.length || !estado.categorias?.length) return delegado;
 
   const equiposDelegado = new Set(delegado.equipos.map((equipo) => normalizarTexto(equipo)));
-  const categoriasActuales = [];
-
-  for (const categoria of estado.categorias) {
+  const categoriasConEquipos = await Promise.all(estado.categorias.map(async (categoria) => {
     const equiposCategoria = await cargarEquiposCategoria(categoria.id);
     const tieneEquipo = equiposCategoria.some((equipo) => equiposDelegado.has(normalizarTexto(equipo.nombre)));
-    if (tieneEquipo) categoriasActuales.push(categoria.nombre);
-  }
+    return tieneEquipo ? categoria.nombre : null;
+  }));
+  const categoriasActuales = categoriasConEquipos.filter(Boolean);
 
   if (!categoriasActuales.length) return delegado;
 
