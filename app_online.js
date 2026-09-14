@@ -684,7 +684,7 @@ const DELEGADOS = {
   },
   "hogar123": {
     nombre: "HOGAR SOCIAL",
-    categorias: ["Maxi +35 A", "Maxi +48", "Femenino"],
+    categorias: ["Maxi +35 B", "Maxi +48", "Femenino"],
     equipos: ["HOGAR SOCIAL"]
   },
   "sud123": {
@@ -831,6 +831,26 @@ function delegadoDesdePermisos(permisos, respaldo = null) {
     equipos,
     rol,
     permisos
+  };
+}
+
+async function reconciliarDelegadoConCategoriasActuales(delegado) {
+  if (!delegado?.equipos?.length || !estado.categorias?.length) return delegado;
+
+  const equiposDelegado = new Set(delegado.equipos.map((equipo) => normalizarTexto(equipo)));
+  const categoriasActuales = [];
+
+  for (const categoria of estado.categorias) {
+    const equiposCategoria = await cargarEquiposCategoria(categoria.id);
+    const tieneEquipo = equiposCategoria.some((equipo) => equiposDelegado.has(normalizarTexto(equipo.nombre)));
+    if (tieneEquipo) categoriasActuales.push(categoria.nombre);
+  }
+
+  if (!categoriasActuales.length) return delegado;
+
+  return {
+    ...delegado,
+    categorias: Array.from(new Set(categoriasActuales))
   };
 }
 
@@ -5234,7 +5254,7 @@ async function desbloquearDelegado() {
   const status = $("delegado-status");
 
   setStatus(status, "Validando acceso...", "");
-  const delegado = await validarDelegadoConPermisos(clave);
+  let delegado = await validarDelegadoConPermisos(clave);
 
   if (!delegado) {
     estado.delegado = null;
@@ -5244,6 +5264,8 @@ async function desbloquearDelegado() {
     setStatus(status, "Clave incorrecta.", "error");
     return;
   }
+
+  delegado = await reconciliarDelegadoConCategoriasActuales(delegado);
 
   estado.delegado = delegado;
   estado.delegadoDesbloqueado = true;
@@ -5814,7 +5836,7 @@ function renderSesionAuth() {
   if ($("auth-logout")) $("auth-logout").disabled = false;
 }
 
-function aplicarPermisosAutenticados(permisos) {
+async function aplicarPermisosAutenticados(permisos) {
   estado.permisosAuth = permisos || [];
   const status = $("auth-status");
 
@@ -5839,8 +5861,9 @@ function aplicarPermisosAutenticados(permisos) {
     });
   }
 
-  const delegado = delegadoDesdePermisos(permisos, null);
+  let delegado = delegadoDesdePermisos(permisos, null);
   if (delegado && !accesoAsociacion) {
+    delegado = await reconciliarDelegadoConCategoriasActuales(delegado);
     estado.delegado = delegado;
     estado.delegadoDesbloqueado = true;
     aplicarBloqueoDelegado();
@@ -5888,7 +5911,7 @@ async function iniciarSesionAuth() {
   estado.authSession = data.session || null;
   estado.authUser = data.user || null;
   const permisos = await cargarPermisosUsuarioActual();
-  aplicarPermisosAutenticados(permisos);
+  await aplicarPermisosAutenticados(permisos);
 }
 
 async function cerrarSesionAuth() {
@@ -5910,7 +5933,7 @@ async function inicializarSesionAuth() {
     estado.authUser = session?.user || null;
     if (estado.authUser) {
       const permisos = await cargarPermisosUsuarioActual();
-      aplicarPermisosAutenticados(permisos);
+      await aplicarPermisosAutenticados(permisos);
     } else {
       estado.permisosAuth = [];
       renderSesionAuth();
@@ -5919,7 +5942,7 @@ async function inicializarSesionAuth() {
 
   if (estado.authUser) {
     const permisos = await cargarPermisosUsuarioActual();
-    aplicarPermisosAutenticados(permisos);
+    await aplicarPermisosAutenticados(permisos);
   } else {
     renderSesionAuth();
   }

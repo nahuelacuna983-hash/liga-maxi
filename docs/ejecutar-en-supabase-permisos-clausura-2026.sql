@@ -52,7 +52,7 @@ begin
         ('unlp123', 'Maxi +35 A', 'U.N.L.P.'),
         ('tolosano123', 'Maxi +35 B', 'TOLOSANO'),
         ('mayo123', 'Maxi +35 A', 'MAYO'),
-        ('hogar123', 'Maxi +35 A', 'HOGAR SOCIAL'),
+        ('hogar123', 'Maxi +35 B', 'HOGAR SOCIAL'),
         ('hogar123', 'Maxi +48', 'HOGAR SOCIAL'),
         ('hogar123', 'Femenino', 'HOGAR SOCIAL'),
         ('sud123', 'Maxi +35 A', 'SUD AMERICA'),
