@@ -816,14 +816,12 @@ function delegadoDesdePermisos(permisos, respaldo = null) {
 
   if (rol !== "delegado") return respaldo;
 
-  const categorias = Array.from(new Set([
-    ...(respaldo?.categorias || []),
-    ...permisos.map((permiso) => permiso.categoria_nombre).filter(Boolean)
-  ]));
-  const equipos = Array.from(new Set([
-    ...(respaldo?.equipos || []),
-    ...permisos.map((permiso) => permiso.equipo_nombre).filter(Boolean)
-  ]));
+  const categorias = Array.from(new Set(
+    permisos.map((permiso) => permiso.categoria_nombre).filter(Boolean)
+  ));
+  const equipos = Array.from(new Set(
+    permisos.map((permiso) => permiso.equipo_nombre).filter(Boolean)
+  ));
 
   if (!categorias.length || !equipos.length) return respaldo;
 
