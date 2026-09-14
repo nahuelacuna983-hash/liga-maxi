@@ -674,7 +674,7 @@ const DELEGADOS = {
   },
   "tolosano123": {
     nombre: "TOLOSANO",
-    categorias: ["Maxi +35 A"],
+    categorias: ["Maxi +35 B"],
     equipos: ["TOLOSANO"]
   },
   "mayo123": {
