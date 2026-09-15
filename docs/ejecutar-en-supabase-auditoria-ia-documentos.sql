@@ -133,6 +133,10 @@ before update on public.document_ai_audits
 for each row
 execute function public.set_updated_at();
 
+drop view if exists public.v_team_documents_admin_ai;
+drop view if exists public.v_player_documents_admin_ai;
+drop view if exists public.v_document_ai_audits_latest;
+
 create or replace view public.v_document_ai_audits_latest as
 select distinct on (
   coalesce(team_document_id, player_document_id),
