@@ -110,12 +110,6 @@ create index if not exists idx_document_ai_audits_status
 create index if not exists idx_document_ai_audits_audited_at
   on public.document_ai_audits(audited_at desc);
 
-create index if not exists idx_document_ai_audits_criteria_version
-  on public.document_ai_audits(criteria_version);
-
-create index if not exists idx_document_ai_audits_source
-  on public.document_ai_audits(source_kind, source_file_id);
-
 alter table public.document_ai_audits
   add column if not exists criteria_version text not null default 'APDB_MAXI_2026_V1',
   add column if not exists unresolved_reason text,
@@ -125,6 +119,12 @@ alter table public.document_ai_audits
   add column if not exists source_file_url text,
   add column if not exists source_modified_at timestamptz,
   add column if not exists source_hash text;
+
+create index if not exists idx_document_ai_audits_criteria_version
+  on public.document_ai_audits(criteria_version);
+
+create index if not exists idx_document_ai_audits_source
+  on public.document_ai_audits(source_kind, source_file_id);
 
 drop trigger if exists trg_document_ai_audits_updated_at on public.document_ai_audits;
 
