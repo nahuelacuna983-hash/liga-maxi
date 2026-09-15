@@ -24,6 +24,8 @@ type DocumentRow = {
   file_type: string | null;
 };
 
+const DEFAULT_CRITERIA_VERSION = "APDB_MAXI_2026_V1";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-secret",
@@ -68,6 +70,7 @@ async function blobToBase64(blob: Blob) {
 function buildAuditPrompt(documento: DocumentRow, scope: AuditScope) {
   const requisito = documento.requirement_nombre || "Documento";
   const jugador = scope === "player" ? `Jugador: ${documento.jugador_nombre || "sin nombre"}.` : "Alcance: club/equipo.";
+  const criteriaVersion = Deno.env.get("DOCUMENT_AUDIT_CRITERIA_VERSION") || DEFAULT_CRITERIA_VERSION;
 
   return `
 Sos auditor documental de una asociacion deportiva de maxibasquet.
@@ -77,38 +80,61 @@ Contexto:
 - Equipo: ${documento.equipo_nombre || "sin equipo"}.
 - ${jugador}
 - Requisito: ${requisito}.
+- Version de criterios: ${criteriaVersion}.
 
 Criterios:
-- Declaracion jurada/DJDR/deslinde: debe estar firmada y tener fecha del anio corriente.
-- Certificado medico / estudio medico: debe existir aptitud fisica para practica deportiva; si hay estudio y certificado, sus fechas deben ser compatibles o coincidentes. Vigencia: 12 meses.
+- Declaracion jurada/DJDR/deslinde: debe estar firmada y tener fecha del anio corriente. Nombre escrito no equivale a firma. Si la firma no es visible, queda pendiente/revisar; no lo conviertas automaticamente en incumplimiento definitivo.
+- Certificado medico / estudio medico: debe existir aptitud fisica para practica deportiva y estudio complementario identificable. Si hay estudio y certificado, el estudio debe ser del mismo dia o anterior al certificado, con margen maximo de 30 dias posteriores. Vigencia: 12 meses.
 - Lista de buena fe: debe contener indicio de recibido/sello APdB.
 - Seguro: debe mostrar poliza/certificado y nomina/listado de jugadores, o indicar aceptacion provisoria gestionada por APdB.
 - Pase: no bloquea habilitacion general; solo observar si parece necesario por traspaso.
 
+Reglas de seguridad documental:
+- No desplaces conclusiones entre jugadores. Si el archivo no corresponde claramente al jugador/alcance solicitado, audit_status debe ser "revisar" o "rechazado" segun corresponda.
+- Toda conclusion debe citar archivo y pagina. Si no podes ubicar pagina, usa null y explica la duda.
+- Diferencia fechas visibles del documento contra texto extraido/OCR/metadatos impresos. Si hay conflicto de fechas, deja el caso en "revisar" salvo que la pagina visible resuelva claramente.
+- Si el caso no puede resolverse con certeza, dejalo como "revisar" o "pendiente". Nunca conviertas una duda de lectura en incumplimiento automatico.
+- Caso Raffa/Banco: ECG del mismo dia con certificado APTO puede funcionar como complemento alternativo, aunque exista una ergometria adicional posterior.
+- Caso Suppes/Banco: distinguir fechas visibles reales del estudio/documento del texto extraido que pueda mezclar fechas impresas o metadatos.
+- Caso Barragan/Banco: detectar si la DJDR esta sin firma visible; nombre escrito o datos completados no alcanzan como firma.
+
 Estados posibles:
 - validado: el archivo cumple claramente.
 - listo_aprobar: parece correcto, pero conviene acto administrativo humano.
-- revisar: hay dudas de lectura, sello, firma, fecha o correspondencia.
+- revisar: hay dudas de lectura, sello, firma, fecha, pagina o correspondencia.
+- pendiente: falta informacion externa o no se puede resolver automaticamente.
 - observado: hay una observacion relevante que corregir.
 - rechazado: no corresponde al requisito o no sirve.
 - vencido: corresponde pero esta vencido.
 
 Devolve JSON con esta forma exacta:
 {
-  "audit_status": "validado|listo_aprobar|revisar|observado|rechazado|vencido",
+  "audit_status": "validado|listo_aprobar|revisar|pendiente|observado|rechazado|vencido",
   "confidence": 0-100,
   "summary": "frase corta en espanol",
   "valid_until": "YYYY-MM-DD o null",
   "detected_dates": ["YYYY-MM-DD"],
+  "criteria_version": "${criteriaVersion}",
+  "unresolved_reason": "texto o null",
+  "page_evidence": [
+    {
+      "page": 1,
+      "kind": "ok|duda|faltante|fecha|firma|identidad",
+      "quote": "texto breve visible o resumen de evidencia visual",
+      "conclusion": "como sostiene o limita el dictamen"
+    }
+  ],
   "checks": {
     "corresponde_requisito": true|false|null,
+    "corresponde_jugador": true|false|null,
     "tiene_firma": true|false|null,
     "tiene_sello_apdb": true|false|null,
     "tiene_poliza": true|false|null,
     "tiene_nomina": true|false|null,
     "tiene_apto_fisico": true|false|null,
     "fechas_compatibles": true|false|null,
-    "anio_corriente": true|false|null
+    "anio_corriente": true|false|null,
+    "requiere_revision_humana": true|false|null
   },
   "findings": {
     "ok": ["..."],
@@ -226,6 +252,7 @@ Deno.serve(async (req) => {
         .join("\n");
 
     const audit = parseJsonObject(outputText || "{}");
+    const criteriaVersion = audit.criteria_version || Deno.env.get("DOCUMENT_AUDIT_CRITERIA_VERSION") || DEFAULT_CRITERIA_VERSION;
     const insertPayload = {
       scope: payload.scope,
       team_document_id: payload.scope === "team" ? row.id : null,
@@ -250,6 +277,12 @@ Deno.serve(async (req) => {
       detected_dates: audit.detected_dates || [],
       valid_until: audit.valid_until || null,
       checks: audit.checks || {},
+      criteria_version: criteriaVersion,
+      unresolved_reason: audit.unresolved_reason || null,
+      page_evidence: audit.page_evidence || [],
+      source_kind: "supabase_storage",
+      source_file_id: row.storage_path,
+      source_file_url: null,
       model: auditModel,
       raw_response: raw,
       audited_by: payload.actor || "auditoria-ia"
