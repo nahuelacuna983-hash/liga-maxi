@@ -1018,6 +1018,145 @@
       white-space: nowrap;
     }
 
+    .doc-upload-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      border-radius: 8px;
+      border: 1px solid rgba(96, 165, 250, 0.5);
+      background: rgba(37, 99, 235, 0.2);
+      color: #dbeafe;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 5px 10px;
+    }
+
+    .doc-upload-button:hover {
+      background: rgba(37, 99, 235, 0.32);
+    }
+
+    .player-doc-upload-input,
+    .doc-upload-input {
+      display: none;
+    }
+
+    .doc-uploaded-mark {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #bbf7d0;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 9px;
+    }
+
+    .doc-file-name {
+      display: block;
+      max-width: 220px;
+      margin-top: 6px;
+      color: #bfdbfe;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .doc-preaudit-detail {
+      display: block;
+      max-width: 42ch;
+      margin-top: 6px;
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+      text-transform: none;
+    }
+
+    .doc-player-team {
+      margin-top: 14px;
+    }
+
+    .doc-player-card-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .doc-player-card-delegate {
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.24);
+      padding: 12px;
+    }
+
+    .doc-player-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.34);
+      margin: -4px -4px 10px;
+      padding: 10px;
+    }
+
+    .doc-player-card-head strong {
+      display: block;
+      color: #ffffff;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .doc-player-card-state {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .doc-player-doc-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .doc-player-doc-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 1.2fr) minmax(120px, auto) minmax(180px, 1fr);
+      gap: 12px;
+      align-items: center;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.26);
+      padding: 11px;
+    }
+
+    .doc-player-doc-name strong,
+    .doc-player-doc-name span {
+      display: block;
+    }
+
+    .doc-player-doc-name span {
+      max-width: 52ch;
+      margin-top: 4px;
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .doc-player-doc-action {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+      align-items: center;
+      min-width: 0;
+    }
+
     .doc-player-admin {
       border: 1px solid var(--line);
       border-radius: 12px;
@@ -1129,6 +1268,25 @@
 
       .card {
         padding: 12px;
+      }
+
+      .doc-player-card-head,
+      .doc-player-card-state {
+        display: grid;
+        justify-content: stretch;
+      }
+
+      .doc-player-doc-row {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .doc-player-doc-action {
+        justify-content: flex-start;
+      }
+
+      .doc-preaudit-detail {
+        max-width: 100%;
       }
 
       .match {
@@ -2607,6 +2765,12 @@
     </div>
     <div class="doc-filters">
       <div class="field">
+        <label for="documentacion-filtro-equipo">Club</label>
+        <select id="documentacion-filtro-equipo">
+          <option value="">Elegir club</option>
+        </select>
+      </div>
+      <div class="field">
         <label for="documentacion-filtro-estado">Estado</label>
         <select id="documentacion-filtro-estado">
           <option value="">Todos</option>
@@ -2836,7 +3000,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20260914-permisos-torneo-activo"></script>
+  <script src="app_online.js?v=20260917-fechas-visibles"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

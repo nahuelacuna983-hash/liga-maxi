@@ -1409,13 +1409,41 @@ function controlManualDocumento(nombre) {
   const controles = {
     buena_fe: "Verificar sello o recibido de APdB.",
     seguro: "Verificar poliza/certificado y nomina del plantel.",
-    certificado: "Verificar certificado medico, estudio complementario y fechas coincidentes.",
+    certificado: "Pendiente fecha del estudio para calcular vigencia de 12 meses.",
     declaracion: `Verificar declaracion jurada firmada y fecha del anio ${new Date().getFullYear()}.`,
     pase: "Controlar solo si el jugador viene de otro club.",
     documento: "Verificar que el archivo corresponda al requisito."
   };
 
   return controles[tipoDocumentoAuditable(nombre)] || controles.documento;
+}
+
+function datosPrecontrolDesdeObservacion(documento) {
+  const observacion = String(documento?.observacion || "");
+  const esPrecontrol = [
+    "Precontrol delegado:",
+    "Precontrol automatico:",
+    "Precontrol documental:"
+  ].some((prefijo) => observacion.includes(prefijo));
+  if (!esPrecontrol) return null;
+
+  const normalizada = normalizarTexto(observacion);
+  const requiereRevision = /revisar:|=no| no declar|falta|duda|contenido pendiente/.test(normalizada);
+  const automatico = observacion.includes("Precontrol automatico:");
+  const fechaEstudio = observacion.match(/fecha_estudio=(\d{4}-\d{2}-\d{2})/)?.[1] || "";
+  const vencimiento = observacion.match(/vencimiento=(\d{4}-\d{2}-\d{2})/)?.[1] || "";
+  const fechaDocumento = observacion.match(/fecha_documento=(\d{4}-\d{2}-\d{2})/)?.[1] || "";
+  const senales = observacion.match(/senales=([^;.]*)/)?.[1]?.split("|").filter(Boolean) || [];
+
+  return {
+    requiereRevision,
+    automatico,
+    fechaEstudio,
+    vencimiento,
+    fechaDocumento,
+    senales,
+    texto: observacion
+  };
 }
 
 function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
@@ -1425,6 +1453,8 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
   const observacion = observacionDocumentoNormalizada(documento);
   const tieneArchivo = documentoTieneArchivo(documento);
   const controlManual = controlManualDocumento(etiqueta || documento?.requirement_nombre);
+  const precontrol = datosPrecontrolDesdeObservacion(documento);
+  const tipo = tipoDocumentoAuditable(etiqueta || documento?.requirement_nombre);
 
   if (!requerido) {
     return {
@@ -1445,10 +1475,18 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
   }
 
   if (status === "vencido" || vencimiento === "vencido") {
+    const detalleVencido = tipo === "certificado"
+      ? precontrol?.fechaEstudio && precontrol?.vencimiento
+        ? `${etiqueta}: fecha del estudio ${formatearFecha(precontrol.fechaEstudio)}; venció el ${formatearFecha(precontrol.vencimiento)}.`
+        : documento?.vencimiento
+          ? `${etiqueta}: estudio/certificado vencido el ${formatearFecha(documento.vencimiento)}.`
+          : `${etiqueta}: estudio/certificado vencido o fuera del período vigente.`
+      : `${etiqueta}: documento vencido o fuera del período vigente.`;
+
     return {
       estado: "vencido",
       label: "Vencido",
-      detalle: `${etiqueta}: documento vencido. Requiere nueva carga.`,
+      detalle: detalleVencido,
       bloquea: true
     };
   }
@@ -1458,6 +1496,19 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
       estado: status === "rechazado" ? "rechazado" : "revision",
       label: status === "rechazado" ? "Rechazado" : "Falta revisar",
       detalle: `${etiqueta}: requiere revisión administrativa.`,
+      bloquea: true
+    };
+  }
+
+  if (vencimiento === "sin_fecha" && tieneArchivo && ["certificado", "declaracion"].includes(tipo)) {
+    const detalleContenido = tipo === "certificado"
+      ? `${etiqueta}: fecha del estudio pendiente de lectura/carga. Con esa fecha se calcula vigencia por 12 meses.`
+      : `${etiqueta}: fecha/firma pendiente de lectura o revisión.`;
+
+    return {
+      estado: "revision_contenido",
+      label: tipo === "certificado" ? "Pendiente fecha" : "Pendiente revisión",
+      detalle: detalleContenido,
       bloquea: true
     };
   }
@@ -1472,19 +1523,60 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
   }
 
   if (status === "aprobado") {
+    const detalleAprobado = tipo === "certificado"
+      ? precontrol?.fechaEstudio && precontrol?.vencimiento
+        ? `${etiqueta}: fecha del estudio ${formatearFecha(precontrol.fechaEstudio)}; vigente hasta ${formatearFecha(precontrol.vencimiento)}.`
+        : documento?.vencimiento
+          ? `${etiqueta}: estudio y apto vigentes hasta ${formatearFecha(documento.vencimiento)}.`
+          : `${etiqueta}: estudio y apto dentro del período vigente.`
+      : `${etiqueta}: documentación vigente aprobada.`;
+
     return {
       estado: "aprobado",
-      label: "Aprobado",
-      detalle: `${etiqueta}: aprobado${vencimiento === "por_vencer" ? ", próximo a vencer" : ""}.`,
+      label: vencimiento === "por_vencer" ? "Aprobado por vencer" : "Aprobado vigente",
+      detalle: vencimiento === "por_vencer" ? `${detalleAprobado} Próximo a vencer.` : detalleAprobado,
       bloquea: false
     };
   }
 
+  if (tieneArchivo && precontrol) {
+    if (precontrol.requiereRevision) {
+      const detalleRevision = tipo === "certificado"
+        ? `${etiqueta}: archivo recibido. Falta confirmar fecha del estudio para definir vigencia.`
+        : tipo === "declaracion" && precontrol.fechaDocumento
+          ? `${etiqueta}: fecha ${formatearFecha(precontrol.fechaDocumento)} detectada; falta confirmar firma visible.`
+          : `${etiqueta}: archivo recibido. Falta revisión de contenido.`;
+
+      return {
+        estado: "revision_contenido",
+        label: tipo === "certificado" ? "Pendiente fecha" : (tipo === "declaracion" ? "Revisar firma" : (precontrol.automatico ? "Revisar contenido" : "Revisar precontrol")),
+        detalle: detalleRevision,
+        bloquea: true
+      };
+    }
+
+    return {
+      estado: "preaprobado",
+      label: tipo === "certificado" ? "Vigente para aprobar" : "Preaprobado",
+      detalle: detallePrecontrolAprobable(etiqueta, tipo, precontrol),
+      bloquea: true
+    };
+  }
+
   if (tieneArchivo && ["cargado", "pendiente"].includes(status)) {
+    const labelCargado = tipo === "certificado" && vencimiento !== "sin_fecha"
+      ? "Vigente para aprobar"
+      : "Listo para aprobar";
+    const detalleCargado = tipo === "certificado" && vencimiento !== "sin_fecha"
+      ? precontrol?.fechaEstudio && precontrol?.vencimiento
+        ? `${etiqueta}: fecha del estudio ${formatearFecha(precontrol.fechaEstudio)}; vigente hasta ${formatearFecha(precontrol.vencimiento)}. Falta aprobación final APdB.`
+        : `${etiqueta}: estudio y apto vigentes hasta ${formatearFecha(documento.vencimiento)}. Falta aprobación final APdB.`
+      : `${etiqueta}: archivo cargado. ${controlManual} Falta aprobación final APdB.`;
+
     return {
       estado: "listo_aprobar",
-      label: "Listo para aprobar",
-      detalle: `${etiqueta}: archivo cargado. ${controlManual} La aprobacion final la realiza Asociacion.`,
+      label: labelCargado,
+      detalle: detalleCargado,
       bloquea: true
     };
   }
@@ -1497,12 +1589,44 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
   };
 }
 
+function resumenPreauditoriaCorto(detalle = "") {
+  const texto = String(detalle || "")
+    .replace(/\s+/g, " ")
+    .replace(/Certificado\/estudio medico:/gi, "")
+    .replace(/Declaracion jurada de responsabilidad:/gi, "")
+    .replace(/Lista de buena fe:/gi, "")
+    .replace(/Seguro:/gi, "")
+    .trim();
+
+  if (!texto) return "";
+  return texto.length > 130 ? `${texto.slice(0, 127)}...` : texto;
+}
+
+function detallePrecontrolAprobable(etiqueta, tipo, precontrol) {
+  if (tipo === "certificado" && precontrol.fechaEstudio && precontrol.vencimiento) {
+    return `${etiqueta}: fecha del estudio ${formatearFecha(precontrol.fechaEstudio)}; vigente hasta ${formatearFecha(precontrol.vencimiento)}. Falta aprobación final APdB.`;
+  }
+  if (tipo === "declaracion" && precontrol.fechaDocumento) {
+    return `${etiqueta}: fecha ${formatearFecha(precontrol.fechaDocumento)} dentro del año corriente; firma a confirmar por APdB.`;
+  }
+  if (tipo === "seguro") {
+    return `${etiqueta}: señales de póliza/certificado y nómina detectadas; falta aprobación final APdB.`;
+  }
+  if (tipo === "buena_fe") {
+    return `${etiqueta}: lista recibida con señales de APdB/recibido; falta aprobación final APdB.`;
+  }
+  if (tipo === "pase") {
+    return `${etiqueta}: archivo registrado como antecedente; no bloquea habilitación general.`;
+  }
+  return `${etiqueta}: archivo recibido y control técnico superado. Falta aprobación final APdB.`;
+}
+
 function combinarPreauditoriaDocumental(items) {
   const bloqueantes = items.filter((item) => item.bloquea);
   const faltantes = items.filter((item) => item.estado === "faltante");
   const vencidos = items.filter((item) => item.estado === "vencido");
   const revision = items.filter((item) => ["revision", "revision_contenido", "rechazado"].includes(item.estado));
-  const listosAprobar = items.filter((item) => item.estado === "listo_aprobar");
+  const listosAprobar = items.filter((item) => item.estado === "listo_aprobar" || item.estado === "preaprobado");
 
   if (vencidos.length) {
     return {
@@ -1530,8 +1654,8 @@ function combinarPreauditoriaDocumental(items) {
 
   if (listosAprobar.length || bloqueantes.length) {
     return {
-      estado: "listo_aprobar",
-      label: "Listo para aprobar",
+      estado: listosAprobar.some((item) => item.estado === "preaprobado") ? "preaprobado" : "listo_aprobar",
+      label: listosAprobar.some((item) => item.estado === "preaprobado") ? "Preaprobado" : "Listo para aprobar",
       detalle: listosAprobar.map((item) => item.detalle).join(" ") || "Documentacion cargada, falta aprobacion administrativa."
     };
   }
@@ -1654,19 +1778,23 @@ function actualizarFiltroPartidosHabilitados(nombreCategoria) {
 
 function actualizarFiltroEquiposHabilitados(nombreCategoria) {
   const select = $("habilitados-filtro-equipo");
-  if (!select) return;
-  const valorActual = select.value;
+  const selectDocumentacion = $("documentacion-filtro-equipo");
+  if (!select && !selectDocumentacion) return;
+  const valorActual = selectDocumentacion?.value || select?.value || "";
   const equipos = obtenerEquiposCategoria(nombreCategoria);
-  select.innerHTML = `<option value="">Elegir club</option>${equipos.map((equipo) =>
+  const opciones = `<option value="">Elegir club</option>${equipos.map((equipo) =>
     `<option value="${escapeHtml(equipo)}">${escapeHtml(equipo)}</option>`
   ).join("")}`;
-  if (equipos.some((equipo) => nombresEquipoCoinciden(equipo, valorActual))) {
-    select.value = valorActual;
-  }
+  [select, selectDocumentacion].filter(Boolean).forEach((control) => {
+    control.innerHTML = opciones;
+    if (equipos.some((equipo) => nombresEquipoCoinciden(equipo, valorActual))) {
+      control.value = valorActual;
+    }
+  });
 }
 
 function equipoOperativoSeleccionado() {
-  return $("habilitados-filtro-equipo")?.value || "";
+  return $("documentacion-filtro-equipo")?.value || $("habilitados-filtro-equipo")?.value || "";
 }
 
 function resumenHabilitadosPorEquipo(filas) {
@@ -1887,6 +2015,133 @@ function formatearFecha(value) {
   return `${day}/${month}/${year}`;
 }
 
+function fechaIsoValida(year, month, day) {
+  const y = Number(year);
+  const m = Number(month);
+  const d = Number(day);
+  if (!y || !m || !d || y < 1900 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return "";
+  const fecha = new Date(y, m - 1, d);
+  if (fecha.getFullYear() !== y || fecha.getMonth() !== m - 1 || fecha.getDate() !== d) return "";
+  return `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+function sumarMesesFecha(value, meses) {
+  if (!value) return "";
+  const [year, month, day] = String(value).split("-").map(Number);
+  if (!year || !month || !day) return "";
+  const fecha = new Date(year, month - 1, day);
+  fecha.setMonth(fecha.getMonth() + meses);
+  return fecha.toISOString().slice(0, 10);
+}
+
+function extraerFechasTexto(texto) {
+  const fuente = String(texto || "");
+  const fechas = new Set();
+  const patrones = [
+    /\b(\d{1,2})\s*[\/.-]\s*(\d{1,2})\s*[\/.-]\s*((?:20)?\d{2})\b/g,
+    /\b(20\d{2})\s*[\/.-]\s*(\d{1,2})\s*[\/.-]\s*(\d{1,2})\b/g
+  ];
+
+  let match;
+  while ((match = patrones[0].exec(fuente))) {
+    const year = match[3].length === 2 ? `20${match[3]}` : match[3];
+    const iso = fechaIsoValida(year, match[2], match[1]);
+    if (iso) fechas.add(iso);
+  }
+  while ((match = patrones[1].exec(fuente))) {
+    const iso = fechaIsoValida(match[1], match[2], match[3]);
+    if (iso) fechas.add(iso);
+  }
+
+  return Array.from(fechas).sort();
+}
+
+function elegirFechaDocumento(fechas) {
+  const hoy = new Date();
+  hoy.setHours(23, 59, 59, 999);
+  return (fechas || [])
+    .filter((fecha) => {
+      const [year, month, day] = String(fecha).split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      return Number.isFinite(date.getTime()) && date <= hoy;
+    })
+    .sort()
+    .at(-1) || "";
+}
+
+function elegirFechaDocumentoPorContexto(texto, fechas, tipo) {
+  const fuente = String(texto || "");
+  if (!fechas?.length) return "";
+
+  const contextoCertificado = /(estudio|ergometr|electro|ecg|apto|certificado|medic|cardio|fisic)/i;
+  if (tipo !== "certificado" || !contextoCertificado.test(fuente)) {
+    return elegirFechaDocumento(fechas);
+  }
+
+  const candidatos = fechas.map((fecha) => {
+    const [year, month, day] = fecha.split("-");
+    const variantes = [
+      `${day}/${month}/${year}`,
+      `${Number(day)}/${Number(month)}/${year}`,
+      `${day}-${month}-${year}`,
+      fecha
+    ];
+    let score = 0;
+
+    variantes.forEach((variante) => {
+      let index = fuente.indexOf(variante);
+      while (index >= 0) {
+        const inicio = Math.max(0, index - 90);
+        const fin = Math.min(fuente.length, index + variante.length + 90);
+        const alrededor = fuente.slice(inicio, fin);
+        if (contextoCertificado.test(alrededor)) score += 5;
+        score += 1;
+        index = fuente.indexOf(variante, index + variante.length);
+      }
+    });
+
+    return { fecha, score };
+  });
+
+  const conScore = candidatos.filter((item) => item.score > 0);
+  if (!conScore.length) return elegirFechaDocumento(fechas);
+
+  return conScore
+    .sort((a, b) => a.score - b.score || a.fecha.localeCompare(b.fecha))
+    .at(-1)?.fecha || elegirFechaDocumento(fechas);
+}
+
+function evaluarPlausibilidadFechaDocumento(fecha, tipo) {
+  if (!fecha) return { valida: false, motivo: "sin fecha" };
+
+  const [year, month, day] = String(fecha).split("-").map(Number);
+  const valor = new Date(year, month - 1, day);
+  if (!Number.isFinite(valor.getTime())) return { valida: false, motivo: "fecha invalida" };
+
+  const hoy = new Date();
+  hoy.setHours(23, 59, 59, 999);
+  const futuroPermitido = new Date(hoy);
+  futuroPermitido.setDate(futuroPermitido.getDate() + 31);
+
+  if (valor > futuroPermitido) {
+    return { valida: false, motivo: "fecha futura improbable" };
+  }
+
+  // En certificados presentados para el torneo, una lectura de más de tres
+  // años suele ser un error de OCR manuscrito. Se conserva como duda y nunca
+  // se convierte automáticamente en incumplimiento.
+  if (tipo === "certificado" && year < hoy.getFullYear() - 3) {
+    return { valida: false, motivo: "año improbable para el torneo actual" };
+  }
+
+  return { valida: true, motivo: "" };
+}
+
+function contieneTexto(texto, patrones) {
+  const fuente = normalizarTexto(texto || "");
+  return patrones.some((patron) => fuente.includes(normalizarTexto(patron)));
+}
+
 function diasHastaFecha(value) {
   if (!value) return null;
 
@@ -1953,6 +2208,223 @@ function validarArchivoDocumento(file, soloImagenes = false) {
   if (file.size > maxBytes) return "El archivo supera 10 MB.";
 
   return "";
+}
+
+let pdfJsLoaderPromise = null;
+let tesseractWorkerPromise = null;
+
+async function cargarPdfJs() {
+  if (window.pdfjsLib) return window.pdfjsLib;
+  if (!pdfJsLoaderPromise) {
+    pdfJsLoaderPromise = import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs")
+      .then((pdfjsLib) => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
+        window.pdfjsLib = pdfjsLib;
+        return pdfjsLib;
+      });
+  }
+  return pdfJsLoaderPromise;
+}
+
+async function leerTextoPdf(file) {
+  const pdfjsLib = await cargarPdfJs();
+  const buffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+  const pdf = await loadingTask.promise;
+  const textos = [];
+  const maxPaginas = Math.min(pdf.numPages || 0, 30);
+
+  for (let pageNumber = 1; pageNumber <= maxPaginas; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    const textoPagina = (content.items || [])
+      .map((item) => item.str || "")
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (textoPagina) {
+      textos.push(`PAGINA ${pageNumber}: ${textoPagina}`);
+    }
+  }
+
+  return textos.join("\n");
+}
+
+async function cargarTesseractWorker() {
+  if (!tesseractWorkerPromise) {
+    tesseractWorkerPromise = import("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/+esm")
+      .then(async ({ createWorker }) => createWorker("spa"))
+      .catch((error) => {
+        tesseractWorkerPromise = null;
+        throw error;
+      });
+  }
+  return tesseractWorkerPromise;
+}
+
+async function reconocerImagenOcr(image, opciones = {}) {
+  const worker = await cargarTesseractWorker();
+  const result = await worker.recognize(image, opciones);
+  return String(result?.data?.text || "").replace(/\s+/g, " ").trim();
+}
+
+function aumentarContrasteFecha(canvasOrigen) {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvasOrigen.width;
+  canvas.height = canvasOrigen.height;
+  const context = canvas.getContext("2d", { alpha: false, willReadFrequently: true });
+  context.drawImage(canvasOrigen, 0, 0);
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+
+  for (let index = 0; index < data.length; index += 4) {
+    const gris = Math.round(data[index] * 0.299 + data[index + 1] * 0.587 + data[index + 2] * 0.114);
+    const contraste = gris < 205 ? Math.max(0, Math.round((gris - 128) * 1.8 + 128)) : 255;
+    data[index] = contraste;
+    data[index + 1] = contraste;
+    data[index + 2] = contraste;
+    data[index + 3] = 255;
+  }
+
+  context.putImageData(imageData, 0, 0);
+  return canvas;
+}
+
+async function leerFechaPdfOcr(file) {
+  const pdfjsLib = await cargarPdfJs();
+  const buffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+  const pdf = await loadingTask.promise;
+  if (!pdf.numPages) return "";
+
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 3.2 });
+  const pagina = document.createElement("canvas");
+  pagina.width = Math.ceil(viewport.width);
+  pagina.height = Math.ceil(viewport.height);
+  const paginaContext = pagina.getContext("2d", { alpha: false });
+  await page.render({ canvasContext: paginaContext, viewport }).promise;
+
+  // La fecha suele estar manuscrita junto a "LA PLATA" en el tercio superior.
+  const recorte = document.createElement("canvas");
+  const x = Math.floor(pagina.width * 0.08);
+  const y = Math.floor(pagina.height * 0.18);
+  const width = Math.floor(pagina.width * 0.72);
+  const height = Math.floor(pagina.height * 0.30);
+  recorte.width = width;
+  recorte.height = height;
+  recorte.getContext("2d", { alpha: false }).drawImage(
+    pagina,
+    x, y, width, height,
+    0, 0, width, height
+  );
+
+  const altoContraste = aumentarContrasteFecha(recorte);
+  const textos = [];
+  const lecturaNormal = await reconocerImagenOcr(recorte);
+  if (lecturaNormal) textos.push(lecturaNormal);
+  const lecturaNumerica = await reconocerImagenOcr(altoContraste, {
+    tessedit_char_whitelist: "0123456789/.- "
+  });
+  if (lecturaNumerica) textos.push(lecturaNumerica);
+
+  pagina.width = 1;
+  pagina.height = 1;
+  recorte.width = 1;
+  recorte.height = 1;
+  altoContraste.width = 1;
+  altoContraste.height = 1;
+  return textos.join(" ");
+}
+
+async function leerTextoPdfOcr(file) {
+  const pdfjsLib = await cargarPdfJs();
+  const buffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+  const pdf = await loadingTask.promise;
+  const textos = [];
+  const maxPaginas = Math.min(pdf.numPages || 0, 3);
+
+  for (let pageNumber = 1; pageNumber <= maxPaginas; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const viewport = page.getViewport({ scale: 1.8 });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    const context = canvas.getContext("2d", { alpha: false });
+    await page.render({ canvasContext: context, viewport }).promise;
+    const textoPagina = await reconocerImagenOcr(canvas);
+    if (textoPagina) textos.push(`PAGINA ${pageNumber} OCR: ${textoPagina}`);
+    canvas.width = 1;
+    canvas.height = 1;
+  }
+
+  return textos.join("\n");
+}
+
+async function leerTextoDocumentoOcr(file) {
+  if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "")) {
+    return leerTextoPdfOcr(file);
+  }
+  if (/image\/(jpeg|jpg|png)/i.test(file.type || "")) {
+    return reconocerImagenOcr(file);
+  }
+  return "";
+}
+
+async function leerTextoDocumentoBasico(file) {
+  if (!file) return "";
+
+  const partes = [file.name || ""];
+  let textoExtraido = "";
+
+  if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "")) {
+    try {
+      const textoPdf = await leerTextoPdf(file);
+      if (textoPdf) {
+        textoExtraido = textoPdf;
+        partes.push(textoPdf);
+      }
+    } catch (error) {
+      console.warn("No se pudo leer texto con PDF.js:", error);
+    }
+
+    try {
+      const texto = await file.text();
+      partes.push(texto.slice(0, 250000));
+    } catch (error) {
+      console.warn("No se pudo leer texto basico del PDF:", error);
+    }
+  }
+
+  const necesitaOcr =
+    /image\/(jpeg|jpg|png)/i.test(file.type || "") ||
+    textoExtraido.replace(/PAGINA \d+:/g, "").trim().length < 180 ||
+    extraerFechasTexto(textoExtraido).length === 0;
+
+  if (necesitaOcr) {
+    try {
+      const textoOcr = await leerTextoDocumentoOcr(file);
+      if (textoOcr) partes.push(`LECTURA_OCR_LOCAL\n${textoOcr}`);
+    } catch (error) {
+      console.warn("No se pudo completar la lectura OCR local:", error);
+    }
+  }
+
+  const textoAcumulado = partes.join("\n");
+  if (
+    (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "")) &&
+    extraerFechasTexto(textoAcumulado).length === 0
+  ) {
+    try {
+      const fechaOcr = await leerFechaPdfOcr(file);
+      if (fechaOcr) partes.push(`LECTURA_FECHA_MANUSCRITA\n${fechaOcr}`);
+    } catch (error) {
+      console.warn("No se pudo completar la lectura focalizada de fecha:", error);
+    }
+  }
+
+  return partes.join("\n");
 }
 
 function obtenerEquiposCategoria(nombreCategoria) {
@@ -2084,6 +2556,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
     <div class="doc-scope-note">
       <strong>Revisión de Asociación</strong>
       <span>Aprobar un documento valida ese archivo para el control documental. La habilitación final del jugador surge de tener completos y vigentes los requisitos obligatorios.</span>
+      <button id="documentacion-reprocesar-club" class="secondary" type="button">Leer documentos cargados del club</button>
     </div>
     ${renderImpactoHabilitacionDocumental(nombreCategoria, equipoOperativo)}
     ${renderGestionJugadoresAsociacion(nombreCategoria)}
@@ -2607,14 +3080,12 @@ function renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugad
         </thead>
         <tbody>
           ${filas.map((documento) => {
-            const jugador = {
-              id: documento.player_id,
-              equipo_nombre: documento.equipo_nombre,
-              nombre: documento.jugador_nombre,
-              dni: documento.jugador_dni,
-              dorsal: documento.jugador_dorsal
-            };
-            const estadoHabilitacion = calcularEstadoHabilitacionJugador(nombreCategoria, jugador);
+            const tipoDocumento = tipoDocumentoAuditable(documento.requirement_nombre);
+            const dictamenDocumento = evaluarDocumentoPreauditoria(
+              documento,
+              documento.requirement_nombre,
+              { requerido: tipoDocumento !== "pase" }
+            );
 
             return `
               <tr>
@@ -2625,10 +3096,10 @@ function renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugad
                 </td>
                 <td>
                   ${docStateHtml(
-                    estadoHabilitacion.preauditoria?.label || "Pendiente",
-                    estadoHabilitacion.preauditoria?.estado || "pendiente"
+                    dictamenDocumento.label || "Pendiente",
+                    dictamenDocumento.estado || "pendiente"
                   )}
-                  <span class="doc-player-meta">${escapeHtml(estadoHabilitacion.preauditoriaDetalle || "")}</span>
+                  <span class="doc-preaudit-detail">${escapeHtml(resumenPreauditoriaCorto(dictamenDocumento.detalle))}</span>
                 </td>
                 <td>${docStateHtml(
                   estadoDocumentoLabel(documento),
@@ -3145,7 +3616,6 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
                   ${renderAccionBajaJugadorDelegado(jugador)}
                 </div>
               </div>
-              <p class="doc-player-card-note">${escapeHtml(estadoHabilitacion.preauditoriaDetalle || estadoHabilitacion.faltantes || "Documentación aprobada por Asociación.")}</p>
               <div class="doc-player-doc-grid">
                 ${documentosJugador.map((requisito) => {
                   const documento = obtenerDocumentoJugador(categoria, jugador.id, requisito);
@@ -3156,7 +3626,7 @@ function renderJugadoresEquipoDelegado(categoria, equipo, documentosJugador) {
                     <div class="doc-player-doc-row">
                       <div class="doc-player-doc-name">
                         <strong>${escapeHtml(requisito)}</strong>
-                        <span>${escapeHtml(estadoDocumento.detalle)}</span>
+                        <span>${escapeHtml(resumenPreauditoriaCorto(estadoDocumento.detalle))}</span>
                       </div>
                       <div>${docStateHtml(
                         estadoDocumento.label,
@@ -3207,6 +3677,105 @@ function renderAccionDocumentoJugadorDelegado(documento) {
     ${nombreArchivo}
     ${marcaCargado}
 `;
+}
+
+async function leerPrecontrolDocumentoJugador(documentId, documento, file) {
+  const tipo = tipoDocumentoAuditable(documento?.requirement_nombre);
+  const textoBasico = await leerTextoDocumentoBasico(file);
+  const fechasDetectadas = extraerFechasTexto(textoBasico);
+  const fechaDocumento = elegirFechaDocumentoPorContexto(textoBasico, fechasDetectadas, tipo);
+  const plausibilidadFecha = evaluarPlausibilidadFechaDocumento(fechaDocumento, tipo);
+  const vencimientoCalculado = tipo === "certificado" && plausibilidadFecha.valida
+    ? sumarMesesFecha(fechaDocumento, 12)
+    : null;
+  const partes = [
+    "motor=lector_v5_fecha_confiable",
+    textoBasico.includes("LECTURA_OCR_LOCAL") ? "lectura=ocr_local" : "lectura=texto_pdf",
+    `archivo=${file?.name || documento?.file_name || "sin nombre"}`,
+    `tipo=${tipo}`,
+    `formato=${file?.type || documento?.file_type || "sin dato"}`,
+    `tamano=${file?.size || documento?.file_size || 0}`,
+    fechasDetectadas.length ? `fechas_detectadas=${fechasDetectadas.join("|")}` : "fechas_detectadas=sin_dato"
+  ];
+  const advertencias = [];
+  const senales = [];
+
+  if (!documento?.player_id || !documento?.requirement_id) {
+    advertencias.push("faltan datos internos de jugador o requisito");
+  }
+
+  if (!file?.type || !/pdf|jpeg|jpg|png/i.test(file.type)) {
+    advertencias.push("formato no reconocido");
+  }
+
+  if (tipo === "certificado") {
+    if (fechaDocumento && plausibilidadFecha.valida && vencimientoCalculado) {
+      partes.push(`fecha_estudio=${fechaDocumento}`);
+      partes.push(`vencimiento=${vencimientoCalculado}`);
+    } else if (fechaDocumento && !plausibilidadFecha.valida) {
+      partes.push(`fecha_descartada=${fechaDocumento}`);
+      advertencias.push(`fecha dudosa (${plausibilidadFecha.motivo}); confirmar visualmente`);
+    } else {
+      advertencias.push("fecha del estudio no detectada");
+    }
+  }
+
+  if (tipo === "declaracion") {
+    if (fechaDocumento) {
+      partes.push(`fecha_documento=${fechaDocumento}`);
+      const anioActual = new Date().getFullYear();
+      if (Number(fechaDocumento.slice(0, 4)) !== anioActual) {
+        advertencias.push("fecha fuera del año corriente");
+      } else {
+        senales.push("anio_corriente");
+      }
+    } else {
+      advertencias.push("fecha de declaracion no detectada");
+    }
+    if (contieneTexto(textoBasico, ["firma", "firmado", "declaro", "deslinde", "responsabilidad"])) {
+      senales.push("texto_declaracion");
+    } else {
+      advertencias.push("texto de declaracion no detectado");
+    }
+    advertencias.push("firma visible pendiente de revisión");
+  }
+
+  if (tipo === "seguro") {
+    const tienePoliza = contieneTexto(textoBasico, ["poliza", "póliza", "certificado", "cobertura", "seguro"]);
+    const tieneNomina = contieneTexto(textoBasico, ["nomina", "nómina", "listado", "asegurado", "asegurados", "jugadores"]);
+    if (tienePoliza) senales.push("poliza_certificado");
+    if (tieneNomina) senales.push("nomina_listado");
+    if (!tienePoliza) advertencias.push("poliza/certificado no detectado");
+    if (!tieneNomina) advertencias.push("nomina/listado no detectado");
+  }
+
+  if (tipo === "buena_fe") {
+    const tieneLista = contieneTexto(textoBasico, ["lista", "buena fe", "jugadores"]);
+    const tieneApdb = contieneTexto(textoBasico, ["apdb", "asociacion platense", "asociación platense", "recibido", "sello"]);
+    if (tieneLista) senales.push("lista_jugadores");
+    if (tieneApdb) senales.push("recibido_apdb");
+    if (!tieneLista) advertencias.push("lista de jugadores no detectada");
+    if (!tieneApdb) advertencias.push("sello/recibido APdB no detectado");
+  }
+
+  if (tipo === "pase") {
+    if (fechaDocumento) partes.push(`fecha_documento=${fechaDocumento}`);
+    if (contieneTexto(textoBasico, ["pase", "transferencia", "autorizacion", "autorización", "club"])) {
+      senales.push("pase_transferencia");
+    } else {
+      advertencias.push("señal de pase no detectada");
+    }
+  }
+
+  if (senales.length) {
+    partes.push(`senales=${senales.join("|")}`);
+  }
+
+  return {
+    ok: !advertencias.length,
+    vencimiento: vencimientoCalculado,
+    observacion: `Precontrol automatico: ${partes.join("; ")}${advertencias.length ? `; REVISAR: ${advertencias.join(", ")}` : "; control técnico sin alertas"}.`
+  };
 }
 
 function renderBotonVerDocumentoDelegado(documento, scope = "team") {
@@ -5186,6 +5755,10 @@ async function subirDocumentoJugadorDelegado(event) {
   }
 
   input.disabled = true;
+  setStatus(status, "Leyendo documento y preparando carga...", "");
+
+  const precontrol = await leerPrecontrolDocumentoJugador(documentId, documento, file);
+
   setStatus(status, "Subiendo documento del jugador...", "");
 
   const storagePath = [
@@ -5214,15 +5787,28 @@ async function subirDocumentoJugadorDelegado(event) {
     return;
   }
 
-  const { error: rpcError } = await supabaseClient.rpc("mark_player_document_uploaded", {
+  const rpcPayload = {
     p_document_id: documento.id,
     p_uploaded_by: estado.delegado.nombre,
     p_storage_path: storagePath,
     p_file_name: file.name,
     p_file_type: file.type,
     p_file_size: file.size,
-    p_vencimiento: null
-  });
+    p_vencimiento: precontrol.vencimiento,
+    p_observacion: precontrol.observacion
+  };
+
+  let { error: rpcError } = await supabaseClient.rpc("mark_player_document_uploaded", rpcPayload);
+
+  if (rpcError && /p_observacion|function .*mark_player_document_uploaded|Could not find|schema cache/i.test(rpcError.message || "")) {
+    const fallbackPayload = { ...rpcPayload };
+    delete fallbackPayload.p_observacion;
+    const fallback = await supabaseClient.rpc("mark_player_document_uploaded", fallbackPayload);
+    rpcError = fallback.error;
+    if (!rpcError) {
+      console.warn("mark_player_document_uploaded sin p_observacion: aplicar SQL de precontrol para guardar la declaracion del delegado.");
+    }
+  }
 
   if (rpcError) {
     input.disabled = false;
@@ -6599,16 +7185,16 @@ function documentosListosParaAprobacionAdministrativa(categoriaNombre, equipoNom
     .map((requisito) => obtenerDocumentoEquipo(categoriaNombre, equipoNombre, requisito))
     .filter(Boolean)
     .filter((documento) =>
-      evaluarDocumentoPreauditoria(documento, documento.requirement_nombre).estado === "listo_aprobar"
+      ["listo_aprobar", "preaprobado"].includes(evaluarDocumentoPreauditoria(documento, documento.requirement_nombre).estado)
     )
     .map((documento) => ({ scope: "team", documento }));
 
   const docsJugador = (estado.documentosJugadoresPorCategoriaId[categoria.id] || [])
     .filter((documento) => nombresEquipoCoinciden(documento.equipo_nombre, equipoNombre))
     .filter((documento) =>
-      evaluarDocumentoPreauditoria(documento, documento.requirement_nombre, {
+      ["listo_aprobar", "preaprobado"].includes(evaluarDocumentoPreauditoria(documento, documento.requirement_nombre, {
         requerido: esDocumentoJugadorBloqueante(documento.requirement_nombre)
-      }).estado === "listo_aprobar"
+      }).estado)
     )
     .map((documento) => ({ scope: "player", documento }));
 
@@ -6674,6 +7260,127 @@ async function aprobarDocumentosListosDelClub() {
     role: estado.usuarioAsociacion?.role || "asociacion"
   });
   setStatus(status, `${listos.length} documento(s) aprobados por acto administrativo.`, "ok");
+}
+
+async function descargarArchivoDocumentoStorage(documento) {
+  if (!documento?.storage_path || esUrlDocumentoExterno(documento.storage_path)) {
+    throw new Error("El documento no esta en Storage privado.");
+  }
+
+  const { data, error } = await supabaseClient.storage
+    .from("documentos")
+    .download(documento.storage_path);
+
+  if (error || !data) {
+    throw new Error(error?.message || "No se pudo descargar el archivo.");
+  }
+
+  const tipo = documento.file_type || data.type || "application/octet-stream";
+  return new File([data], documento.file_name || "documento", { type: tipo });
+}
+
+function documentosJugadorParaReprocesarClub(categoriaNombre, equipoNombre) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
+  if (!categoria || !equipoNombre) return [];
+
+  return (estado.documentosJugadoresPorCategoriaId[categoria.id] || [])
+    .filter((documento) => nombresEquipoCoinciden(documento.equipo_nombre, equipoNombre))
+    .filter((documento) => documento.file_name && documento.storage_path)
+    .filter((documento) => !esUrlDocumentoExterno(documento.storage_path))
+    .filter((documento) => documento.status !== "aprobado")
+    .filter((documento) => !String(documento.observacion || "").includes("motor=lector_v5_fecha_confiable"));
+}
+
+async function reprocesarDocumentosCargadosClub() {
+  const status = $("asociacion-status");
+  const categoriaNombre = $("asociacion-categoria")?.value || "";
+  const categoria = estado.categorias.find((cat) => cat.nombre === categoriaNombre);
+  const equipoNombre = equipoOperativoSeleccionado();
+  const button = $("documentacion-reprocesar-club");
+
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilitá Asociación con la clave administrativa.", "warn");
+    return;
+  }
+
+  if (!categoria || !equipoNombre) {
+    setStatus(status, "Elegí una categoría y un club operativo antes de leer documentos.", "warn");
+    return;
+  }
+
+  const documentos = documentosJugadorParaReprocesarClub(categoriaNombre, equipoNombre);
+  if (!documentos.length) {
+    setStatus(status, "No hay documentos de jugador cargados pendientes de lectura automática para este club.", "warn");
+    return;
+  }
+
+  const confirmar = confirm(`¿Leer ${documentos.length} documento(s) cargados de ${equipoNombre}? No se modifican documentos ya aprobados.`);
+  if (!confirmar) {
+    setStatus(status, "Lectura automática cancelada.", "warn");
+    return;
+  }
+
+  if (button) button.disabled = true;
+
+  let procesados = 0;
+  let fallidos = 0;
+
+  for (const documento of documentos) {
+    try {
+      procesados += 1;
+      setStatus(status, `Leyendo ${procesados}/${documentos.length}: ${documento.jugador_nombre} - ${documento.requirement_nombre}...`, "");
+
+      const file = await descargarArchivoDocumentoStorage(documento);
+      const precontrol = await leerPrecontrolDocumentoJugador(documento.id, documento, file);
+      const rpcPayload = {
+        p_document_id: documento.id,
+        p_uploaded_by: estado.usuarioAsociacion?.display_name || "Asociacion",
+        p_storage_path: documento.storage_path,
+        p_file_name: documento.file_name,
+        p_file_type: documento.file_type || file.type,
+        p_file_size: documento.file_size || file.size,
+        p_vencimiento: precontrol.vencimiento,
+        p_observacion: precontrol.observacion
+      };
+
+      let { error: rpcError } = await supabaseClient.rpc("mark_player_document_uploaded", rpcPayload);
+      if (rpcError && /p_observacion|function .*mark_player_document_uploaded|Could not find|schema cache/i.test(rpcError.message || "")) {
+        const fallbackPayload = { ...rpcPayload };
+        delete fallbackPayload.p_observacion;
+        const fallback = await supabaseClient.rpc("mark_player_document_uploaded", fallbackPayload);
+        rpcError = fallback.error;
+      }
+
+      if (rpcError) {
+        throw new Error(rpcError.message);
+      }
+    } catch (error) {
+      fallidos += 1;
+      console.warn("No se pudo reprocesar documento:", documento, error);
+    }
+  }
+
+  await cargarDocumentosJugadoresCategoria(categoria.id, true);
+  renderDocumentacionAsociacion(categoriaNombre);
+  renderDocumentacionDelegado();
+
+  registrarUso("documentos_jugador_reprocesados", {
+    area: "asociacion",
+    categoria: categoriaNombre,
+    equipo: equipoNombre,
+    cantidad: documentos.length,
+    fallidos,
+    user: estado.usuarioAsociacion?.display_name || "Asociacion",
+    role: estado.usuarioAsociacion?.role || "asociacion"
+  });
+
+  setStatus(
+    status,
+    fallidos
+      ? `Lectura terminada: ${documentos.length - fallidos} procesados y ${fallidos} con error.`
+      : `Lectura terminada: ${documentos.length} documento(s) procesados.`,
+    fallidos ? "warn" : "ok"
+  );
 }
 
 function obtenerDriveDocumentoPorId(documentId) {
@@ -7834,8 +8541,13 @@ function seleccionarEquipoHabilitados(event) {
   if (!select) return;
 
   select.value = button.dataset.habilitadosEquipo || "";
+  if ($("documentacion-filtro-equipo")) {
+    $("documentacion-filtro-equipo").value = select.value;
+  }
   const categoria = $("asociacion-categoria").value;
   renderListaHabilitadosArbitros(categoria);
+  renderDocumentacionAsociacion(categoria);
+  renderAuditoriaDocumentalAsociacion(categoria);
 }
 
 function descargarPlanPruebaDocumental() {
@@ -8052,16 +8764,37 @@ async function inicializarAsociacion() {
   $("documentacion-copiar-resumen")?.addEventListener("click", copiarResumenDocumentacionAsociacion);
   $("documentacion-informe-club")?.addEventListener("click", descargarInformeDocumentalClubAsociacion);
   $("documentacion-aprobar-listos")?.addEventListener("click", aprobarDocumentosListosDelClub);
+  $("documentacion-tabla")?.addEventListener("click", (event) => {
+    if (event.target.closest("#documentacion-reprocesar-club")) {
+      reprocesarDocumentosCargadosClub();
+    }
+  });
   $("habilitados-filtro-equipo")?.addEventListener("change", () => {
+    if ($("documentacion-filtro-equipo")) {
+      $("documentacion-filtro-equipo").value = $("habilitados-filtro-equipo").value;
+    }
     if ($("habilitados-filtro-partido")) $("habilitados-filtro-partido").value = "";
     const categoria = $("asociacion-categoria").value;
     renderListaHabilitadosArbitros(categoria);
+    renderDocumentacionAsociacion(categoria);
+    renderAuditoriaDocumentalAsociacion(categoria);
+  });
+  $("documentacion-filtro-equipo")?.addEventListener("change", () => {
+    if ($("habilitados-filtro-equipo")) {
+      $("habilitados-filtro-equipo").value = $("documentacion-filtro-equipo").value;
+    }
+    if ($("habilitados-filtro-partido")) $("habilitados-filtro-partido").value = "";
+    const categoria = $("asociacion-categoria").value;
+    renderDocumentacionAsociacion(categoria);
+    renderListaHabilitadosArbitros(categoria);
+    renderAuditoriaDocumentalAsociacion(categoria);
   });
   $("habilitados-filtro-estado")?.addEventListener("change", () => {
     renderListaHabilitadosArbitros($("asociacion-categoria").value);
   });
   $("habilitados-filtro-partido")?.addEventListener("change", () => {
     if ($("habilitados-filtro-equipo")) $("habilitados-filtro-equipo").value = "";
+    if ($("documentacion-filtro-equipo")) $("documentacion-filtro-equipo").value = "";
     renderListaHabilitadosArbitros($("asociacion-categoria").value);
   });
   $("habilitados-tabla")?.addEventListener("click", seleccionarEquipoHabilitados);
