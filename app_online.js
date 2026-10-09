@@ -3653,17 +3653,7 @@ function renderPartidoResultadoHtml(partido) {
   const tieneResultado = partidoTieneResultado(partido);
   const puntosLocal = tieneResultado ? partido.puntos_local : "–";
   const puntosVisitante = tieneResultado ? partido.puntos_visitante : "–";
-  const detalleCarga = partido.cargado_por
-    ? `
-      <details class="result-detail">
-        <summary>Ver detalle</summary>
-        <div>
-          Cargado por: ${escapeHtml(partido.cargado_por)}<br>
-          ${escapeHtml(partido.cargado_en || "")}
-        </div>
-      </details>
-    `
-    : "";
+  const detalleCarga = "";
 
   return `
     <div class="result-match${tieneResultado ? "" : " result-match-pending"}">
