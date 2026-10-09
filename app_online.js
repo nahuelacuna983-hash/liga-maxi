@@ -4431,20 +4431,23 @@ function mostrarCargaPublico(nombreCategoria) {
   if (playoffs) playoffs.innerHTML = "";
 }
 
+function mostrarErrorResultadosPublicos() {
+  const mensaje = `<div class="empty">No pudimos actualizar los resultados desde la fuente oficial. Reintentá.</div>`;
+  ["publico-tabla-wrap", "publico-fixture", "fecha-destacada"].forEach((id) => {
+    const container = $(id);
+    if (container) container.innerHTML = id === "fecha-destacada" ? `<div class="card">${mensaje}</div>` : mensaje;
+  });
+  ["publico-playoffs-principal", "publico-playoffs"].forEach((id) => {
+    const container = $(id);
+    if (container) container.innerHTML = "";
+  });
+}
+
 async function refrescarPublicoCategoria(nombreCategoria) {
   if (!nombreCategoria) return;
 
   const cargaId = ++estado.publicoCargaActual;
-  const partidosCache = leerCachePublica("partidos", `${TORNEO_ID}_${nombreCategoria}`);
-  if (partidosCache?.length) {
-    estado.partidosPorCategoria[nombreCategoria] = partidosCache;
-    renderTablaSimple(nombreCategoria, partidosCache);
-    renderFixturePublico(nombreCategoria);
-    renderFechaDestacada(nombreCategoria);
-    renderPlayoffsSimple(nombreCategoria, partidosCache);
-  } else {
-    mostrarCargaPublico(nombreCategoria);
-  }
+  mostrarCargaPublico(nombreCategoria);
 
   try {
     const cargas = [cargarPartidosCategoria(nombreCategoria)];
@@ -4465,11 +4468,9 @@ async function refrescarPublicoCategoria(nombreCategoria) {
     });
   } catch (error) {
     if (cargaId !== estado.publicoCargaActual) return;
-
-    const tabla = $("publico-tabla-wrap");
-    if (tabla) {
-      tabla.innerHTML = `<div class="empty">No se pudo cargar la categoría: ${escapeHtml(error.message)}</div>`;
-    }
+    estado.partidosPorCategoria[nombreCategoria] = [];
+    mostrarErrorResultadosPublicos();
+    console.warn("No se pudieron actualizar los resultados públicos:", error);
   }
 }
 
@@ -10632,8 +10633,10 @@ async function inicializar() {
 
     $("tab-publico").addEventListener("click", () => {
       mostrarVista("publico");
-      actualizarUrlCategoria($("publico-categoria")?.value || "", "publico");
-      registrarUso("vista_publico", { area: "publico", categoria: $("publico-categoria")?.value || null });
+      const categoria = $("publico-categoria")?.value || "";
+      actualizarUrlCategoria(categoria, "publico");
+      if (categoria) refrescarPublicoCategoria(categoria);
+      registrarUso("vista_publico", { area: "publico", categoria: categoria || null });
     });
     $("tab-fecha").addEventListener("click", () => {
       mostrarVista("fecha");
