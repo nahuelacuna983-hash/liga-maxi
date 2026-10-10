@@ -3913,8 +3913,30 @@ function generarPartidosPlayoff(nombreCategoria, tabla) {
     const datosSemis = obtenerDatosRondaPlayoff(nombreCategoria, "semifinales");
     const datosFinal = obtenerDatosRondaPlayoff(nombreCategoria, "final");
 
-    partidos.push(crearPlayoffMatch("repechaje", "repechaje_1", "Repechaje 1", 10, 1, equipo(3), equipo(6), datosRepechaje.fecha || ""));
-    partidos.push(crearPlayoffMatch("repechaje", "repechaje_2", "Repechaje 2", 20, 1, equipo(4), equipo(5), datosRepechaje.fecha || ""));
+    const fechasRepechaje = datosRepechaje.fechas || [datosRepechaje.fecha || ""];
+    fechasRepechaje.forEach((fecha, index) => {
+      const localiaInvertida = index === 1;
+      partidos.push(crearPlayoffMatch(
+        "repechaje",
+        "repechaje_1",
+        `Repechaje 1 - Partido ${index + 1}`,
+        10 + index,
+        index + 1,
+        localiaInvertida ? equipo(6) : equipo(3),
+        localiaInvertida ? equipo(3) : equipo(6),
+        fecha || ""
+      ));
+      partidos.push(crearPlayoffMatch(
+        "repechaje",
+        "repechaje_2",
+        `Repechaje 2 - Partido ${index + 1}`,
+        20 + index,
+        index + 1,
+        localiaInvertida ? equipo(5) : equipo(4),
+        localiaInvertida ? equipo(4) : equipo(5),
+        fecha || ""
+      ));
+    });
     (datosSemis.fechas || [datosSemis.fecha || ""]).forEach((fecha, index) => {
       partidos.push(crearPlayoffMatch("semifinales", "semi_1", `Semi 1 - Partido ${index + 1}`, 30 + index, index + 1, equipo(1), "Peor ganador de repechaje", fecha || ""));
       partidos.push(crearPlayoffMatch("semifinales", "semi_2", `Semi 2 - Partido ${index + 1}`, 40 + index, index + 1, equipo(2), "Mejor ganador de repechaje", fecha || ""));
@@ -3981,6 +4003,29 @@ function ganadorSeriePlayoff(partidos, llave) {
   return ordenados[0][0];
 }
 
+function modoDefinicionRonda(nombreCategoria, ronda) {
+  const datos = obtenerDatosRondaPlayoff(nombreCategoria, ronda);
+  if (datos.modo_definicion === "global" || datos.modo_definicion === "mejor_de") return datos.modo_definicion;
+  return "global";
+}
+
+function ganadorRondaPlayoff(partidos, llave, modo) {
+  const serie = (partidos || []).filter((partido) => partido.llave === llave);
+  if (!serie.length) return "";
+  if (modo === "mejor_de") {
+    const victorias = {};
+    serie.forEach((partido) => {
+      const ganador = ganadorPartidoPlayoff(partido);
+      if (ganador) victorias[ganador] = (victorias[ganador] || 0) + 1;
+    });
+    const ordenados = Object.entries(victorias).sort((a, b) => b[1] - a[1]);
+    return ordenados.length && ordenados[0][1] >= 2 && (ordenados.length < 2 || ordenados[0][1] > ordenados[1][1])
+      ? ordenados[0][0]
+      : "";
+  }
+  return ganadorSeriePlayoff(partidos, llave);
+}
+
 function posicionEquipoEnTabla(tabla, nombreEquipo) {
   return tabla.findIndex((fila) => nombresEquipoCoinciden(fila.equipo, nombreEquipo)) + 1;
 }
@@ -4023,8 +4068,8 @@ function aplicarAvanceAutomaticoPlayoffs(nombreCategoria, tabla, partidosPlayoff
 
   if (clasificados === 6) {
     const ganadoresRepechaje = [
-      ganadorPartidoPlayoff(buscar("repechaje", "repechaje_1")),
-      ganadorPartidoPlayoff(buscar("repechaje", "repechaje_2"))
+      ganadorRondaPlayoff(partidosPlayoff, "repechaje_1", modoDefinicionRonda(nombreCategoria, "clasificacion")),
+      ganadorRondaPlayoff(partidosPlayoff, "repechaje_2", modoDefinicionRonda(nombreCategoria, "clasificacion"))
     ].filter(Boolean).map((equipo) => ({
       equipo,
       posicion: posicionEquipoEnTabla(tabla, equipo) || 99
@@ -4042,8 +4087,9 @@ function aplicarAvanceAutomaticoPlayoffs(nombreCategoria, tabla, partidosPlayoff
         .forEach((partido) => actualizarEquipo(partido, "visitante", mejorGanador));
     }
 
-    const ganadorSemi1 = ganadorSeriePlayoff(partidosPlayoff, "semi_1");
-    const ganadorSemi2 = ganadorSeriePlayoff(partidosPlayoff, "semi_2");
+    const modoSemis = modoDefinicionRonda(nombreCategoria, "semifinales");
+    const ganadorSemi1 = ganadorRondaPlayoff(partidosPlayoff, "semi_1", modoSemis);
+    const ganadorSemi2 = ganadorRondaPlayoff(partidosPlayoff, "semi_2", modoSemis);
     partidosPlayoff
       .filter((partido) => partido.llave === "final")
       .forEach((partido) => {
@@ -4065,6 +4111,40 @@ function renderResultadoPlayoff(partido) {
 
 function renderPlayoffMatchGuardado(titulo, partido, slotA, slotB) {
   return renderPlayoffMatch(titulo, slotA, slotB, renderResultadoPlayoff(partido));
+}
+
+function renderPlayoffSerieGuardada(titulo, partidos, slotA, slotB, modo, mostrarLocaliaPorPartido = false) {
+  const serie = (partidos || []).slice().sort((a, b) => Number(a.partido_numero || 1) - Number(b.partido_numero || 1));
+  const contenido = serie.map((partido) => {
+    const numero = Number(partido.partido_numero || 1);
+    const etiqueta = modo === "mejor_de" && numero === 3 ? "P3 - si es necesario" : `P${numero}`;
+    const local = mostrarLocaliaPorPartido ? renderPlayoffSlotDinamico(partido.local || "Por definir") : slotA;
+    const visitante = mostrarLocaliaPorPartido ? renderPlayoffSlotDinamico(partido.visitante || "Por definir") : slotB;
+    return renderPlayoffMatchGuardado(`${titulo} - ${etiqueta}`, partido, local, visitante);
+  }).join("");
+  const ganador = ganadorRondaPlayoff(serie, serie[0]?.llave, modo);
+  let globalDetalle = "";
+  if (modo === "global" && serie.some(partidoPlayoffTieneResultado)) {
+    const global = {};
+    serie.forEach((partido) => {
+      if (!partidoPlayoffTieneResultado(partido)) return;
+      global[partido.local] = (global[partido.local] || 0) + Number(partido.puntos_local || 0);
+      global[partido.visitante] = (global[partido.visitante] || 0) + Number(partido.puntos_visitante || 0);
+    });
+    const nombres = Object.keys(global);
+    if (nombres.length >= 2) {
+      globalDetalle = `Global: ${nombres[0]} ${global[nombres[0]]} - ${global[nombres[1]]} ${nombres[1]}`;
+      globalDetalle += ganador ? ` · Ganador: ${ganador}` : serie.every(partidoPlayoffTieneResultado) ? " · Empatado / requiere definición" : " · Definición pendiente";
+    }
+  }
+  const estado = globalDetalle || (ganador
+    ? `Ganador: ${ganador}`
+    : modo === "global" && serie.some(partidoPlayoffTieneResultado)
+      ? "Definición global pendiente o empatada"
+      : modo === "mejor_de" && serie.some(partidoPlayoffTieneResultado)
+        ? "Serie en curso"
+        : "");
+  return `${contenido}${estado ? `<small class="playoff-series-status">${escapeHtml(estado)}</small>` : ""}`;
 }
 
 function renderResumenResultadosPlayoff(partidos) {
@@ -4135,9 +4215,9 @@ function obtenerDatosRondaPlayoffFallback(nombreCategoria, clave) {
 
   if (nombreCategoria === "Maxi +48") {
     const datos48 = {
-      clasificacion: { partidos: 1, fecha: "2026-06-17" },
-      semifinales: { partidos: 2, fechas: ["2026-06-24", "2026-07-01"] },
-      final: { partidos: 2, fechas: ["2026-07-08", "2026-07-15"] }
+      clasificacion: { partidos: 2, fechas: ["2026-10-21", "2026-10-28"], modo_definicion: "global" },
+      semifinales: { partidos: 3, fechas: ["2026-11-04", "2026-11-11", "2026-11-18"], modo_definicion: "mejor_de" },
+      final: { partidos: 3, fechas: ["2026-11-25", "2026-12-02", "2026-12-09"], modo_definicion: "mejor_de" }
     };
     return datos48[clave] || {};
   }
@@ -4157,6 +4237,9 @@ function renderMetaRondaPlayoff(nombreCategoria, ronda) {
   } else {
     partes.push("Partidos a confirmar");
   }
+
+  if (datos.modo_definicion === "global") partes.push("definición por resultado global");
+  if (datos.modo_definicion === "mejor_de") partes.push("al mejor de 3");
 
   if (fechas.length > 1) {
     partes.push(fechas.map((item) => fechaPartidoLabel(item) || item).join(", "));
@@ -4330,27 +4413,30 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
   }
 
   if (clasificados === 6 && cantidadEquipos >= 6) {
-    const repechaje1 = buscarPlayoff("repechaje", "repechaje_1");
-    const repechaje2 = buscarPlayoff("repechaje", "repechaje_2");
-    const semi1p1 = buscarPlayoff("semifinales", "semi_1", 1);
-    const semi2p1 = buscarPlayoff("semifinales", "semi_2", 1);
-    const final1 = buscarPlayoff("final", "final", 1);
+    const repechaje1 = partidosPlayoff.filter((partido) => partido.fase === "repechaje" && partido.llave === "repechaje_1");
+    const repechaje2 = partidosPlayoff.filter((partido) => partido.fase === "repechaje" && partido.llave === "repechaje_2");
+    const semis1 = partidosPlayoff.filter((partido) => partido.fase === "semifinales" && partido.llave === "semi_1");
+    const semis2 = partidosPlayoff.filter((partido) => partido.fase === "semifinales" && partido.llave === "semi_2");
+    const final = partidosPlayoff.filter((partido) => partido.fase === "final" && partido.llave === "final");
+    const modoRepechaje = modoDefinicionRonda(nombreCategoria, "clasificacion");
+    const modoSemis = modoDefinicionRonda(nombreCategoria, "semifinales");
+    const modoFinal = modoDefinicionRonda(nombreCategoria, "final");
 
     bracket = `
       <div class="playoff-bracket playoff-bracket-three">
         <div class="playoff-round">
           ${renderPlayoffRoundTitulo("Repechaje", nombreCategoria, "clasificacion")}
-          ${renderPlayoffMatchGuardado("Repechaje 1", repechaje1, renderPlayoffSlot(3, equipo(3)), renderPlayoffSlot(6, equipo(6)))}
-          ${renderPlayoffMatchGuardado("Repechaje 2", repechaje2, renderPlayoffSlot(4, equipo(4)), renderPlayoffSlot(5, equipo(5)))}
+          ${renderPlayoffSerieGuardada("Repechaje 1", repechaje1, renderPlayoffSlot(3, equipo(3)), renderPlayoffSlot(6, equipo(6)), modoRepechaje, true)}
+          ${renderPlayoffSerieGuardada("Repechaje 2", repechaje2, renderPlayoffSlot(4, equipo(4)), renderPlayoffSlot(5, equipo(5)), modoRepechaje, true)}
         </div>
         <div class="playoff-round">
           ${renderPlayoffRoundTitulo("Semifinales", nombreCategoria, "semifinales")}
-          ${renderPlayoffMatchGuardado("Semi 1", semi1p1, renderPlayoffSlot(1, equipo(1), "1 directo"), renderPlayoffSlotDinamico(semi1p1.visitante || "Peor ganador de repechaje"))}
-          ${renderPlayoffMatchGuardado("Semi 2", semi2p1, renderPlayoffSlot(2, equipo(2), "2 directo"), renderPlayoffSlotDinamico(semi2p1.visitante || "Mejor ganador de repechaje"))}
+          ${renderPlayoffSerieGuardada("Semi 1", semis1, renderPlayoffSlot(1, equipo(1), "1 directo"), renderPlayoffSlotDinamico(semis1[0]?.visitante || "Peor ganador de repechaje"), modoSemis)}
+          ${renderPlayoffSerieGuardada("Semi 2", semis2, renderPlayoffSlot(2, equipo(2), "2 directo"), renderPlayoffSlotDinamico(semis2[0]?.visitante || "Mejor ganador de repechaje"), modoSemis)}
         </div>
         <div class="playoff-round">
           ${renderPlayoffRoundTitulo("Final", nombreCategoria, "final")}
-          ${renderPlayoffMatchGuardado("Final", final1, renderPlayoffSlotDinamico(final1.local || "Ganador Semi 1"), renderPlayoffSlotDinamico(final1.visitante || "Ganador Semi 2"))}
+          ${renderPlayoffSerieGuardada("Final", final, renderPlayoffSlotDinamico(final[0]?.local || "Ganador Semi 1"), renderPlayoffSlotDinamico(final[0]?.visitante || "Ganador Semi 2"), modoFinal)}
         </div>
       </div>
     `;
@@ -5572,7 +5658,7 @@ function renderPlayoffsAsociacion(nombreCategoria) {
       ${partidos.map((partido) => `
         <div class="assoc-playoff-row" data-playoff-key="${escapeHtml(playoffKey(partido))}">
           <div class="assoc-playoff-title">
-            <strong>${escapeHtml(partido.titulo || partido.llave || "Playoff")}</strong>
+            <strong>${escapeHtml(modoDefinicionRonda(nombreCategoria, partido.fase === "repechaje" ? "clasificacion" : partido.fase) === "mejor_de" && Number(partido.partido_numero || 1) === 3 ? "Partido 3 · si es necesario" : partido.titulo || partido.llave || "Playoff")}</strong>
             <span>${escapeHtml(partido.fase || "")}${partido.fecha ? ` · ${escapeHtml(fechaPartidoLabel(partido.fecha))}` : ""}</span>
           </div>
           <div class="field">
@@ -5646,6 +5732,12 @@ async function guardarResultadoPlayoffAsociacion(event) {
 
   if (!Number.isFinite(puntosLocal) || !Number.isFinite(puntosVisitante) || puntosLocal < 0 || puntosVisitante < 0) {
     setStatus(status, "Los tanteadores de playoff deben ser numeros validos.", "warn");
+    return;
+  }
+
+  const ronda = button.dataset.fase === "repechaje" ? "clasificacion" : button.dataset.fase;
+  if (modoDefinicionRonda(categoriaNombre, ronda) === "mejor_de" && puntosLocal === puntosVisitante) {
+    setStatus(status, "Un partido de una serie al mejor de 3 no puede finalizar empatado.", "warn");
     return;
   }
 
@@ -5950,7 +6042,7 @@ function calcularEstadoCierreTorneo(nombreCategoria) {
   const playoffsJugados = playoffs.filter(partidoPlayoffTieneResultado).length;
   const playoffsPendientes = playoffs.filter((partido) => !partidoPlayoffTieneResultado(partido)).length;
   const finalPartidos = playoffs.filter((partido) => partido.fase === "final");
-  const campeon = ganadorSeriePlayoff(playoffs, "final");
+  const campeon = ganadorRondaPlayoff(playoffs, "final", modoDefinicionRonda(nombreCategoria, "final"));
   const finalPendiente = finalPartidos.length > 0 && !campeon;
   const documentosEquipo = categoria ? estado.documentosPorCategoriaId[categoria.id] || [] : [];
   const documentosJugador = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
@@ -8192,7 +8284,7 @@ function detalleFormatoPlanner(categoria) {
         ? "Campeon de playoffs asciende y subcampeon juega promocion."
         : "1ro de tabla asciende y 2do de tabla juega promocion.";
   } else if (categoria === "Maxi +48") {
-    reglaPromocion = "Top 6: 3ro vs 6to y 4to vs 5to en repechaje. Semifinales reordenadas por merito de fase regular.";
+    reglaPromocion = "Top 6: 3ro vs 6to y 4to vs 5to, dos partidos por repechaje con definición por resultado global. 1ro y 2do pasan directo a semifinales al mejor de 3; final al mejor de 3.";
   }
 
   return {
@@ -9964,6 +10056,8 @@ function armarSeriesPlayoffCategoriaPlanner(formato) {
     if (formato.clasificados === 6) {
       series.clasificacion = datosIniciales;
       series.repechaje = datosIniciales;
+      series.clasificacion.modo_definicion = "global";
+      series.repechaje.modo_definicion = "global";
     } else {
       series.cuartos = datosIniciales;
     }
@@ -9978,6 +10072,10 @@ function armarSeriesPlayoffCategoriaPlanner(formato) {
       formato.partidosFinal,
       fechasSerieValoresPlanner(formato, "final", formato.partidosFinal)
     );
+    if (formato.clasificados === 6) {
+      series.semifinales.modo_definicion = "mejor_de";
+      series.final.modo_definicion = "mejor_de";
+    }
   }
 
   if (formato?.partidosPromocion) {
