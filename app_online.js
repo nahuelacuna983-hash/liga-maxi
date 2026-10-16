@@ -4215,7 +4215,7 @@ function obtenerDatosRondaPlayoffFallback(nombreCategoria, clave) {
 
   if (nombreCategoria === "Maxi +48") {
     const datos48 = {
-      clasificacion: { partidos: 2, fechas: ["2026-10-21", "2026-10-28"], modo_definicion: "global" },
+      clasificacion: { partidos: 1, fechas: ["2026-10-28"], modo_definicion: "global" },
       semifinales: { partidos: 3, fechas: ["2026-11-04", "2026-11-11", "2026-11-18"], modo_definicion: "mejor_de" },
       final: { partidos: 3, fechas: ["2026-11-25", "2026-12-02", "2026-12-09"], modo_definicion: "mejor_de" }
     };
@@ -4238,7 +4238,7 @@ function renderMetaRondaPlayoff(nombreCategoria, ronda) {
     partes.push("Partidos a confirmar");
   }
 
-  if (datos.modo_definicion === "global") partes.push("definición por resultado global");
+  if (datos.modo_definicion === "global" && Number(partidos) > 1) partes.push("definición por resultado global");
   if (datos.modo_definicion === "mejor_de") partes.push("al mejor de 3");
 
   if (fechas.length > 1) {
