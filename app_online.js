@@ -3450,6 +3450,8 @@ function calcularTabla(partidos) {
     tabla[p.visitante].pf += p.puntos_visitante;
     tabla[p.visitante].pc += p.puntos_local;
 
+    if (esResultadoAdministrativoSinPuntos(p)) return;
+
     if (esResolucionAdministrativa(p)) {
       if (p.estado_resultado === "resolucion_local") {
         tabla[p.local].pg += 1;
@@ -3527,6 +3529,8 @@ function calcularMiniTablaOlimpica(equipos, partidos) {
     miniTabla[p.local].pc += p.puntos_visitante;
     miniTabla[p.visitante].pf += p.puntos_visitante;
     miniTabla[p.visitante].pc += p.puntos_local;
+
+    if (esResultadoAdministrativoSinPuntos(p)) return;
 
     if (esResolucionAdministrativa(p)) {
       if (p.estado_resultado === "resolucion_local") {
@@ -3612,6 +3616,10 @@ function esResolucionAdministrativa(partido) {
   return partido?.estado_resultado === "resolucion_local" || partido?.estado_resultado === "resolucion_visitante";
 }
 
+function esResultadoAdministrativoSinPuntos(partido) {
+  return partido?.estado_resultado === "administrativo_sin_puntos";
+}
+
 function renderAccionBajaJugadorDelegado(jugador) {
   if (jugador.baja_solicitada) {
     return `
@@ -3638,6 +3646,8 @@ function partidoTieneResultado(partido) {
 }
 
 function resultadoPartidoLabel(partido) {
+  if (esResultadoAdministrativoSinPuntos(partido)) return "0 - 0 (administrativo, sin puntos)";
+
   if (esResolucionAdministrativa(partido)) {
     return partido.estado_resultado === "resolucion_local"
       ? "20 - 0 (resolucion administrativa)"
@@ -4197,7 +4207,15 @@ function obtenerDatosRondaPlayoff(nombreCategoria, ronda) {
   }[clave] || [clave];
 
   for (const posible of posiblesClaves) {
-    if (series[posible]) return series[posible];
+    const configuracion = series[posible];
+    if (!configuracion) continue;
+    const tieneFecha = Boolean(
+      configuracion.fecha ||
+      configuracion.fecha_inicio ||
+      configuracion.dia ||
+      (Array.isArray(configuracion.fechas) && configuracion.fechas.some(Boolean))
+    );
+    if (tieneFecha) return configuracion;
   }
 
   return obtenerDatosRondaPlayoffFallback(nombreCategoria, clave);
@@ -4206,9 +4224,9 @@ function obtenerDatosRondaPlayoff(nombreCategoria, ronda) {
 function obtenerDatosRondaPlayoffFallback(nombreCategoria, clave) {
   if (nombreCategoria === "Maxi +35 A" || nombreCategoria === "Maxi +35 B") {
     const datos35 = {
-      cuartos: { partidos: 1, fecha: "2026-06-21" },
-      semifinales: { partidos: 1, fecha: "2026-06-28" },
-      final: { partidos: 3, fechas: ["2026-07-05", "2026-07-12", "2026-07-19"] }
+      cuartos: { partidos: 1, fecha: "2026-11-01" },
+      semifinales: { partidos: 1, fecha: "2026-11-08" },
+      final: { partidos: 3, fechas: ["2026-11-15", "2026-11-22", "2026-11-29"] }
     };
     return datos35[clave] || {};
   }
@@ -4233,7 +4251,13 @@ function renderMetaRondaPlayoff(nombreCategoria, ronda) {
   const partes = [];
 
   if (partidos) {
-    partes.push(Number(partidos) === 1 ? "1 partido" : `${partidos} partidos`);
+    partes.push(
+      normalizarClaveRonda(ronda) === "final" && Number(partidos) === 3
+        ? "Hasta 3 partidos, si es necesario"
+        : Number(partidos) === 1
+          ? "1 partido"
+          : `${partidos} partidos`
+    );
   } else {
     partes.push("Partidos a confirmar");
   }
@@ -5502,6 +5526,58 @@ async function guardarResultadoAsociacion() {
   });
 
   setStatus(status, "Corrección guardada correctamente.", "ok");
+}
+
+async function guardarResultadoAdministrativoSinPuntos() {
+  const categoria = $("asociacion-categoria").value;
+  const partidoId = $("asociacion-partido").value;
+  const status = $("asociacion-status");
+
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilitá Asociación con la clave administrativa.", "warn");
+    return;
+  }
+  if (!partidoId) {
+    setStatus(status, "Seleccioná un partido.", "warn");
+    return;
+  }
+
+  const partido = (estado.partidosPorCategoria[categoria] || []).find((item) => item.id === partidoId);
+  const confirmar = confirm(`¿Confirmás 0 - 0 administrativo sin puntos para ${partido?.local || "local"} vs ${partido?.visitante || "visitante"}?`);
+  if (!confirmar) {
+    setStatus(status, "Operación cancelada.", "warn");
+    return;
+  }
+
+  setStatus(status, "Guardando 0-0 administrativo...", "");
+  const { error } = await supabaseClient
+    .from("partidos")
+    .update({
+      puntos_local: 0,
+      puntos_visitante: 0,
+      estado_resultado: "administrativo_sin_puntos",
+      cargado_por: "ADMIN - 0-0 SIN PUNTOS",
+      cargado_en: new Date().toISOString()
+    })
+    .eq("id", partidoId);
+
+  if (error) {
+    setStatus(status, `No se pudo guardar: ${error.message}`, "error");
+    return;
+  }
+
+  await refrescarCategoria(categoria, { actualizarPublico: $("publico-categoria")?.value === categoria });
+  poblarSelectPartidosAsociacion(categoria);
+  renderPlayoffsAsociacion(categoria);
+  completarInputsAsociacion();
+  registrarUso("resultado_administrativo_sin_puntos", {
+    area: "asociacion",
+    categoria,
+    partido_id: partidoId,
+    user: estado.usuarioAsociacion?.display_name || "Asociación",
+    role: estado.usuarioAsociacion?.role || "asociacion"
+  });
+  setStatus(status, "0-0 administrativo guardado sin puntos para ambos equipos.", "ok");
 }
 
 async function resolverPartidoAdministrativamente(ganador) {
@@ -8073,6 +8149,7 @@ async function inicializarAsociacion() {
 
   $("asociacion-partido").addEventListener("change", completarInputsAsociacion);
   $("asociacion-guardar").addEventListener("click", guardarResultadoAsociacion);
+  $("asociacion-guardar-0-0-admin")?.addEventListener("click", guardarResultadoAdministrativoSinPuntos);
   $("asociacion-anular")?.addEventListener("click", anularResultadoAsociacion);
   $("asociacion-resuelve-local")?.addEventListener("click", () => resolverPartidoAdministrativamente("local"));
   $("asociacion-resuelve-visitante")?.addEventListener("click", () => resolverPartidoAdministrativamente("visitante"));
