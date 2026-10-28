@@ -1358,7 +1358,11 @@ function prioridadDocumento(documento) {
 }
 
 function elegirDocumentoVigente(documentos) {
-  return [...documentos].sort((a, b) => prioridadDocumento(b) - prioridadDocumento(a))[0] || null;
+  const conContenido = documentos.filter((d) =>
+    documentoTieneArchivo(d) || ["aprobado", "observado", "rechazado", "vencido"].includes(normalizarTexto(d.status))
+  );
+  const elegibles = conContenido.length ? conContenido : documentos;
+  return [...elegibles].sort((a, b) => prioridadDocumento(b) - prioridadDocumento(a))[0] || null;
 }
 
 function buscarDocumentoEquipoPorTerminos(nombreCategoria, equipo, terminos) {
