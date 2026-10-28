@@ -1342,12 +1342,10 @@ function obtenerDocumentoJugador(nombreCategoria, playerId, requisito) {
   const documentos = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
   const clave = claveRequisitoDocumental(requisito);
 
-  return documentos
-    .filter((documento) =>
-      documento.player_id === playerId &&
-      claveRequisitoDocumental(documento.requirement_nombre) === clave
-    )
-    .sort((a, b) => prioridadDocumento(b) - prioridadDocumento(a))[0] || null;
+  return elegirDocumentoVigente(documentos.filter((documento) =>
+    documento.player_id === playerId &&
+    claveRequisitoDocumental(documento.requirement_nombre) === clave
+  ));
 }
 
 function prioridadDocumento(documento) {
