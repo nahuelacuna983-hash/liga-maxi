@@ -1453,7 +1453,7 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
     };
   }
 
-  if (["rechazado", "observado", "no_validable"].includes(status) || /rechaz|observ|no valid|no localiz|falta/.test(observacion)) {
+  if (["rechazado", "observado", "no_validable"].includes(status) || (status !== "aprobado" && /rechaz|observ|no valid|no localiz|falta/.test(observacion))) {
     return {
       estado: status === "rechazado" ? "rechazado" : "revision",
       label: status === "rechazado" ? "Rechazado" : "Observado",
