@@ -1456,9 +1456,22 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
   if (["rechazado", "observado", "no_validable"].includes(status) || /rechaz|observ|no valid|no localiz|falta/.test(observacion)) {
     return {
       estado: status === "rechazado" ? "rechazado" : "revision",
-      label: status === "rechazado" ? "Rechazado" : "Falta revisar",
-      detalle: `${etiqueta}: requiere revisión administrativa.`,
+      label: status === "rechazado" ? "Rechazado" : "Observado",
+      detalle: observacion && !/^(pendiente de carga|archivo cargado\. esperando revision\.?|pendiente de revisión)$/i.test(observacion.trim())
+        ? `${etiqueta}: ${observacion}`
+        : `${etiqueta}: requiere revisión administrativa.`,
       bloquea: true
+    };
+  }
+
+  if (status === "aprobado") {
+    return {
+      estado: "aprobado",
+      label: "Aprobado",
+      detalle: observacion && !/^(archivo cargado\. esperando revision\.?|pendiente de carga)$/i.test(observacion.trim())
+        ? `${etiqueta}: aprobado. ${observacion}`
+        : `${etiqueta}: aprobado${vencimiento === "por_vencer" ? ", próximo a vencer" : ""}.`,
+      bloquea: false
     };
   }
 
@@ -1468,15 +1481,6 @@ function evaluarDocumentoPreauditoria(documento, etiqueta, opciones = {}) {
       label: tieneArchivo ? "Revisar vencimiento" : "Falta revisar",
       detalle: `${etiqueta}: archivo cargado, falta fecha de vencimiento o vigencia. ${controlManual}`,
       bloquea: true
-    };
-  }
-
-  if (status === "aprobado") {
-    return {
-      estado: "aprobado",
-      label: "Aprobado",
-      detalle: `${etiqueta}: aprobado${vencimiento === "por_vencer" ? ", próximo a vencer" : ""}.`,
-      bloquea: false
     };
   }
 
