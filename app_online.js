@@ -1049,7 +1049,7 @@ async function cargarDocumentosCategoria(categoriaId, force = false) {
 
   const { data, error } = await supabaseClient
     .from("v_team_documents_admin")
-    .select("id, requirement_id, requirement_nombre, categoria_id, equipo_id, equipo_nombre, status, vencimiento, observacion, storage_path, file_name, file_type, file_size")
+    .select("id, requirement_id, requirement_nombre, categoria_id, equipo_id, equipo_nombre, status, vencimiento, observacion, storage_path, file_name, file_type, file_size, reviewed_at, updated_at, created_at")
     .eq("categoria_id", categoriaId);
 
   if (error) {
@@ -1351,35 +1351,34 @@ function obtenerDocumentoJugador(nombreCategoria, playerId, requisito) {
 }
 
 function prioridadDocumento(documento) {
-  const estados = {
-    aprobado: 50,
-    cargado: 40,
-    observado: 30,
-    vencido: 20,
-    rechazado: 10,
-    pendiente: 0
-  };
-  return (estados[normalizarTexto(documento?.status)] ?? 0) + (documentoTieneArchivo(documento) ? 5 : 0);
+  // Prevalece el documento/dictamen más reciente; nunca la aprobación más favorable.
+  // reviewed_at/updated_at deben venir de las vistas administrativas.
+  const fecha = Date.parse(documento?.reviewed_at || documento?.updated_at || documento?.created_at || "") || 0;
+  return fecha;
+}
+
+function elegirDocumentoVigente(documentos) {
+  return [...documentos].sort((a, b) => prioridadDocumento(b) - prioridadDocumento(a))[0] || null;
 }
 
 function buscarDocumentoEquipoPorTerminos(nombreCategoria, equipo, terminos) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const documentos = categoria ? estado.documentosPorCategoriaId[categoria.id] || [] : [];
   const terminosNormalizados = terminos.map(normalizarTexto);
-  return documentos.find((documento) =>
+  return elegirDocumentoVigente(documentos.filter((documento) =>
     nombresEquipoCoinciden(documento.equipo_nombre, equipo) &&
     terminosNormalizados.some((termino) => normalizarTexto(documento.requirement_nombre).includes(termino))
-  ) || null;
+  ));
 }
 
 function buscarDocumentoJugadorPorTerminos(nombreCategoria, playerId, terminos) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const documentos = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
   const terminosNormalizados = terminos.map(normalizarTexto);
-  return documentos.find((documento) =>
+  return elegirDocumentoVigente(documentos.filter((documento) =>
     documento.player_id === playerId &&
     terminosNormalizados.some((termino) => normalizarTexto(documento.requirement_nombre).includes(termino))
-  ) || null;
+  ));
 }
 
 function documentoAprobadoVigente(documento) {
