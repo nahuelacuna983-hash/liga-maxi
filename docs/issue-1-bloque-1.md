@@ -45,3 +45,19 @@ Quedan pendientes las pruebas que requieren sesión real de Asociación y Delega
 - No se escribieron datos en Supabase.
 - No se modificaron fixtures, resultados, habilitaciones ni auditoría documental.
 - No se publicó a GitHub Pages.
+
+## Bloque siguiente validado
+
+Se reforzó `tools/smoke-server.js` con una allowlist explícita de recursos públicos. Las rutas a `.git`, `.env`, `docs`, `tools`, directorios y traversal codificado devuelven 404; además se valida `realpath`, archivo regular y supervivencia después de errores.
+
+Las pruebas quedaron separadas en tres grupos dentro de `tools/issue1-smoke.cjs`:
+
+- Dominio: tabla normal, 0-0 `administrativo_sin_puntos` con cero puntos, desempate olímpico y rechazo de empate 60-60 en un resultado normal.
+- Planificador/roles: fixture con tres equipos y fecha bloqueada, salto de fecha, siguiente fecha libre, reglas de roles y deduplicación de permisos.
+- Interfaz/servidor: contrato estático de IDs HTML y HTTP local. Esto no se presenta como renderizado visual ni interacción real del navegador.
+
+La validación del empate ejecuta la función real `validarMarcadorResultadoNormal` desde `app_online.js` y la aplican tanto el guardado de Delegado como el de Asociación. La vía administrativa permanece separada.
+
+Resultado local del bloque: `node tools/issue1-smoke.cjs` -> `ISSUE1_SMOKE_OK`; `node --check` para los tres archivos y `git diff --check` correctos. No hubo acceso ni escritura en Supabase.
+
+La captura visual y la prueba de navegador real siguen bloqueadas en este entorno; no se presentan como verificadas. CI headless queda como mejora posterior si se habilita un runner controlado.

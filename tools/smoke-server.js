@@ -4,6 +4,10 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 const port = Number(process.env.PORT || 8790);
+const publicFiles = new Set([
+  'index_online.html', 'app_online.js', 'style.css', 'manifest.json',
+  'sw.js', 'icon-192.png', 'icon-512.png'
+]);
 const mime = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -24,20 +28,34 @@ function createServer() {
       return;
     }
   const relative = requestPath === '/' ? 'index_online.html' : requestPath.replace(/^\/+/, '');
-  const file = path.resolve(root, relative);
-  if (!file.startsWith(root + path.sep)) {
-    res.writeHead(403);
-    res.end('Forbidden');
+  if (!publicFiles.has(relative) || relative.includes('/') || relative.includes('\\')) {
+    res.writeHead(404);
+    res.end('Not found');
     return;
   }
-  fs.readFile(file, (error, data) => {
-    if (error) {
-      res.writeHead(error.code === 'ENOENT' ? 404 : 500);
-      res.end(error.code === 'ENOENT' ? 'Not found' : 'Server error');
+  const file = path.join(root, relative);
+  fs.realpath(file, (realpathError, resolvedFile) => {
+    if (realpathError || resolvedFile !== file) {
+      res.writeHead(404);
+      res.end('Not found');
       return;
     }
-    res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream' });
-    res.end(data);
+    fs.stat(file, (statError, stats) => {
+      if (statError || !stats.isFile()) {
+        res.writeHead(404);
+        res.end('Not found');
+        return;
+      }
+      fs.readFile(file, (error, data) => {
+        if (error) {
+          res.writeHead(500);
+          res.end('Server error');
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream' });
+        res.end(data);
+      });
+    });
   });
   });
 }

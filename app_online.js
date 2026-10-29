@@ -85,6 +85,16 @@ function setStatus(element, text, kind = "") {
   element.className = `status${kind ? " " + kind : ""}`;
 }
 
+function validarMarcadorResultadoNormal(puntosLocal, puntosVisitante) {
+  if (!Number.isFinite(puntosLocal) || !Number.isFinite(puntosVisitante) || puntosLocal < 0 || puntosVisitante < 0) {
+    return "Los tanteadores deben ser números válidos.";
+  }
+  if (puntosLocal === puntosVisitante) {
+    return "Un partido normal no puede terminar empatado. Para un 0-0 administrativo sin puntos, utilizá la opción administrativa.";
+  }
+  return "";
+}
+
 function claveCachePublica(tipo, nombreCategoria) {
   return `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}_${tipo}_${slugify(nombreCategoria || "general")}`;
 }
@@ -3450,6 +3460,8 @@ function calcularTabla(partidos) {
     tabla[p.visitante].pf += p.puntos_visitante;
     tabla[p.visitante].pc += p.puntos_local;
 
+    if (p.estado_resultado === "administrativo_sin_puntos") return;
+
     if (esResolucionAdministrativa(p)) {
       if (p.estado_resultado === "resolucion_local") {
         tabla[p.local].pg += 1;
@@ -3527,6 +3539,8 @@ function calcularMiniTablaOlimpica(equipos, partidos) {
     miniTabla[p.local].pc += p.puntos_visitante;
     miniTabla[p.visitante].pf += p.puntos_visitante;
     miniTabla[p.visitante].pc += p.puntos_local;
+
+    if (p.estado_resultado === "administrativo_sin_puntos") return;
 
     if (esResolucionAdministrativa(p)) {
       if (p.estado_resultado === "resolucion_local") {
@@ -4605,8 +4619,9 @@ async function guardarResultadoDelegado() {
   const pl = Number(puntosLocal);
   const pv = Number(puntosVisitante);
 
-  if (!Number.isFinite(pl) || !Number.isFinite(pv) || pl < 0 || pv < 0) {
-    setStatus(status, "Los tanteadores deben ser números válidos.", "warn");
+  const errorMarcador = validarMarcadorResultadoNormal(pl, pv);
+  if (errorMarcador) {
+    setStatus(status, errorMarcador, "warn");
     return;
   }
 
@@ -5382,8 +5397,9 @@ async function guardarResultadoAsociacion() {
   const pl = Number(puntosLocal);
   const pv = Number(puntosVisitante);
 
-  if (!Number.isFinite(pl) || !Number.isFinite(pv) || pl < 0 || pv < 0) {
-    setStatus(status, "Los tanteadores deben ser números válidos.", "warn");
+  const errorMarcador = validarMarcadorResultadoNormal(pl, pv);
+  if (errorMarcador) {
+    setStatus(status, errorMarcador, "warn");
     return;
   }
 
