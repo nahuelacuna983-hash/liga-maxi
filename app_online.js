@@ -95,6 +95,14 @@ function validarMarcadorResultadoNormal(puntosLocal, puntosVisitante) {
   return "";
 }
 
+function delegadoPuedeEditarPartido(partido, categoria, delegado) {
+  if (!partido || !delegado) return false;
+  const categorias = (delegado.categorias || []).map((item) => normalizarTexto(item));
+  const equipos = (delegado.equipos || []).map((item) => normalizarTexto(item));
+  if (!categorias.includes(normalizarTexto(categoria))) return false;
+  return [partido.local, partido.visitante].some((item) => equipos.includes(normalizarTexto(item)));
+}
+
 function claveCachePublica(tipo, nombreCategoria) {
   return `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}_${tipo}_${slugify(nombreCategoria || "general")}`;
 }
@@ -3652,6 +3660,9 @@ function partidoTieneResultado(partido) {
 }
 
 function resultadoPartidoLabel(partido) {
+  if (partido.estado_resultado === "administrativo_sin_puntos") {
+    return "0 - 0 (administrativo, sin puntos)";
+  }
   if (esResolucionAdministrativa(partido)) {
     return partido.estado_resultado === "resolucion_local"
       ? "20 - 0 (resolucion administrativa)"
@@ -4608,6 +4619,12 @@ async function guardarResultadoDelegado() {
 
   if (!partidoId) {
     setStatus(status, "Seleccioná un partido.", "warn");
+    return;
+  }
+
+  const partidoActual = (estado.partidosPorCategoria[categoria] || []).find((partido) => partido.id === partidoId);
+  if (!delegadoPuedeEditarPartido(partidoActual, categoria, estado.delegado)) {
+    setStatus(status, "No tenés permiso para cargar resultados de este partido.", "warn");
     return;
   }
 

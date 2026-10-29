@@ -37,7 +37,7 @@ Se intentó Playwright mediante `npm exec`, pero el entorno no entregó un runti
 
 Se corrigió un fallo reproducible del servidor de smoke: `decodeURIComponent()` podía lanzar una excepción ante una URL malformada y terminar el proceso. Ahora responde HTTP 400 y continúa atendiendo solicitudes.
 
-Quedan pendientes las pruebas que requieren sesión real de Asociación y Delegado, persistencia contra Supabase y verificación visual/interactiva de fixture, resultados y playoffs.
+Quedan pendientes la corrección de RLS en una base/branch aislada, las pruebas de persistencia con sesión de prueba y la verificación visual/interactiva real de fixture, resultados y playoffs.
 
 ## No realizado
 
@@ -61,3 +61,16 @@ La validación del empate ejecuta la función real `validarMarcadorResultadoNorm
 Resultado local del bloque: `node tools/issue1-smoke.cjs` -> `ISSUE1_SMOKE_OK`; `node --check` para los tres archivos y `git diff --check` correctos. No hubo acceso ni escritura en Supabase.
 
 La captura visual y la prueba de navegador real siguen bloqueadas en este entorno; no se presentan como verificadas. CI headless queda como mejora posterior si se habilita un runner controlado.
+
+## Matriz de pruebas del bloque actual
+
+| Prueba | Ejecución | Resultado | Evidencia | Bloqueo |
+|---|---|---|---|---|
+| Permiso de guardado de Delegado | `node tools/issue1-smoke.cjs` | OK aislado | `delegadoPuedeEditarPartido` permite equipo propio y rechaza otro equipo/categoría; el guardado real lo invoca | RLS real permisivo |
+| RLS de `partidos` | consulta SQL read-only a `pg_policies` | Bloqueante | UPDATE para `anon,authenticated` con `qual=true` y `with_check=true` | Requiere corrección autorizada en Supabase aislado |
+| Fixture 6/10 equipos, 1/2 ruedas | `node tools/issue1-smoke.cjs` | OK | pares únicos, libres y ausencia de duplicados por jornada | No ejecuta publicación real |
+| Días de juego | `node tools/issue1-smoke.cjs` | OK | miércoles para +48 y domingo para +35 | No prueba datos reales |
+| Series de playoffs 8/6 | `node tools/issue1-smoke.cjs` | OK | cuartos/repechaje, semifinales y finales | No prueba DOM real |
+| Marcadores inválidos | `node tools/issue1-smoke.cjs` | OK | empate, negativo, NaN y vacío rechazados | No se inventaron límites máximos |
+| Consumidores `administrativo_sin_puntos` | `node tools/issue1-smoke.cjs` | OK aislado | tabla, mini tabla y etiqueta pública | Persistencia real no ejecutada |
+| Navegador headless | intento local | Bloqueado | Playwright/Edge no entregaron DOM/captura verificable | Requiere runner CI con navegador |

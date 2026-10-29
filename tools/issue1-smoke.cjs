@@ -18,7 +18,7 @@ function extract(start, end) {
 }
 
 function loadDomainFunctions() {
-  const context = { Set, Object, Array, Number, Math, Intl };
+  const context = { Set, Object, Array, Number, Math, Intl, normalizarTexto: (value) => String(value || '').trim().toLowerCase() };
   context.partidoTieneResultado = (p) => ['jugado', 'resolucion_local', 'resolucion_visitante', 'administrativo_sin_puntos'].includes(p.estado_resultado);
   context.esResolucionAdministrativa = (p) => ['resolucion_local', 'resolucion_visitante'].includes(p.estado_resultado);
   vm.createContext(context);
@@ -35,6 +35,27 @@ function testDomainLogic() {
   const mini = calcularMiniTablaOlimpica(['A', 'B'], [{ local: 'A', visitante: 'B', puntos_local: 0, puntos_visitante: 0, estado_resultado: 'administrativo_sin_puntos' }]);
   assert.equal(mini.A.pts, 0); assert.equal(mini.B.pts, 0);
   assert.equal(validarMarcadorResultadoNormal(60, 60).length > 0, true); assert.equal(validarMarcadorResultadoNormal(70, 60), '');
+  assert.match(validarMarcadorResultadoNormal(-1, 70), /números válidos/);
+  assert.match(validarMarcadorResultadoNormal(Number.NaN, 70), /números válidos/);
+  assert.match(validarMarcadorResultadoNormal(undefined, 70), /números válidos/);
+  assert.match(appSource.slice(appSource.indexOf('function resultadoPartidoLabel'), appSource.indexOf('function renderPartidoResultadoHtml')), /administrativo_sin_puntos/);
+  assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoDelegado'), appSource.indexOf('async function subirDocumentoDelegado')), /estado_resultado: "jugado"/);
+  assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoAsociacion'), appSource.indexOf('async function resolverPartidoAdministrativamente')), /estado_resultado: "jugado"/);
+  const labelContext = { Number };
+  labelContext.esResolucionAdministrativa = (partido) => ['resolucion_local', 'resolucion_visitante'].includes(partido.estado_resultado);
+  vm.createContext(labelContext);
+  vm.runInContext(extract('partidoTieneResultado', 'renderPartidoResultadoHtml'), labelContext);
+  assert.equal(labelContext.resultadoPartidoLabel({ puntos_local: 0, puntos_visitante: 0, estado_resultado: 'administrativo_sin_puntos' }), '0 - 0 (administrativo, sin puntos)');
+}
+
+function testDelegateWriteGuard() {
+  const context = { Set, normalizarTexto: (value) => String(value || '').trim().toLowerCase() };
+  vm.createContext(context); vm.runInContext(extract('delegadoPuedeEditarPartido', 'claveCachePublica'), context);
+  const delegado = { categorias: ['Maxi +35 A'], equipos: ['Equipo A'] };
+  assert.equal(context.delegadoPuedeEditarPartido({ local: 'Equipo A', visitante: 'Equipo B' }, 'Maxi +35 A', delegado), true);
+  assert.equal(context.delegadoPuedeEditarPartido({ local: 'Equipo B', visitante: 'Equipo C' }, 'Maxi +35 A', delegado), false);
+  assert.equal(context.delegadoPuedeEditarPartido({ local: 'Equipo A', visitante: 'Equipo B' }, 'Maxi +35 B', delegado), false);
+  assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoDelegado'), appSource.indexOf('async function subirDocumentoDelegado')), /delegadoPuedeEditarPartido/);
 }
 
 function testFixtureAndPlayoffRules() {
@@ -45,12 +66,40 @@ function testFixtureAndPlayoffRules() {
   const fixture = context.generarFixtureSimuladoPlanner(['A', 'B', 'C'], 1, '2026-11-01', 0, blocked, '2026-12-31');
   assert.equal(fixture.jornadas.length, 3); assert.equal(fixture.jornadas.some((j) => j.fecha === '2026-11-08'), false); assert.equal(fixture.bloqueosSalteados, 1);
   assert.equal(context.siguienteFechaLibrePlanner(new Date('2026-11-01T12:00:00'), blocked).toISOString().slice(0, 10), '2026-11-15');
+  for (const [count, ruedas] of [[6, 1], [6, 2], [10, 1], [10, 2]]) {
+    const names = Array.from({ length: count }, (_, index) => `E${index + 1}`);
+    const generated = context.generarFixtureSimuladoPlanner(names, ruedas, '2026-03-01', 0, new Set(), '2026-12-31');
+    const pairs = new Set();
+    generated.jornadas.forEach((jornada) => {
+      const seen = new Set();
+      jornada.partidos.forEach((partido) => {
+        assert.equal(seen.has(partido.local), false); assert.equal(seen.has(partido.visitante), false);
+        seen.add(partido.local); seen.add(partido.visitante);
+        pairs.add([partido.local, partido.visitante].sort().join('|'));
+      });
+      assert.equal(seen.size + (jornada.libre ? 1 : 0), count);
+    });
+    assert.equal(pairs.size, (count * (count - 1)) / 2);
+    assert.equal(generated.jornadas.length, (count - 1) * ruedas);
+  }
+  assert.equal(context.siguienteDiaJuegoPlanner('2026-03-04', 3).getDay(), 3); // miércoles (+48
+  assert.equal(context.siguienteDiaJuegoPlanner('2026-03-01', 0).getDay(), 0); // domingo (+35
 }
 
 function testRoleRules() {
   const context = { Set, DELEGADOS: { admin123: { rol: 'admin' } } }; vm.createContext(context); vm.runInContext(extract('delegadoDesdePermisos', 'reconciliarDelegadoConCategoriasActuales'), context);
   const delegado = context.delegadoDesdePermisos([{ role: 'delegado', display_name: 'Delegado Test', categoria_nombre: 'Maxi +35 A', equipo_nombre: 'Equipo A' }, { role: 'delegado', display_name: 'Delegado Test', categoria_nombre: 'Maxi +35 A', equipo_nombre: 'Equipo A' }]);
   assert.deepEqual(Array.from(delegado.categorias), ['Maxi +35 A']); assert.deepEqual(Array.from(delegado.equipos), ['Equipo A']); assert.equal(context.delegadoDesdePermisos([{ role: 'otro' }], null), null);
+}
+
+function testPlayoffFormats() {
+  const context = { Array, Number };
+  vm.createContext(context);
+  vm.runInContext(extract('fechasSerieValoresPlanner', 'guardarFormatoCategoriaPublicadaPlanner'), context);
+  const formato8 = context.armarSeriesPlayoffCategoriaPlanner({ clasificados: 8, partidosCuartos: 1, partidosSemis: 1, partidosFinal: 3, fechaCuartos: '2027-06-06', fechaSemis: '2027-06-13', fechaFinal1: '2027-06-20', fechaFinal2: '2027-06-27', fechaFinal3: '2027-07-04' });
+  assert.equal(formato8.cuartos.partidos, 1); assert.deepEqual(Array.from(formato8.final.fechas), ['2027-06-20', '2027-06-27', '2027-07-04']);
+  const formato6 = context.armarSeriesPlayoffCategoriaPlanner({ clasificados: 6, partidosCuartos: 2, partidosSemis: 2, partidosFinal: 2, fechaCuartos: '2027-06-06', fechaCuartos2: '2027-06-13', fechaSemis: '2027-06-20', fechaSemis2: '2027-06-27', fechaFinal1: '2027-07-04', fechaFinal2: '2027-07-11' });
+  assert.equal(formato6.repechaje.partidos, 2); assert.deepEqual(Array.from(formato6.semifinales.fechas), ['2027-06-20', '2027-06-27']);
 }
 
 function request(port, requestPath) { return new Promise((resolve, reject) => { const req = http.get({ host: '127.0.0.1', port, path: requestPath }, (res) => { let body = ''; res.setEncoding('utf8'); res.on('data', (chunk) => { body += chunk; }); res.on('end', () => resolve({ status: res.statusCode, body })); }); req.on('error', reject); }); }
@@ -65,4 +114,4 @@ async function testInterfaceSourceAndServer() {
   } finally { await new Promise((resolve) => server.close(resolve)); }
 }
 
-(async () => { testDomainLogic(); testFixtureAndPlayoffRules(); testRoleRules(); await testInterfaceSourceAndServer(); console.log('ISSUE1_SMOKE_OK'); })().catch((error) => { console.error(`ISSUE1_SMOKE_FAIL: ${error.stack || error.message}`); process.exitCode = 1; });
+(async () => { testDomainLogic(); testDelegateWriteGuard(); testFixtureAndPlayoffRules(); testPlayoffFormats(); testRoleRules(); await testInterfaceSourceAndServer(); console.log('ISSUE1_SMOKE_OK'); })().catch((error) => { console.error(`ISSUE1_SMOKE_FAIL: ${error.stack || error.message}`); process.exitCode = 1; });
