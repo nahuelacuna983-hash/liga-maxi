@@ -21,6 +21,8 @@ La migración propuesta, aún no aplicada, revoca INSERT/UPDATE/DELETE de client
 
 Se impide editar permisos propios y escribir directamente tablas de delegados, relaciones o equipos. La creación de fixtures queda fuera del navegador hasta definir un RPC administrativo separado.
 
+La aplicación ya no hace UPDATE directo para cargar/corregir resultados normales: Delegado y Asociación invocan `cargar_resultado_partido`. La RPC propuesta es `SECURITY INVOKER`, valida marcador no empatado, existencia del partido, `auth.uid()` y alcance de permisos, y solo actualiza campos de resultado.
+
 ## Pruebas preparadas
 
 `tools/rls-policy-smoke.cjs` verifica localmente la matriz estructural: anon sin escritura, delegado acotado, Asociación global explícita, usuario ligado por `auth.uid()`, campos de UPDATE limitados y ausencia de INSERT/DELETE cliente.

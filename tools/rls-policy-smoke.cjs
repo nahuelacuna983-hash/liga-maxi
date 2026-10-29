@@ -15,6 +15,10 @@ function assertPolicyMatrix() {
   assert.match(migration, /revoke insert, update, delete on public\.app_user_permissions from public, anon, authenticated/i);
   assert.match(migration, /create policy "app permissions own read"/i);
   assert.match(migration, /revoke insert, update, delete on public\.delegados, public\.delegado_categorias, public\.equipos/i);
+  assert.match(migration, /create or replace function public\.cargar_resultado_partido/i);
+  assert.match(migration, /security invoker/i);
+  assert.match(migration, /grant execute on function public\.cargar_resultado_partido[\s\S]*to authenticated/i);
+  assert.doesNotMatch(migration, /grant execute on function public\.cargar_resultado_partido[\s\S]*to anon/i);
   assert.doesNotMatch(migration, /for insert[\s\S]*to authenticated[\s\S]*with check \(\s*true\s*\)/i);
 }
 

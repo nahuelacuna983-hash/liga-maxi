@@ -40,8 +40,6 @@ function testDomainLogic() {
   assert.match(validarMarcadorResultadoNormal(Number.NaN, 70), /números válidos/);
   assert.match(validarMarcadorResultadoNormal(undefined, 70), /números válidos/);
   assert.match(appSource.slice(appSource.indexOf('function resultadoPartidoLabel'), appSource.indexOf('function renderPartidoResultadoHtml')), /administrativo_sin_puntos/);
-  assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoDelegado'), appSource.indexOf('async function subirDocumentoDelegado')), /estado_resultado: "jugado"/);
-  assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoAsociacion'), appSource.indexOf('async function resolverPartidoAdministrativamente')), /estado_resultado: "jugado"/);
   const labelContext = { Number };
   labelContext.esResolucionAdministrativa = (partido) => ['resolucion_local', 'resolucion_visitante'].includes(partido.estado_resultado);
   vm.createContext(labelContext);
@@ -57,6 +55,8 @@ function testDelegateWriteGuard() {
   assert.equal(context.delegadoPuedeEditarPartido({ local: 'Equipo B', visitante: 'Equipo C' }, 'Maxi +35 A', delegado), false);
   assert.equal(context.delegadoPuedeEditarPartido({ local: 'Equipo A', visitante: 'Equipo B' }, 'Maxi +35 B', delegado), false);
   assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoDelegado'), appSource.indexOf('async function subirDocumentoDelegado')), /delegadoPuedeEditarPartido/);
+  assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoDelegado'), appSource.indexOf('async function subirDocumentoDelegado')), /guardarResultadoPartidoAutorizado/);
+  assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoAsociacion'), appSource.indexOf('async function resolverPartidoAdministrativamente')), /guardarResultadoPartidoAutorizado/);
   assert.match(rlsProposal, /to authenticated/i);
   assert.match(rlsProposal, /auth\.uid\(\)/i);
   assert.match(rlsProposal, /p\.can_load_results and p\.equipo_id in/i);

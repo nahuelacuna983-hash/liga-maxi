@@ -103,6 +103,15 @@ function delegadoPuedeEditarPartido(partido, categoria, delegado) {
   return [partido.local, partido.visitante].some((item) => equipos.includes(normalizarTexto(item)));
 }
 
+async function guardarResultadoPartidoAutorizado(partidoId, puntosLocal, puntosVisitante, cargadoPor) {
+  return supabaseClient.rpc("cargar_resultado_partido", {
+    p_partido_id: partidoId,
+    p_puntos_local: puntosLocal,
+    p_puntos_visitante: puntosVisitante,
+    p_cargado_por: cargadoPor || null
+  });
+}
+
 function claveCachePublica(tipo, nombreCategoria) {
   return `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}_${tipo}_${slugify(nombreCategoria || "general")}`;
 }
@@ -4650,16 +4659,12 @@ async function guardarResultadoDelegado() {
 
   setStatus(status, "Guardando resultado...", "");
 
-  const { error } = await supabaseClient
-    .from("partidos")
-    .update({
-      puntos_local: pl,
-      puntos_visitante: pv,
-      estado_resultado: "jugado",
-      cargado_por: estado.delegado?.nombre || null,
-      cargado_en: new Date().toISOString()
-    })
-    .eq("id", partidoId);
+  const { error } = await guardarResultadoPartidoAutorizado(
+    partidoId,
+    pl,
+    pv,
+    estado.delegado?.nombre || null
+  );
 
   if (error) {
     setStatus(status, `No se pudo guardar: ${error.message}`, "error");
@@ -5428,16 +5433,7 @@ async function guardarResultadoAsociacion() {
 
   setStatus(status, "Guardando corrección...", "");
 
-  const { error } = await supabaseClient
-    .from("partidos")
-    .update({
-      puntos_local: pl,
-      puntos_visitante: pv,
-      estado_resultado: "jugado",
-      cargado_por: "ADMIN",
-      cargado_en: new Date().toISOString()
-    })
-    .eq("id", partidoId);
+  const { error } = await guardarResultadoPartidoAutorizado(partidoId, pl, pv, "ADMIN");
 
   if (error) {
     setStatus(status, `No se pudo guardar: ${error.message}`, "error");

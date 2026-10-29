@@ -2,6 +2,77 @@
 -- No habilita escritura de fixtures desde clientes: esa operación debe usar un
 -- flujo administrativo/RPC revisado por separado.
 
+create or replace function public.cargar_resultado_partido(
+  p_partido_id uuid,
+  p_puntos_local integer,
+  p_puntos_visitante integer,
+  p_cargado_por text default null
+)
+returns public.partidos
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_partido public.partidos;
+  v_autorizado boolean;
+begin
+  if p_puntos_local is null or p_puntos_visitante is null
+     or p_puntos_local < 0 or p_puntos_visitante < 0
+     or p_puntos_local = p_puntos_visitante then
+    raise exception 'Marcador normal invalido';
+  end if;
+
+  select p.* into v_partido
+  from public.partidos p
+  where p.id = p_partido_id;
+
+  if not found then
+    raise exception 'Partido inexistente';
+  end if;
+
+  select exists (
+    select 1
+    from public.app_user_permissions permission
+    join public.categorias category on category.id = v_partido.categoria_id
+    left join public.equipos home_team
+      on home_team.categoria_id = v_partido.categoria_id
+     and lower(home_team.nombre) = lower(v_partido.local)
+    left join public.equipos away_team
+      on away_team.categoria_id = v_partido.categoria_id
+     and lower(away_team.nombre) = lower(v_partido.visitante)
+    where permission.user_id = (select auth.uid())
+      and permission.categoria_id = v_partido.categoria_id
+      and permission.torneo_id = category.torneo_id
+      and (
+        (permission.can_correct_results and permission.equipo_id is null)
+        or (permission.can_load_results and permission.equipo_id in (home_team.id, away_team.id))
+        or (permission.can_correct_results and permission.equipo_id in (home_team.id, away_team.id))
+      )
+  ) into v_autorizado;
+
+  if not v_autorizado then
+    raise exception 'Usuario sin permiso para este partido';
+  end if;
+
+  update public.partidos
+  set puntos_local = p_puntos_local,
+      puntos_visitante = p_puntos_visitante,
+      estado_resultado = 'jugado',
+      cargado_por = p_cargado_por,
+      cargado_en = now()
+  where id = p_partido_id
+  returning * into v_partido;
+
+  return v_partido;
+end;
+$$;
+
+revoke all on function public.cargar_resultado_partido(uuid, integer, integer, text)
+  from public, anon, authenticated;
+grant execute on function public.cargar_resultado_partido(uuid, integer, integer, text)
+  to authenticated;
+
 -- El cliente solo puede cambiar los campos de resultado, nunca equipos,
 -- categoría, torneo, fecha, fase u otra metadata del partido.
 revoke insert, update, delete on public.partidos from public, anon, authenticated;
