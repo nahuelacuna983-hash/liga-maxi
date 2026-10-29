@@ -2,6 +2,8 @@
 -- No habilita escritura de fixtures desde clientes: esa operación debe usar un
 -- flujo administrativo/RPC revisado por separado.
 
+drop function if exists public.cargar_resultado_partido(uuid, integer, integer, text);
+
 create or replace function public.cargar_resultado_partido(
   p_partido_id uuid,
   p_puntos_local integer,
@@ -220,7 +222,9 @@ begin
     select 1
     from jsonb_to_recordset(p_partidos) as x(local text, visitante text, jornada integer, fecha date, libre text)
     where x.fecha is not null and exists (
-      select 1 from jsonb_array_elements_text(coalesce(v_categoria.fechas_bloqueadas, '[]'::jsonb)) blocked_date
+      select 1 from jsonb_array_elements_text(
+        coalesce(p_configuracion->'fechas_bloqueadas', v_categoria.fechas_bloqueadas, '[]'::jsonb)
+      ) blocked_date
       where blocked_date = x.fecha::text
     )
   ) then

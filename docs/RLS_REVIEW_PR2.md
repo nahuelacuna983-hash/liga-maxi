@@ -29,4 +29,6 @@ La publicación valida en base los equipos de la categoría, parejas duplicadas,
 
 `tools/rls-policy-smoke.cjs` verifica localmente la matriz estructural: anon sin escritura, delegado acotado, Asociación global explícita, usuario ligado por `auth.uid()`, campos de UPDATE limitados y ausencia de INSERT/DELETE cliente.
 
-No es una prueba RLS efectiva. Para cerrarla hace falta una branch/base aislada de Supabase con roles de prueba; crearla puede generar coste y no se realizó sin autorización.
+No es una prueba RLS efectiva. En esta ejecución se comprobó el entorno local: `docker`, `psql`, `supabase`, `pg_isready`, `initdb`, `postgres`, `podman` y WSL no están disponibles. Por lo tanto no fue posible levantar PostgreSQL local ni ejecutar la migración con roles ficticios. No se instalaron componentes del sistema ni se tocó Supabase remoto.
+
+La migración también elimina explícitamente la sobrecarga histórica `cargar_resultado_partido(uuid, integer, integer, text)` y valida las fechas bloqueadas de la configuración enviada, además de las fechas ya almacenadas. El siguiente paso para certificar RLS es ejecutar una copia sintética de esquema con PostgreSQL local o CI, con clientes anónimo, delegado propio, delegado ajeno y Asociación; los smoke actuales no sustituyen esa prueba.
