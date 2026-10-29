@@ -120,13 +120,13 @@ declare v_team uuid; v_torneo uuid; v_cat uuid; begin
 end $$;
 
 -- Fixture data: Association global, delegates A/B scoped, anonymous context.
-\set torneo '''00000000-0000-0000-0000-000000000001'''
-\set categoria '''00000000-0000-0000-0000-000000000011'''
-\set equipo_a '''00000000-0000-0000-0000-0000000000a1'''
-\set equipo_b '''00000000-0000-0000-0000-0000000000b1'''
-\set assoc '''00000000-0000-0000-0000-0000000000aa'''
-\set del_a '''00000000-0000-0000-0000-0000000000da'''
-\set del_b '''00000000-0000-0000-0000-0000000000db'''
+\set torneo 00000000-0000-0000-0000-000000000001
+\set categoria 00000000-0000-0000-0000-000000000011
+\set equipo_a 00000000-0000-0000-0000-0000000000a1
+\set equipo_b 00000000-0000-0000-0000-0000000000b1
+\set assoc 00000000-0000-0000-0000-0000000000aa
+\set del_a 00000000-0000-0000-0000-0000000000da
+\set del_b 00000000-0000-0000-0000-0000000000db
 insert into teams values(:'equipo_a'::uuid,:'torneo'::uuid,:'categoria'::uuid),(:'equipo_b'::uuid,:'torneo'::uuid,:'categoria'::uuid) on conflict do nothing;
 insert into app_users values(:'assoc'::uuid,'asociacion'),(:'del_a'::uuid,'delegado'),(:'del_b'::uuid,'delegado') on conflict do nothing;
 insert into app_user_permissions values
@@ -135,19 +135,19 @@ insert into app_user_permissions values
  (:'del_b'::uuid,:'torneo'::uuid,:'categoria'::uuid,:'equipo_b'::uuid,true,false,false,true,false);
 insert into team_players values('00000000-0000-0000-0000-0000000000a1',:'torneo'::uuid,:'categoria'::uuid,:'equipo_a'::uuid,'Jugador A',true,false,null),('00000000-0000-0000-0000-0000000000b1',:'torneo'::uuid,:'categoria'::uuid,:'equipo_b'::uuid,'Jugador B',true,false,null) on conflict do nothing;
 insert into player_documents values('00000000-0000-0000-0000-0000000000d1','00000000-0000-0000-0000-0000000000a1',:'equipo_a'::uuid,'pendiente',null,null,null,null),('00000000-0000-0000-0000-0000000000d2','00000000-0000-0000-0000-0000000000b1',:'equipo_b'::uuid,'pendiente',null,null,null,null) on conflict do nothing;
-insert into team_documents values('00000000-0000-0000-0000-0000000000td',:'equipo_a'::uuid,'pendiente',null,null,null) on conflict do nothing;
+insert into team_documents values('00000000-0000-0000-0000-0000000000cd',:'equipo_a'::uuid,'pendiente',null,null,null) on conflict do nothing;
 
 -- Helper de aserción y ejecución esperada/rechazada.
 create or replace function public._expect_reject(p_sql text) returns void language plpgsql as $$ begin execute p_sql; raise exception 'expected rejection'; exception when others then if sqlerrm='expected rejection' then raise; end if; end $$;
-set local role authenticated;
-set local app.auth_uid = :'del_a'; set local app.auth_role='authenticated';
+set role authenticated;
+set app.auth_uid = :'del_a'; set app.auth_role='authenticated';
 select public.mark_player_document_uploaded('00000000-0000-0000-0000-0000000000d1','spoof','a.pdf','a.pdf','application/pdf',1,current_date);
 select public.request_team_player_deactivation('00000000-0000-0000-0000-0000000000a1','spoof','request');
 do $$ begin perform public.review_player_document('00000000-0000-0000-0000-0000000000d2','aprobado','spoof','cross-team'); raise exception 'delegate cross-team should reject'; exception when others then if sqlerrm='delegate cross-team should reject' then raise; end if; end $$;
-set local app.auth_uid = :'assoc';
+set app.auth_uid = :'assoc';
 select public.review_player_document('00000000-0000-0000-0000-0000000000d2','aprobado','spoof','association review');
 select reviewed_by = :'assoc'::uuid as actor_derived from player_documents where id='00000000-0000-0000-0000-0000000000d2';
-set local role anon; set local app.auth_uid = '';
+set role anon; set app.auth_uid = ''; set app.auth_role = 'anon';
 do $$ begin perform public.review_player_document('00000000-0000-0000-0000-0000000000d1','aprobado','spoof','anon'); raise exception 'anon should reject'; exception when others then if sqlerrm='anon should reject' then raise; end if; end $$;
 select count(*) = 2 as no_partial_fixture_rows from team_players;
 
