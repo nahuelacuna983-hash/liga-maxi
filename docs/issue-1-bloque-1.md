@@ -74,3 +74,11 @@ La captura visual y la prueba de navegador real siguen bloqueadas en este entorn
 | Marcadores inválidos | `node tools/issue1-smoke.cjs` | OK | empate, negativo, NaN y vacío rechazados | No se inventaron límites máximos |
 | Consumidores `administrativo_sin_puntos` | `node tools/issue1-smoke.cjs` | OK aislado | tabla, mini tabla y etiqueta pública | Persistencia real no ejecutada |
 | Navegador headless | intento local | Bloqueado | Playwright/Edge no entregaron DOM/captura verificable | Requiere runner CI con navegador |
+
+## Revisión de autorización de Supabase
+
+La consulta read-only a `pg_policies` confirmó que la política vigente permite UPDATE a `anon,authenticated` con `qual=true` y `with_check=true`. Esto es un bloqueo de seguridad y no se corrige de forma segura desde JavaScript.
+
+Se agregó como propuesta no aplicada `supabase/migrations/20261029_restrict_partidos_write_by_permission.sql`. La migración limita INSERT/UPDATE a usuarios `authenticated`, exige `auth.uid()` y cruza `app_user_permissions` por torneo, categoría, equipo y `can_load_results`/`can_correct_results`. No se ejecutó contra ningún proyecto.
+
+La prueba local valida que la propuesta no concede acceso a `anon`, pero no sustituye su aplicación y verificación en una branch aislada de Supabase. Antes de publicar se debe probar una matriz de roles reales en esa branch y confirmar que las lecturas necesarias siguen funcionando.

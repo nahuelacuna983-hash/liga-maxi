@@ -8,6 +8,7 @@ const { createServer } = require('./smoke-server');
 const root = path.resolve(__dirname, '..');
 const appSource = fs.readFileSync(path.join(root, 'app_online.js'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'index_online.html'), 'utf8');
+const rlsProposal = fs.readFileSync(path.join(root, 'supabase', 'migrations', '20261029_restrict_partidos_write_by_permission.sql'), 'utf8');
 
 function extract(start, end) {
   const from = appSource.indexOf(`function ${start}`);
@@ -56,6 +57,10 @@ function testDelegateWriteGuard() {
   assert.equal(context.delegadoPuedeEditarPartido({ local: 'Equipo B', visitante: 'Equipo C' }, 'Maxi +35 A', delegado), false);
   assert.equal(context.delegadoPuedeEditarPartido({ local: 'Equipo A', visitante: 'Equipo B' }, 'Maxi +35 B', delegado), false);
   assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoDelegado'), appSource.indexOf('async function subirDocumentoDelegado')), /delegadoPuedeEditarPartido/);
+  assert.match(rlsProposal, /to authenticated/i);
+  assert.match(rlsProposal, /auth\.uid\(\)/i);
+  assert.match(rlsProposal, /p\.can_load_results or p\.can_correct_results/i);
+  assert.doesNotMatch(rlsProposal, /to anon/i);
 }
 
 function testFixtureAndPlayoffRules() {
