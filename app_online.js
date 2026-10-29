@@ -103,12 +103,11 @@ function delegadoPuedeEditarPartido(partido, categoria, delegado) {
   return [partido.local, partido.visitante].some((item) => equipos.includes(normalizarTexto(item)));
 }
 
-async function guardarResultadoPartidoAutorizado(partidoId, puntosLocal, puntosVisitante, cargadoPor) {
+async function guardarResultadoPartidoAutorizado(partidoId, puntosLocal, puntosVisitante) {
   return supabaseClient.rpc("cargar_resultado_partido", {
     p_partido_id: partidoId,
     p_puntos_local: puntosLocal,
-    p_puntos_visitante: puntosVisitante,
-    p_cargado_por: cargadoPor || null
+    p_puntos_visitante: puntosVisitante
   });
 }
 
@@ -4659,12 +4658,7 @@ async function guardarResultadoDelegado() {
 
   setStatus(status, "Guardando resultado...", "");
 
-  const { error } = await guardarResultadoPartidoAutorizado(
-    partidoId,
-    pl,
-    pv,
-    estado.delegado?.nombre || null
-  );
+  const { error } = await guardarResultadoPartidoAutorizado(partidoId, pl, pv);
 
   if (error) {
     setStatus(status, `No se pudo guardar: ${error.message}`, "error");
@@ -5433,7 +5427,7 @@ async function guardarResultadoAsociacion() {
 
   setStatus(status, "Guardando corrección...", "");
 
-  const { error } = await guardarResultadoPartidoAutorizado(partidoId, pl, pv, "ADMIN");
+  const { error } = await guardarResultadoPartidoAutorizado(partidoId, pl, pv);
 
   if (error) {
     setStatus(status, `No se pudo guardar: ${error.message}`, "error");
@@ -10053,6 +10047,30 @@ async function guardarFormatoCategoriaPublicadaPlanner(categoria, simulacion) {
   }
 }
 
+async function publicarFixtureCategoriaPlanner(categoria, simulacion, payload) {
+  const formato = simulacion?.formato || {};
+  const configuracion = {
+    estado: "publicada",
+    formato: formato.playoffsTexto || null,
+    playoffs: Number(formato.clasificados || 0) > 0,
+    clasificados: formato.clasificados || null,
+    dia_juego: simulacion.dia === "" || simulacion.dia == null ? null : Number(simulacion.dia),
+    fecha_inicio: simulacion.fechaInicio || null,
+    fecha_fin: simulacion.fechaFin || null,
+    frecuencia: simulacion.frecuencia || null,
+    fechas_bloqueadas: simulacion.fechasBloqueadas || [],
+    series_playoff: armarSeriesPlayoffCategoriaPlanner(formato)
+  };
+
+  const { error } = await supabaseClient.rpc("publicar_fixture_categoria", {
+    p_categoria_id: categoria.id,
+    p_partidos: payload,
+    p_configuracion: configuracion
+  });
+
+  if (error) throw new Error(error.message);
+}
+
 function armarPayloadFixtureSimulado(simulacion, categoriaId) {
   return (simulacion.fixture?.jornadas || []).flatMap((jornada) =>
     (jornada.partidos || []).map((partido) => ({
@@ -10268,16 +10286,7 @@ async function publicarFixtureSimuladoPlanner() {
     }
 
     const payload = armarPayloadFixtureSimulado(simulacion, categoria.id);
-    const { error } = await supabaseClient
-      .from("partidos")
-      .insert(payload);
-
-    if (error) {
-      setStatus(status, `No se pudo publicar el fixture: ${error.message}`, "error");
-      return;
-    }
-
-    await guardarFormatoCategoriaPublicadaPlanner(categoria, simulacion);
+    await publicarFixtureCategoriaPlanner(categoria, simulacion, payload);
 
     await cargarTorneoActivo();
     const categoriasActualizadas = await cargarCategorias();

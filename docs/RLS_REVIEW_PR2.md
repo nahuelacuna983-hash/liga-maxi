@@ -19,9 +19,9 @@ La migración propuesta, aún no aplicada, revoca INSERT/UPDATE/DELETE de client
 - Delegado: `can_load_results` y equipo asignado coincidente con local o visitante.
 - Asociación: `can_correct_results` explícito; alcance global solo con `equipo_id IS NULL`.
 
-Se impide editar permisos propios y escribir directamente tablas de delegados, relaciones o equipos. La creación de fixtures queda fuera del navegador hasta definir un RPC administrativo separado.
+Se impide editar permisos propios y escribir directamente tablas de delegados, relaciones o equipos. La creación de fixtures se concentra en un RPC administrativo separado con permiso global de Asociación.
 
-La aplicación ya no hace UPDATE directo para cargar/corregir resultados normales: Delegado y Asociación invocan `cargar_resultado_partido`. La RPC propuesta es `SECURITY INVOKER`, valida marcador no empatado, existencia del partido, `auth.uid()` y alcance de permisos, y solo actualiza campos de resultado.
+La aplicación ya no hace UPDATE directo para cargar/corregir resultados normales: Delegado y Asociación invocan `cargar_resultado_partido`. La RPC es `SECURITY DEFINER` con `search_path` fijo, valida marcador no empatado, existencia del partido, `auth.uid()` y alcance de permisos, y sólo actualiza campos de resultado. La publicación de fixture usa `publicar_fixture_categoria` en una transacción única.
 
 ## Pruebas preparadas
 

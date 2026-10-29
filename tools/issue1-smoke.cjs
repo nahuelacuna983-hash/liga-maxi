@@ -57,10 +57,15 @@ function testDelegateWriteGuard() {
   assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoDelegado'), appSource.indexOf('async function subirDocumentoDelegado')), /delegadoPuedeEditarPartido/);
   assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoDelegado'), appSource.indexOf('async function subirDocumentoDelegado')), /guardarResultadoPartidoAutorizado/);
   assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoAsociacion'), appSource.indexOf('async function resolverPartidoAdministrativamente')), /guardarResultadoPartidoAutorizado/);
+  assert.doesNotMatch(appSource.slice(appSource.indexOf('async function guardarResultadoDelegado'), appSource.indexOf('async function subirDocumentoDelegado')), /p_cargado_por/);
+  assert.doesNotMatch(appSource.slice(appSource.indexOf('async function guardarResultadoAsociacion'), appSource.indexOf('async function resolverPartidoAdministrativamente')), /p_cargado_por/);
   assert.match(rlsProposal, /to authenticated/i);
   assert.match(rlsProposal, /auth\.uid\(\)/i);
-  assert.match(rlsProposal, /p\.can_load_results and p\.equipo_id in/i);
-  assert.match(rlsProposal, /p\.can_correct_results and p\.equipo_id is null/i);
+  assert.match(rlsProposal, /permission\.can_load_results and permission\.equipo_id in/i);
+  assert.match(rlsProposal, /permission\.can_correct_results and permission\.equipo_id is null/i);
+  assert.match(rlsProposal, /create or replace function public\.publicar_fixture_categoria/i);
+  assert.match(rlsProposal, /grant execute on function public\.publicar_fixture_categoria\(uuid, jsonb, jsonb\)[\s\S]*to authenticated/i);
+  assert.match(appSource, /supabaseClient\.rpc\("publicar_fixture_categoria"/i);
   assert.doesNotMatch(rlsProposal, /to anon/i);
 }
 
