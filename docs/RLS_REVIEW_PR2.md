@@ -46,3 +46,5 @@ Se agregó `.github/workflows/rls-local.yml`, únicamente manual mediante `workf
 - eliminación de la sobrecarga RPC antigua.
 
 El workflow todavía no fue ejecutado. Comando equivalente en un PostgreSQL local: `psql -v ON_ERROR_STOP=1 -f tools/rls-local-test.sql`.
+
+Para ejecutarlo sin fusionar el PR: abrir **Actions → RLS local integration → Run workflow**, seleccionar la rama `codex/issue-1-bloque-1` y lanzar manualmente. La ejecución sólo usa el checkout de esa rama y un servicio PostgreSQL efímero de GitHub Actions; no requiere credenciales de Supabase ni modifica ningún remoto.

@@ -40,7 +40,7 @@ function assertPolicyMatrix() {
   assert.match(workflow, /postgres:16/i);
   assert.match(workflow, /rls-local-test\.sql/i);
   for (const role of ['anon', 'authenticated']) assert.match(localSql, new RegExp(`set role ${role}`, 'i'));
-  for (const marker of ['anon RPC accepted', 'delegate A touched B-C', 'delegate B corrected without permission', 'direct update accepted', 'blocked request was accepted', 'RLS_LOCAL_TEST_OK']) {
+  for (const marker of ['anon RPC accepted', 'delegate A touched B-C', 'delegate B corrected without permission', 'direct insert accepted', 'direct update accepted', 'blocked request was accepted', 'malicious fixture was accepted', 'arbitrary category state accepted', 'RLS_LOCAL_TEST_OK']) {
     assert.match(localSql, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
   }
 }

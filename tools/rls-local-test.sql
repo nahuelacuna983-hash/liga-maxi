@@ -126,6 +126,45 @@ do $$ begin
 end $$;
 reset role;
 
+-- Malicious fixture payloads are rejected by the database, not by the browser.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000aa', false);
+do $$
+declare
+  v_payload jsonb;
+  v_config jsonb := '{"estado":"publicada","fechas_bloqueadas":[]}'::jsonb;
+begin
+  for v_payload in
+    select '[{"local":"A","visitante":"Z","jornada":1,"fecha":"2027-01-03","libre":"C"}]'::jsonb
+    union all select '[{"local":"A","visitante":"B","jornada":1,"fecha":"2027-01-03","libre":"C"},{"local":"B","visitante":"A","jornada":1,"fecha":"2027-01-03","libre":null}]'::jsonb
+    union all select '[{"local":"A","visitante":"B","jornada":1,"fecha":"2027-01-03","libre":"B"}]'::jsonb
+  loop
+    begin
+      perform public.publicar_fixture_categoria('00000000-0000-0000-0000-000000000010', v_payload, v_config);
+      raise exception 'malicious fixture was accepted: %', v_payload;
+    exception when others then
+      if position('equipos fuera' in lower(sqlerrm)) = 0
+         and position('parejas duplicadas' in lower(sqlerrm)) = 0
+         and position('repite un equipo' in lower(sqlerrm)) = 0 then
+        raise;
+      end if;
+    end;
+  end loop;
+end $$;
+do $$ begin
+  begin
+    perform public.publicar_fixture_categoria(
+      '00000000-0000-0000-0000-000000000010',
+      '[{"local":"A","visitante":"B","jornada":1,"fecha":"2027-01-03","libre":"C"}]'::jsonb,
+      '{"estado":"borrador","fechas_bloqueadas":[]}'::jsonb
+    );
+    raise exception 'arbitrary category state accepted';
+  exception when others then
+    if position('estado de categoria' in lower(sqlerrm)) = 0 then raise; end if;
+  end;
+end $$;
+reset role;
+
 -- Load and correction matrix. Delegates are team-scoped; Association is global.
 insert into public.partidos (categoria_id, local, visitante, jornada, fecha, estado_resultado)
 values ('00000000-0000-0000-0000-000000000010', 'A', 'B', 1, '2027-02-01', 'pendiente'),
@@ -165,9 +204,22 @@ do $$ begin
 end $$;
 reset role;
 
+-- Association can correct an existing result and its audit identity comes from auth.jwt.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000ac', false);
+select set_config('request.jwt.claim.email', 'asociacion@test.invalid', false);
+select public.cargar_resultado_partido((select id from public.partidos where local='A' and visitante='B'), 81, 70);
+do $$ begin
+  if (select cargado_por from public.partidos where local='A' and visitante='B') <> 'asociacion@test.invalid' then
+    raise exception 'audit identity was not derived from auth';
+  end if;
+end $$;
+reset role;
+
 -- Direct UPDATE/INSERT/DELETE remain denied even for authenticated clients.
 set role authenticated;
 do $$ begin
+  begin insert into public.partidos(categoria_id, local, visitante) values ('00000000-0000-0000-0000-000000000010','X','Y'); raise exception 'direct insert accepted'; exception when insufficient_privilege then null; end;
   begin update public.partidos set puntos_local=99; raise exception 'direct update accepted'; exception when insufficient_privilege then null; end;
   begin delete from public.partidos; raise exception 'direct delete accepted'; exception when insufficient_privilege then null; end;
 end $$;
