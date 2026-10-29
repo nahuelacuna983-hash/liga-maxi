@@ -245,11 +245,14 @@ end $$;
 reset role;
 
 -- Administrative operations: Association may resolve and annul; delegate and anon may not.
+insert into public.partidos (categoria_id, local, visitante, jornada, fecha, estado_resultado)
+values ('00000000-0000-0000-0000-000000000010', 'C', 'A', 2, '2027-02-08', 'pendiente');
+
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a0', false);
 do $$ begin
   begin
-    perform public.resolver_partido_administrativamente((select id from public.partidos where local='B' and visitante='C'), 'local');
+    perform public.resolver_partido_administrativamente((select id from public.partidos where local='C' and visitante='A'), 'local');
     raise exception 'delegate resolved administratively';
   exception when others then
     if position('asociacion' in lower(sqlerrm)) = 0 then raise; end if;
@@ -269,19 +272,19 @@ reset role;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000aa', false);
 select set_config('request.jwt.claim.email', 'asociacion@test.invalid', false);
-select public.resolver_partido_administrativamente((select id from public.partidos where local='B' and visitante='C'), 'local');
+select public.resolver_partido_administrativamente((select id from public.partidos where local='C' and visitante='A'), 'local');
 do $$ begin
-  if (select estado_resultado from public.partidos where local='B' and visitante='C') <> 'resolucion_local'
-     or (select puntos_local from public.partidos where local='B' and visitante='C') <> 20
-     or (select puntos_visitante from public.partidos where local='B' and visitante='C') <> 0 then
+  if (select estado_resultado from public.partidos where local='C' and visitante='A') <> 'resolucion_local'
+     or (select puntos_local from public.partidos where local='C' and visitante='A') <> 20
+     or (select puntos_visitante from public.partidos where local='C' and visitante='A') <> 0 then
     raise exception 'administrative resolution is inconsistent';
   end if;
 end $$;
-select public.anular_resultado_partido((select id from public.partidos where local='B' and visitante='C'));
+select public.anular_resultado_partido((select id from public.partidos where local='C' and visitante='A'));
 do $$ begin
-  if (select estado_resultado from public.partidos where local='B' and visitante='C') <> 'pendiente'
-     or (select puntos_local from public.partidos where local='B' and visitante='C') is not null
-     or (select puntos_visitante from public.partidos where local='B' and visitante='C') is not null then
+  if (select estado_resultado from public.partidos where local='C' and visitante='A') <> 'pendiente'
+     or (select puntos_local from public.partidos where local='C' and visitante='A') is not null
+     or (select puntos_visitante from public.partidos where local='C' and visitante='A') is not null then
     raise exception 'administrative annulment is inconsistent';
   end if;
 end $$;
