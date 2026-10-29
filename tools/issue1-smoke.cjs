@@ -59,7 +59,8 @@ function testDelegateWriteGuard() {
   assert.match(appSource.slice(appSource.indexOf('async function guardarResultadoDelegado'), appSource.indexOf('async function subirDocumentoDelegado')), /delegadoPuedeEditarPartido/);
   assert.match(rlsProposal, /to authenticated/i);
   assert.match(rlsProposal, /auth\.uid\(\)/i);
-  assert.match(rlsProposal, /p\.can_load_results or p\.can_correct_results/i);
+  assert.match(rlsProposal, /p\.can_load_results and p\.equipo_id in/i);
+  assert.match(rlsProposal, /p\.can_correct_results and p\.equipo_id is null/i);
   assert.doesNotMatch(rlsProposal, /to anon/i);
 }
 

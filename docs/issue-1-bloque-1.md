@@ -82,3 +82,19 @@ La consulta read-only a `pg_policies` confirmó que la política vigente permite
 Se agregó como propuesta no aplicada `supabase/migrations/20261029_restrict_partidos_write_by_permission.sql`. La migración limita INSERT/UPDATE a usuarios `authenticated`, exige `auth.uid()` y cruza `app_user_permissions` por torneo, categoría, equipo y `can_load_results`/`can_correct_results`. No se ejecutó contra ningún proyecto.
 
 La prueba local valida que la propuesta no concede acceso a `anon`, pero no sustituye su aplicación y verificación en una branch aislada de Supabase. Antes de publicar se debe probar una matriz de roles reales en esa branch y confirmar que las lecturas necesarias siguen funcionando.
+
+## Corrección de riesgos RLS
+
+La revisión read-only posterior confirmó además políticas `ALL ... true` en `delegados`, `delegado_categorias` y `equipos`, y privilegios de escritura concedidos en `app_user_permissions`. La migración revisada ahora:
+
+- revoca INSERT/UPDATE/DELETE de `public`, `anon` y `authenticated` para resultados, permisos, delegados, relaciones de delegados y equipos;
+- deja a clientes autenticados solo los campos de marcador/estado/carga del partido;
+- exige `auth.uid()` y coincidencia de torneo/categoría/equipo;
+- permite alcance global únicamente cuando existe `can_correct_results` explícito y `equipo_id` nulo;
+- permite al Delegado solo `can_load_results` sobre un equipo que participa del partido;
+- impide que un usuario edite sus propios permisos;
+- no habilita INSERT de fixtures ni DELETE desde clientes.
+
+Se agregó `tools/rls-policy-smoke.cjs`, que verifica esta matriz contra el SQL sin conectarse ni escribir en Supabase. La prueba es estructural, no una sustitución de RLS real.
+
+El inventario y la revisión de amenazas quedan documentados en `docs/RLS_REVIEW_PR2.md`.
