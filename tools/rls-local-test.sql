@@ -91,7 +91,26 @@ end $$;
 
 -- Fixture publication: only global Association permission may pass.
 insert into public.app_user_permissions values
-  ('00000000-0000-0000-0000-0000000000aa', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000010', null, null, false, true, true);
+  ('00000000-0000-0000-0000-0000000000aa', '00000000-0000-0000-0000-000000000001', null, null, null, false, false, true),
+  ('00000000-0000-0000-0000-0000000000aa', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000010', null, null, false, true, false),
+  ('00000000-0000-0000-0000-0000000000ad', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000010', null, null, false, false, true);
+
+-- A category-scoped manager is not allowed to publish a tournament fixture.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000ad', false);
+do $$ begin
+  begin
+    perform public.publicar_fixture_categoria(
+      '00000000-0000-0000-0000-000000000010',
+      '[{"local":"A","visitante":"B","jornada":1,"fecha":"2027-01-01","libre":"C"}]'::jsonb,
+      '{"estado":"publicada","fechas_bloqueadas":[]}'::jsonb
+    );
+    raise exception 'category-scoped manager published fixture';
+  exception when others then
+    if position('permiso' in lower(sqlerrm)) = 0 then raise; end if;
+  end;
+end $$;
+reset role;
 
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000aa', false);
