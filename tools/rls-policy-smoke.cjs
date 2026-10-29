@@ -4,6 +4,8 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const migration = fs.readFileSync(path.join(root, 'supabase', 'migrations', '20261029_restrict_partidos_write_by_permission.sql'), 'utf8');
+const localSql = fs.readFileSync(path.join(root, 'tools', 'rls-local-test.sql'), 'utf8');
+const workflow = fs.readFileSync(path.join(root, '.github', 'workflows', 'rls-local.yml'), 'utf8');
 
 function assertPolicyMatrix() {
   assert.match(migration, /revoke insert, update, delete on public\.partidos from public, anon, authenticated/i);
@@ -34,6 +36,13 @@ function assertPolicyMatrix() {
   assert.match(migration, /create or replace function public\.publicar_fixture_categoria/i);
   assert.match(migration, /revoke insert, update, delete on public\.partidos from public, anon, authenticated/i);
   assert.doesNotMatch(migration, /for insert[\s\S]*to authenticated[\s\S]*with check \(\s*true\s*\)/i);
+  assert.match(workflow, /workflow_dispatch:/i);
+  assert.match(workflow, /postgres:16/i);
+  assert.match(workflow, /rls-local-test\.sql/i);
+  for (const role of ['anon', 'authenticated']) assert.match(localSql, new RegExp(`set role ${role}`, 'i'));
+  for (const marker of ['anon RPC accepted', 'delegate A touched B-C', 'delegate B corrected without permission', 'direct update accepted', 'blocked request was accepted', 'RLS_LOCAL_TEST_OK']) {
+    assert.match(localSql, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
+  }
 }
 
 assertPolicyMatrix();

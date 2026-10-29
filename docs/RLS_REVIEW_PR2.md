@@ -32,3 +32,17 @@ La publicación valida en base los equipos de la categoría, parejas duplicadas,
 No es una prueba RLS efectiva. En esta ejecución se comprobó el entorno local: `docker`, `psql`, `supabase`, `pg_isready`, `initdb`, `postgres`, `podman` y WSL no están disponibles. Por lo tanto no fue posible levantar PostgreSQL local ni ejecutar la migración con roles ficticios. No se instalaron componentes del sistema ni se tocó Supabase remoto.
 
 La migración también elimina explícitamente la sobrecarga histórica `cargar_resultado_partido(uuid, integer, integer, text)` y valida las fechas bloqueadas de la configuración enviada, además de las fechas ya almacenadas. El siguiente paso para certificar RLS es ejecutar una copia sintética de esquema con PostgreSQL local o CI, con clientes anónimo, delegado propio, delegado ajeno y Asociación; los smoke actuales no sustituyen esa prueba.
+
+## Ejecución preparada en CI
+
+Se agregó `.github/workflows/rls-local.yml`, únicamente manual mediante `workflow_dispatch`. Levanta PostgreSQL 16 como servicio efímero y ejecuta `tools/rls-local-test.sql`, que crea datos sintéticos, aplica la migración real y prueba:
+
+- anónimo sin EXECUTE ni escrituras directas;
+- Delegado A cargando su partido y rechazado frente a B-C;
+- Delegado B cargando inicialmente y rechazado al corregir sin capacidad;
+- Asociación publicando un fixture impar con equipo libre;
+- equipos ajenos, duplicados, fechas bloqueadas y estado inválido;
+- UPDATE/DELETE directo rechazado;
+- eliminación de la sobrecarga RPC antigua.
+
+El workflow todavía no fue ejecutado. Comando equivalente en un PostgreSQL local: `psql -v ON_ERROR_STOP=1 -f tools/rls-local-test.sql`.
