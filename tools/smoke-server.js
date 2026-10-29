@@ -13,8 +13,16 @@ const mime = {
   '.ico': 'image/x-icon',
 };
 
-const server = http.createServer((req, res) => {
-  const requestPath = decodeURIComponent((req.url || '/').split('?')[0]);
+function createServer() {
+  return http.createServer((req, res) => {
+    let requestPath;
+    try {
+      requestPath = decodeURIComponent((req.url || '/').split('?')[0]);
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Bad request');
+      return;
+    }
   const relative = requestPath === '/' ? 'index_online.html' : requestPath.replace(/^\/+/, '');
   const file = path.resolve(root, relative);
   if (!file.startsWith(root + path.sep)) {
@@ -31,10 +39,16 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream' });
     res.end(data);
   });
-});
+  });
+}
 
-server.listen(port, '127.0.0.1', () => {
-  process.stdout.write(`SMOKE_SERVER_READY ${port}\n`);
-});
+if (require.main === module) {
+  const server = createServer();
+  server.listen(port, '127.0.0.1', () => {
+    process.stdout.write(`SMOKE_SERVER_READY ${port}\n`);
+  });
 
-process.on('SIGTERM', () => server.close(() => process.exit(0)));
+  process.on('SIGTERM', () => server.close(() => process.exit(0)));
+}
+
+module.exports = { createServer };
