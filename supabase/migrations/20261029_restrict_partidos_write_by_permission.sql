@@ -27,7 +27,8 @@ begin
 
   select p.* into v_partido
   from public.partidos p
-  where p.id = p_partido_id;
+  where p.id = p_partido_id
+  for update;
 
   if not found then
     raise exception 'Partido inexistente';
@@ -75,10 +76,17 @@ begin
   select exists (
     select 1
     from public.app_user_permissions permission
+    left join public.equipos home_team
+      on home_team.categoria_id = v_partido.categoria_id
+     and lower(home_team.nombre) = lower(v_partido.local)
+    left join public.equipos away_team
+      on away_team.categoria_id = v_partido.categoria_id
+     and lower(away_team.nombre) = lower(v_partido.visitante)
     where permission.user_id = (select auth.uid())
       and permission.torneo_id = v_categoria.torneo_id
       and permission.categoria_id = v_partido.categoria_id
       and permission.can_correct_results
+      and (permission.equipo_id is null or permission.equipo_id in (home_team.id, away_team.id))
   ) into v_puede_corregir;
 
   if v_partido.estado_resultado is not null
@@ -151,6 +159,72 @@ begin
 
   if jsonb_typeof(p_partidos) <> 'array' or jsonb_array_length(p_partidos) = 0 then
     raise exception 'El fixture debe contener al menos un partido';
+  end if;
+  if jsonb_array_length(p_partidos) > 500 then
+    raise exception 'El fixture supera el limite de partidos';
+  end if;
+  if coalesce(p_configuracion->>'estado', 'publicada') not in ('publicada', 'activa') then
+    raise exception 'Estado de categoria no permitido';
+  end if;
+  if exists (
+    select 1
+    from jsonb_to_recordset(p_partidos) as x(local text, visitante text, jornada integer, fecha date, libre text)
+    where nullif(btrim(x.local), '') is null
+       or nullif(btrim(x.visitante), '') is null
+       or lower(btrim(x.local)) = lower(btrim(x.visitante))
+       or x.jornada is null
+       or x.jornada < 1
+  ) then
+    raise exception 'El fixture contiene partido invalido';
+  end if;
+  if exists (
+    select 1
+    from jsonb_to_recordset(p_partidos) as x(local text, visitante text, jornada integer, fecha date, libre text)
+    where not exists (
+      select 1 from public.equipos e
+      where e.categoria_id = p_categoria_id and lower(e.nombre) = lower(btrim(x.local))
+    )
+       or not exists (
+      select 1 from public.equipos e
+      where e.categoria_id = p_categoria_id and lower(e.nombre) = lower(btrim(x.visitante))
+    )
+       or (x.libre is not null and not exists (
+      select 1 from public.equipos e
+      where e.categoria_id = p_categoria_id and lower(e.nombre) = lower(btrim(x.libre))
+    ))
+  ) then
+    raise exception 'El fixture contiene equipos fuera de la categoria';
+  end if;
+  if exists (
+    select 1
+    from jsonb_to_recordset(p_partidos) as x(local text, visitante text, jornada integer, fecha date, libre text)
+    group by x.jornada, least(lower(btrim(x.local)), lower(btrim(x.visitante))), greatest(lower(btrim(x.local)), lower(btrim(x.visitante)))
+    having count(*) > 1
+  ) then
+    raise exception 'El fixture contiene parejas duplicadas';
+  end if;
+  if exists (
+    select 1 from (
+      select x.jornada, lower(btrim(x.local)) as equipo from jsonb_to_recordset(p_partidos) as x(local text, visitante text, jornada integer, fecha date, libre text)
+      union all
+      select x.jornada, lower(btrim(x.visitante)) from jsonb_to_recordset(p_partidos) as x(local text, visitante text, jornada integer, fecha date, libre text)
+      union all
+      select x.jornada, lower(btrim(x.libre)) from jsonb_to_recordset(p_partidos) as x(local text, visitante text, jornada integer, fecha date, libre text) where x.libre is not null
+    ) teams_per_round
+    group by jornada, equipo
+    having count(*) > 1
+  ) then
+    raise exception 'El fixture repite un equipo en la misma jornada';
+  end if;
+  if exists (
+    select 1
+    from jsonb_to_recordset(p_partidos) as x(local text, visitante text, jornada integer, fecha date, libre text)
+    where x.fecha is not null and exists (
+      select 1 from jsonb_array_elements_text(coalesce(v_categoria.fechas_bloqueadas, '[]'::jsonb)) blocked_date
+      where blocked_date = x.fecha::text
+    )
+  ) then
+    raise exception 'El fixture usa una fecha bloqueada';
   end if;
   if exists (select 1 from public.partidos where categoria_id = p_categoria_id) then
     raise exception 'La categoria ya tiene partidos cargados';

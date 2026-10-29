@@ -14,7 +14,7 @@ También se confirmó que `partidos` tiene `categoria_id`, nombres de equipos, t
 
 ## Riesgos corregidos en la propuesta
 
-La migración propuesta, aún no aplicada, revoca INSERT/UPDATE/DELETE de clientes y otorga UPDATE únicamente sobre los campos de resultado. La política de UPDATE exige `auth.uid()`, torneo/categoría coincidentes y:
+La migración propuesta, aún no aplicada, revoca INSERT/UPDATE/DELETE directos de clientes. Las RPC validan `auth.uid()`, torneo/categoría coincidentes y:
 
 - Delegado: `can_load_results` y equipo asignado coincidente con local o visitante.
 - Asociación: `can_correct_results` explícito; alcance global solo con `equipo_id IS NULL`.
@@ -22,6 +22,8 @@ La migración propuesta, aún no aplicada, revoca INSERT/UPDATE/DELETE de client
 Se impide editar permisos propios y escribir directamente tablas de delegados, relaciones o equipos. La creación de fixtures se concentra en un RPC administrativo separado con permiso global de Asociación.
 
 La aplicación ya no hace UPDATE directo para cargar/corregir resultados normales: Delegado y Asociación invocan `cargar_resultado_partido`. La RPC es `SECURITY DEFINER` con `search_path` fijo, valida marcador no empatado, existencia del partido, `auth.uid()` y alcance de permisos, y sólo actualiza campos de resultado. La publicación de fixture usa `publicar_fixture_categoria` en una transacción única.
+
+La publicación valida en base los equipos de la categoría, parejas duplicadas, repetición de equipos por jornada, fechas bloqueadas, jornadas inválidas, límite de volumen y estado de categoría. La corrección de un resultado bloquea la fila con `FOR UPDATE` y aplica el mismo alcance equipo/categoría que la carga inicial.
 
 ## Pruebas preparadas
 

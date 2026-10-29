@@ -12,6 +12,7 @@ function assertPolicyMatrix() {
   assert.match(migration, /permission\.user_id = \(select auth\.uid\(\)\)/i);
   assert.match(migration, /permission\.can_load_results and permission\.equipo_id in \(home_team\.id, away_team\.id\)/i);
   assert.match(migration, /permission\.can_correct_results and permission\.equipo_id is null/i);
+  assert.match(migration, /permission\.can_correct_results[\s\S]*permission\.equipo_id in \(home_team\.id, away_team\.id\)/i);
   assert.match(migration, /p\.user_id = auth\.uid\(\)/i);
   assert.match(migration, /p\.can_manage_tournaments is true/i);
   assert.match(migration, /revoke insert, update, delete on public\.app_user_permissions from public, anon, authenticated/i);
@@ -24,6 +25,12 @@ function assertPolicyMatrix() {
   assert.doesNotMatch(migration, /grant execute on function public\.cargar_resultado_partido[\s\S]*to anon/i);
   assert.match(migration, /estado_resultado is not null[\s\S]*se requiere permiso de correccion/i);
   assert.match(migration, /Fecha bloqueada/i);
+  assert.match(migration, /for update/i);
+  assert.match(migration, /El fixture contiene equipos fuera de la categoria/i);
+  assert.match(migration, /El fixture contiene parejas duplicadas/i);
+  assert.match(migration, /El fixture repite un equipo en la misma jornada/i);
+  assert.match(migration, /El fixture usa una fecha bloqueada/i);
+  assert.match(migration, /El fixture supera el limite de partidos/i);
   assert.match(migration, /create or replace function public\.publicar_fixture_categoria/i);
   assert.match(migration, /revoke insert, update, delete on public\.partidos from public, anon, authenticated/i);
   assert.doesNotMatch(migration, /for insert[\s\S]*to authenticated[\s\S]*with check \(\s*true\s*\)/i);
