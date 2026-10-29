@@ -66,6 +66,8 @@ function testDelegateWriteGuard() {
   assert.match(rlsProposal, /create or replace function public\.publicar_fixture_categoria/i);
   assert.match(rlsProposal, /grant execute on function public\.publicar_fixture_categoria\(uuid, jsonb, jsonb\)[\s\S]*to authenticated/i);
   assert.match(appSource, /supabaseClient\.rpc\("publicar_fixture_categoria"/i);
+  assert.match(appSource, /supabaseClient\.rpc\("resolver_partido_administrativamente"/i);
+  assert.match(appSource, /supabaseClient\.rpc\("anular_resultado_partido"/i);
   assert.doesNotMatch(rlsProposal, /to anon/i);
 }
 

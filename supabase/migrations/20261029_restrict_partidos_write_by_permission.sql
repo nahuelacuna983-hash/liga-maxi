@@ -264,6 +264,108 @@ revoke all on function public.publicar_fixture_categoria(uuid, jsonb, jsonb)
 grant execute on function public.publicar_fixture_categoria(uuid, jsonb, jsonb)
   to authenticated;
 
+create or replace function public.resolver_partido_administrativamente(
+  p_partido_id uuid,
+  p_ganador text
+)
+returns public.partidos
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_partido public.partidos;
+  v_categoria public.categorias;
+  v_torneo public.torneos;
+  v_autorizado boolean;
+begin
+  if auth.uid() is null then raise exception 'Se requiere una sesion autenticada'; end if;
+  if p_ganador not in ('local', 'visitante') then raise exception 'Ganador administrativo invalido'; end if;
+
+  select p.* into v_partido from public.partidos p where p.id = p_partido_id for update;
+  if not found then raise exception 'Partido inexistente'; end if;
+  select c.* into v_categoria from public.categorias c where c.id = v_partido.categoria_id;
+  select t.* into v_torneo from public.torneos t where t.id = v_categoria.torneo_id;
+  if v_categoria.estado not in ('publicada', 'activa') or v_torneo.estado <> 'activo' then
+    raise exception 'Categoria o torneo bloqueado';
+  end if;
+  if v_partido.estado_resultado is not null and v_partido.estado_resultado <> 'pendiente' then
+    raise exception 'El partido ya tiene resultado';
+  end if;
+
+  select exists (
+    select 1 from public.app_user_permissions permission
+    where permission.user_id = auth.uid()
+      and permission.torneo_id = v_categoria.torneo_id
+      and permission.categoria_id = v_partido.categoria_id
+      and permission.equipo_id is null
+      and permission.can_correct_results is true
+  ) into v_autorizado;
+  if not v_autorizado then raise exception 'Usuario sin permiso de Asociacion'; end if;
+
+  update public.partidos
+  set puntos_local = case when p_ganador = 'local' then 20 else 0 end,
+      puntos_visitante = case when p_ganador = 'visitante' then 20 else 0 end,
+      estado_resultado = case when p_ganador = 'local' then 'resolucion_local' else 'resolucion_visitante' end,
+      cargado_por = coalesce(auth.jwt()->>'email', auth.uid()::text),
+      cargado_en = now()
+  where id = p_partido_id
+  returning * into v_partido;
+  return v_partido;
+end;
+$$;
+
+create or replace function public.anular_resultado_partido(p_partido_id uuid)
+returns public.partidos
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_partido public.partidos;
+  v_categoria public.categorias;
+  v_torneo public.torneos;
+  v_autorizado boolean;
+begin
+  if auth.uid() is null then raise exception 'Se requiere una sesion autenticada'; end if;
+  select p.* into v_partido from public.partidos p where p.id = p_partido_id for update;
+  if not found then raise exception 'Partido inexistente'; end if;
+  select c.* into v_categoria from public.categorias c where c.id = v_partido.categoria_id;
+  select t.* into v_torneo from public.torneos t where t.id = v_categoria.torneo_id;
+  if v_categoria.estado not in ('publicada', 'activa') or v_torneo.estado <> 'activo' then
+    raise exception 'Categoria o torneo bloqueado';
+  end if;
+  if v_partido.estado_resultado not in ('jugado', 'resolucion_local', 'resolucion_visitante', 'administrativo_sin_puntos') then
+    raise exception 'El partido no tiene un resultado anulable';
+  end if;
+
+  select exists (
+    select 1 from public.app_user_permissions permission
+    where permission.user_id = auth.uid()
+      and permission.torneo_id = v_categoria.torneo_id
+      and permission.categoria_id = v_partido.categoria_id
+      and permission.equipo_id is null
+      and permission.can_correct_results is true
+  ) into v_autorizado;
+  if not v_autorizado then raise exception 'Usuario sin permiso de Asociacion'; end if;
+
+  update public.partidos
+  set puntos_local = null,
+      puntos_visitante = null,
+      estado_resultado = 'pendiente',
+      cargado_por = coalesce(auth.jwt()->>'email', auth.uid()::text),
+      cargado_en = now()
+  where id = p_partido_id
+  returning * into v_partido;
+  return v_partido;
+end;
+$$;
+
+revoke all on function public.resolver_partido_administrativamente(uuid, text) from public, anon, authenticated;
+grant execute on function public.resolver_partido_administrativamente(uuid, text) to authenticated;
+revoke all on function public.anular_resultado_partido(uuid) from public, anon, authenticated;
+grant execute on function public.anular_resultado_partido(uuid) to authenticated;
+
 -- El cliente solo puede cambiar los campos de resultado, nunca equipos,
 -- categoría, torneo, fecha, fase u otra metadata del partido.
 revoke insert, update, delete on public.partidos from public, anon, authenticated;

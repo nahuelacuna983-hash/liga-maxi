@@ -6,7 +6,7 @@ Fecha de corte: 29/10/2026. Esta revisión es de sólo lectura. No se ejecutó n
 
 El workflow `RLS local integration #1` demuestra que la migración funciona en el esquema sintético para la matriz cubierta. No alcanza para declarar compatible toda la aplicación: existen dos recorridos actuales de Asociación que todavía hacen `UPDATE` directo sobre `partidos` y quedarían bloqueados por la migración.
 
-**Conclusión: PR #2 bloqueado para fusionar** hasta resolver esos recorridos y repetir la matriz SQL con ellos.
+**Conclusión provisional:** los dos recorridos fueron corregidos en la rama posterior a este informe. El PR sigue bloqueado hasta repetir la matriz SQL real con las nuevas RPCs.
 
 ## Compatible verificado
 
@@ -18,21 +18,21 @@ El workflow `RLS local integration #1` demuestra que la migración funciona en e
 | Gestión documental y jugadores | La aplicación usa RPCs (`add_team_player`, `mark_player_document_uploaded`, `review_*`, `deactivate_team_player`) y no INSERT/UPDATE directo en las tablas auditadas | No afectada directamente; las RPCs propias requieren prueba separada |
 | `app_user_permissions` | La aplicación lee `get_current_app_user_permissions`; no escribe la tabla | Compatible con el revoke de escritura directo |
 
-## Riesgo confirmado
+## Riesgo confirmado y corrección aplicada
 
 ### Resolución administrativa
 
 - **Archivo/función:** `app_online.js:5453`, `resolverPartidoAdministrativamente`.
 - **Operación:** `from("partidos").update(...)` con `resolucion_local` o `resolucion_visitante`.
-- **Impacto:** la migración revoca INSERT/UPDATE/DELETE directos en `partidos` (`20261029_restrict_partidos_write_by_permission.sql:269`). El botón de resolución administrativa fallará aunque el usuario sea Asociación.
-- **Corrección propuesta:** RPC administrativa separada, por ejemplo `resolver_partido_administrativamente`, con autorización global `can_correct_results`, `FOR UPDATE`, bloqueo de categoría/fecha y estado permitido; el cliente debe invocar sólo esa RPC.
+- **Impacto confirmado antes de la corrección:** la migración revoca INSERT/UPDATE/DELETE directos en `partidos` (`20261029_restrict_partidos_write_by_permission.sql:269`).
+- **Corrección aplicada en la rama:** `resolver_partido_administrativamente`, con autorización global `can_correct_results`, `FOR UPDATE`, validación de categoría/torneo/estado y auditoría derivada de JWT. `app_online.js` invoca la RPC.
 
 ### Anulación de resultado
 
 - **Archivo/función:** `app_online.js:5515`, `anularResultadoAsociacion`.
 - **Operación:** `from("partidos").update(...)` para volver a `pendiente`.
-- **Impacto:** mismo bloqueo por revocación de UPDATE directo.
-- **Corrección propuesta:** RPC `anular_resultado_partido`, con permiso global de Asociación, bloqueo de fila y auditoría derivada de `auth.uid()`/JWT.
+- **Impacto confirmado antes de la corrección:** mismo bloqueo por revocación de UPDATE directo.
+- **Corrección aplicada en la rama:** `anular_resultado_partido`, con permiso global de Asociación, bloqueo de fila, estados anulables y auditoría derivada de JWT. `app_online.js` invoca la RPC.
 
 ### Función de actualización de categoría
 
@@ -65,10 +65,10 @@ El workflow de `main` incluye el input `ref` y permite ejecutar el SQL del PR so
 - `delegados`, `delegado_categorias`, `app_user_permissions`: no hay escrituras directas detectadas en `app_online.js`; se accede mediante RPC/vista.
 - Tablas de documentación y jugadores: las escrituras observadas son RPC, no operaciones directas de las tablas protegidas por esta migración.
 
-## Recomendación
+## Recomendación actualizada
 
 1. No fusionar todavía.
-2. Implementar las dos RPCs administrativas para resolución y anulación, y reemplazar los dos UPDATE directos.
-3. Ampliar el workflow SQL para probar ambas RPCs y las RPCs documentales con delegado propio/ajeno.
-4. Repetir la prueba en CI y revisar el propietario/privilegios efectivos de las funciones.
+2. Ejecutar nuevamente `RLS local integration` sobre `codex/issue-1-bloque-1`.
+3. Verificar que la nueva matriz cubra resolución, anulación, delegado/anónimo rechazados y ausencia de cambios parciales.
+4. Revisar el propietario/privilegios efectivos de las funciones y ampliar después la matriz a las RPCs documentales.
 

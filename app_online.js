@@ -5480,16 +5480,10 @@ async function resolverPartidoAdministrativamente(ganador) {
 
   setStatus(status, "Guardando resolucion administrativa...", "");
 
-  const { error } = await supabaseClient
-    .from("partidos")
-    .update({
-      puntos_local: ganaLocal ? 20 : 0,
-      puntos_visitante: ganaLocal ? 0 : 20,
-      estado_resultado: ganaLocal ? "resolucion_local" : "resolucion_visitante",
-      cargado_por: "ADMIN - RESOLUCION",
-      cargado_en: new Date().toISOString()
-    })
-    .eq("id", partidoId);
+  const { error } = await supabaseClient.rpc("resolver_partido_administrativamente", {
+    p_partido_id: partidoId,
+    p_ganador: ganador
+  });
 
   if (error) {
     setStatus(status, `No se pudo guardar la resolucion: ${error.message}`, "error");
@@ -5537,16 +5531,9 @@ async function anularResultadoAsociacion() {
 
   setStatus(status, "Anulando resultado...", "");
 
-  const { error } = await supabaseClient
-    .from("partidos")
-    .update({
-      puntos_local: null,
-      puntos_visitante: null,
-      estado_resultado: "pendiente",
-      cargado_por: "ADMIN - ANULADO",
-      cargado_en: new Date().toISOString()
-    })
-    .eq("id", partidoId);
+  const { error } = await supabaseClient.rpc("anular_resultado_partido", {
+    p_partido_id: partidoId
+  });
 
   if (error) {
     setStatus(status, `No se pudo anular: ${error.message}`, "error");

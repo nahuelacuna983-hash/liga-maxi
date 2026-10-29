@@ -91,7 +91,7 @@ end $$;
 
 -- Fixture publication: only global Association permission may pass.
 insert into public.app_user_permissions values
-  ('00000000-0000-0000-0000-0000000000aa', '00000000-0000-0000-0000-000000000001', null, null, null, false, false, true);
+  ('00000000-0000-0000-0000-0000000000aa', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000010', null, null, false, true, true);
 
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000aa', false);
@@ -222,6 +222,49 @@ do $$ begin
   begin insert into public.partidos(categoria_id, local, visitante) values ('00000000-0000-0000-0000-000000000010','X','Y'); raise exception 'direct insert accepted'; exception when insufficient_privilege then null; end;
   begin update public.partidos set puntos_local=99; raise exception 'direct update accepted'; exception when insufficient_privilege then null; end;
   begin delete from public.partidos; raise exception 'direct delete accepted'; exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+
+-- Administrative operations: Association may resolve and annul; delegate and anon may not.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a0', false);
+do $$ begin
+  begin
+    perform public.resolver_partido_administrativamente((select id from public.partidos where local='B' and visitante='C'), 'local');
+    raise exception 'delegate resolved administratively';
+  exception when others then
+    if position('asociacion' in lower(sqlerrm)) = 0 then raise; end if;
+  end;
+end $$;
+reset role;
+
+set role anon;
+do $$ begin
+  begin
+    perform public.anular_resultado_partido((select id from public.partidos where local='A' and visitante='B'));
+    raise exception 'anon annul accepted';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000aa', false);
+select set_config('request.jwt.claim.email', 'asociacion@test.invalid', false);
+select public.resolver_partido_administrativamente((select id from public.partidos where local='B' and visitante='C'), 'local');
+do $$ begin
+  if (select estado_resultado from public.partidos where local='B' and visitante='C') <> 'resolucion_local'
+     or (select puntos_local from public.partidos where local='B' and visitante='C') <> 20
+     or (select puntos_visitante from public.partidos where local='B' and visitante='C') <> 0 then
+    raise exception 'administrative resolution is inconsistent';
+  end if;
+end $$;
+select public.anular_resultado_partido((select id from public.partidos where local='B' and visitante='C'));
+do $$ begin
+  if (select estado_resultado from public.partidos where local='B' and visitante='C') <> 'pendiente'
+     or (select puntos_local from public.partidos where local='B' and visitante='C') is not null
+     or (select puntos_visitante from public.partidos where local='B' and visitante='C') is not null then
+    raise exception 'administrative annulment is inconsistent';
+  end if;
 end $$;
 reset role;
 

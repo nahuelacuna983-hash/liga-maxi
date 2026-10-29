@@ -34,13 +34,17 @@ function assertPolicyMatrix() {
   assert.match(migration, /El fixture usa una fecha bloqueada/i);
   assert.match(migration, /El fixture supera el limite de partidos/i);
   assert.match(migration, /create or replace function public\.publicar_fixture_categoria/i);
+  assert.match(migration, /create or replace function public\.resolver_partido_administrativamente/i);
+  assert.match(migration, /create or replace function public\.anular_resultado_partido/i);
+  assert.match(migration, /grant execute on function public\.resolver_partido_administrativamente\(uuid, text\)[\s\S]*to authenticated/i);
+  assert.match(migration, /grant execute on function public\.anular_resultado_partido\(uuid\)[\s\S]*to authenticated/i);
   assert.match(migration, /revoke insert, update, delete on public\.partidos from public, anon, authenticated/i);
   assert.doesNotMatch(migration, /for insert[\s\S]*to authenticated[\s\S]*with check \(\s*true\s*\)/i);
   assert.match(workflow, /workflow_dispatch:/i);
   assert.match(workflow, /postgres:16/i);
   assert.match(workflow, /rls-local-test\.sql/i);
   for (const role of ['anon', 'authenticated']) assert.match(localSql, new RegExp(`set role ${role}`, 'i'));
-  for (const marker of ['anon RPC accepted', 'delegate A touched B-C', 'delegate B corrected without permission', 'direct insert accepted', 'direct update accepted', 'blocked request was accepted', 'malicious fixture was accepted', 'arbitrary category state accepted', 'RLS_LOCAL_TEST_OK']) {
+  for (const marker of ['anon RPC accepted', 'delegate A touched B-C', 'delegate B corrected without permission', 'direct insert accepted', 'direct update accepted', 'delegate resolved administratively', 'anon annul accepted', 'blocked request was accepted', 'malicious fixture was accepted', 'arbitrary category state accepted', 'RLS_LOCAL_TEST_OK']) {
     assert.match(localSql, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
   }
 }
