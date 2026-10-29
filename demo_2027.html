@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Liga Maxi 2027 | Pruebas</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: #f4f6f8; }
+    .demo-shell { max-width: 1180px; margin: 0 auto; padding: 28px 20px 48px; }
+    .demo-banner { background: #16324f; color: #fff; padding: 18px 22px; border-radius: 8px; margin-bottom: 18px; }
+    .demo-banner h1 { margin: 0 0 6px; font-size: 1.55rem; }
+    .demo-banner p { margin: 0; opacity: .88; }
+    .demo-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0; }
+    .demo-toolbar button { cursor: pointer; border: 1px solid #b8c4cf; background: #fff; border-radius: 6px; padding: 10px 14px; font-weight: 700; }
+    .demo-toolbar button[aria-pressed="true"] { background: #1677a8; color: #fff; border-color: #1677a8; }
+    .demo-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 18px; }
+    .demo-card { background: #fff; border: 1px solid #d8e0e7; border-radius: 8px; padding: 18px; box-shadow: 0 2px 8px #16324f12; }
+    .demo-card h2 { margin-top: 0; font-size: 1.2rem; }
+    .demo-table { width: 100%; border-collapse: collapse; }
+    .demo-table th, .demo-table td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #e5e9ed; }
+    .demo-table th { color: #486174; font-size: .9rem; }
+    .demo-result { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid #e5e9ed; }
+    .demo-result strong { display: block; }
+    .demo-result small { color: #607383; }
+    .demo-empty { color: #607383; padding: 12px 0; }
+    .demo-footer { color: #607383; font-size: .9rem; margin-top: 20px; }
+    @media (max-width: 800px) { .demo-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="demo-shell" data-demo="liga-maxi-2027">
+    <section class="demo-banner">
+      <h1>LIGA MAXI 2027 — PRUEBAS</h1>
+      <p>Demostración local con datos sintéticos. Sin Supabase, sin escrituras remotas y sin credenciales.</p>
+    </section>
+    <nav class="demo-toolbar" aria-label="Vistas de demostración">
+      <button type="button" data-view="fixture" aria-pressed="true">Fixture</button>
+      <button type="button" data-view="tabla" aria-pressed="false">Tabla</button>
+      <button type="button" data-view="resultados" aria-pressed="false">Resultados</button>
+    </nav>
+    <section class="demo-grid">
+      <article class="demo-card" id="demo-main-panel"></article>
+      <aside class="demo-card">
+        <h2>Entorno</h2>
+        <p><strong>Torneo:</strong> Apertura de prueba 2027</p>
+        <p><strong>Categoría:</strong> Maxi +35 A</p>
+        <p><strong>Fuente:</strong> datos sintéticos locales</p>
+        <p id="demo-status" role="status">Listo para navegar.</p>
+      </aside>
+    </section>
+    <p class="demo-footer">Esta versión no representa habilitaciones ni decisiones administrativas reales.</p>
+  </main>
+  <script src="demo_2027.js"></script>
+</body>
+</html>
