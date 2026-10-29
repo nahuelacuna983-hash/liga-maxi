@@ -143,13 +143,37 @@ set role authenticated;
 set app.auth_uid = :'del_a'; set app.auth_role='authenticated';
 select public.mark_player_document_uploaded('00000000-0000-0000-0000-0000000000d1','spoof','a.pdf','a.pdf','application/pdf',1,current_date);
 select public.request_team_player_deactivation('00000000-0000-0000-0000-0000000000a1','spoof','request');
-do $$ begin perform public.review_player_document('00000000-0000-0000-0000-0000000000d2','aprobado','spoof','cross-team'); raise exception 'delegate cross-team should reject'; exception when others then if sqlerrm='delegate cross-team should reject' then raise; end if; end $$;
+do $$ begin
+  perform public.review_player_document('00000000-0000-0000-0000-0000000000d2','aprobado','spoof','cross-team');
+  raise exception 'delegate cross-team should reject';
+exception when others then
+  if sqlerrm = 'delegate cross-team should reject' then raise; end if;
+  if sqlerrm <> 'not authorized' then raise exception 'unexpected delegate failure: %', sqlerrm; end if;
+end $$;
 set app.auth_uid = :'assoc';
 select public.review_player_document('00000000-0000-0000-0000-0000000000d2','aprobado','spoof','association review');
-select reviewed_by = :'assoc'::uuid as actor_derived from player_documents where id='00000000-0000-0000-0000-0000000000d2';
+reset role;
+reset app.auth_uid;
+reset app.auth_role;
+do $$ begin
+  if not exists (select 1 from player_documents where id='00000000-0000-0000-0000-0000000000d2' and reviewed_by = '00000000-0000-0000-0000-0000000000aa'::uuid and status = 'aprobado') then
+    raise exception 'association audit assertion failed';
+  end if;
+end $$;
 set role anon; set app.auth_uid = ''; set app.auth_role = 'anon';
-do $$ begin perform public.review_player_document('00000000-0000-0000-0000-0000000000d1','aprobado','spoof','anon'); raise exception 'anon should reject'; exception when others then if sqlerrm='anon should reject' then raise; end if; end $$;
-select count(*) = 2 as no_partial_fixture_rows from team_players;
+do $$ begin
+  perform public.review_player_document('00000000-0000-0000-0000-0000000000d1','aprobado','spoof','anon');
+  raise exception 'anon should reject';
+exception when others then
+  if sqlerrm = 'anon should reject' then raise; end if;
+  if sqlerrm <> 'not authorized' then raise exception 'unexpected anonymous failure: %', sqlerrm; end if;
+end $$;
+reset role;
+do $$ begin
+  if (select count(*) from team_players) <> 2 then raise exception 'partial player mutation detected'; end if;
+  if (select status from player_documents where id='00000000-0000-0000-0000-0000000000d1') <> 'cargado' then raise exception 'anonymous attempt changed document'; end if;
+  if (select status from player_documents where id='00000000-0000-0000-0000-0000000000d2') <> 'aprobado' then raise exception 'association result not persisted'; end if;
+end $$;
 
 -- Catálogo de seguridad del arnés: todas SECURITY DEFINER, search_path fijo, EXECUTE público revocado.
 select p.proname, p.prosecdef, p.proconfig, r.rolname as owner
