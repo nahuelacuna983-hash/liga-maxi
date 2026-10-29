@@ -23,7 +23,8 @@
   }
 
   function renderTable() {
-    const rows = Demo2027Rules.calculateTable(teams, matches).map((team, index) => `<tr><td>${index + 1}</td><td>${team.name}</td><td>${team.pj}</td><td>${team.pts}</td><td>${team.pf - team.pc > 0 ? "+" : ""}${team.pf - team.pc}</td></tr>`).join("");
+    const sportMatches = matches.map((match) => ({ local: teamName(match.home), visitante: teamName(match.away), puntos_local: match.hs, puntos_visitante: match.as, estado_resultado: match.state === "jugado" ? "jugado" : "pendiente" }));
+    const rows = Demo2027Sports.calcularTabla(sportMatches).map((team, index) => `<tr><td>${index + 1}</td><td>${team.equipo}</td><td>${team.pj}</td><td>${team.pg}</td><td>${team.pp}</td><td>${team.pf}</td><td>${team.pc}</td><td>${team.dif > 0 ? "+" : ""}${team.dif}</td><td>${team.pts}</td></tr>`).join("");
     $("#demo-main-panel").innerHTML = `<h2>Tabla de posiciones</h2><table class="demo-table"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>Pts</th><th>DIF</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
