@@ -23,7 +23,7 @@
   }
   function calcularMiniTablaOlimpica(equipos, partidos) {
     const selected = new Set(equipos); const mini = {};
-    equipos.forEach((equipo) => { mini[equipo] = { pts: 0, pf: 0, pc: 0, dif: 0 }; });
+    equipos.forEach((equipo) => { mini[equipo] = { pg: 0, pp: 0, pts: 0, pf: 0, pc: 0, dif: 0 }; });
     partidos.forEach((partido) => {
       if (!selected.has(partido.local) || !selected.has(partido.visitante) || !tieneResultado(partido)) return;
       mini[partido.local].pf += partido.puntos_local; mini[partido.local].pc += partido.puntos_visitante;
@@ -33,7 +33,7 @@
       if (esAdministrativoSinPuntos(partido)) return;
       if (esResolucionAdministrativa(partido)) return;
     });
-    Object.values(mini).forEach((team) => { team.dif = team.pf - team.pc; });
+    Object.values(mini).forEach((team) => { team.dif = team.pf - team.pc; delete team.pg; delete team.pp; });
     return mini;
   }
   function compare(a, b, all, partidos) {

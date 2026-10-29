@@ -14,6 +14,13 @@ const table = sports.calcularTabla(tripleTie);
 assert.deepStrictEqual(table.map((team) => team.pts), [3, 3, 3]);
 assert.deepStrictEqual(table.map((team) => team.equipo), ["Universal", "Banco Provincia", "Estrella de Berisso"]);
 
+const historicTripleTie = [
+  { local: "Banco Provincia", visitante: "Estrella de Berisso", puntos_local: 53, puntos_visitante: 62, estado_resultado: "jugado" },
+  { local: "Banco Provincia", visitante: "Universal", puntos_local: 57, puntos_visitante: 40, estado_resultado: "jugado" },
+  { local: "Estrella de Berisso", visitante: "Universal", puntos_local: 44, puntos_visitante: 56, estado_resultado: "jugado" },
+];
+assert.deepStrictEqual(sports.calcularTabla(historicTripleTie).map((team) => team.equipo), ["Banco Provincia", "Estrella de Berisso", "Universal"]);
+
 const admin = sports.calcularTabla([{ local: "A", visitante: "B", puntos_local: 0, puntos_visitante: 0, estado_resultado: "administrativo_sin_puntos" }]);
 assert.deepStrictEqual(admin.map((team) => [team.pj, team.pg, team.pp, team.pts]), [[1, 0, 0, 0], [1, 0, 0, 0]]);
 assert.strictEqual(sports.ganadorPartidoPlayoff({ local: "A", visitante: "B", puntos_local: 80, puntos_visitante: 72 }), "A");

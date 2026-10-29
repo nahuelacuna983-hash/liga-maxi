@@ -28,6 +28,12 @@ Prueba de reglas sin navegador:
 node tests/demo-2027-sports.cjs
 ```
 
+Equivalencia contra las funciones originales, sin crear cliente Supabase:
+
+```powershell
+node tests/equivalence-app-sports.cjs
+```
+
 ## Reutilización de lógica real
 
 La aplicación existente concentra `calcularTabla(partidos)`, `calcularMiniTablaOlimpica`, `ganadorPartidoPlayoff` y `ganadorSeriePlayoff` en `app_online.js`, pero ese archivo inicializa el cliente Supabase al cargarse. La demo no lo importa para evitar conexiones accidentales. `demo_2027_sports.js` es un módulo compatible y auditable para esta etapa; la integración siguiente debe extraer las funciones puras reales desde `app_online.js` o convertirlas en módulos compartidos, sin duplicar reglas.
