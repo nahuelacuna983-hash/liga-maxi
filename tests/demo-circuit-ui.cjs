@@ -4,6 +4,7 @@ const html = fs.readFileSync("demo_circuito_2027.html", "utf8");
 const js = fs.readFileSync("demo_circuito_2027.js", "utf8");
 const provider = fs.readFileSync("demo_2027_provider.js", "utf8");
 for (const view of ["association", "date", "delegate", "public"]) assert.match(html, new RegExp(`data-view="${view}"`));
+assert.match(js, /\["inicio", "operacion", "documentacion", "torneo", "programacion", "permisos"\]/);
 assert.match(provider, /class SyntheticDataProvider/);
 assert.match(js, /new SyntheticDataProvider/);
 assert.doesNotMatch(js, /supabase|fetch\(/i);

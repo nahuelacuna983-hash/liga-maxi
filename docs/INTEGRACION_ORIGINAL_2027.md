@@ -4,7 +4,7 @@
 
 La aplicación original (`index_online.html`, `app_online.js`, `style.css`) contiene las vistas públicas `Público`, `Fecha`, `Delegados` y `Asociación`. Asociación organiza paneles de Inicio, Competencia, Documentación, Torneos, Programación y Administración, además de subpaneles de auditoría, habilitados, informes, cierres y uso.
 
-La demo 2027 mantiene el recorrido público de cuatro vistas y reutiliza `style.css`, pero su Asociación es todavía un panel sintético reducido. No carga los seis paneles originales ni ejecuta operaciones remotas.
+La demo 2027 mantiene el recorrido público de cuatro vistas, reutiliza `style.css` y ahora presenta los seis paneles de Asociación. Competencia y Programación son funcionales con datos sintéticos; Documentación, Torneos y Administración están presentes como pendientes explícitos y no ejecutan operaciones remotas.
 
 ## Contrato de adaptación
 
