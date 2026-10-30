@@ -5,7 +5,7 @@ const Provider = require('../demo_2027_provider.js');
 const source = fs.readFileSync('demo_asociacion_2027.js', 'utf8');
 assert.match(source, /provider\.getMatches\(selectedCategoryId\(\)\)/);
 assert.match(source, /El torneo activo no tiene categoría o fixture generado/);
-assert.doesNotMatch(source, /renderCompetition\(\).*currentFixture\.length/);
+assert.doesNotMatch(source, /function renderCompetition\(\) \{[^}]*currentFixture\.length/);
 
 const p = new Provider();
 const aperture = p.activeTournamentId;
