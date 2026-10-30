@@ -14,6 +14,7 @@ insert into lm_category_teams values ('00000000-0000-0000-0000-000000000201','00
 insert into lm_players values ('00000000-0000-0000-0000-000000000401','00000000-0000-0000-0000-000000000001','Jugador A',null);
 insert into lm_registrations (id,player_id,tournament_id,category_id,team_id) values ('00000000-0000-0000-0000-000000000501','00000000-0000-0000-0000-000000000401','00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000301');
 
+set role lm_app;
 set local "request.jwt.claim.sub" = '00000000-0000-0000-0000-000000000011';
 select lm_test_assert((select count(*) from lm_tournaments) = 1, 'organization A sees one tournament');
 select lm_test_assert((select count(*) from lm_categories) = 1, 'organization A sees one category');
@@ -33,14 +34,14 @@ do $$ begin
   begin
     update lm_document_events set status = 'approved';
     raise exception 'ASSERTION_FAILED: history update succeeded';
-  exception when sqlstate 'P0001' then null;
+  exception when sqlstate '55000' then null;
   end;
 end $$;
 do $$ begin
   begin
     delete from lm_document_events;
     raise exception 'ASSERTION_FAILED: history delete succeeded';
-  exception when sqlstate 'P0001' then null;
+  exception when sqlstate '55000' then null;
   end;
 end $$;
 select lm_test_assert((select count(*) from lm_document_events) = 1, 'history preserved after rejected mutations');

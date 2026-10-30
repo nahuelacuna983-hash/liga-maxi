@@ -60,7 +60,8 @@ $$;
 create or replace function lm_org_scope() returns setof uuid language sql stable as $$
   select organization_id from lm_memberships where user_id = lm_uid()
 $$;
-create or replace function lm_is_admin() returns boolean language sql stable as $$
+create or replace function lm_is_admin() returns boolean language sql stable security definer
+set search_path = public as $$
   select exists (select 1 from lm_memberships where user_id = lm_uid() and role = 'platform_admin')
 $$;
 
@@ -76,7 +77,8 @@ alter table lm_registrations enable row level security;
 alter table lm_document_events enable row level security;
 
 create policy lm_org_read on lm_organizations for select using (id in (select lm_org_scope()));
-create policy lm_membership_read on lm_memberships for select using (organization_id in (select lm_org_scope()));
+-- No consultar lm_org_scope() desde la propia política: eso recursaría sobre RLS.
+create policy lm_membership_read on lm_memberships for select using (user_id = lm_uid() or lm_is_admin());
 create policy lm_tournament_read on lm_tournaments for select using (organization_id in (select lm_org_scope()));
 create policy lm_tournament_write on lm_tournaments for all using (lm_is_admin() or organization_id in (select lm_org_scope()));
 create policy lm_category_scope on lm_categories for all using (exists (select 1 from lm_tournaments t where t.id = tournament_id and (lm_is_admin() or t.organization_id in (select lm_org_scope()))));
@@ -87,7 +89,10 @@ create policy lm_player_scope on lm_players for all using (lm_is_admin() or orga
 create policy lm_registration_scope on lm_registrations for all using (exists (select 1 from lm_players p join lm_tournaments t on t.id = tournament_id join lm_categories c on c.id = category_id join lm_teams tm on tm.id = team_id where p.id = player_id and p.organization_id = t.organization_id and c.tournament_id = t.id and tm.organization_id = t.organization_id and (lm_is_admin() or t.organization_id in (select lm_org_scope()))));
 create policy lm_document_read on lm_document_events for select using (exists (select 1 from lm_registrations r join lm_players p on p.id = r.player_id where r.id = registration_id and (lm_is_admin() or p.organization_id in (select lm_org_scope()))));
 create policy lm_document_insert on lm_document_events for insert with check (exists (select 1 from lm_registrations r join lm_players p on p.id = r.player_id where r.id = registration_id and (lm_is_admin() or p.organization_id in (select lm_org_scope())) and actor_id = lm_uid()));
+-- Permitir que el trigger de historial sea el rechazo observable, sin abrir el alcance.
+create policy lm_document_mutation_scope on lm_document_events for update using (exists (select 1 from lm_registrations r join lm_players p on p.id = r.player_id where r.id = registration_id and (lm_is_admin() or p.organization_id in (select lm_org_scope()))));
+create policy lm_document_delete_scope on lm_document_events for delete using (exists (select 1 from lm_registrations r join lm_players p on p.id = r.player_id where r.id = registration_id and (lm_is_admin() or p.organization_id in (select lm_org_scope()))));
 
 -- El historial no admite UPDATE/DELETE mediante políticas. Las aplicaciones deben insertar eventos nuevos.
-create or replace function lm_reject_history_mutation() returns trigger language plpgsql as $$ begin raise exception 'document history is append-only'; end $$;
+create or replace function lm_reject_history_mutation() returns trigger language plpgsql as $$ begin raise exception using errcode = '55000', message = 'document history is append-only'; end $$;
 create trigger lm_document_events_immutable before update or delete on lm_document_events for each row execute function lm_reject_history_mutation();
