@@ -46,13 +46,16 @@
       const actor = this.requireRole(actorId, ["administrador", "asociacion"]);
       if (!this.categories[categoryId] || !Array.isArray(teams) || teams.length < 2) throw new Error("Equipos sintéticos inválidos.");
       if (actor.role !== "administrador" && this.categories[categoryId].organizador !== actor.organizador) throw new Error("El actor no puede modificar esta categoría.");
+      const existing = this.matches[categoryId] || [];
+      if (existing.some((match) => match.estado_resultado === "jugado" || match.estado_resultado === "administrativo_sin_puntos")) throw new Error("No se pueden cambiar los equipos con resultados disputados.");
       this.categories[categoryId].equipos = [...teams];
-      this.matches[categoryId] = [];
+      if (existing.length) this.matches[categoryId] = [];
     }
     generateFixture(actorId, categoryId, options = {}) {
       const actor = this.requireRole(actorId, ["administrador", "asociacion"]);
       const category = this.categories[categoryId]; if (!category) throw new Error("Categoría sintética inexistente.");
       if (category.torneo_id !== this.activeTournamentId || actor.role !== "administrador" && category.organizador !== actor.organizador) throw new Error("El actor no puede generar fixture para esta categoría.");
+      if ((this.matches[categoryId] || []).some((match) => match.estado_resultado === "jugado" || match.estado_resultado === "administrativo_sin_puntos")) throw new Error("No se puede regenerar un fixture con resultados disputados.");
       const generated = fixtureRules.generateFixture(category.equipos, options.start || "2027-04-04", options.blocked || category.blocked, options.frequency || 1, options.wheels || 1, options.gameDay ?? 0);
       this.matches[categoryId] = generated.matches; return clone(generated);
     }
