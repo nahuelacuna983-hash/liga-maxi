@@ -36,6 +36,15 @@ for (const match of provider.getPlayoffMatches("maxi-a").filter((item) => item.r
 state = provider.advancePlayoffs("maxi-a");
 assert.strictEqual(state.estado, "finalizado");
 assert.ok(provider.getChampion("maxi-a"));
+provider.generatePlayoffs("maxi-a", 4, { seriesGames: 3 });
+for (const match of provider.getPlayoffMatches("maxi-a")) provider.loadPlayoffResult("maxi-a", match.partido_numero, match.serie_partido <= 2 ? 80 : 60, match.serie_partido <= 2 ? 60 : 70);
+let bestOfThree = provider.advancePlayoffs("maxi-a");
+assert.strictEqual(bestOfThree.matches.filter((match) => match.ronda === "final").length, 3);
+const finalMatch = provider.getPlayoffMatches("maxi-a").find((match) => match.ronda === "final");
+provider.loadPlayoffResult("maxi-a", finalMatch.partido_numero, 80, 70);
+provider.annulPlayoffResult("maxi-a", finalMatch.partido_numero);
+assert.strictEqual(provider.getPlayoffMatches("maxi-a").find((match) => match.partido_numero === finalMatch.partido_numero).puntos_local, null);
+assert.strictEqual(provider.advancePlayoffs("maxi-a").estado, "pendiente_resultados");
 provider.generatePlayoffs("maxi-b", 8);
 assert.strictEqual(provider.getPlayoffMatches("maxi-b").length, 0);
 assert.strictEqual(provider.getPlayoffs("maxi-b").estado, "pendiente_clasificados");
