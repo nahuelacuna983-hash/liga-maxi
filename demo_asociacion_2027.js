@@ -1,16 +1,21 @@
 (function () {
   "use strict";
-  const matches = [["05/04/2027", "Sud América", "Gonnet", "62 - 55"], ["05/04/2027", "Banco Provincia", "Estudiantes", "58 - 54"], ["12/04/2027", "Sud América", "Banco Provincia", "Pendiente"], ["12/04/2027", "Gonnet", "Estudiantes", "Pendiente"]];
+  const categories = { "maxi-a": ["Sud América", "Gonnet", "Banco Provincia", "Estudiantes"], "maxi-b": ["Estrella de Berisso", "Mayo", "Universal", "Los Hornos"] };
+  let currentFixture = [];
   const panelNames = ["inicio", "competencia", "documentacion", "torneos", "programacion", "administracion"];
-  function renderCompetition() { document.querySelector("#assoc-competition").innerHTML = matches.map((match) => `<div class="assoc-row"><span>${match[0]} · ${match[1]} vs ${match[2]}</span><strong>${match[3]}</strong></div>`).join(""); }
+  function renderTeams() { const teams = categories[document.querySelector("#fixture-category").value]; document.querySelector("#assoc-teams").innerHTML = `<p><strong>Equipos (${teams.length})</strong></p><p>${teams.join(" · ")}</p>`; }
+  function renderCompetition() { document.querySelector("#assoc-competition").innerHTML = currentFixture.length ? currentFixture.map((match) => `<div class="assoc-row"><span>J${match.jornada} · ${match.fecha} · ${match.local} vs ${match.visitante}</span><strong>Programado</strong></div>`).join("") : '<p class="readonly">Todavía no hay fixture generado.</p>'; }
+  function generateFixture() { const teams = categories[document.querySelector("#fixture-category").value]; currentFixture = Demo2027Fixture.generateFixture(teams, "2027-04-05", ["2027-04-12"] ).matches; renderCompetition(); document.querySelector("#assoc-status").textContent = `Fixture sintético regenerado: ${currentFixture.length} partidos.`; }
   function showPanel(panel) {
     if (!panelNames.includes(panel)) return;
     document.querySelectorAll(".assoc-panel").forEach((element) => { element.hidden = element.id !== `panel-${panel}`; });
     document.querySelectorAll("[data-panel]").forEach((button) => button.setAttribute("aria-selected", String(button.dataset.panel === panel)));
     document.querySelector("#assoc-status").textContent = `Panel ${panel} activo. Datos locales solamente.`;
-    if (panel === "competencia") renderCompetition();
+    if (panel === "competencia") { renderTeams(); renderCompetition(); }
   }
   document.querySelectorAll("[data-panel]").forEach((button) => button.addEventListener("click", () => showPanel(button.dataset.panel)));
+  document.querySelector("#fixture-category").addEventListener("change", () => { renderTeams(); currentFixture = []; renderCompetition(); });
+  document.querySelector("#generate-fixture").addEventListener("click", generateFixture);
   document.querySelector("#assoc-category").addEventListener("change", (event) => { document.querySelector("#assoc-status").textContent = `Categoría ${event.target.value}. Datos sintéticos.`; });
   showPanel("inicio");
 })();
