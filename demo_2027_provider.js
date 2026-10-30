@@ -14,8 +14,25 @@
       this.matches = {};
       this.playoffs = {};
       this.delegates = { "delegado-a": { nombre: "Delegado A", equipos: ["Sud América"] }, "delegado-b": { nombre: "Delegado B", equipos: ["Gonnet"] } };
+      this.tournaments = { "demo-2027": { id: "demo-2027", nombre: "Apertura de prueba 2027", temporada: 2027, estado: "activo", categorias: ["maxi-a", "maxi-b"], organizador: "org-demo" } };
+      this.activeTournamentId = "demo-2027";
+      this.permissions = { "admin-demo": { role: "administrador", organizador: "org-demo" }, "asoc-demo": { role: "asociacion", organizador: "org-demo" }, "delegado-a": { role: "delegado", equipos: ["Sud América"] }, "delegado-b": { role: "delegado", equipos: ["Gonnet"] } };
+      this.players = {};
+      this.documents = {};
     }
     getTournament() { return clone(this.tournament); }
+    getTournaments() { return clone(Object.values(this.tournaments)); }
+    createTournament(actorId, input) { this.requireRole(actorId, ["administrador", "asociacion"]); const id = `torneo-${Object.keys(this.tournaments).length + 1}`; this.tournaments[id] = { id, nombre: input.nombre, temporada: input.temporada, estado: "borrador", categorias: [], organizador: this.permissions[actorId].organizador || "org-demo" }; return clone(this.tournaments[id]); }
+    setActiveTournament(actorId, tournamentId) { this.requireRole(actorId, ["administrador", "asociacion"]); if (!this.tournaments[tournamentId]) throw new Error("Torneo sintético inexistente."); this.activeTournamentId = tournamentId; return clone(this.tournaments[tournamentId]); }
+    updateTournament(actorId, tournamentId, patch) { this.requireRole(actorId, ["administrador", "asociacion"]); const tournament = this.tournaments[tournamentId]; if (!tournament) throw new Error("Torneo sintético inexistente."); if (patch.estado && patch.estado !== tournament.estado && Object.values(this.matches).some((items) => items.some((match) => match.estado_resultado === "jugado"))) throw new Error("No se puede modificar el estado con partidos disputados."); Object.assign(tournament, patch); return clone(tournament); }
+    requireRole(actorId, roles) { const permission = this.permissions[actorId]; if (!permission || !roles.includes(permission.role)) throw new Error("Operación no autorizada para el rol sintético."); return permission; }
+    setPermission(actorId, targetId, permission) { this.requireRole(actorId, ["administrador", "asociacion"]); if (!this.permissions[targetId]) this.permissions[targetId] = {}; Object.assign(this.permissions[targetId], permission); return clone(this.permissions[targetId]); }
+    revokePermission(actorId, targetId) { this.requireRole(actorId, ["administrador", "asociacion"]); delete this.permissions[targetId]; }
+    registerPlayer(actorId, player) { this.requireRole(actorId, ["administrador", "asociacion", "delegado"]); if (!player.id || !player.nombre || !player.equipo || !player.categoria) throw new Error("Jugador sintético incompleto."); this.players[player.id] = { ...player, torneo: this.activeTournamentId }; return clone(this.players[player.id]); }
+    setDocumentStatus(actorId, playerId, requirement, status, evidence = "") { this.requireRole(actorId, ["administrador", "asociacion"]); if (!this.players[playerId]) throw new Error("Jugador sintético inexistente."); if (!["pendiente", "cargado", "observado", "aprobado", "rechazado"].includes(status)) throw new Error("Estado documental sintético inválido."); const key = `${playerId}:${requirement}`; const item = { id: key, playerId, requirement, status, evidence, reviewedBy: actorId, reviewedAt: new Date().toISOString() }; this.documents[key] = item; return clone(item); }
+    getPlayerDocuments(playerId) { return clone(Object.values(this.documents).filter((item) => item.playerId === playerId)); }
+    getPlayers() { return clone(Object.values(this.players)); }
+    getPermissions() { return clone(this.permissions); }
     getCategories() { return clone(Object.values(this.categories)); }
     getCategory(id) { return clone(this.categories[id]); }
     getTeams(categoryId) { return clone(this.categories[categoryId]?.equipos || []); }
