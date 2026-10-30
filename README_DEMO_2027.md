@@ -37,3 +37,9 @@ node tests/equivalence-app-sports.cjs
 ## Reutilización de lógica real
 
 La aplicación existente concentra `calcularTabla(partidos)`, `calcularMiniTablaOlimpica`, `ganadorPartidoPlayoff` y `ganadorSeriePlayoff` en `app_online.js`, pero ese archivo inicializa el cliente Supabase al cargarse. La demo no lo importa para evitar conexiones accidentales. `demo_2027_sports.js` es un módulo compatible y auditable para esta etapa; la integración siguiente debe extraer las funciones puras reales desde `app_online.js` o convertirlas en módulos compartidos, sin duplicar reglas.
+
+## Panel de Asociación demo
+
+Abrir `http://127.0.0.1:4173/demo_asociacion_2027.html` para revisar Inicio, Competencia, Documentación, Torneos, Programación y Administración. Los controles que modificarían datos están deshabilitados.
+
+La estructura sigue los paneles originales de `index_online.html` (`asociacion-categoria`, navegación por panel y acciones de Competencia), pero no carga `app_online.js`; todas las filas son sintéticas.

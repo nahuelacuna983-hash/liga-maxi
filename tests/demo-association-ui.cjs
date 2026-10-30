@@ -1,0 +1,10 @@
+const assert = require("assert");
+const fs = require("fs");
+const html = fs.readFileSync("demo_asociacion_2027.html", "utf8");
+const js = fs.readFileSync("demo_asociacion_2027.js", "utf8");
+assert.match(html, /data-association-demo="2027"/);
+for (const panel of ["inicio", "competencia", "documentacion", "torneos", "programacion", "administracion"]) assert.match(html, new RegExp(`data-panel="${panel}"`));
+assert.match(html, /no hay conexión a Supabase ni escrituras remotas/);
+assert.match(js, /document\.querySelectorAll\("\.assoc-panel"\)/);
+assert.doesNotMatch(js, /supabase|fetch\(/i);
+console.log("DEMO_ASSOCIATION_UI_STATIC_OK");
