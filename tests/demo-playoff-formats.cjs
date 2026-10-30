@@ -22,7 +22,7 @@ for (const tiedSecond of p.getPlayoffMatches('maxi-a').filter((m) => m.ronda ===
   p.loadPlayoffResult('maxi-a', tiedSecond.partido_numero, 70, 50);
 }
 p.advancePlayoffs('maxi-a');
-assert.equal(p.getPlayoffMatches('maxi-a').filter((m) => m.ronda === 'semifinales').length, 2);
+assert.equal(p.getPlayoffMatches('maxi-a').filter((m) => m.ronda === 'semifinales').length, 4, 'two-game series generate two semifinal matches per pairing');
 completeRound(p, 'maxi-a', 'semifinales');
 completeRound(p, 'maxi-a', 'final');
 assert.equal(p.getPlayoffs('maxi-a').estado, 'finalizado');
