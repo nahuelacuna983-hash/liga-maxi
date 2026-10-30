@@ -14,17 +14,26 @@ insert into lm_category_teams values ('00000000-0000-0000-0000-000000000201','00
 insert into lm_players values ('00000000-0000-0000-0000-000000000401','00000000-0000-0000-0000-000000000001','Jugador A',null);
 insert into lm_registrations (id,player_id,tournament_id,category_id,team_id) values ('00000000-0000-0000-0000-000000000501','00000000-0000-0000-0000-000000000401','00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000301');
 
+-- Integridad estructural: se ejecuta en preparación privilegiada, no como evidencia RLS.
+do $$ begin
+  begin
+    insert into lm_category_teams values ('00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000302');
+    raise exception 'ASSERTION_FAILED: cross organization FK insert succeeded';
+  exception when foreign_key_violation then null;
+  end;
+end $$;
+
 set role lm_app;
 set local "request.jwt.claim.sub" = '00000000-0000-0000-0000-000000000011';
 select lm_test_assert((select count(*) from lm_tournaments) = 1, 'organization A sees one tournament');
 select lm_test_assert((select count(*) from lm_categories) = 1, 'organization A sees one category');
 
--- La FK compuesta debe impedir cruzar equipo de Org B con categoría de Org A.
+-- El rol de aplicación tiene INSERT, pero RLS debe rechazar el cruce antes de mutar.
 do $$ begin
   begin
     insert into lm_category_teams values ('00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000302');
-    raise exception 'ASSERTION_FAILED: cross organization team insert succeeded';
-  exception when foreign_key_violation then null;
+    raise exception 'ASSERTION_FAILED: cross organization RLS insert succeeded';
+  exception when insufficient_privilege then null;
   end;
 end $$;
 
