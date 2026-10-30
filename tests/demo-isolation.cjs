@@ -20,4 +20,7 @@ assert.throws(() => provider.getPermissions("delegado-a"), /no autorizada/);
 const before = JSON.stringify(provider.getPermissions("admin-demo"));
 assert.throws(() => provider.setPermission("asoc-demo", "asoc-b", { role: "administrador", organizador: "org-b" }), /otro organizador/);
 assert.strictEqual(JSON.stringify(provider.getPermissions("admin-demo")), before);
+const beforeUnknown = JSON.stringify(provider.getPermissions("admin-demo"));
+assert.throws(() => provider.setPermission("asoc-demo", "usuario-inexistente", { role: "delegado", organizador: "org-demo" }), /inexistente/);
+assert.strictEqual(JSON.stringify(provider.getPermissions("admin-demo")), beforeUnknown);
 console.log("DEMO_ISOLATION_OK");

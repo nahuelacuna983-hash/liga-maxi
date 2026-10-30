@@ -12,6 +12,9 @@ provider.registerPlayer("asoc-demo", { id: "player-1", nombre: "Jugador Sintéti
 const document = provider.setDocumentStatus("asoc-demo", "player-1", "seguro", "observado", "Evidencia sintética");
 assert.strictEqual(document.status, "observado");
 assert.strictEqual(provider.getPlayerDocuments("asoc-demo", "player-1").length, 1);
+provider.setDocumentStatus("asoc-demo", "player-1", "seguro", "aprobado", "Nueva evidencia sintética");
+assert.strictEqual(provider.getPlayerDocuments("asoc-demo", "player-1")[0].status, "aprobado");
+assert.strictEqual(provider.getDocumentHistory("asoc-demo", "player-1").length, 2);
 assert.throws(() => provider.setDocumentStatus("delegado-a", "player-1", "seguro", "aprobado"), /no autorizada/);
 assert.ok(Object.values(provider.getPermissions("asoc-demo")).some((item) => item.role === "asociacion"));
 console.log("DEMO_PLATFORM_OK");
