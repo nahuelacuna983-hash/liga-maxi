@@ -7,6 +7,7 @@ Se corrigieron dos falsos positivos de `docs/synthetic-persistence-tests.sql`:
 - Las mutaciones del historial ahora se rechazan con SQLSTATE `55000`, mientras que `P0001` queda reservado para aserciones de la prueba.
 - La vinculación cruzada usa UUID válidos de organizaciones distintas y se comprueba mediante la FK compuesta `(category_id, team_id)`.
 - El mismo cruce se intenta luego como `lm_app`: la prueba espera `insufficient_privilege` por RLS y verifica que no haya mutación. Así no se confunde una denegación de autorización con una violación FK.
+- El esquema ahora propaga `organization_id` en categorías, vínculos categoría-equipo, asignaciones y registros, con FKs compuestas contra torneo, categoría, equipo y jugador.
 
 También se eliminó la recursión de la política de membresías. `lm_is_admin()` es una función `SECURITY DEFINER` con `search_path` fijo y la política de membresías consulta identidad directa o esa función. El rol `lm_app` recibe sólo los privilegios de tablas necesarios para el harness; no tiene propiedad ni bypass de RLS.
 

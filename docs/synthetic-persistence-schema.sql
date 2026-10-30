@@ -13,38 +13,51 @@ create table lm_memberships (
 create table lm_tournaments (
   id uuid primary key, organization_id uuid not null references lm_organizations(id),
   name text not null, season integer not null,
-  state text not null check (state in ('draft','active','closed'))
+  state text not null check (state in ('draft','active','closed')),
+  unique (id, organization_id)
 );
 create table lm_categories (
-  id uuid primary key, tournament_id uuid not null references lm_tournaments(id),
-  name text not null, unique (tournament_id, name)
+  id uuid primary key, tournament_id uuid not null, organization_id uuid not null references lm_organizations(id),
+  name text not null, unique (tournament_id, name),
+  unique (id, organization_id),
+  foreign key (tournament_id, organization_id) references lm_tournaments(id, organization_id)
 );
 create table lm_teams (
   id uuid primary key, organization_id uuid not null references lm_organizations(id), name text not null,
-  unique (organization_id, name)
+  unique (organization_id, name), unique (id, organization_id)
 );
 create table lm_category_teams (
-  category_id uuid not null references lm_categories(id) on delete cascade,
-  team_id uuid not null references lm_teams(id) on delete restrict,
-  primary key (category_id, team_id)
+  organization_id uuid not null references lm_organizations(id),
+  category_id uuid not null,
+  team_id uuid not null,
+  primary key (category_id, team_id),
+  unique (category_id, team_id, organization_id),
+  foreign key (category_id, organization_id) references lm_categories(id, organization_id) on delete cascade,
+  foreign key (team_id, organization_id) references lm_teams(id, organization_id) on delete restrict
 );
 create table lm_delegate_assignments (
   user_id uuid not null, organization_id uuid not null,
-  category_id uuid not null references lm_categories(id) on delete cascade,
-  team_id uuid not null references lm_teams(id) on delete restrict,
+  category_id uuid not null,
+  team_id uuid not null,
   primary key (user_id, category_id, team_id),
-  foreign key (user_id, organization_id) references lm_memberships(user_id, organization_id)
+  foreign key (user_id, organization_id) references lm_memberships(user_id, organization_id),
+  foreign key (category_id, organization_id) references lm_categories(id, organization_id) on delete cascade,
+  foreign key (team_id, organization_id) references lm_teams(id, organization_id) on delete restrict
 );
 create table lm_players (
   id uuid primary key, organization_id uuid not null references lm_organizations(id),
-  name text not null, dni_hash text
+  name text not null, dni_hash text, unique (id, organization_id)
 );
 create table lm_registrations (
   id uuid primary key default gen_random_uuid(), player_id uuid not null references lm_players(id),
-  tournament_id uuid not null references lm_tournaments(id), category_id uuid not null references lm_categories(id),
-  team_id uuid not null references lm_teams(id),
+  organization_id uuid not null references lm_organizations(id),
+  tournament_id uuid not null, category_id uuid not null, team_id uuid not null,
   unique (player_id, tournament_id, category_id),
-  foreign key (category_id, team_id) references lm_category_teams(category_id, team_id)
+  foreign key (player_id, organization_id) references lm_players(id, organization_id),
+  foreign key (tournament_id, organization_id) references lm_tournaments(id, organization_id),
+  foreign key (category_id, organization_id) references lm_categories(id, organization_id),
+  foreign key (team_id, organization_id) references lm_teams(id, organization_id),
+  foreign key (category_id, team_id, organization_id) references lm_category_teams(category_id, team_id, organization_id)
 );
 create table lm_document_events (
   id bigserial primary key, registration_id uuid not null references lm_registrations(id) on delete restrict,
