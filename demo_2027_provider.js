@@ -21,6 +21,7 @@
       this.documents = {};
       this.documentHistory = [];
       this.auditLog = [];
+      this.scheduleHistory = [];
     }
     getTournament() { return clone(this.tournament); }
     getTournaments() { return clone(Object.values(this.tournaments)); }
@@ -41,6 +42,8 @@
     getCategories(tournamentId = this.activeTournamentId) { return clone(Object.values(this.categories).filter((category) => !tournamentId || category.torneo_id === tournamentId)); }
     getCategory(id) { return clone(this.categories[id]); }
     addCategory(actorId, tournamentId, category) { const actor = this.requireRole(actorId, ["administrador", "asociacion"]); const tournament = this.tournaments[tournamentId]; if (!tournament) throw new Error("Torneo sintético inexistente."); if (actor.role !== "administrador" && tournament.organizador !== actor.organizador) throw new Error("El actor no puede modificar este organizador."); if (!category.id || this.categories[category.id]) throw new Error("Identificador de categoría ocupado."); this.categories[category.id] = { id: category.id, nombre: category.nombre, torneo_id: tournamentId, organizador: tournament.organizador, equipos: [], blocked: [] }; tournament.categorias.push(category.id); return clone(this.categories[category.id]); }
+    addTeam(actorId, categoryId, teamName) { const actor = this.requireRole(actorId, ["administrador", "asociacion"]); const category = this.categories[categoryId]; if (!category) throw new Error("Categoría sintética inexistente."); if (actor.role !== "administrador" && category.organizador !== actor.organizador) throw new Error("El actor no puede modificar esta categoría."); const name = String(teamName || "").trim(); if (!name || category.equipos.includes(name)) throw new Error("Equipo sintético inválido o repetido."); if ((this.matches[categoryId] || []).some((match) => match.estado_resultado === "jugado" || match.estado_resultado === "administrativo_sin_puntos")) throw new Error("No se pueden cambiar los equipos con resultados disputados."); category.equipos.push(name); return clone(category);
+    }
     getTeams(categoryId) { return clone(this.categories[categoryId]?.equipos || []); }
     setCategoryTeams(actorId, categoryId, teams) {
       const actor = this.requireRole(actorId, ["administrador", "asociacion"]);
@@ -60,6 +63,7 @@
       this.matches[categoryId] = generated.matches; return clone(generated);
     }
     getMatches(categoryId) { return clone(this.matches[categoryId] || []); }
+    updateMatchSchedule(actorId, categoryId, matchNumber, patch = {}) { const actor = this.requireRole(actorId, ["administrador", "asociacion"]); const category = this.categories[categoryId]; const match = (this.matches[categoryId] || []).find((item) => item.partido_numero === matchNumber); if (!category || !match) throw new Error("Partido sintético inexistente."); if (actor.role !== "administrador" && category.organizador !== actor.organizador) throw new Error("El actor no puede programar esta categoría."); if (match.estado_resultado === "jugado" || match.estado_resultado === "administrativo_sin_puntos") throw new Error("No se puede reprogramar un partido con resultado."); if (patch.fecha && category.blocked.includes(patch.fecha)) throw new Error("La fecha está bloqueada para la categoría."); const previous = { fecha: match.fecha, hora: match.hora || null, cancha: match.cancha || null }; Object.assign(match, { fecha: patch.fecha || match.fecha, hora: patch.hora ?? match.hora, cancha: patch.cancha ?? match.cancha }); this.scheduleHistory.push({ categoryId, matchNumber, actorId, previous, next: { fecha: match.fecha, hora: match.hora || null, cancha: match.cancha || null }, at: new Date().toISOString() }); return clone(match); }
     loadResult(categoryId, matchNumber, local, visitante) {
       sportsRules.validateNormalResult(local, visitante);
       const match = (this.matches[categoryId] || []).find((item) => item.partido_numero === matchNumber);
