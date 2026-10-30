@@ -14,4 +14,7 @@ assert.match(js, /champion-card/);
 assert.match(js, /simulateCompleteChampionship/);
 assert.match(js, /estado !== "finalizado"/);
 assert.match(html, /@media\(max-width:720px\)/);
+assert.match(html, /\.circuit \.assoc-panel\{display:block\}/);
+assert.match(html, /\.circuit \.assoc-panel\[hidden\]\{display:none\}/);
+for (const text of ["Fixture", "Playoffs", "Pendiente de integración funcional"]) assert.match(js, new RegExp(text));
 console.log("DEMO_CIRCUIT_UI_STATIC_OK");
