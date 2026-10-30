@@ -8,8 +8,8 @@
     constructor() {
       this.tournament = { id: "demo-2027", nombre: "Apertura de prueba 2027", estado: "activo" };
       this.categories = {
-        "maxi-a": { id: "cat-maxi-a", nombre: "Maxi +35 A", torneo_id: "demo-2027", organizador: "org-demo", equipos: ["Sud América", "Gonnet", "Banco Provincia", "Estudiantes"], blocked: ["2027-04-11"] },
-        "maxi-b": { id: "cat-maxi-b", nombre: "Maxi +35 B", torneo_id: "demo-2027", organizador: "org-demo", equipos: ["Estrella de Berisso", "Mayo", "Universal", "Los Hornos"], blocked: [] },
+        "maxi-a": { id: "maxi-a", nombre: "Maxi +35 A", torneo_id: "demo-2027", organizador: "org-demo", equipos: ["Sud América", "Gonnet", "Banco Provincia", "Estudiantes"], blocked: ["2027-04-11"] },
+        "maxi-b": { id: "maxi-b", nombre: "Maxi +35 B", torneo_id: "demo-2027", organizador: "org-demo", equipos: ["Estrella de Berisso", "Mayo", "Universal", "Los Hornos"], blocked: [] },
       };
       this.matches = {};
       this.playoffs = {};
