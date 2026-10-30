@@ -1,0 +1,27 @@
+const assert = require('node:assert/strict');
+const Provider = require('../demo_2027_provider.js');
+
+const p = new Provider();
+const tournament = p.createTournament('asoc-demo', { nombre: 'Torneo desde cero', temporada: 2027 });
+p.setActiveTournament('asoc-demo', tournament.id);
+p.addCategory('asoc-demo', tournament.id, { id: 'nueva-cat', nombre: 'Maxi Sintética' });
+for (const team of ['Azul', 'Blanco', 'Rojo', 'Verde']) p.addTeam('asoc-demo', 'nueva-cat', team);
+p.generateFixture('asoc-demo', 'nueva-cat', { start: '2027-05-02', blocked: ['2027-05-09'], gameDay: 0 });
+const first = p.getMatches('nueva-cat')[0];
+p.updateMatchSchedule('asoc-demo', 'nueva-cat', first.partido_numero, { fecha: '2027-05-16', hora: '20:00', cancha: 'Central' });
+p.createUser('admin-demo', 'delegado-nuevo', { role: 'delegado', organizador: 'org-demo' });
+p.setPermission('asoc-demo', 'delegado-nuevo', { role: 'delegado', organizador: 'org-demo', categorias: ['nueva-cat'], equipos: ['Azul'] });
+const own = p.getDelegateMatches('delegado-nuevo', 'nueva-cat')[0];
+p.loadDelegateResult('delegado-nuevo', 'nueva-cat', own.partido_numero, 70, 60);
+for (const match of p.getMatches('nueva-cat').filter((item) => item.puntos_local == null)) p.loadResult('nueva-cat', match.partido_numero, 70, 60);
+assert.equal(p.getTable('nueva-cat').reduce((sum, row) => sum + row.pj, 0), p.getMatches('nueva-cat').length * 2);
+const playoffs = p.generatePlayoffs('nueva-cat', 4, { seriesGames: 1 });
+assert.equal(playoffs.estado, 'listo');
+for (const match of p.getPlayoffMatches('nueva-cat')) p.loadPlayoffResult('nueva-cat', match.partido_numero, 80, 70);
+let state = p.advancePlayoffs('nueva-cat');
+assert.equal(state.estado, 'clasificados_avanzados');
+for (const match of p.getPlayoffMatches('nueva-cat').filter((item) => item.ronda === 'final')) p.loadPlayoffResult('nueva-cat', match.partido_numero, 80, 70);
+state = p.advancePlayoffs('nueva-cat');
+assert.equal(state.estado, 'finalizado');
+assert.ok(p.getChampion('nueva-cat'));
+console.log('DEMO_END_TO_END_OK');
