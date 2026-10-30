@@ -79,17 +79,17 @@
         puntos_local: null,
         puntos_visitante: null,
       })));
-      this.playoffs[categoryId] = { formato: `top${classified}`, estado: "listo", modo_repechaje: mode, matches, next_round: null, champion: null };
+      this.playoffs[categoryId] = { formato: `top${classified}`, estado: "listo", modo_repechaje: mode, matches, direct_teams: Number(classified) === 6 ? [table[0].equipo, table[1].equipo] : [], seed_order: table.map((row, index) => ({ equipo: row.equipo, posicion: index + 1 })), next_round: null, champion: null };
       return clone(this.playoffs[categoryId]);
     }
     getPlayoffMatches(categoryId) { return clone(this.playoffs[categoryId]?.matches || []); }
     loadPlayoffResult(categoryId, matchNumber, local, visitante) {
       const playoff = this.playoffs[categoryId];
       if (!playoff) throw new Error("Playoffs sintéticos no generados.");
-      sportsRules.validateNormalResult(local, visitante);
       const match = playoff.matches.find((item) => item.partido_numero === matchNumber);
       if (!match) throw new Error("Partido de playoffs sintético inexistente.");
       if (match.puntos_local != null || match.puntos_visitante != null) throw new Error("El partido de playoffs ya tiene resultado.");
+      sportsRules.validateNormalResult(local, visitante);
       match.puntos_local = local; match.puntos_visitante = visitante;
       return clone(match);
     }
@@ -113,7 +113,12 @@
       }
       if (winners.length === 1) { playoff.champion = winners[0]; playoff.estado = "finalizado"; return clone(playoff); }
       const nextRound = currentRound === "final" ? "finalizado" : currentRound === "semifinales" ? "final" : "semifinales";
-      const pairs = nextRound === "finalizado" ? [] : winners.length === 2 ? [[winners[0], winners[1]]] : [[winners[0], winners[1]], [winners[2], winners[3]]];
+      let pairs;
+      if (nextRound === "finalizado") pairs = [];
+      else if (currentRound === "repechaje") {
+        const ranked = winners.slice().sort((a, b) => playoff.seed_order.find((item) => item.equipo === a).posicion - playoff.seed_order.find((item) => item.equipo === b).posicion);
+        pairs = [[playoff.direct_teams[0], ranked[1]], [playoff.direct_teams[1], ranked[0]]];
+      } else pairs = winners.length === 2 ? [[winners[0], winners[1]]] : [[winners[0], winners[1]], [winners[2], winners[3]]];
       if (nextRound === "finalizado") { playoff.champion = winners[0]; playoff.estado = "finalizado"; return clone(playoff); }
       const roundMatches = pairs.map(([local, visitante], index) => ({ llave: `${nextRound}_${index + 1}`, ronda: nextRound, partido_numero: playoff.matches.length + index + 1, serie_partido: 1, local, visitante, modo_definicion: "mejor_de", puntos_local: null, puntos_visitante: null }));
       playoff.matches.push(...roundMatches); playoff.next_round = roundMatches.map((match) => match.llave); playoff.estado = "clasificados_avanzados";

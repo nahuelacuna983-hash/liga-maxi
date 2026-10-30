@@ -21,10 +21,12 @@ const top6 = provider.generatePlayoffs("maxi-a", 6);
 assert.ok(top6.matches.every((match) => match.ronda === "repechaje" && match.modo_definicion === "global"));
 assert.notStrictEqual(top6.matches[0].local, top6.matches[1].local);
 const first = top6.matches[0];
-provider.loadPlayoffResult("maxi-a", first.partido_numero, 70, 60);
+for (const match of top6.matches) provider.loadPlayoffResult("maxi-a", match.partido_numero, match.serie_partido === 1 ? 70 : 60, match.serie_partido === 1 ? 60 : 70);
 assert.strictEqual(provider.getPlayoffMatches("maxi-a")[0].puntos_local, 70);
+const top6Advanced = provider.advancePlayoffs("maxi-a");
+assert.deepStrictEqual(top6Advanced.matches.filter((match) => match.ronda === "semifinales").map((match) => match.local), ["A", "B"]);
 assert.strictEqual(provider.getPlayoffMatches("maxi-b").length, 0);
-assert.throws(() => provider.loadPlayoffResult("maxi-a", first.partido_numero, 60, 60), /no puede terminar empatado/);
+assert.throws(() => provider.loadPlayoffResult("maxi-a", first.partido_numero, 60, 60), /ya tiene resultado/);
 
 provider.generatePlayoffs("maxi-a", 4, { seriesGames: 1 });
 for (const match of provider.getPlayoffMatches("maxi-a")) provider.loadPlayoffResult("maxi-a", match.partido_numero, 70, 60);
