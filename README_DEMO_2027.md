@@ -51,3 +51,14 @@ La aplicación existente concentra `calcularTabla(partidos)`, `calcularMiniTabla
 Abrir `http://127.0.0.1:4173/demo_asociacion_2027.html` para revisar Inicio, Competencia, Documentación, Torneos, Programación y Administración. Los controles que modificarían datos están deshabilitados.
 
 La estructura sigue los paneles originales de `index_online.html` (`asociacion-categoria`, navegación por panel y acciones de Competencia), pero no carga `app_online.js`; todas las filas son sintéticas.
+
+## Circuito integrado
+
+Abrir `http://127.0.0.1:4173/demo_circuito_2027.html` para recorrer una única sesión compartida:
+
+1. Asociación genera el fixture.
+2. Delegados muestra sólo los partidos del equipo ficticio.
+3. Se carga un resultado en memoria.
+4. Público recalcula tabla y fixture desde el mismo proveedor.
+
+El proveedor rechaza empates normales, delegados ajenos, categorías cerradas y partidos inexistentes. Estas comprobaciones son simulación local, no autenticación ni RLS.

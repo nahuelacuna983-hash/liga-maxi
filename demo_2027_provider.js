@@ -31,11 +31,21 @@
       if (!match) throw new Error("Partido sintético inexistente.");
       match.puntos_local = local; match.puntos_visitante = visitante; match.estado_resultado = "jugado"; return clone(match);
     }
+    loadDelegateResult(delegateId, categoryId, matchNumber, local, visitante) {
+      const delegate = this.delegates[delegateId]; const match = (this.matches[categoryId] || []).find((item) => item.partido_numero === matchNumber);
+      const category = this.categories[categoryId];
+      if (!delegate || !category) throw new Error("Delegado o categoría sintética inexistente.");
+      if (category.closed) throw new Error("La categoría está cerrada.");
+      if (!match || (!delegate.equipos.includes(match.local) && !delegate.equipos.includes(match.visitante))) throw new Error("El delegado no puede modificar este partido.");
+      return this.loadResult(categoryId, matchNumber, local, visitante);
+    }
     setAdministrativeNoPoints(categoryId, matchNumber) {
       const match = (this.matches[categoryId] || []).find((item) => item.partido_numero === matchNumber);
       if (!match) throw new Error("Partido sintético inexistente.");
       match.puntos_local = 0; match.puntos_visitante = 0; match.estado_resultado = "administrativo_sin_puntos"; return clone(match);
     }
+    annulResult(categoryId, matchNumber) { const match = (this.matches[categoryId] || []).find((item) => item.partido_numero === matchNumber); if (!match) throw new Error("Partido sintético inexistente."); match.puntos_local = null; match.puntos_visitante = null; match.estado_resultado = "pendiente"; return clone(match); }
+    setCategoryClosed(categoryId, closed = true) { if (!this.categories[categoryId]) throw new Error("Categoría sintética inexistente."); this.categories[categoryId].closed = Boolean(closed); }
     getTable(categoryId) { return sportsRules.calcularTabla(this.matches[categoryId] || []); }
     getDelegate(id) { return clone(this.delegates[id]); }
     getDelegateMatches(id, categoryId) { const delegate = this.delegates[id]; if (!delegate) return []; return this.getMatches(categoryId).filter((match) => delegate.equipos.includes(match.local) || delegate.equipos.includes(match.visitante)); }

@@ -1,0 +1,10 @@
+const assert = require("assert");
+const fs = require("fs");
+const html = fs.readFileSync("demo_circuito_2027.html", "utf8");
+const js = fs.readFileSync("demo_circuito_2027.js", "utf8");
+for (const view of ["association", "delegate", "public"]) assert.match(html, new RegExp(`data-view="${view}"`));
+assert.match(html, /SyntheticDataProvider/);
+assert.doesNotMatch(js, /supabase|fetch\(/i);
+assert.match(js, /loadDelegateResult/);
+assert.match(js, /getTable/);
+console.log("DEMO_CIRCUIT_UI_STATIC_OK");
