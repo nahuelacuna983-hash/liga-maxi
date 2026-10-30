@@ -3,8 +3,8 @@ const Provider = require("../demo_2027_provider.js");
 
 function complete(categoryId, teams, format) {
   const provider = new Provider();
-  provider.setCategoryTeams(categoryId, teams);
-  provider.generateFixture(categoryId, { start: "2027-04-04" });
+  provider.setCategoryTeams("admin-demo", categoryId, teams);
+  provider.generateFixture("admin-demo", categoryId, { start: "2027-04-04" });
   for (const match of provider.getMatches(categoryId)) provider.loadResult(categoryId, match.partido_numero, 80, 70);
   const prepared = provider.generatePlayoffs(categoryId, format, { seriesGames: 1 });
   assert.strictEqual(prepared.estado, "listo");
@@ -28,10 +28,10 @@ assert.strictEqual(simulated.getPlayoffs("maxi-b").length, 0);
 assert.strictEqual(simulated.getChampion("maxi-a"), championship.champion);
 
 const isolated = new Provider();
-isolated.setCategoryTeams("maxi-a", ["A", "B", "C", "D"]);
-isolated.setCategoryTeams("maxi-b", ["W", "X", "Y", "Z"]);
-isolated.generateFixture("maxi-a", { start: "2027-04-04" });
-isolated.generateFixture("maxi-b", { start: "2027-04-04" });
+isolated.setCategoryTeams("admin-demo", "maxi-a", ["A", "B", "C", "D"]);
+isolated.setCategoryTeams("admin-demo", "maxi-b", ["W", "X", "Y", "Z"]);
+isolated.generateFixture("admin-demo", "maxi-a", { start: "2027-04-04" });
+isolated.generateFixture("admin-demo", "maxi-b", { start: "2027-04-04" });
 isolated.generatePlayoffs("maxi-a", 4);
 assert.strictEqual(isolated.getPlayoffMatches("maxi-b").length, 0);
 assert.strictEqual(isolated.getMatches("maxi-a").length, isolated.getMatches("maxi-b").length);

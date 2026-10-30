@@ -18,6 +18,8 @@ El proveedor sintético expone las operaciones que la interfaz deportiva necesit
 
 Además, las operaciones administrativas sintéticas verifican actor, organizador, torneo activo, categoría, equipo y jugador antes de modificar estado. Las pruebas `demo-platform.cjs` y `demo-isolation.cjs` cubren intentos autorizados y cruzados entre organizadores.
 
+Las operaciones de generación/configuración y las lecturas de jugadores, permisos y documentos requieren un actor explícito. Los rechazos de permisos se producen antes de modificar colecciones internas; la prueba de aislamiento compara el estado antes y después.
+
 La futura implementación sobre una base aislada deberá cumplir el mismo contrato, pero reemplazar las mutaciones en memoria por RPC/Auth/RLS verificadas. No se debe conectar este adaptador a la URL productiva ni reutilizar claves del sitio publicado.
 
 ## Flujo documental observado

@@ -7,7 +7,7 @@ const second = provider.createTournament("asoc-b", { nombre: "Torneo B", tempora
 provider.addCategory("asoc-b", second.id, { id: "cat-b", nombre: "Categoría B" });
 assert.throws(() => provider.setActiveTournament("asoc-demo", second.id), /no pertenece/);
 provider.setActiveTournament("asoc-b", second.id);
-provider.setCategoryTeams("cat-b", ["Equipo B1", "Equipo B2"]);
+provider.setCategoryTeams("asoc-b", "cat-b", ["Equipo B1", "Equipo B2"]);
 provider.registerPlayer("asoc-b", { id: "player-b", nombre: "Jugador B", equipo: "Equipo B1", categoria: "cat-b" });
 assert.throws(() => provider.setDocumentStatus("asoc-demo", "player-b", "seguro", "observado"), /otro organizador/);
 provider.setActiveTournament("admin-demo", "demo-2027");
@@ -15,4 +15,9 @@ assert.throws(() => provider.registerPlayer("delegado-a", { id: "wrong", nombre:
 provider.setPermission("asoc-demo", "delegado-a", { categorias: ["maxi-a"], equipos: ["Sud América"] });
 assert.throws(() => provider.registerPlayer("delegado-a", { id: "wrong", nombre: "Fuera", equipo: "Gonnet", categoria: "maxi-b" }), /no puede registrar/);
 assert.throws(() => provider.setPermission("asoc-demo", "asoc-b", { organizador: "org-b" }), /otro organizador/);
+assert.throws(() => provider.getPlayers("delegado-a"), /no autorizada/);
+assert.throws(() => provider.getPermissions("delegado-a"), /no autorizada/);
+const before = JSON.stringify(provider.getPermissions("admin-demo"));
+assert.throws(() => provider.setPermission("asoc-demo", "asoc-b", { role: "administrador", organizador: "org-b" }), /otro organizador/);
+assert.strictEqual(JSON.stringify(provider.getPermissions("admin-demo")), before);
 console.log("DEMO_ISOLATION_OK");

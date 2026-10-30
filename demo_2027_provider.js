@@ -30,20 +30,24 @@
     revokePermission(actorId, targetId) { const actor = this.requireRole(actorId, ["administrador", "asociacion"]); if (actor.role !== "administrador" && this.permissions[targetId]?.organizador && this.permissions[targetId].organizador !== actor.organizador) throw new Error("No se puede revocar un permiso de otro organizador."); delete this.permissions[targetId]; }
     registerPlayer(actorId, player) { const actor = this.requireRole(actorId, ["administrador", "asociacion", "delegado"]); const category = this.categories[player.categoria]; if (!category || category.torneo_id !== this.activeTournamentId) throw new Error("Categoría fuera del torneo activo."); if (actor.role === "delegado" && (!actor.equipos?.includes(player.equipo) || actor.categorias && !actor.categorias.includes(player.categoria))) throw new Error("El delegado no puede registrar jugadores de este alcance."); if (actor.organizador && actor.organizador !== category.organizador) throw new Error("El actor no pertenece al organizador de la categoría."); if (!player.id || !player.nombre || !player.equipo || !player.categoria) throw new Error("Jugador sintético incompleto."); this.players[player.id] = { ...player, torneo: this.activeTournamentId, organizador: category.organizador }; return clone(this.players[player.id]); }
     setDocumentStatus(actorId, playerId, requirement, status, evidence = "") { const actor = this.requireRole(actorId, ["administrador", "asociacion"]); if (!this.players[playerId]) throw new Error("Jugador sintético inexistente."); if (actor.role !== "administrador" && this.players[playerId].organizador !== actor.organizador) throw new Error("El actor no puede revisar documentos de otro organizador."); if (!["pendiente", "cargado", "observado", "aprobado", "rechazado"].includes(status)) throw new Error("Estado documental sintético inválido."); const key = `${this.players[playerId].torneo}:${playerId}:${requirement}`; const item = { id: key, playerId, requirement, status, evidence, reviewedBy: actorId, reviewedAt: new Date().toISOString() }; this.documents[key] = item; return clone(item); }
-    getPlayerDocuments(playerId) { return clone(Object.values(this.documents).filter((item) => item.playerId === playerId)); }
-    getPlayers() { return clone(Object.values(this.players)); }
-    getPermissions() { return clone(this.permissions); }
+    getPlayerDocuments(actorId, playerId) { const actor = this.requireRole(actorId, ["administrador", "asociacion"]); const player = this.players[playerId]; if (!player || actor.role !== "administrador" && player.organizador !== actor.organizador) throw new Error("El actor no puede leer documentos de otro organizador."); return clone(Object.values(this.documents).filter((item) => item.playerId === playerId)); }
+    getPlayers(actorId) { const actor = this.requireRole(actorId, ["administrador", "asociacion"]); return clone(Object.values(this.players).filter((player) => actor.role === "administrador" || player.organizador === actor.organizador)); }
+    getPermissions(actorId) { const actor = this.requireRole(actorId, ["administrador", "asociacion"]); return clone(Object.fromEntries(Object.entries(this.permissions).filter(([, item]) => actor.role === "administrador" || item.organizador === actor.organizador))); }
     getCategories() { return clone(Object.values(this.categories)); }
     getCategory(id) { return clone(this.categories[id]); }
     addCategory(actorId, tournamentId, category) { const actor = this.requireRole(actorId, ["administrador", "asociacion"]); const tournament = this.tournaments[tournamentId]; if (!tournament) throw new Error("Torneo sintético inexistente."); if (actor.role !== "administrador" && tournament.organizador !== actor.organizador) throw new Error("El actor no puede modificar este organizador."); if (!category.id || this.categories[category.id]) throw new Error("Identificador de categoría ocupado."); this.categories[category.id] = { id: category.id, nombre: category.nombre, torneo_id: tournamentId, organizador: tournament.organizador, equipos: [], blocked: [] }; tournament.categorias.push(category.id); return clone(this.categories[category.id]); }
     getTeams(categoryId) { return clone(this.categories[categoryId]?.equipos || []); }
-    setCategoryTeams(categoryId, teams) {
+    setCategoryTeams(actorId, categoryId, teams) {
+      const actor = this.requireRole(actorId, ["administrador", "asociacion"]);
       if (!this.categories[categoryId] || !Array.isArray(teams) || teams.length < 2) throw new Error("Equipos sintéticos inválidos.");
+      if (actor.role !== "administrador" && this.categories[categoryId].organizador !== actor.organizador) throw new Error("El actor no puede modificar esta categoría.");
       this.categories[categoryId].equipos = [...teams];
       this.matches[categoryId] = [];
     }
-    generateFixture(categoryId, options = {}) {
+    generateFixture(actorId, categoryId, options = {}) {
+      const actor = this.requireRole(actorId, ["administrador", "asociacion"]);
       const category = this.categories[categoryId]; if (!category) throw new Error("Categoría sintética inexistente.");
+      if (category.torneo_id !== this.activeTournamentId || actor.role !== "administrador" && category.organizador !== actor.organizador) throw new Error("El actor no puede generar fixture para esta categoría.");
       const generated = fixtureRules.generateFixture(category.equipos, options.start || "2027-04-04", options.blocked || category.blocked, options.frequency || 1, options.wheels || 1, options.gameDay ?? 0);
       this.matches[categoryId] = generated.matches; return clone(generated);
     }
@@ -156,7 +160,7 @@
     simulateCompleteChampionship(categoryId) {
       const category = this.categories[categoryId];
       if (!category) throw new Error("Categoría sintética inexistente.");
-      this.generateFixture(categoryId, { start: "2027-04-04", blocked: category.blocked, gameDay: 0 });
+      this.generateFixture("admin-demo", categoryId, { start: "2027-04-04", blocked: category.blocked, gameDay: 0 });
       for (const match of this.getMatches(categoryId)) this.loadResult(categoryId, match.partido_numero, 80, 70);
       const format = category.equipos.length >= 8 ? 8 : category.equipos.length >= 6 ? 6 : 4;
       this.generatePlayoffs(categoryId, format, { seriesGames: 1 });

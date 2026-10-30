@@ -2,8 +2,8 @@ const assert = require("assert");
 const Provider = require("../demo_2027_provider.js");
 
 const provider = new Provider();
-provider.setCategoryTeams("maxi-a", ["A", "B", "C", "D", "E", "F", "G", "H"]);
-provider.generateFixture("maxi-a", { start: "2027-04-04" });
+provider.setCategoryTeams("asoc-demo", "maxi-a", ["A", "B", "C", "D", "E", "F", "G", "H"]);
+provider.generateFixture("asoc-demo", "maxi-a", { start: "2027-04-04" });
 const table = provider.getTable("maxi-a");
 assert.strictEqual(table.length, 8);
 
