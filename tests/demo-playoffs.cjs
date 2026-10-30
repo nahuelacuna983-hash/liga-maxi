@@ -36,6 +36,11 @@ for (const match of provider.getPlayoffMatches("maxi-a").filter((item) => item.r
 state = provider.advancePlayoffs("maxi-a");
 assert.strictEqual(state.estado, "finalizado");
 assert.ok(provider.getChampion("maxi-a"));
+const championBeforeAnnul = provider.getChampion("maxi-a");
+const completedFinal = provider.getPlayoffMatches("maxi-a").find((match) => match.ronda === "final" && match.puntos_local != null);
+provider.annulPlayoffResult("maxi-a", completedFinal.partido_numero);
+assert.strictEqual(provider.getChampion("maxi-a"), null);
+assert.notStrictEqual(championBeforeAnnul, null);
 provider.generatePlayoffs("maxi-a", 4, { seriesGames: 3 });
 for (const match of provider.getPlayoffMatches("maxi-a")) provider.loadPlayoffResult("maxi-a", match.partido_numero, match.serie_partido <= 2 ? 80 : 60, match.serie_partido <= 2 ? 60 : 70);
 let bestOfThree = provider.advancePlayoffs("maxi-a");

@@ -98,7 +98,8 @@
       const match = playoff?.matches.find((item) => item.partido_numero === matchNumber);
       if (!match) throw new Error("Partido de playoffs sintético inexistente.");
       match.puntos_local = null; match.puntos_visitante = null;
-      if (playoff.estado !== "finalizado") playoff.estado = "listo";
+      playoff.champion = null;
+      playoff.estado = "pendiente_resultados";
       return clone(match);
     }
     advancePlayoffs(categoryId) {
