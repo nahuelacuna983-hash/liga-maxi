@@ -1,0 +1,18 @@
+const assert = require("assert");
+const Provider = require("../demo_2027_provider.js");
+const provider = new Provider();
+
+provider.setPermission("admin-demo", "asoc-b", { role: "asociacion", organizador: "org-b" });
+const second = provider.createTournament("asoc-b", { nombre: "Torneo B", temporada: 2027 });
+provider.addCategory("asoc-b", second.id, { id: "cat-b", nombre: "Categoría B" });
+assert.throws(() => provider.setActiveTournament("asoc-demo", second.id), /no pertenece/);
+provider.setActiveTournament("asoc-b", second.id);
+provider.setCategoryTeams("cat-b", ["Equipo B1", "Equipo B2"]);
+provider.registerPlayer("asoc-b", { id: "player-b", nombre: "Jugador B", equipo: "Equipo B1", categoria: "cat-b" });
+assert.throws(() => provider.setDocumentStatus("asoc-demo", "player-b", "seguro", "observado"), /otro organizador/);
+provider.setActiveTournament("admin-demo", "demo-2027");
+assert.throws(() => provider.registerPlayer("delegado-a", { id: "wrong", nombre: "Fuera", equipo: "Equipo B1", categoria: "cat-b" }), /fuera del torneo activo/);
+provider.setPermission("asoc-demo", "delegado-a", { categorias: ["maxi-a"], equipos: ["Sud América"] });
+assert.throws(() => provider.registerPlayer("delegado-a", { id: "wrong", nombre: "Fuera", equipo: "Gonnet", categoria: "maxi-b" }), /no puede registrar/);
+assert.throws(() => provider.setPermission("asoc-demo", "asoc-b", { organizador: "org-b" }), /otro organizador/);
+console.log("DEMO_ISOLATION_OK");

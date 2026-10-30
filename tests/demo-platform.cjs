@@ -5,6 +5,7 @@ const provider = new Provider();
 const created = provider.createTournament("asoc-demo", { nombre: "Clausura sintético", temporada: 2027 });
 assert.strictEqual(created.estado, "borrador");
 provider.setActiveTournament("asoc-demo", created.id);
+provider.setActiveTournament("admin-demo", "demo-2027");
 assert.throws(() => provider.createTournament("delegado-a", { nombre: "No autorizado", temporada: 2027 }), /no autorizada/);
 provider.setPermission("asoc-demo", "delegado-a", { equipos: ["Sud América"], categorias: ["maxi-a"] });
 provider.registerPlayer("asoc-demo", { id: "player-1", nombre: "Jugador Sintético", equipo: "Sud América", categoria: "maxi-a" });
