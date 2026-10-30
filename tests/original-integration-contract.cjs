@@ -1,0 +1,11 @@
+const assert = require("assert");
+const fs = require("fs");
+const original = fs.readFileSync("index_online.html", "utf8");
+const demo = fs.readFileSync("demo_circuito_2027.html", "utf8");
+const controller = fs.readFileSync("demo_circuito_2027.js", "utf8");
+for (const id of ["tab-publico", "tab-fecha", "tab-delegados", "tab-asociacion"]) assert.match(original, new RegExp(`id="${id}"`));
+for (const panel of ["inicio", "operacion", "documentacion", "torneo", "programacion", "permisos"]) assert.match(original, new RegExp(`data-asociacion-panel-view="${panel}"`));
+for (const view of ["public", "date", "delegate", "association"]) assert.match(demo, new RegExp(`data-view="${view}"`));
+assert.doesNotMatch(demo, /supabase|fetch\(/i);
+assert.doesNotMatch(controller, /supabase|fetch\(/i);
+console.log("ORIGINAL_INTEGRATION_CONTRACT_OK");
