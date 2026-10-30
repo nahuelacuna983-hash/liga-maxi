@@ -21,6 +21,11 @@ assert.ok(complete("maxi-a", ["A", "B", "C", "D"], 4));
 assert.ok(complete("maxi-a", ["A", "B", "C", "D", "E", "F"], 6));
 assert.ok(complete("maxi-a", ["A", "B", "C", "D", "E", "F", "G", "H"], 8));
 assert.ok(complete("maxi-a", ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"], 8));
+const simulated = new Provider();
+const championship = simulated.simulateCompleteChampionship("maxi-a");
+assert.ok(championship.champion);
+assert.strictEqual(simulated.getPlayoffs("maxi-b").length, 0);
+assert.strictEqual(simulated.getChampion("maxi-a"), championship.champion);
 
 const isolated = new Provider();
 isolated.setCategoryTeams("maxi-a", ["A", "B", "C", "D"]);

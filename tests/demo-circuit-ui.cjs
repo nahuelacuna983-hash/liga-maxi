@@ -10,6 +10,7 @@ assert.doesNotMatch(js, /supabase|fetch\(/i);
 assert.match(js, /loadDelegateResult/);
 assert.match(js, /getTable/);
 assert.match(js, /champion-card/);
+assert.match(js, /simulateCompleteChampionship/);
 assert.match(js, /estado !== "finalizado"/);
 assert.match(html, /@media\(max-width:720px\)/);
 console.log("DEMO_CIRCUIT_UI_STATIC_OK");

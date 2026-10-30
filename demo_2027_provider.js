@@ -135,6 +135,21 @@
       return clone(playoff);
     }
     getChampion(categoryId) { return this.playoffs[categoryId]?.champion || null; }
+    simulateCompleteChampionship(categoryId) {
+      const category = this.categories[categoryId];
+      if (!category) throw new Error("Categoría sintética inexistente.");
+      this.generateFixture(categoryId, { start: "2027-04-04", blocked: category.blocked, gameDay: 0 });
+      for (const match of this.getMatches(categoryId)) this.loadResult(categoryId, match.partido_numero, 80, 70);
+      const format = category.equipos.length >= 8 ? 8 : category.equipos.length >= 6 ? 6 : 4;
+      this.generatePlayoffs(categoryId, format, { seriesGames: 1 });
+      for (let guard = 0; guard < 6; guard += 1) {
+        const pending = this.getPlayoffMatches(categoryId).filter((match) => match.puntos_local == null && match.local && match.visitante);
+        for (const match of pending) this.loadPlayoffResult(categoryId, match.partido_numero, 70, 60);
+        const state = this.advancePlayoffs(categoryId);
+        if (state.estado === "finalizado") return clone({ categoryId, champion: state.champion, table: this.getTable(categoryId), playoffs: state });
+      }
+      throw new Error("La simulación no alcanzó un campeón.");
+    }
     getDelegate(id) { return clone(this.delegates[id]); }
     getDelegateMatches(id, categoryId) { const delegate = this.delegates[id]; if (!delegate) return []; return this.getMatches(categoryId).filter((match) => delegate.equipos.includes(match.local) || delegate.equipos.includes(match.visitante)); }
     getPlayoffs(categoryId) { return clone(this.playoffs[categoryId] || []); }
