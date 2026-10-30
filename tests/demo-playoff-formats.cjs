@@ -10,6 +10,17 @@ function completeRound(provider, categoryId, round, score = [80, 70]) {
   for (const match of provider.getPlayoffMatches(categoryId).filter((item) => item.ronda === round && item.puntos_local == null)) provider.loadPlayoffResult(categoryId, match.partido_numero, score[0], score[1]);
   return provider.advancePlayoffs(categoryId);
 }
+function completeBestOfRound(provider, categoryId, round) {
+  const pending = provider.getPlayoffMatches(categoryId).filter((item) => item.ronda === round && item.puntos_local == null);
+  const winners = new Map();
+  for (const match of pending) {
+    const winner = winners.get(match.llave) || match.local;
+    winners.set(match.llave, winner);
+    const localWins = winner === match.local;
+    provider.loadPlayoffResult(categoryId, match.partido_numero, localWins ? 80 : 60, localWins ? 60 : 80);
+  }
+  return provider.advancePlayoffs(categoryId);
+}
 
 const p = new Provider();
 completeRegularSeason(p, 'maxi-a', ['A', 'B', 'C', 'D', 'E', 'F']);
@@ -23,8 +34,8 @@ for (const tiedSecond of p.getPlayoffMatches('maxi-a').filter((m) => m.ronda ===
 }
 p.advancePlayoffs('maxi-a');
 assert.equal(p.getPlayoffMatches('maxi-a').filter((m) => m.ronda === 'semifinales').length, 4, 'two-game series generate two semifinal matches per pairing');
-completeRound(p, 'maxi-a', 'semifinales');
-completeRound(p, 'maxi-a', 'final');
+completeBestOfRound(p, 'maxi-a', 'semifinales');
+completeBestOfRound(p, 'maxi-a', 'final');
 assert.equal(p.getPlayoffs('maxi-a').estado, 'finalizado');
 assert.ok(p.getChampion('maxi-a'));
 
