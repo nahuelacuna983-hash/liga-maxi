@@ -21,7 +21,7 @@ Los resultados y playoffs son exclusivamente de memoria. El selector de delegado
 
 ## Limitaciones
 
-La demo todavía no implementa el avance automático de ganadores entre rondas ni una simulación completa de series de varios partidos. Esas reglas dependen de la configuración de cada categoría y deben extraerse antes de presentarlas como comportamiento final. Playwright no está instalado en este entorno; la validación de navegador disponible fue manual en Edge.
+La demo implementa el avance sintético de rondas y series configuradas, pero todavía no reemplaza la publicación real ni Auth/RLS. Las reglas no expresadas por la configuración original permanecen fuera de alcance. Playwright no está instalado en este entorno; la validación de navegador disponible fue manual en Edge.
 
 ## Reproducción
 

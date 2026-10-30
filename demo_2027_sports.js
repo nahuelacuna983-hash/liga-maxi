@@ -70,5 +70,15 @@
     const totals = {}; (partidos || []).filter((partido) => partido.llave === llave && partido.puntos_local != null && partido.puntos_visitante != null).forEach((partido) => { totals[partido.local] = (totals[partido.local] || 0) + partido.puntos_local; totals[partido.visitante] = (totals[partido.visitante] || 0) + partido.puntos_visitante; });
     const ordered = Object.entries(totals).sort((a, b) => b[1] - a[1]); return ordered.length > 1 && ordered[0][1] !== ordered[1][1] ? ordered[0][0] : "";
   }
-  return { calcularTabla, calcularMiniTablaOlimpica, validateNormalResult, ganadorPartidoPlayoff, ganadorSerieGlobal };
+  function ganadorSerieMejorDe(partidos, llave) {
+    const wins = {};
+    for (const partido of (partidos || []).filter((item) => item.llave === llave)) {
+      const winner = ganadorPartidoPlayoff(partido);
+      if (!winner) continue;
+      wins[winner] = (wins[winner] || 0) + 1;
+    }
+    const ordered = Object.entries(wins).sort((a, b) => b[1] - a[1]);
+    return ordered.length && ordered[0][1] >= 2 && (!ordered[1] || ordered[0][1] > ordered[1][1]) ? ordered[0][0] : "";
+  }
+  return { calcularTabla, calcularMiniTablaOlimpica, validateNormalResult, ganadorPartidoPlayoff, ganadorSerieGlobal, ganadorSerieMejorDe };
 });
