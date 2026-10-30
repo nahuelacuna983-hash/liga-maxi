@@ -1,0 +1,14 @@
+const assert = require("assert");
+const Provider = require("../demo_2027_provider.js");
+const provider = new Provider();
+assert.strictEqual(provider.getTournament().id, "demo-2027");
+provider.generateFixture("maxi-a", { start: "2027-04-04", blocked: ["2027-04-11"], gameDay: 0 });
+assert.strictEqual(provider.getMatches("maxi-a").length, 6);
+const first = provider.getMatches("maxi-a")[0];
+provider.loadResult("maxi-a", first.partido_numero, 70, 60);
+assert.strictEqual(provider.getTable("maxi-a")[0].pts, 2);
+assert.throws(() => provider.loadResult("maxi-a", first.partido_numero, 60, 60), /no puede terminar empatado/);
+provider.setAdministrativeNoPoints("maxi-a", 2);
+assert.strictEqual(provider.getTable("maxi-a").find((row) => row.pts === 0).pts, 0);
+assert.deepStrictEqual(provider.getDelegateMatches("delegado-a", "maxi-a").every((match) => match.local === "Sud América" || match.visitante === "Sud América"), true);
+console.log("DEMO_PROVIDER_OK");
