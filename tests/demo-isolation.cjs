@@ -2,7 +2,7 @@ const assert = require("assert");
 const Provider = require("../demo_2027_provider.js");
 const provider = new Provider();
 
-provider.setPermission("admin-demo", "asoc-b", { role: "asociacion", organizador: "org-b" });
+provider.createUser("admin-demo", "asoc-b", { role: "asociacion", organizador: "org-b" });
 const second = provider.createTournament("asoc-b", { nombre: "Torneo B", temporada: 2027 });
 provider.addCategory("asoc-b", second.id, { id: "cat-b", nombre: "Categoría B" });
 assert.throws(() => provider.setActiveTournament("asoc-demo", second.id), /no pertenece/);
