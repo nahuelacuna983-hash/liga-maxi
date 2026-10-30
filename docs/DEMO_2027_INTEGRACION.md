@@ -4,6 +4,8 @@
 
 La aplicación original organiza la experiencia pública en `Público`, `Fecha`, `Delegados` y `Asociación`. La demo integrada conserva ese recorrido mediante vistas sintéticas y mantiene los estilos base de `style.css` en lugar de introducir un sistema visual paralelo.
 
+La correspondencia estructural se verifica con `tests/demo-structure.cjs`: los cuatro tabs originales existen en `index_online.html`, las cuatro vistas equivalentes existen en la demo y la demo no contiene URLs remotas.
+
 En Asociación, la aplicación original separa Inicio, Competencia, Documentación, Torneos, Programación y Administración. La demo implementa por ahora el subconjunto seguro de Competencia/Programación: categoría, equipos sintéticos, fixture, fechas bloqueadas y playoffs en memoria.
 
 ## Separación de arquitectura
@@ -35,4 +37,4 @@ Abrir `http://127.0.0.1:4173/demo_circuito_2027.html`. En Asociación generar fi
 
 ## Pendientes
 
-Playwright no está instalado en este entorno y no se declara una prueba automatizada Playwright como ejecutada. La integración con Supabase/Auth/RLS requiere una base aislada posterior. Las funciones documentales y administrativas de la aplicación original permanecen fuera de esta demo deportiva.
+Playwright no está instalado en este entorno y no se declara una prueba automatizada Playwright como ejecutada; la prueba de navegador disponible sigue siendo manual en Edge. La integración con Supabase/Auth/RLS requiere una base aislada posterior. Las funciones documentales y administrativas de la aplicación original permanecen fuera de esta demo deportiva.
