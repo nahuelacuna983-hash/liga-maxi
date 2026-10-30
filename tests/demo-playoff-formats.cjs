@@ -17,9 +17,10 @@ const top6 = p.generatePlayoffs('maxi-a', 6, { seriesGames: 2 });
 assert.equal(top6.matches.filter((m) => m.ronda === 'repechaje').length, 4);
 completeRound(p, 'maxi-a', 'repechaje', [70, 60]);
 assert.equal(p.getPlayoffMatches('maxi-a').filter((m) => m.ronda === 'semifinales').length, 0, 'global tie must not advance');
-const tiedSecond = p.getPlayoffMatches('maxi-a').find((m) => m.ronda === 'repechaje' && m.serie_partido === 2);
-p.annulPlayoffResult('maxi-a', tiedSecond.partido_numero);
-p.loadPlayoffResult('maxi-a', tiedSecond.partido_numero, 70, 50);
+for (const tiedSecond of p.getPlayoffMatches('maxi-a').filter((m) => m.ronda === 'repechaje' && m.serie_partido === 2)) {
+  p.annulPlayoffResult('maxi-a', tiedSecond.partido_numero);
+  p.loadPlayoffResult('maxi-a', tiedSecond.partido_numero, 70, 50);
+}
 p.advancePlayoffs('maxi-a');
 assert.equal(p.getPlayoffMatches('maxi-a').filter((m) => m.ronda === 'semifinales').length, 2);
 completeRound(p, 'maxi-a', 'semifinales');
