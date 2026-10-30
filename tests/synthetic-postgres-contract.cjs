@@ -5,6 +5,7 @@ const schema = fs.readFileSync('docs/synthetic-persistence-schema.sql', 'utf8');
 const tests = fs.readFileSync('docs/synthetic-persistence-tests.sql', 'utf8');
 const roles = fs.readFileSync('docs/synthetic-persistence-roles.sql', 'utf8');
 const workflow = fs.readFileSync('.github/workflows/synthetic-postgres-local.yml', 'utf8');
+const entrypoint = fs.readFileSync('tools/rls-local-test.sql', 'utf8');
 
 assert.match(schema, /errcode = '55000'/);
 assert.match(schema, /security definer\s+set search_path = public/);
@@ -16,4 +17,7 @@ assert.match(roles, /grant insert on lm_document_events to lm_app/);
 assert.match(workflow, /postgres:16/);
 assert.match(workflow, /with:[\s\S]*ref: \$\{\{ inputs\.ref \}\}/);
 assert.match(workflow, /synthetic-persistence-tests\.sql/);
+assert.match(entrypoint, /\\ir \.\.\/docs\/synthetic-persistence-schema\.sql/);
+assert.match(entrypoint, /\\ir \.\.\/docs\/synthetic-persistence-roles\.sql/);
+assert.match(entrypoint, /\\ir \.\.\/docs\/synthetic-persistence-tests\.sql/);
 console.log('SYNTHETIC_POSTGRES_CONTRACT_OK');
