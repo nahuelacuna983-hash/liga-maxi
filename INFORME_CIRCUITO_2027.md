@@ -18,10 +18,12 @@ Los resultados y playoffs son exclusivamente de memoria. El selector de delegado
 - Top 6 conserva la definición `global`, tal como está expresada en la lógica original; Top 4/Top 8 conservan el modo de serie configurado.
 - Equivalencia de tabla, desempate olímpico y ganadores de playoffs contra funciones extraídas de `app_online.js`.
 - Prueba visual real en Edge del circuito integrado, con actualización visible de resultado y tabla.
+- Torneos completos sintéticos con 4, 6, 8 y 10 equipos, desde fase regular hasta campeón.
+- Alternancia de categorías sin pérdida de fixtures ni playoffs.
 
 ## Limitaciones
 
-La demo implementa el avance sintético de rondas y series configuradas, pero todavía no reemplaza la publicación real ni Auth/RLS. Las reglas no expresadas por la configuración original permanecen fuera de alcance. Playwright no está instalado en este entorno; la validación de navegador disponible fue manual en Edge.
+La demo implementa el avance sintético de rondas y series configuradas, pero todavía no reemplaza la publicación real ni Auth/RLS. Las reglas no expresadas por la configuración original permanecen fuera de alcance. Playwright no está instalado en este entorno y no se ejecutó automatización Playwright en esta iteración; la validación de navegador disponible fue manual en Edge.
 
 ## Reproducción
 
