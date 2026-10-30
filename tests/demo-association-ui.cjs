@@ -7,4 +7,6 @@ for (const panel of ["inicio", "competencia", "documentacion", "torneos", "progr
 assert.match(html, /no hay conexión a Supabase ni escrituras remotas/);
 assert.match(js, /document\.querySelectorAll\("\.assoc-panel"\)/);
 assert.doesNotMatch(js, /supabase|fetch\(/i);
+assert.match(html, /\.assoc-demo \.assoc-panel \{\s*display:block;/);
+assert.match(html, /\.assoc-demo \.assoc-panel\[hidden\] \{\s*display:none !important;/);
 console.log("DEMO_ASSOCIATION_UI_STATIC_OK");
