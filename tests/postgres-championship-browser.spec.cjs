@@ -4,11 +4,19 @@ const base = process.env.POSTGRES_UI_BASE_URL || "http://127.0.0.1:8787/demo_cir
 test.skip(!process.env.POSTGRES_UI_BASE_URL, "Requiere PostgreSQL 16 y el backend HTTP levantado por CI.");
 
 async function saveResult(page, select, local, away) {
-  await page.locator(select).selectOption({ index: 1 });
+  const pending = await page.locator(`${select} option`).evaluateAll((options) => options.filter((option) => option.value).map((option) => ({ value: option.value, label: option.textContent })));
+  if (!pending.length) throw new Error(`No hay partidos pendientes en ${select}. Opciones: ${JSON.stringify(pending)}`);
+  const matchId = pending[0].value;
+  await page.locator(select).selectOption(matchId);
+  expect(await page.locator(select).inputValue()).toBe(matchId);
   await page.locator("#pg-playoff-local").fill(String(local));
   await page.locator("#pg-playoff-away").fill(String(away));
+  const response = page.waitForResponse((item) => item.url().includes("/api/playoffs") && item.request().method() === "POST");
   await page.locator("#pg-playoff-result").click();
+  const result = await response;
+  if (result.status() !== 201) throw new Error(`Resultado playoff rechazado para ${matchId}: HTTP ${result.status()} ${await result.text()}`);
   await expect(page.locator("#circuit-status")).toContainText("Resultado de playoff confirmado");
+  return matchId;
 }
 
 test("completa un campeonato Top 4 y recupera el campeón desde PostgreSQL", async ({ page }) => {
@@ -59,8 +67,9 @@ test("completa un campeonato Top 4 y recupera el campeón desde PostgreSQL", asy
   await page.locator("#pg-playoff-generate").click();
   await expect(page.locator("#circuit-status")).toContainText("Playoffs confirmados");
   await expect(page.locator("#pg-playoff-match option")).toHaveCount(3);
-  await saveResult(page, "#pg-playoff-match", 78, 70);
-  await saveResult(page, "#pg-playoff-match", 76, 69);
+  const semifinalOne = await saveResult(page, "#pg-playoff-match", 78, 70);
+  const semifinalTwo = await saveResult(page, "#pg-playoff-match", 76, 69);
+  expect(semifinalTwo).not.toBe(semifinalOne);
   await page.locator("#pg-playoff-advance").click();
   await expect(page.locator("#circuit-status")).toContainText("Avance de playoff confirmado");
   await expect(page.locator("#pg-playoff-match option")).toHaveCount(2);
