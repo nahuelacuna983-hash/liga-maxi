@@ -10,7 +10,7 @@ const repository = {
   saveFixture: async (categoryId, matches) => matches.length,
   scheduleMatch: async (input) => input,
   saveResult: async (input) => input,
-  readCategory: async (id) => ({ category: { id }, matches: [], history: [] })
+  readCategory: async (id) => ({ category: { id }, teams: [], matches: [], history: [] })
 };
 
 function request(base, path, method = "GET", payload) {
@@ -29,6 +29,8 @@ function request(base, path, method = "GET", payload) {
   assert.equal((await fixture.json()).saved, 1);
   const category = await request(base, "/api/categories/cat");
   assert.equal((await category.json()).category.id, "cat");
+  const competition = await request(base, "/api/categories/cat/competition");
+  assert.deepEqual((await competition.json()).table, []);
   await new Promise((resolve) => server.close(resolve));
   console.log("POSTGRES_SERVER_CONTRACT_OK");
 })().catch((error) => { console.error(error); process.exitCode = 1; });

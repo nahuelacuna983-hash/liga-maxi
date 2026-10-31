@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { Pool } = require("pg");
 const PostgresRepository = require("./demo_2027_postgres_repository.js");
+const sports = require("./demo_2027_sports.js");
 
 function json(response, status, body) {
   response.writeHead(status, { "content-type": "application/json; charset=utf-8" });
@@ -38,6 +39,12 @@ function createServer({ repository, staticRoot = null }) {
       if (request.method === "POST" && /^\/api\/matches\/[^/]+\/schedule$/.test(url.pathname)) { const input = await body(request); input.matchId = url.pathname.split("/")[3]; return json(response, 200, await repository.scheduleMatch(input)); }
       if (request.method === "POST" && /^\/api\/matches\/[^/]+\/result$/.test(url.pathname)) { const input = await body(request); input.matchId = url.pathname.split("/")[3]; return json(response, 200, await repository.saveResult(input)); }
       if (request.method === "GET" && /^\/api\/categories\/[^/]+$/.test(url.pathname)) return json(response, 200, await repository.readCategory(url.pathname.split("/")[3]));
+      if (request.method === "GET" && /^\/api\/categories\/[^/]+\/competition$/.test(url.pathname)) {
+        const state = await repository.readCategory(url.pathname.split("/")[3]);
+        const names = new Map(state.teams.map((team) => [team.id, team.name]));
+        const matches = state.matches.map((match) => ({ ...match, local: names.get(match.home_team_id), visitante: names.get(match.away_team_id), puntos_local: match.home_score, puntos_visitante: match.away_score, estado_resultado: match.result_state }));
+        return json(response, 200, { ...state, matches, table: sports.calcularTabla(matches) });
+      }
       return json(response, 404, { error: "Ruta no encontrada" });
     } catch (error) { return json(response, 400, { error: error.message, code: error.code || "PERSISTENCE_ERROR" }); }
   });

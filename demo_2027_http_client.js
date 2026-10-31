@@ -18,6 +18,7 @@ class PostgresHttpClient {
   schedule(matchId, input) { return this.request(`/api/matches/${matchId}/schedule`, "POST", input); }
   result(matchId, input) { return this.request(`/api/matches/${matchId}/result`, "POST", input); }
   categoryState(categoryId) { return this.request(`/api/categories/${categoryId}`); }
+  competition(categoryId) { return this.request(`/api/categories/${categoryId}/competition`); }
 }
 
 if (typeof module !== "undefined") module.exports = PostgresHttpClient;
