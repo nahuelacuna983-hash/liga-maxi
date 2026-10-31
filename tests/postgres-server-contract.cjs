@@ -18,11 +18,13 @@ function request(base, path, method = "GET", payload) {
 }
 
 (async () => {
-  const server = createServer({ repository });
+  const server = createServer({ repository, staticRoot: require("node:path").join(__dirname, "..") });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   const health = await request(base, "/health");
   assert.deepEqual(await health.json(), { ok: true, persistence: "postgresql" });
+  const page = await request(base, "/demo_persistencia_2027.html");
+  assert.match(await page.text(), /PERSISTENCIA LOCAL/);
   const fixture = await request(base, "/api/fixtures", "POST", { categoryId: "cat", actorId: "actor", matches: [{ id: "m1" }] });
   assert.equal((await fixture.json()).saved, 1);
   const category = await request(base, "/api/categories/cat");

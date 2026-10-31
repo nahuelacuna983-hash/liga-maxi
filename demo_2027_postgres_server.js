@@ -1,6 +1,8 @@
 "use strict";
 
 const http = require("node:http");
+const fs = require("node:fs");
+const path = require("node:path");
 const { Pool } = require("pg");
 const PostgresRepository = require("./demo_2027_postgres_repository.js");
 
@@ -13,10 +15,19 @@ async function body(request) {
   for await (const chunk of request) raw += chunk;
   return raw ? JSON.parse(raw) : {};
 }
-function createServer({ repository }) {
+function createServer({ repository, staticRoot = null }) {
   return http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, "http://127.0.0.1");
+      if (request.method === "GET" && staticRoot && ["/", "/demo_persistencia_2027.html", "/demo_2027_http_client.js", "/style.css"].includes(url.pathname)) {
+        const file = url.pathname === "/" ? "demo_persistencia_2027.html" : url.pathname.slice(1);
+        const target = path.resolve(staticRoot, file);
+        if (!target.startsWith(path.resolve(staticRoot) + path.sep) && target !== path.resolve(staticRoot, file)) return json(response, 400, { error: "Ruta estática inválida" });
+        if (!fs.existsSync(target)) return json(response, 404, { error: "Recurso no encontrado" });
+        const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
+        response.writeHead(200, { "content-type": types[path.extname(target)] || "application/octet-stream" });
+        return response.end(fs.readFileSync(target));
+      }
       if (request.method === "GET" && url.pathname === "/health") return json(response, 200, { ok: true, persistence: "postgresql" });
       if (request.method === "GET" && url.pathname === "/api/tournaments") return json(response, 200, await repository.readTournaments());
       if (request.method === "POST" && url.pathname === "/api/tournaments") return json(response, 201, await repository.createTournament(await body(request)));
@@ -34,7 +45,7 @@ function createServer({ repository }) {
 
 if (require.main === module) {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const server = createServer({ repository: new PostgresRepository(pool) });
+  const server = createServer({ repository: new PostgresRepository(pool), staticRoot: process.cwd() });
   const port = Number(process.env.PORT || 8787);
   server.listen(port, "127.0.0.1", () => console.log(`Liga Maxi PostgreSQL local: http://127.0.0.1:${port}`));
   const close = async () => { server.close(); await pool.end(); };
