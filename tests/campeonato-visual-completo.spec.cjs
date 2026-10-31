@@ -31,9 +31,11 @@ test('administra un campeonato nuevo desde controles visibles hasta el campeón'
   await page.getByRole('button', { name: 'Guardar alcance' }).click();
   await expect(page.locator('#circuit-status')).toHaveText('Alcance del delegado actualizado.');
   await expect(page.locator('#view-association')).toContainText('delegado-visual');
+  await page.locator('#circuit-category').selectOption('visual-cat');
   await page.getByRole('button', { name: 'Delegados' }).click();
   await page.locator('#active-delegate').selectOption('delegado-visual');
-  await page.waitForTimeout(100);
+  await expect(page.locator('#active-delegate')).toHaveValue('delegado-visual');
+  await expect(page.locator('input[name="circuit-match"]')).toHaveCount(3);
   await expect(page.getByText('Delegado ficticio')).toBeVisible();
   const ownMatch = page.locator('input[name="circuit-match"]').first();
   await ownMatch.check();
