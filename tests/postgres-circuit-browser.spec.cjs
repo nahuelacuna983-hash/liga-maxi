@@ -35,6 +35,7 @@ test("opera y recupera el circuito principal contra PostgreSQL", async ({ page }
   await page.locator("#pg-schedule").click();
   expect((await scheduleResponse).status()).toBe(200);
   await expect(page.locator("#circuit-status")).toContainText("Programación confirmada");
+  await expect(page.locator("#pg-match")).toHaveValue(matchId);
   await page.locator("#pg-local").fill("80");
   await page.locator("#pg-away").fill("70");
   const resultResponse = page.waitForResponse((response) => response.url().includes("/result") && response.request().method() === "POST");
