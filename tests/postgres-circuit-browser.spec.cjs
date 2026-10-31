@@ -26,7 +26,9 @@ test("opera y recupera el circuito principal contra PostgreSQL", async ({ page }
   await page.locator("#pg-fixture").click();
   await expect(page.locator("#circuit-status")).toContainText("Fixture confirmado");
   await expect(page.locator("#pg-match option")).toHaveCount(7);
+  await page.locator("#pg-match").selectOption({ index: 1 });
   const matchId = await page.locator("#pg-match").inputValue();
+  expect(matchId).toMatch(/^[0-9a-f-]{36}$/);
   await page.locator("#pg-date").fill("2027-06-13T15:00");
   await page.locator("#pg-court").fill("Cancha Browser");
   const scheduleResponse = page.waitForResponse((response) => response.url().includes("/schedule") && response.request().method() === "POST");
