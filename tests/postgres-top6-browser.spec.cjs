@@ -1,7 +1,18 @@
 const { test, expect } = require("@playwright/test");
 const base = process.env.POSTGRES_UI_BASE_URL || "http://127.0.0.1:8787/demo_circuito_2027.html?mode=postgres";
 test.skip(!process.env.POSTGRES_UI_BASE_URL, "Requiere PostgreSQL 16 y el backend HTTP levantado por CI.");
-async function playoffResult(page, local, away) { const options = await page.locator("#pg-playoff-match option").evaluateAll((items) => items.filter((item) => item.value).map((item) => item.value)); if (!options.length) throw new Error("No quedan playoffs pendientes"); const id = options[0]; await page.locator("#pg-playoff-match").selectOption(id); await page.locator("#pg-playoff-local").fill(String(local)); await page.locator("#pg-playoff-away").fill(String(away)); await page.locator("#pg-playoff-result").click(); await expect(page.locator("#circuit-status")).toContainText("Resultado de playoff confirmado"); return id; }
+async function playoffResult(page, local, away) {
+  const state = await page.locator("#pg-playoff-state").textContent();
+  const options = await page.locator("#pg-playoff-match option").evaluateAll((items) => items.filter((item) => item.value).map((item) => ({ value: item.value, label: item.textContent })));
+  if (!options.length) throw new Error(`No quedan playoffs pendientes; estado=${JSON.stringify(state)} opciones=${JSON.stringify(options)}`);
+  const id = options[0].value;
+  await page.locator("#pg-playoff-match").selectOption(id);
+  await page.locator("#pg-playoff-local").fill(String(local));
+  await page.locator("#pg-playoff-away").fill(String(away));
+  await page.locator("#pg-playoff-result").click();
+  await expect(page.locator("#circuit-status")).toContainText("Resultado de playoff confirmado");
+  return id;
+}
 test("completa Top 6 persistente con repechaje, semifinales, final y recuperaci처n", async ({ page }) => {
   const errors = []; page.on("pageerror", (error) => errors.push(error.message)); page.on("requestfailed", (request) => errors.push(`${request.method()} ${request.url()}`));
   await page.goto(base); await expect(page.locator("#circuit-status")).toContainText("PostgreSQL local conectado"); await page.getByRole("button", { name: "Asociaci처n" }).click();
@@ -10,8 +21,11 @@ test("completa Top 6 persistente con repechaje, semifinales, final y recuperaci�
   for (let i = 1; i <= 6; i += 1) { await page.locator("#pg-team").fill(`Top6 ${i}`); await page.locator("#pg-add-team").click(); await expect(page.locator("#pg-team-state")).toContainText(`Equipos persistidos: ${i}`); }
   await page.locator("#pg-fixture").click(); await expect(page.locator("#pg-match option")).toHaveCount(16);
   for (let i = 1; i <= 15; i += 1) { await page.locator("#pg-match").selectOption({ index: i }); await page.locator("#pg-local").fill(String(80 + i)); await page.locator("#pg-away").fill(String(60 + i)); await page.locator("#pg-result").click(); await expect(page.locator("#circuit-status")).toContainText("Resultado confirmado"); }
-  await page.locator("#pg-playoff-top").selectOption("6"); await page.locator("#pg-playoff-generate").click(); await expect(page.locator("#circuit-status")).toContainText("Playoffs confirmados"); await expect(page.locator("#pg-playoff-match option")).toHaveCount(3);
-  await playoffResult(page, 80, 70); await playoffResult(page, 79, 68); await page.locator("#pg-playoff-advance").click(); await expect(page.locator("#circuit-status")).toContainText("Avance de playoff confirmado");
+  await page.locator("#pg-playoff-top").selectOption("6"); await page.locator("#pg-playoff-generate").click(); await expect(page.locator("#circuit-status")).toContainText("Playoffs confirmados");
+  // Top 6 uses two-game global repechage series: two series, four pending matches.
+  await expect(page.locator("#pg-playoff-match option")).toHaveCount(5);
+  await playoffResult(page, 80, 70); await playoffResult(page, 79, 68); await playoffResult(page, 78, 69); await playoffResult(page, 77, 66);
+  await expect(page.locator("#pg-playoff-match option")).toHaveCount(1); await page.locator("#pg-playoff-advance").click(); await expect(page.locator("#circuit-status")).toContainText("Avance de playoff confirmado");
   await playoffResult(page, 81, 70); await playoffResult(page, 78, 69); await page.locator("#pg-playoff-advance").click(); await playoffResult(page, 85, 77); await page.locator("#pg-playoff-advance").click(); await expect(page.locator("#pg-playoff-state")).toContainText("Campe처n:"); const champion = await page.locator("#pg-playoff-state").textContent();
   await page.reload(); await page.getByRole("button", { name: "Asociaci처n" }).click(); await expect(page.locator("#pg-playoff-state")).toContainText("Campe처n:"); expect(await page.locator("#pg-playoff-state").textContent()).toContain(champion.match(/Campe처n:[^\n]+/)?.[0] || "Campe처n:"); expect(errors).toEqual([]);
 });

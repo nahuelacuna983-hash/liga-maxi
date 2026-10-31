@@ -1,7 +1,18 @@
 const { test, expect } = require("@playwright/test");
 const base = process.env.POSTGRES_UI_BASE_URL || "http://127.0.0.1:8787/demo_circuito_2027.html?mode=postgres";
 test.skip(!process.env.POSTGRES_UI_BASE_URL, "Requiere PostgreSQL 16 y el backend HTTP levantado por CI.");
-async function playoffResult(page, local, away) { const id = (await page.locator("#pg-playoff-match option").evaluateAll((items) => items.find((item) => item.value)?.value)); if (!id) throw new Error("No quedan playoffs Top 8 pendientes"); await page.locator("#pg-playoff-match").selectOption(id); await page.locator("#pg-playoff-local").fill(String(local)); await page.locator("#pg-playoff-away").fill(String(away)); await page.locator("#pg-playoff-result").click(); await expect(page.locator("#circuit-status")).toContainText("Resultado de playoff confirmado"); return id; }
+async function playoffResult(page, local, away) {
+  const state = await page.locator("#pg-playoff-state").textContent();
+  const options = await page.locator("#pg-playoff-match option").evaluateAll((items) => items.filter((item) => item.value).map((item) => ({ value: item.value, label: item.textContent })));
+  if (!options.length) throw new Error(`No quedan playoffs Top 8 pendientes; estado=${JSON.stringify(state)} opciones=${JSON.stringify(options)}`);
+  const id = options[0].value;
+  await page.locator("#pg-playoff-match").selectOption(id);
+  await page.locator("#pg-playoff-local").fill(String(local));
+  await page.locator("#pg-playoff-away").fill(String(away));
+  await page.locator("#pg-playoff-result").click();
+  await expect(page.locator("#circuit-status")).toContainText("Resultado de playoff confirmado");
+  return id;
+}
 test("completa Top 8 persistente con cuartos, semifinales, final y recuperación", async ({ page }) => {
   const errors = []; page.on("pageerror", (error) => errors.push(error.message)); page.on("requestfailed", (request) => errors.push(`${request.method()} ${request.url()}`));
   await page.goto(base); await expect(page.locator("#circuit-status")).toContainText("PostgreSQL local conectado"); await page.getByRole("button", { name: "Asociación" }).click();
