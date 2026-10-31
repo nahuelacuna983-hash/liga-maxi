@@ -11,6 +11,8 @@ test("opera y recupera el circuito principal contra PostgreSQL", async ({ page }
   await page.locator("#pg-create-tournament").click();
   await page.locator("#pg-category").fill("Maxi +35 Browser");
   await page.locator("#pg-create-category").click();
+  await page.locator("#pg-add-team").click();
+  await expect(page.locator("#circuit-status")).toContainText("nombre del equipo es obligatorio");
   for (const team of ["Browser A", "Browser B", "Browser C", "Browser D"]) {
     await page.locator("#pg-team").fill(team);
     await page.locator("#pg-add-team").click();

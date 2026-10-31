@@ -52,10 +52,15 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
       - run: npx playwright install --with-deps chromium
-      - name: Start local HTTP backend
-        run: node demo_2027_postgres_server.js > postgres-server.log 2>&1 &
+      - name: Create isolated browser database
+        run: |
+          createdb -h 127.0.0.1 -U postgres liga_maxi_browser
+          psql -h 127.0.0.1 -U postgres -d liga_maxi_browser -v ON_ERROR_STOP=1 -f docs/demo-2027-postgres-schema.sql
         env:
-          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+          PGPASSWORD: postgres
+      - name: Start backend on isolated browser database
+        run: |
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_browser node demo_2027_postgres_server.js > postgres-browser-server.log 2>&1 &
       - run: npx playwright test tests/postgres-circuit-browser.spec.cjs
         env:
           POSTGRES_UI_BASE_URL: http://127.0.0.1:8787/demo_circuito_2027.html?mode=postgres
