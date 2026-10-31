@@ -3,18 +3,17 @@ name: PostgreSQL adapter integration
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: Must be codex/demo-2027-visual
+      sha:
+        description: Full commit SHA from codex/demo-2027-visual
         required: true
-        default: codex/demo-2027-visual
+        default: 6c33edbbdf4a5264a1600e50d5bdfe0d82fcd579
         type: string
 
 jobs:
   integration:
     runs-on: ubuntu-latest
     env:
-      EXPECTED_REF: codex/demo-2027-visual
-      EXPECTED_SHA: 457bec9906f1c759131e8d183a8e3d6b8a19a31c
+      AUTHORIZED_BRANCH: codex/demo-2027-visual
     services:
       postgres:
         image: postgres:16
@@ -28,17 +27,19 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - name: Validate development ref
-        env:
-          REQUESTED_REF: ${{ inputs.ref }}
-        run: |
-          test "$REQUESTED_REF" = "$EXPECTED_REF"
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: codex/demo-2027-visual
           fetch-depth: 0
-      - name: Validate expected commit
-        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Validate and checkout requested commit
+        env:
+          REQUESTED_SHA: ${{ inputs.sha }}
+        run: |
+          printf '%s\n' "$REQUESTED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          git cat-file -e "$REQUESTED_SHA^{commit}"
+          git merge-base --is-ancestor "$REQUESTED_SHA" "origin/$AUTHORIZED_BRANCH"
+          git checkout --detach "$REQUESTED_SHA"
+          test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
