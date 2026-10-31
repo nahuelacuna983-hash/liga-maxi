@@ -47,7 +47,10 @@ async function mustReject(action) { await assert.rejects(action); }
   const matches = [[0, 0, 1], [0, 2, 3], [1, 0, 2], [1, 1, 3], [2, 0, 3], [2, 1, 2]].map(([round, home, away], index) => ({ id: ids.matches[index], round, homeTeamId: ids.teams[home], awayTeamId: ids.teams[away] }));
   await call(running.base, "/api/fixtures", "POST", { categoryId: ids.category, actorId: ids.actor, matches });
   await call(running.base, `/api/matches/${ids.matches[0]}/schedule`, "POST", { actorId: ids.actor, scheduledAt: "2027-05-02T15:00:00Z", court: "HTTP 1" });
-  await call(running.base, `/api/matches/${ids.matches[0]}/result`, "POST", { actorId: ids.actor, homeScore: 80, awayScore: 70 });
+  const savedResult = await call(running.base, `/api/matches/${ids.matches[0]}/result`, "POST", { actorId: ids.actor, homeScore: 80, awayScore: 70 });
+  assert.equal(savedResult.home_score, 80);
+  assert.equal(savedResult.away_score, 70);
+  assert.equal(savedResult.result_state, "played");
   await mustReject(() => call(running.base, `/api/matches/${ids.matches[0]}/result`, "POST", { actorId: ids.actor, homeScore: 81, awayScore: 71 }));
   await mustReject(() => call(running.base, `/api/matches/${ids.matches[0]}/schedule`, "POST", { actorId: ids.actor, scheduledAt: "2027-05-09T15:00:00Z", court: "HTTP 2" }));
   await mustReject(() => call(running.base, "/api/fixtures", "POST", { categoryId: ids.category, actorId: ids.actor, matches: [{ ...matches[1], id: ids.matches[0] }] }));
@@ -57,6 +60,7 @@ async function mustReject(action) { await assert.rejects(action); }
   const recovered = await call(running.base, `/api/categories/${ids.category}`);
   assert.equal(recovered.matches.length, 6);
   assert.equal(recovered.matches.find((match) => match.id === ids.matches[0]).home_score, 80);
+  assert.equal(recovered.matches.find((match) => match.id === ids.matches[0]).result_state, "played");
   assert.ok(recovered.history.some((entry) => entry.action === "fixture_saved"));
   assert.ok(recovered.history.some((entry) => entry.action === "schedule_updated"));
   assert.ok(recovered.history.some((entry) => entry.action === "result_saved"));

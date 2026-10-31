@@ -29,10 +29,18 @@ test("opera y recupera el circuito principal contra PostgreSQL", async ({ page }
   const matchId = await page.locator("#pg-match").inputValue();
   await page.locator("#pg-date").fill("2027-06-13T15:00");
   await page.locator("#pg-court").fill("Cancha Browser");
+  const scheduleResponse = page.waitForResponse((response) => response.url().includes("/schedule") && response.request().method() === "POST");
   await page.locator("#pg-schedule").click();
+  expect((await scheduleResponse).status()).toBe(200);
+  await expect(page.locator("#circuit-status")).toContainText("Programación confirmada");
   await page.locator("#pg-local").fill("80");
   await page.locator("#pg-away").fill("70");
+  const resultResponse = page.waitForResponse((response) => response.url().includes("/result") && response.request().method() === "POST");
   await page.locator("#pg-result").click();
+  const result = await resultResponse;
+  expect(result.status()).toBe(200);
+  expect((await result.json()).home_score).toBe(80);
+  await expect(page.locator("#circuit-status")).toContainText("Resultado confirmado");
   await page.getByRole("button", { name: "Público" }).click();
   await expect(page.locator("#view-public")).toContainText("80");
   await page.reload();
