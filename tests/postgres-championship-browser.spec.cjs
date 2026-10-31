@@ -20,14 +20,27 @@ test("completa un campeonato Top 4 y recupera el campeón desde PostgreSQL", asy
   await expect(page.locator("#circuit-status")).toContainText("PostgreSQL local conectado");
   await page.getByRole("button", { name: "Asociación" }).click();
   await page.locator("#pg-tournament").fill("Campeonato persistente Top 4");
+  const tournamentResponse = page.waitForResponse((item) => item.url().endsWith("/api/tournaments") && item.request().method() === "POST");
   await page.locator("#pg-create-tournament").click();
+  expect((await tournamentResponse).status()).toBe(201);
+  await expect(page.locator("#circuit-status")).toContainText("Torneo confirmado");
   await page.locator("#pg-category").fill("Maxi +35 Persistente");
+  const categoryResponse = page.waitForResponse((item) => item.url().endsWith("/api/categories") && item.request().method() === "POST");
   await page.locator("#pg-create-category").click();
+  expect((await categoryResponse).status()).toBe(201);
+  await expect(page.locator("#circuit-status")).toContainText("Categoría confirmada");
   for (const team of ["Persistente A", "Persistente B", "Persistente C", "Persistente D"]) {
     await page.locator("#pg-team").fill(team);
+    const teamResponse = page.waitForResponse((item) => item.url().endsWith("/api/teams") && item.request().method() === "POST");
     await page.locator("#pg-add-team").click();
+    expect((await teamResponse).status()).toBe(201);
+    await expect(page.locator("#circuit-status")).toContainText("Equipo confirmado");
+    await expect(page.locator("#pg-team-state")).toContainText(`Equipos persistidos: ${["Persistente A", "Persistente B", "Persistente C", "Persistente D"].indexOf(team) + 1}`);
   }
+  const fixtureResponse = page.waitForResponse((item) => item.url().endsWith("/api/fixtures") && item.request().method() === "POST");
   await page.locator("#pg-fixture").click();
+  expect((await fixtureResponse).status()).toBe(201);
+  await expect(page.locator("#circuit-status")).toContainText("Fixture confirmado");
   await expect(page.locator("#pg-match option")).toHaveCount(7);
   for (let index = 1; index <= 6; index += 1) {
     await page.locator("#pg-match").selectOption({ index });
