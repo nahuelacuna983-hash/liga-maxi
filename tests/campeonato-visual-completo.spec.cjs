@@ -65,7 +65,7 @@ test('administra un campeonato nuevo desde controles visibles hasta el campeón'
   }
   await page.getByRole('button', { name: 'Avanzar ronda' }).click();
   await expect(page.getByText(/final/i).first()).toBeVisible();
-  await page.locator('#playoff-match').selectOption({ index: 1 });
+  await page.locator('#playoff-match').selectOption({ index: (await page.locator('#playoff-match option').count()) - 1 });
   await page.locator('#playoff-local').fill('88');
   await page.locator('#playoff-away').fill('77');
   await page.getByRole('button', { name: 'Cargar playoff' }).click();
