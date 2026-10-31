@@ -1,0 +1,30 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const os = require('node:os');
+const path = require('node:path');
+const { JsonFileRepository, RepositoryError } = require('../demo_2027_repository.js');
+const PersistentSyntheticProvider = require('../demo_2027_persistent_provider.js');
+
+(async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'liga-maxi-hardening-'));
+  const file = path.join(dir, 'state.json');
+  const seed = new PersistentSyntheticProvider();
+  const repo = new JsonFileRepository(file);
+  await seed.saveTo(repo);
+  await fs.writeFile(file, '{broken', 'utf8');
+  await assert.rejects(() => repo.read(), (error) => error.code === 'CORRUPT_FILE');
+  await fs.writeFile(file, JSON.stringify({ schemaVersion: 99, revision: 1, state: seed.exportState() }), 'utf8');
+  await assert.rejects(() => repo.read(), (error) => error.code === 'INCOMPATIBLE_SCHEMA');
+  await fs.writeFile(file, JSON.stringify({ schemaVersion: 1, revision: 1, state: seed.exportState() }), 'utf8');
+  const first = new PersistentSyntheticProvider(); const second = new PersistentSyntheticProvider();
+  await first.loadFrom(repo); await second.loadFrom(repo);
+  first.tournaments['demo-2027'].nombre = 'cambio-1'; await first.saveTo(repo);
+  second.tournaments['demo-2027'].nombre = 'cambio-obsoleto';
+  await assert.rejects(() => second.saveTo(repo), (error) => error.code === 'STALE_REVISION');
+  const persisted = await repo.read(); assert.equal(persisted.tournaments['demo-2027'].nombre, 'cambio-1');
+  const failingFs = { readFile: fs.readFile, writeFile: async () => { throw new Error('simulated disk failure'); }, rename: fs.rename, unlink: fs.unlink };
+  const failingRepo = new JsonFileRepository(path.join(dir, 'failed.json'), failingFs);
+  await assert.rejects(() => failingRepo.write(seed.exportState()), (error) => error.code === 'WRITE_FAILED');
+  await fs.rm(dir, { recursive: true, force: true });
+  console.log('DEMO_PERSISTENCE_HARDENING_OK');
+})().catch((error) => { console.error(error); process.exitCode = 1; });
