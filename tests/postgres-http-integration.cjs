@@ -46,6 +46,8 @@ async function mustReject(action) { await assert.rejects(action); }
   for (const [index, id] of ids.teams.entries()) await call(running.base, "/api/teams", "POST", { id, categoryId: ids.category, name: `HTTP Equipo ${index + 1}` });
   const matches = [[0, 0, 1], [0, 2, 3], [1, 0, 2], [1, 1, 3], [2, 0, 3], [2, 1, 2]].map(([round, home, away], index) => ({ id: ids.matches[index], round, homeTeamId: ids.teams[home], awayTeamId: ids.teams[away] }));
   await call(running.base, "/api/fixtures", "POST", { categoryId: ids.category, actorId: ids.actor, matches });
+  const playoffPayload = { formato: "top4", estado: "listo", matches: [{ llave: "semifinal_1", local: "HTTP Equipo 1", visitante: "HTTP Equipo 4", puntos_local: null, puntos_visitante: null }] };
+  await call(running.base, "/api/playoffs", "POST", { categoryId: ids.category, actorId: ids.actor, format: "top4", state: "listo", payload: playoffPayload });
   await call(running.base, `/api/matches/${ids.matches[0]}/schedule`, "POST", { actorId: ids.actor, scheduledAt: "2027-05-02T15:00:00Z", court: "HTTP 1" });
   const savedResult = await call(running.base, `/api/matches/${ids.matches[0]}/result`, "POST", { actorId: ids.actor, homeScore: 80, awayScore: 70 });
   assert.equal(savedResult.home_score, 80);
@@ -64,6 +66,10 @@ async function mustReject(action) { await assert.rejects(action); }
   assert.ok(recovered.history.some((entry) => entry.action === "fixture_saved"));
   assert.ok(recovered.history.some((entry) => entry.action === "schedule_updated"));
   assert.ok(recovered.history.some((entry) => entry.action === "result_saved"));
+  const recoveredPlayoffs = await call(running.base, `/api/categories/${ids.category}/playoffs`);
+  assert.equal(recoveredPlayoffs.playoff.format, "top4");
+  assert.deepEqual(recoveredPlayoffs.playoff.payload, playoffPayload);
+  assert.ok(recoveredPlayoffs.history.some((entry) => entry.action === "playoff_saved"));
   const other = await call(running.base, `/api/categories/${ids.secondCategory}`);
   assert.equal(other.matches.length, 0, "un torneo no debe recuperar partidos de otro");
   await stop(running.server); await db.end();

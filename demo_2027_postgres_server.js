@@ -36,6 +36,7 @@ function createServer({ repository, staticRoot = null }) {
       if (request.method === "GET" && /^\/api\/tournaments\/[^/]+\/categories$/.test(url.pathname)) return json(response, 200, await repository.readCategories(url.pathname.split("/")[3]));
       if (request.method === "POST" && url.pathname === "/api/teams") return json(response, 201, await repository.addTeam(await body(request)));
       if (request.method === "POST" && url.pathname === "/api/fixtures") { const input = await body(request); return json(response, 201, { saved: await repository.saveFixture(input.categoryId, input.matches, input.actorId) }); }
+      if (request.method === "POST" && url.pathname === "/api/playoffs") return json(response, 201, await repository.savePlayoffs(await body(request)));
       if (request.method === "POST" && /^\/api\/matches\/[^/]+\/schedule$/.test(url.pathname)) { const input = await body(request); input.matchId = url.pathname.split("/")[3]; return json(response, 200, await repository.scheduleMatch(input)); }
       if (request.method === "POST" && /^\/api\/matches\/[^/]+\/result$/.test(url.pathname)) { const input = await body(request); input.matchId = url.pathname.split("/")[3]; return json(response, 200, await repository.saveResult(input)); }
       if (request.method === "GET" && /^\/api\/categories\/[^/]+$/.test(url.pathname)) return json(response, 200, await repository.readCategory(url.pathname.split("/")[3]));
@@ -45,6 +46,7 @@ function createServer({ repository, staticRoot = null }) {
         const matches = state.matches.map((match) => ({ ...match, local: names.get(match.home_team_id), visitante: names.get(match.away_team_id), puntos_local: match.home_score, puntos_visitante: match.away_score, estado_resultado: match.result_state }));
         return json(response, 200, { ...state, matches, table: sports.calcularTabla(matches) });
       }
+      if (request.method === "GET" && /^\/api\/categories\/[^/]+\/playoffs$/.test(url.pathname)) return json(response, 200, await repository.readPlayoffs(url.pathname.split("/")[3]));
       return json(response, 404, { error: "Ruta no encontrada" });
     } catch (error) { return json(response, 400, { error: error.message, code: error.code || "PERSISTENCE_ERROR" }); }
   });
