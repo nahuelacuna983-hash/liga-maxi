@@ -24,6 +24,8 @@ test("completa un campeonato Top 4 y recupera el campeón desde PostgreSQL", asy
   page.on("console", (message) => diagnostics.push(`console:${message.type()}:${message.text()}`));
   page.on("pageerror", (error) => diagnostics.push(`pageerror:${error.message}`));
   page.on("requestfailed", (request) => diagnostics.push(`requestfailed:${request.url()}:${request.failure()?.errorText}`));
+  page.on("request", (request) => { if (request.url().includes("/api/")) diagnostics.push(`request:${request.method()}:${request.url()}:${request.postData() || ""}`); });
+  page.on("response", (response) => { if (response.url().includes("/api/")) diagnostics.push(`response:${response.status()}:${response.url()}`); });
   await page.goto(base);
   await expect(page.locator("#circuit-status")).toContainText("PostgreSQL local conectado");
   await page.getByRole("button", { name: "Asociación" }).click();
