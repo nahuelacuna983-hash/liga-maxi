@@ -51,3 +51,21 @@ jobs:
       - run: node tests/postgres-http-integration.cjs
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      - run: npx playwright install --with-deps chromium
+      - name: Start local HTTP backend
+        run: node demo_2027_postgres_server.js > postgres-server.log 2>&1 &
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      - name: Wait for local HTTP backend
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:8787/health > /dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat postgres-server.log || true
+          exit 1
+      - run: npx playwright test tests/postgres-circuit-browser.spec.cjs
+        env:
+          POSTGRES_UI_BASE_URL: http://127.0.0.1:8787/demo_circuito_2027.html?mode=postgres
