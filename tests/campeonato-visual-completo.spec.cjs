@@ -10,6 +10,7 @@ test('administra un campeonato nuevo desde controles visibles hasta el campeón'
   await page.getByPlaceholder('ID categoría').fill('visual-cat');
   await page.getByPlaceholder('Nombre categoría').fill('Maxi Visual');
   await page.getByRole('button', { name: 'Crear categoría' }).click();
+  await expect(page.locator('#circuit-category')).toHaveValue('visual-cat');
   for (const team of ['Águilas', 'Cóndores', 'Halcones', 'Leones']) {
     await page.getByPlaceholder('Equipo').fill(team);
     await page.getByRole('button', { name: 'Agregar equipo' }).click();
