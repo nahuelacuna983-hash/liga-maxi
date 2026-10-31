@@ -16,7 +16,7 @@
       this.delegates = { "delegado-a": { nombre: "Delegado A", equipos: ["Sud América"] }, "delegado-b": { nombre: "Delegado B", equipos: ["Gonnet"] } };
       this.tournaments = { "demo-2027": { id: "demo-2027", nombre: "Apertura de prueba 2027", temporada: 2027, estado: "activo", categorias: ["maxi-a", "maxi-b"], organizador: "org-demo" } };
       this.activeTournamentId = "demo-2027";
-      this.permissions = { "admin-demo": { role: "administrador", organizador: "org-demo" }, "asoc-demo": { role: "asociacion", organizador: "org-demo" }, "delegado-a": { role: "delegado", equipos: ["Sud América"] }, "delegado-b": { role: "delegado", equipos: ["Gonnet"] } };
+      this.permissions = { "admin-demo": { role: "administrador", organizador: "org-demo" }, "asoc-demo": { role: "asociacion", organizador: "org-demo" }, "delegado-a": { role: "delegado", organizador: "org-demo", equipos: ["Sud América"] }, "delegado-b": { role: "delegado", organizador: "org-demo", equipos: ["Gonnet"] } };
       this.players = {};
       this.documents = {};
       this.documentHistory = [];
