@@ -18,8 +18,10 @@ function createServer({ repository }) {
     try {
       const url = new URL(request.url, "http://127.0.0.1");
       if (request.method === "GET" && url.pathname === "/health") return json(response, 200, { ok: true, persistence: "postgresql" });
+      if (request.method === "GET" && url.pathname === "/api/tournaments") return json(response, 200, await repository.readTournaments());
       if (request.method === "POST" && url.pathname === "/api/tournaments") return json(response, 201, await repository.createTournament(await body(request)));
       if (request.method === "POST" && url.pathname === "/api/categories") return json(response, 201, await repository.createCategory(await body(request)));
+      if (request.method === "GET" && /^\/api\/tournaments\/[^/]+\/categories$/.test(url.pathname)) return json(response, 200, await repository.readCategories(url.pathname.split("/")[3]));
       if (request.method === "POST" && url.pathname === "/api/teams") return json(response, 201, await repository.addTeam(await body(request)));
       if (request.method === "POST" && url.pathname === "/api/fixtures") { const input = await body(request); return json(response, 201, { saved: await repository.saveFixture(input.categoryId, input.matches, input.actorId) }); }
       if (request.method === "POST" && /^\/api\/matches\/[^/]+\/schedule$/.test(url.pathname)) { const input = await body(request); input.matchId = url.pathname.split("/")[3]; return json(response, 200, await repository.scheduleMatch(input)); }
