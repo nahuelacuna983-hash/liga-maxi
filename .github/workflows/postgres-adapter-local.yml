@@ -48,3 +48,6 @@ jobs:
       - run: node tests/postgres-adapter-integration.cjs
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      - run: node tests/postgres-http-integration.cjs
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
