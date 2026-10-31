@@ -4,13 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Branch or SHA to test
+        description: Must be codex/demo-2027-visual
         required: true
         default: codex/demo-2027-visual
+        type: string
 
 jobs:
   integration:
     runs-on: ubuntu-latest
+    env:
+      EXPECTED_REF: codex/demo-2027-visual
+      EXPECTED_SHA: 457bec9906f1c759131e8d183a8e3d6b8a19a31c
     services:
       postgres:
         image: postgres:16
@@ -24,9 +28,17 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
+      - name: Validate development ref
+        env:
+          REQUESTED_REF: ${{ inputs.ref }}
+        run: |
+          test "$REQUESTED_REF" = "$EXPECTED_REF"
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - name: Validate expected commit
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
