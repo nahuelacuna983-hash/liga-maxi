@@ -27,11 +27,10 @@ test('administra un campeonato nuevo desde controles visibles hasta el campeón'
   await page.getByRole('button', { name: 'Crear delegado' }).click();
   await page.locator('#view-association input').nth(1).fill('Águilas');
   await page.locator('#view-association input').nth(2).fill('visual-cat');
-  await page.locator('#delegate-permission-target').selectOption('delegado-a');
+  await page.locator('#delegate-permission-target').selectOption('delegado-visual');
   await page.getByRole('button', { name: 'Guardar alcance' }).click();
   await page.getByRole('button', { name: 'Delegados' }).click();
-  await page.locator('#active-delegate').selectOption('delegado-b');
-  await page.locator('#active-delegate').selectOption('delegado-a');
+  await page.locator('#active-delegate').selectOption('delegado-visual');
   await page.waitForTimeout(100);
   await expect(page.getByText('Delegado ficticio')).toBeVisible();
   const ownMatch = page.locator('input[name="circuit-match"]').first();
