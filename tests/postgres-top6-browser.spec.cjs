@@ -22,6 +22,7 @@ test("completa Top 6 persistente con repechaje, semifinales, final y recuperaci√
   await page.locator("#pg-fixture").click(); await expect(page.locator("#pg-match option")).toHaveCount(16);
   for (let i = 1; i <= 15; i += 1) { await page.locator("#pg-match").selectOption({ index: i }); await page.locator("#pg-local").fill(String(80 + i)); await page.locator("#pg-away").fill(String(60 + i)); await page.locator("#pg-result").click(); await expect(page.locator("#circuit-status")).toContainText("Resultado confirmado"); }
   await page.locator("#pg-playoff-top").selectOption("6");
+  await expect(page.locator("#pg-playoff-top")).toHaveValue("6");
   const categoryId = await page.evaluate(() => localStorage.getItem("pg-category-id"));
   let generation = null;
   const generationResponse = page.waitForResponse((response) => response.request().method() === "POST" && response.url().endsWith("/api/playoffs"));
