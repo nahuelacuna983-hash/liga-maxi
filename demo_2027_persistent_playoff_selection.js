@@ -14,4 +14,5 @@
     return bracket;
   };
   Provider.prototype.__persistentPlayoffSelectionPatched = true;
+  window.__persistentPlayoffSelectionReady = true;
 })();
