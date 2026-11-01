@@ -9,7 +9,7 @@ function createDevelopmentAuth({ secret, ttlMs = 15 * 60 * 1000, users = {} } = 
   const issue = (userId) => {
     const user = users[userId];
     if (!user) throw new Error("Credenciales de desarrollo inválidas.");
-    const payload = { sub: user.id, role: user.role, organizationId: user.organizationId || null, exp: Date.now() + ttlMs };
+    const payload = { sub: user.id, role: user.role, organizationId: user.organizationId || null, categories: user.categories || [], teams: user.teams || [], exp: Date.now() + ttlMs };
     const body = encode(payload);
     return `${body}.${sign(body)}`;
   };
@@ -21,6 +21,7 @@ function createDevelopmentAuth({ secret, ttlMs = 15 * 60 * 1000, users = {} } = 
     if (!payload.exp || payload.exp <= Date.now()) throw new Error("Sesión vencida.");
     const current = users[payload.sub];
     if (!current || current.role !== payload.role || (current.organizationId || null) !== (payload.organizationId || null)) throw new Error("Identidad revocada.");
+    if (JSON.stringify(current.categories || []) !== JSON.stringify(payload.categories || []) || JSON.stringify(current.teams || []) !== JSON.stringify(payload.teams || [])) throw new Error("Alcance de sesión revocado.");
     return { ...payload };
   };
   return { issue, verify };

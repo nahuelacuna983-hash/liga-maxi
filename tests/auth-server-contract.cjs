@@ -5,20 +5,21 @@ const { createDevelopmentAuth } = require("../demo_2027_auth.js");
 const { createServer } = require("../demo_2027_postgres_server.js");
 
 const calls = [];
-const repository = {
+  const repository = {
   createTournament: async (input) => { calls.push(input); return input; },
   createCategory: async (input) => input,
   addTeam: async (input) => input,
   saveFixture: async (categoryId, matches, actorId) => { calls.push({ categoryId, matches, actorId }); return matches.length; },
   savePlayoffs: async (input) => input,
   scheduleMatch: async (input) => input,
-  saveResult: async (input) => input,
+  saveResult: async (input) => { calls.push(input); return input; },
+  readMatch: async () => ({ category_id: "c", home_team_id: "team-a", away_team_id: "team-b" }),
   readTournaments: async () => [],
   readCategories: async () => [],
   readCategory: async (id) => ({ category: { id }, teams: [], matches: [], history: [] }),
   readPlayoffs: async () => ({ playoff: null, history: [] })
 };
-const auth = createDevelopmentAuth({ secret: "synthetic-development-secret", users: { organizer: { id: "organizer", role: "organizer", organizationId: "org-a" }, delegate: { id: "delegate", role: "delegate", organizationId: "org-a" } } });
+const auth = createDevelopmentAuth({ secret: "synthetic-development-secret", users: { organizer: { id: "organizer", role: "organizer", organizationId: "org-a" }, delegate: { id: "delegate", role: "delegate", organizationId: "org-a", categories: ["c"], teams: ["team-a"] } } });
 const request = (base, route, method = "GET", payload, token) => fetch(`${base}${route}`, { method, headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: payload === undefined ? undefined : JSON.stringify(payload) });
 
 (async () => {
@@ -38,6 +39,9 @@ const request = (base, route, method = "GET", payload, token) => fetch(`${base}$
   const delegateToken = (await (await request(base, "/api/auth/dev-login", "POST", { userId: "delegate" })).json()).token;
   const forbidden = await request(base, "/api/fixtures", "POST", { categoryId: "c", actorId: "organizer", matches: [] }, delegateToken);
   assert.equal(forbidden.status, 400);
+  const delegatedResult = await request(base, "/api/matches/m/result", "POST", { actorId: "attacker", homeScore: 80, awayScore: 70 }, delegateToken);
+  assert.equal(delegatedResult.status, 200);
+  assert.equal(calls.at(-1).actorId, "delegate");
   await new Promise((resolve) => server.close(resolve));
   console.log("AUTH_SERVER_CONTRACT_OK");
 })().catch((error) => { console.error(error); process.exitCode = 1; });
