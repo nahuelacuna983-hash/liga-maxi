@@ -21,7 +21,26 @@ test("completa Top 6 persistente con repechaje, semifinales, final y recuperaci√
   for (let i = 1; i <= 6; i += 1) { await page.locator("#pg-team").fill(`Top6 ${i}`); await page.locator("#pg-add-team").click(); await expect(page.locator("#pg-team-state")).toContainText(`Equipos persistidos: ${i}`); }
   await page.locator("#pg-fixture").click(); await expect(page.locator("#pg-match option")).toHaveCount(16);
   for (let i = 1; i <= 15; i += 1) { await page.locator("#pg-match").selectOption({ index: i }); await page.locator("#pg-local").fill(String(80 + i)); await page.locator("#pg-away").fill(String(60 + i)); await page.locator("#pg-result").click(); await expect(page.locator("#circuit-status")).toContainText("Resultado confirmado"); }
-  await page.locator("#pg-playoff-top").selectOption("6"); await page.locator("#pg-playoff-generate").click(); await expect(page.locator("#circuit-status")).toContainText("Playoffs confirmados");
+  await page.locator("#pg-playoff-top").selectOption("6");
+  const categoryId = await page.evaluate(() => localStorage.getItem("pg-category-id"));
+  let generation = null;
+  const generationResponse = page.waitForResponse((response) => response.request().method() === "POST" && response.url().endsWith("/api/playoffs"));
+  await page.locator("#pg-playoff-generate").click();
+  const response = await generationResponse;
+  generation = { status: response.status(), body: await response.text() };
+  await expect(page.locator("#circuit-status")).toContainText("Playoffs confirmados");
+  const persistedResponse = await page.request.get(`${new URL(base).origin}/api/categories/${categoryId}/playoffs`);
+  const persisted = { status: persistedResponse.status(), body: await persistedResponse.text() };
+  const selectorOptions = await page.locator("#pg-playoff-match option").evaluateAll((items) => items.map((item) => ({ value: item.value, label: item.textContent })));
+  const stateText = await page.locator("#pg-playoff-state").textContent();
+  let generationPayload = null;
+  let persistedPayload = null;
+  try { generationPayload = JSON.parse(generation.body); } catch (_) { /* included in diagnostic below */ }
+  try { persistedPayload = JSON.parse(persisted.body); } catch (_) { /* included in diagnostic below */ }
+  const payloadMatches = persistedPayload?.playoff?.payload?.matches || generationPayload?.payload?.matches || [];
+  if (payloadMatches.filter((match) => match.ronda === "repechaje").length !== 4 || selectorOptions.filter((option) => option.value).length !== 4) {
+    throw new Error(`Top 6 divergence after generation: expected=4 payload=${JSON.stringify(payloadMatches.map(({ partido_numero, ronda, llave, serie_partido, puntos_local, puntos_visitante }) => ({ partido_numero, ronda, llave, serie_partido, puntos_local, puntos_visitante })))} generation=${JSON.stringify(generation)} persisted=${JSON.stringify(persisted)} selector=${JSON.stringify(selectorOptions)} state=${JSON.stringify(stateText)} status=${JSON.stringify(await page.locator("#circuit-status").textContent())} errors=${JSON.stringify(errors)}`);
+  }
   // Top 6 uses two-game global repechage series: two series, four pending matches.
   await expect(page.locator("#pg-playoff-match option")).toHaveCount(5);
   await playoffResult(page, 80, 70); await playoffResult(page, 79, 68); await playoffResult(page, 78, 69); await playoffResult(page, 77, 66);
