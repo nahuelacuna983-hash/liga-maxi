@@ -6,11 +6,17 @@ async function playoffResult(page, local, away) {
   const options = await page.locator("#pg-playoff-match option").evaluateAll((items) => items.filter((item) => item.value).map((item) => ({ value: item.value, label: item.textContent })));
   if (!options.length) throw new Error(`No quedan playoffs Top 8 pendientes; estado=${JSON.stringify(state)} opciones=${JSON.stringify(options)}`);
   const id = options[0].value;
+  console.log(`[top8] playoff antes id=${id} opciones=${JSON.stringify(options)} estado=${JSON.stringify(state)}`);
   await page.locator("#pg-playoff-match").selectOption(id);
   await page.locator("#pg-playoff-local").fill(String(local));
   await page.locator("#pg-playoff-away").fill(String(away));
+  const responsePromise = page.waitForResponse((response) => response.url().endsWith("/api/playoffs") && response.request().method() === "POST", { timeout: 10000 });
   await page.locator("#pg-playoff-result").click();
+  const response = await responsePromise;
+  const body = await response.text();
+  if (!response.ok()) throw new Error(`Top 8 POST rechazado partido=${id} status=${response.status()} body=${body} estado=${JSON.stringify(await page.locator("#pg-playoff-state").textContent())}`);
   await expect(page.locator("#circuit-status")).toContainText("Resultado de playoff confirmado");
+  console.log(`[top8] playoff confirmado id=${id} status=${response.status()}`);
   return id;
 }
 test("completa Top 8 persistente con cuartos, semifinales, final y recuperación", async ({ page }) => {

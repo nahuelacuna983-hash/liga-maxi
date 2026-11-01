@@ -2,15 +2,31 @@ const { test, expect } = require("@playwright/test");
 const base = process.env.POSTGRES_UI_BASE_URL || "http://127.0.0.1:8787/demo_circuito_2027.html?mode=postgres";
 test.skip(!process.env.POSTGRES_UI_BASE_URL, "Requiere PostgreSQL 16 y el backend HTTP levantado por CI.");
 async function playoffResult(page, local, away) {
+  const started = Date.now();
   const state = await page.locator("#pg-playoff-state").textContent();
   const options = await page.locator("#pg-playoff-match option").evaluateAll((items) => items.filter((item) => item.value).map((item) => ({ value: item.value, label: item.textContent })));
   if (!options.length) throw new Error(`No quedan playoffs pendientes; estado=${JSON.stringify(state)} opciones=${JSON.stringify(options)}`);
   const id = options[0].value;
+  console.log(`[top6] repechaje antes id=${id} opciones=${JSON.stringify(options)} estado=${JSON.stringify(state)}`);
   await page.locator("#pg-playoff-match").selectOption(id);
+  const selectedLabel = await page.locator("#pg-playoff-match option:checked").textContent();
   await page.locator("#pg-playoff-local").fill(String(local));
   await page.locator("#pg-playoff-away").fill(String(away));
+  const responsePromise = page.waitForResponse((response) => response.url().endsWith("/api/playoffs") && response.request().method() === "POST", { timeout: 10000 });
   await page.locator("#pg-playoff-result").click();
+  let response;
+  try { response = await responsePromise; } catch (error) {
+    throw new Error(`Top 6 no envió POST para partido=${id} label=${JSON.stringify(selectedLabel)} estado=${JSON.stringify(await page.locator("#pg-playoff-state").textContent())} opciones=${JSON.stringify(await page.locator("#pg-playoff-match option").evaluateAll((items) => items.map((item) => ({ value: item.value, label: item.textContent }))))} tras=${Date.now() - started}ms: ${error.message}`);
+  }
+  const body = await response.text();
+  if (!response.ok()) throw new Error(`Top 6 POST rechazado partido=${id} status=${response.status()} body=${body} estado=${JSON.stringify(await page.locator("#pg-playoff-state").textContent())}`);
   await expect(page.locator("#circuit-status")).toContainText("Resultado de playoff confirmado");
+  const categoryId = await page.evaluate(() => localStorage.getItem("pg-category-id"));
+  const persistedResponse = await page.request.get(`${new URL(base).origin}/api/categories/${categoryId}/playoffs`);
+  const persisted = await persistedResponse.json();
+  const persistedMatch = persisted.playoff?.payload?.matches?.find((match) => String(match.partido_numero) === String(id));
+  if (!persistedMatch || persistedMatch.puntos_local == null || persistedMatch.puntos_visitante == null) throw new Error(`Top 6 resultado no persistido partido=${id} response=${body} persisted=${JSON.stringify(persistedMatch)} estado=${JSON.stringify(await page.locator("#pg-playoff-state").textContent())}`);
+  console.log(`[top6] repechaje confirmado id=${id} llave=${persistedMatch.llave} serie=${persistedMatch.serie_partido} status=${response.status()} tras=${Date.now() - started}ms`);
   return id;
 }
 test("completa Top 6 persistente con repechaje, semifinales, final y recuperación", async ({ page }) => {
