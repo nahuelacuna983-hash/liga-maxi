@@ -5,16 +5,14 @@ test.skip(!process.env.POSTGRES_UI_BASE_URL, "Requiere PostgreSQL 16 y el backen
 
 test("opera y recupera el circuito principal contra PostgreSQL", async ({ page }) => {
   const diagnostics = [];
-  const selectionLoads = [];
-  const selectionFailures = [];
+  const scriptLoads = [];
   page.on("console", (message) => diagnostics.push(`console:${message.type()}:${message.text()}`));
   page.on("pageerror", (error) => diagnostics.push(`pageerror:${error.message}`));
   page.on("requestfailed", (request) => diagnostics.push(`requestfailed:${request.url()}:${request.failure()?.errorText}`));
-  page.on("response", (response) => { if (response.url().endsWith("/demo_2027_persistent_playoff_selection.js")) selectionLoads.push({ status: response.status(), url: response.url() }); });
-  page.on("requestfailed", (request) => { if (request.url().endsWith("/demo_2027_persistent_playoff_selection.js")) selectionFailures.push({ error: request.failure()?.errorText, url: request.url() }); });
+  page.on("response", (response) => { if (/(demo_2027_http_client|demo_circuito_2027_persistent)\.js$/.test(response.url())) scriptLoads.push({ status: response.status(), url: response.url() }); });
   await page.goto(base);
-  await expect.poll(() => page.evaluate(() => Boolean(window.__persistentPlayoffSelectionReady))).toBe(true);
   await expect(page.locator("#circuit-status")).toContainText("PostgreSQL local conectado");
+  await expect(page.locator("#view-association")).toBeAttached();
   await page.getByRole("button", { name: "Asociación" }).click();
   await page.locator("#pg-tournament").fill("Browser PostgreSQL 2027");
   await page.locator("#pg-create-tournament").click();
@@ -55,9 +53,7 @@ test("opera y recupera el circuito principal contra PostgreSQL", async ({ page }
   await expect(page.locator("#circuit-status")).toContainText("PostgreSQL local conectado");
   await expect(page.locator("#view-public")).toContainText("80");
   expect(matchId).toBeTruthy();
-  expect(selectionLoads.length).toBeGreaterThan(0);
-  expect(selectionLoads.every((load) => load.status === 200)).toBe(true);
-  const realSelectionFailures = selectionFailures.filter((failure) => failure.error !== "net::ERR_ABORTED");
-  expect(realSelectionFailures).toEqual([]);
-  expect(diagnostics.filter((entry) => entry.startsWith("pageerror:") || (entry.startsWith("requestfailed:") && !entry.includes("demo_2027_persistent_playoff_selection.js:net::ERR_ABORTED"))).join("\n")).toBe("");
+  expect(scriptLoads.length).toBeGreaterThan(0);
+  expect(scriptLoads.every((load) => load.status === 200)).toBe(true);
+  expect(diagnostics.filter((entry) => entry.startsWith("pageerror:") || entry.startsWith("requestfailed:")).join("\n")).toBe("");
 });
