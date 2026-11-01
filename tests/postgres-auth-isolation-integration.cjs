@@ -1,0 +1,46 @@
+"use strict";
+
+const assert = require("node:assert/strict");
+const fs = require("node:fs/promises");
+const path = require("node:path");
+const { Pool } = require("pg");
+const { createDevelopmentAuth } = require("../demo_2027_auth.js");
+const PostgresRepository = require("../demo_2027_postgres_repository.js");
+const { createServer } = require("../demo_2027_postgres_server.js");
+
+const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+const ids = { orgA: id(301), orgB: id(302), userA: id(311), userB: id(312), delegateA: id(321), delegateB: id(322), tournamentA: id(331), tournamentB: id(332), categoryA: id(341), categoryB: id(342), teamA1: id(351), teamA2: id(352), teamB1: id(353), teamB2: id(354), matchA: id(361), matchA2: id(363), matchB: id(362) };
+const pool = () => new Pool({ connectionString: process.env.DATABASE_URL });
+const call = async (base, route, method = "GET", payload, token) => { const response = await fetch(`${base}${route}`, { method, headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: payload === undefined ? undefined : JSON.stringify(payload) }); const data = await response.json(); return { response, data }; };
+const expectStatus = (result, status) => assert.equal(result.response.status, status, JSON.stringify(result.data));
+
+(async () => {
+  const db = pool();
+  await db.query(await fs.readFile(path.join(__dirname, "..", "docs", "demo-2027-postgres-schema.sql"), "utf8"));
+  await db.query("insert into lm_demo_organizations(id,name) values($1,'Org A'),($2,'Org B')", [ids.orgA, ids.orgB]);
+  await db.query("insert into lm_demo_users(id,username,role) values($1,'org-a','organizer'),($2,'org-b','organizer'),($3,'delegate-a','delegate'),($4,'delegate-b','delegate')", [ids.userA, ids.userB, ids.delegateA, ids.delegateB]);
+  await db.query("insert into lm_demo_memberships(user_id,organization_id) values($1,$3),($2,$4),($5,$3),($6,$4)", [ids.userA, ids.userB, ids.orgA, ids.orgB, ids.delegateA, ids.delegateB]);
+  await db.query("insert into lm_demo_tournaments(id,organization_id,name,season,state) values($1,$3,'A',2027,'draft'),($2,$4,'B',2027,'draft')", [ids.tournamentA, ids.tournamentB, ids.orgA, ids.orgB]);
+  await db.query("insert into lm_demo_categories(id,tournament_id,name) values($1,$3,'Cat A'),($2,$4,'Cat B')", [ids.categoryA, ids.categoryB, ids.tournamentA, ids.tournamentB]);
+  await db.query("insert into lm_demo_teams(id,category_id,name) values($1,$3,'A1'),($2,$3,'A2'),($4,$5,'B1'),($6,$5,'B2')", [ids.teamA1, ids.teamA2, ids.categoryA, ids.teamB1, ids.categoryB, ids.teamB2]);
+  await db.query("insert into lm_demo_matches(id,category_id,round_no,home_team_id,away_team_id) values($1,$3,1,$4,$5),($2,$6,1,$7,$8),($9,$3,2,$4,$5)", [ids.matchA, ids.matchB, ids.categoryA, ids.teamA1, ids.teamA2, ids.categoryB, ids.teamB1, ids.teamB2, ids.matchA2]);
+  await db.query("insert into lm_demo_delegate_assignments(user_id,category_id,team_id) values($1,$2,$3),($4,$5,$6)", [ids.delegateA, ids.categoryA, ids.teamA1, ids.delegateB, ids.categoryB, ids.teamB1]);
+  const auth = createDevelopmentAuth({ secret: "postgres-auth-isolation-secret", users: { [ids.userA]: { id: ids.userA, role: "organizer", organizationId: ids.orgA }, [ids.userB]: { id: ids.userB, role: "organizer", organizationId: ids.orgB }, [ids.delegateA]: { id: ids.delegateA, role: "delegate", organizationId: ids.orgA }, [ids.delegateB]: { id: ids.delegateB, role: "delegate", organizationId: ids.orgB } } });
+  const server = createServer({ repository: new PostgresRepository(db), auth, requireAuth: true });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const tokenA = auth.issue(ids.userA); const tokenB = auth.issue(ids.userB); const delegateTokenA = auth.issue(ids.delegateA); const delegateTokenB = auth.issue(ids.delegateB);
+  expectStatus(await call(base, "/api/tournaments", "GET"), 400);
+  const own = await call(base, "/api/tournaments", "GET", undefined, tokenA); expectStatus(own, 200); assert.deepEqual(own.data.map((item) => item.id), [ids.tournamentA]);
+  expectStatus(await call(base, `/api/tournaments/${ids.tournamentB}/categories`, "GET", undefined, tokenA), 400);
+  const result = await call(base, `/api/matches/${ids.matchA}/result`, "POST", { actorId: ids.delegateB, homeScore: 80, awayScore: 70 }, delegateTokenA); expectStatus(result, 200); assert.equal(result.data.result_state, "played");
+  expectStatus(await call(base, `/api/matches/${ids.matchB}/result`, "POST", { homeScore: 80, awayScore: 70 }, delegateTokenA), 400);
+  expectStatus(await call(base, `/api/matches/${ids.matchB}/result`, "POST", { homeScore: 80, awayScore: 70 }, delegateTokenB), 200);
+  await db.query("delete from lm_demo_delegate_assignments where user_id=$1", [ids.delegateA]);
+  expectStatus(await call(base, `/api/matches/${ids.matchA2}/result`, "POST", { homeScore: 81, awayScore: 71 }, delegateTokenA), 400);
+  await db.query("delete from lm_demo_memberships where user_id=$1 and organization_id=$2", [ids.userA, ids.orgA]);
+  expectStatus(await call(base, "/api/tournaments", "GET", undefined, tokenA), 200); assert.deepEqual((await call(base, "/api/tournaments", "GET", undefined, tokenA)).data, []);
+  expectStatus(await call(base, "/api/tournaments", "GET", undefined, tokenB), 200);
+  await new Promise((resolve) => server.close(resolve)); await db.end();
+  console.log("POSTGRES_AUTH_ISOLATION_INTEGRATION_OK");
+})().catch((error) => { console.error(error); process.exitCode = 1; });
