@@ -1,14 +1,16 @@
 "use strict";
 
 class PostgresHttpClient {
-  constructor(baseUrl) { this.baseUrl = baseUrl.replace(/\/$/, ""); }
+  constructor(baseUrl) { this.baseUrl = baseUrl.replace(/\/$/, ""); this.token = null; }
   async request(path, method = "GET", payload) {
-    const response = await fetch(`${this.baseUrl}${path}`, { method, headers: { "content-type": "application/json" }, body: payload === undefined ? undefined : JSON.stringify(payload) });
+    const response = await fetch(`${this.baseUrl}${path}`, { method, headers: { "content-type": "application/json", ...(this.token ? { authorization: `Bearer ${this.token}` } : {}) }, body: payload === undefined ? undefined : JSON.stringify(payload) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status}`);
     return data;
   }
   health() { return this.request("/health"); }
+  async login(userId) { const result = await this.request("/api/auth/dev-login", "POST", { userId }); this.token = result.token; return result; }
+  logout() { this.token = null; }
   tournaments() { return this.request("/api/tournaments"); }
   categories(tournamentId) { return this.request(`/api/tournaments/${tournamentId}/categories`); }
   tournament(input) { return this.request("/api/tournaments", "POST", input); }

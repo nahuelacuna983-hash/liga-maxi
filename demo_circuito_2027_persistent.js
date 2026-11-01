@@ -57,7 +57,7 @@
       )
       .join("");
     $("#view-association").innerHTML =
-      `<h2>Asociación · PostgreSQL local</h2><p class="notice">Confirmaciones emitidas sólo después de PostgreSQL. No es autenticación productiva.</p><div id="pg-team-state">Equipos persistidos: ${state.teams.length} · ${(state.teams || []).map((team) => team.name).join(", ") || "ninguno"}</div><div class="result-actions"><input id="pg-tournament" placeholder="Torneo"><button id="pg-create-tournament">Crear torneo</button><input id="pg-category" placeholder="Categoría"><button id="pg-create-category">Crear categoría</button></div><div class="result-actions"><input id="pg-team" placeholder="Equipo"><button id="pg-add-team">Agregar equipo</button><button id="pg-fixture">Guardar fixture</button></div><div class="result-actions"><select id="pg-match"><option value="">Partido</option>${options}</select><input id="pg-date" type="datetime-local"><input id="pg-court" placeholder="Cancha"><button id="pg-schedule">Programar</button><input id="pg-local" type="number" placeholder="Local"><input id="pg-away" type="number" placeholder="Visitante"><button id="pg-result">Guardar resultado</button></div><h3>Estado recuperado</h3>${rows()}`;
+      `<h2>Asociación · PostgreSQL local</h2><p class="notice">Confirmaciones emitidas sólo después de PostgreSQL. El login es exclusivo de desarrollo y no es autenticación productiva.</p><div class="result-actions"><input id="pg-login-user" placeholder="Usuario de desarrollo"><button id="pg-login">Iniciar sesión</button><button id="pg-logout">Cerrar sesión</button></div><div id="pg-team-state">Equipos persistidos: ${state.teams.length} · ${(state.teams || []).map((team) => team.name).join(", ") || "ninguno"}</div><div class="result-actions"><input id="pg-tournament" placeholder="Torneo"><button id="pg-create-tournament">Crear torneo</button><input id="pg-category" placeholder="Categoría"><button id="pg-create-category">Crear categoría</button></div><div class="result-actions"><input id="pg-team" placeholder="Equipo"><button id="pg-add-team">Agregar equipo</button><button id="pg-fixture">Guardar fixture</button></div><div class="result-actions"><select id="pg-match"><option value="">Partido</option>${options}</select><input id="pg-date" type="datetime-local"><input id="pg-court" placeholder="Cancha"><button id="pg-schedule">Programar</button><input id="pg-local" type="number" placeholder="Local"><input id="pg-away" type="number" placeholder="Visitante"><button id="pg-result">Guardar resultado</button></div><h3>Estado recuperado</h3>${rows()}`;
     $("#pg-match").onchange = () => {
       state.selectedMatchId = $("#pg-match").value;
     };
@@ -73,6 +73,8 @@
       if (!matchId) throw new Error("Seleccioná un partido persistido.");
       return matchId;
     };
+    on("#pg-login", async () => { await client.login($("#pg-login-user").value.trim()); status("Sesión de desarrollo iniciada."); await reload(); });
+    on("#pg-logout", async () => { client.logout(); state.category = null; state.matches = []; state.teams = []; state.table = []; state.playoffs = null; renderAssociation(); status("Sesión cerrada."); });
     on("#pg-create-tournament", async () => {
       window.pgTournament = await client.tournament({
         id: crypto.randomUUID(),
