@@ -25,6 +25,9 @@ function request(base, path, method = "GET", payload) {
   assert.deepEqual(await health.json(), { ok: true, persistence: "postgresql" });
   const page = await request(base, "/demo_persistencia_2027.html");
   assert.match(await page.text(), /PERSISTENCIA LOCAL/);
+  const playoffSelection = await request(base, "/demo_2027_persistent_playoff_selection.js");
+  assert.equal(playoffSelection.status, 200);
+  assert.match(await playoffSelection.text(), /persistentPlayoffSelectionPatched/);
   const fixture = await request(base, "/api/fixtures", "POST", { categoryId: "cat", actorId: "actor", matches: [{ id: "m1" }] });
   assert.equal((await fixture.json()).saved, 1);
   const category = await request(base, "/api/categories/cat");
