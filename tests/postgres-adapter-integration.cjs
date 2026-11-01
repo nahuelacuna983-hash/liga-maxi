@@ -22,6 +22,7 @@ async function main() {
   const pool = makePool();
   const schema = await fs.readFile(path.join(__dirname, "..", "docs", "demo-2027-postgres-schema.sql"), "utf8");
   await pool.query(schema);
+  await pool.query("insert into lm_demo_organizations(id,name) values($1,$2) on conflict (id) do nothing", [ids.organization, "Fixture adapter PostgreSQL"]);
   const repo = new PostgresRepository(pool);
   await repo.createTournament({ id: ids.tournament, organizationId: ids.organization, name: "Liga Maxi 2027 PostgreSQL", season: 2027 });
   await repo.createCategory({ id: ids.category, tournamentId: ids.tournament, name: "Maxi +35 A" });
