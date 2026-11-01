@@ -35,7 +35,9 @@ async function mustReject(action) { await assert.rejects(action); }
 
 (async () => {
   const schema = await fs.readFile(path.join(__dirname, "..", "docs", "demo-2027-postgres-schema.sql"), "utf8");
-  const setup = pool(); await setup.query(schema); await setup.end();
+  const setup = pool(); await setup.query(schema);
+  await setup.query("insert into lm_demo_organizations(id,name) values($1,$2) on conflict (id) do nothing", [ids.org, "Fixture HTTP PostgreSQL"]);
+  await setup.end();
   let db = pool();
   let running = await start(new PostgresRepository(db));
   await call(running.base, "/health");
