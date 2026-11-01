@@ -20,7 +20,7 @@ function createServer({ repository, staticRoot = null }) {
   return http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, "http://127.0.0.1");
-      if (request.method === "GET" && staticRoot && ["/", "/demo_persistencia_2027.html", "/demo_circuito_2027.html", "/demo_2027_http_client.js", "/demo_circuito_2027_persistent.js", "/demo_2027_persistent_playoff_selection.js", "/demo_2027_fixture.js", "/demo_2027_sports.js", "/demo_2027_provider.js", "/demo_circuito_2027.js", "/style.css"].includes(url.pathname)) {
+      if (request.method === "GET" && staticRoot && ["/", "/demo_persistencia_2027.html", "/demo_circuito_2027.html", "/demo_2027_http_client.js", "/demo_circuito_2027_persistent.js", "/demo_2027_fixture.js", "/demo_2027_sports.js", "/demo_2027_provider.js", "/demo_circuito_2027.js", "/style.css"].includes(url.pathname)) {
         const file = url.pathname === "/" ? "demo_persistencia_2027.html" : url.pathname.slice(1);
         const target = path.resolve(staticRoot, file);
         if (!target.startsWith(path.resolve(staticRoot) + path.sep)) return json(response, 400, { error: "Ruta estática inválida" });
