@@ -44,6 +44,6 @@
 if (new URLSearchParams(location.search).get("mode") === "postgres") {
   const script = document.createElement("script");
   script.src = "demo_2027_http_client.js";
-  script.onload = () => { const persistent = document.createElement("script"); persistent.src = "demo_circuito_2027_persistent.js"; persistent.onload = () => { const selection = document.createElement("script"); selection.src = "demo_2027_persistent_playoff_selection.js"; document.body.appendChild(selection); }; document.body.appendChild(persistent); };
+  script.onload = () => { const persistent = document.createElement("script"); persistent.src = "demo_circuito_2027_persistent.js"; document.body.appendChild(persistent); };
   document.body.appendChild(script);
 }
