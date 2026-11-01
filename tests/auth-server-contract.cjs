@@ -13,6 +13,7 @@ const calls = [];
   savePlayoffs: async (input) => input,
   scheduleMatch: async (input) => input,
   saveResult: async (input) => { calls.push(input); return input; },
+  saveDelegateResult: async (input) => { calls.push({ matchId: input.matchId, actorId: input.actor.sub }); return { match_id: input.matchId }; },
   readMatch: async () => ({ category_id: "c", home_team_id: "team-a", away_team_id: "team-b" }),
   readTournaments: async () => [],
   readCategories: async () => [],
