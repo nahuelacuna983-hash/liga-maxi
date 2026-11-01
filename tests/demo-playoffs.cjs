@@ -51,7 +51,7 @@ provider.annulPlayoffResult("maxi-a", finalMatch.partido_numero);
 assert.strictEqual(provider.getPlayoffMatches("maxi-a").find((match) => match.partido_numero === finalMatch.partido_numero).puntos_local, null);
 assert.strictEqual(provider.advancePlayoffs("maxi-a").estado, "pendiente_resultados");
 provider.generatePlayoffs("maxi-a", 4, { seriesGames: 2 });
-const tiedSeries = provider.getPlayoffMatches("maxi-a").filter((match) => match.llave === "semifinales_1");
+const tiedSeries = provider.getPlayoffMatches("maxi-a").filter((match) => match.llave === "cuartos_1");
 provider.loadPlayoffResult("maxi-a", tiedSeries[0].partido_numero, 70, 60);
 provider.loadPlayoffResult("maxi-a", tiedSeries[1].partido_numero, 60, 70);
 assert.strictEqual(provider.advancePlayoffs("maxi-a").estado, "pendiente_resultados", "una serie 1-1 no debe producir ganador arbitrario");
