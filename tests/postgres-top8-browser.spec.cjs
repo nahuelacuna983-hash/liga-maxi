@@ -19,6 +19,20 @@ async function playoffResult(page, local, away) {
   console.log(`[top8] playoff confirmado id=${id} status=${response.status()}`);
   return id;
 }
+async function advancePlayoffs(page, expectedRound) {
+  const categoryId = await page.evaluate(() => localStorage.getItem("pg-category-id"));
+  const responsePromise = page.waitForResponse((response) => response.url().endsWith("/api/playoffs") && response.request().method() === "POST", { timeout: 10000 });
+  await page.locator("#pg-playoff-advance").click();
+  const response = await responsePromise;
+  const body = await response.text();
+  if (!response.ok()) throw new Error(`Top 8 avance rechazado status=${response.status()} body=${body} estado=${JSON.stringify(await page.locator("#pg-playoff-state").textContent())}`);
+  const persistedResponse = await page.request.get(`${new URL(base).origin}/api/categories/${categoryId}/playoffs`);
+  const persisted = await persistedResponse.json();
+  const matches = persisted.playoff?.payload?.matches || [];
+  const pending = matches.filter((match) => match.ronda === expectedRound && match.puntos_local == null && match.puntos_visitante == null);
+  if (!pending.length) throw new Error(`Top 8 avance sin ${expectedRound} pendiente status=${response.status()} body=${body} payload=${JSON.stringify(matches)} estado=${JSON.stringify(await page.locator("#pg-playoff-state").textContent())}`);
+  console.log(`[top8] avance confirmado ronda=${expectedRound} status=${response.status()} pendientes=${pending.length}`);
+}
 test("completa Top 8 persistente con cuartos, semifinales, final y recuperación", async ({ page }) => {
   test.setTimeout(120000);
   const started = Date.now();
@@ -30,7 +44,7 @@ test("completa Top 8 persistente con cuartos, semifinales, final y recuperación
   await page.locator("#pg-fixture").click(); await expect(page.locator("#pg-match option")).toHaveCount(29); stage("fixture listo");
   for (let i = 1; i <= 28; i += 1) { await page.locator("#pg-match").selectOption({ index: i }); await page.locator("#pg-local").fill(String(90 + i)); await page.locator("#pg-away").fill(String(60 + i)); await page.locator("#pg-result").click(); await expect(page.locator("#circuit-status")).toContainText("Resultado confirmado"); } stage("fase regular lista");
   await page.locator("#pg-playoff-top").selectOption("8"); await expect(page.locator("#pg-playoff-top")).toHaveValue("8"); await page.locator("#pg-playoff-generate").click(); await expect(page.locator("#pg-playoff-match option")).toHaveCount(5);
-  for (let i = 0; i < 4; i += 1) await playoffResult(page, 82 + i, 70); stage("cuartos listos"); await page.locator("#pg-playoff-advance").click(); await expect(page.locator("#pg-playoff-match option")).toHaveCount(3); stage("semifinales generadas");
-  await playoffResult(page, 88, 75); await playoffResult(page, 87, 74); await page.locator("#pg-playoff-advance").click(); stage("final generada"); await playoffResult(page, 91, 80); await page.locator("#pg-playoff-advance").click(); await expect(page.locator("#pg-playoff-state")).toContainText("Campeón:"); const champion = await page.locator("#pg-playoff-state").textContent(); stage("campeón confirmado");
+  for (let i = 0; i < 4; i += 1) await playoffResult(page, 82 + i, 70); stage("cuartos listos"); await advancePlayoffs(page, "semifinales"); await expect(page.locator("#pg-playoff-match option")).toHaveCount(3); stage("semifinales generadas");
+  await playoffResult(page, 88, 75); await playoffResult(page, 87, 74); await advancePlayoffs(page, "final"); await expect(page.locator("#pg-playoff-match option")).toHaveCount(2); stage("final generada"); await playoffResult(page, 91, 80); await page.locator("#pg-playoff-advance").click(); await expect(page.locator("#pg-playoff-state")).toContainText("Campeón:"); const champion = await page.locator("#pg-playoff-state").textContent(); stage("campeón confirmado");
   await page.reload(); await page.getByRole("button", { name: "Asociación" }).click(); await expect(page.locator("#pg-playoff-state")).toContainText("Campeón:"); expect(await page.locator("#pg-playoff-state").textContent()).toContain(champion.match(/Campeón:[^\n]+/)?.[0] || "Campeón:"); expect(errors).toEqual([]); stage("recuperación lista");
 });
