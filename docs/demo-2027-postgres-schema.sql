@@ -2,7 +2,7 @@
 create table if not exists lm_demo_organizations (id uuid primary key, name text not null unique);
 create table if not exists lm_demo_users (id uuid primary key, username text not null unique, role text not null check (role in ('platform_admin','organizer','delegate')));
 create table if not exists lm_demo_memberships (user_id uuid not null references lm_demo_users(id), organization_id uuid not null references lm_demo_organizations(id), primary key (user_id, organization_id));
-create table if not exists lm_demo_tournaments (id uuid primary key, organization_id uuid not null, name text not null, season integer not null, state text not null check (state in ('draft','active','closed')));
+create table if not exists lm_demo_tournaments (id uuid primary key, organization_id uuid not null references lm_demo_organizations(id), name text not null, season integer not null, state text not null check (state in ('draft','active','closed')));
 create table if not exists lm_demo_categories (id uuid primary key, tournament_id uuid not null references lm_demo_tournaments(id), name text not null, state text not null default 'open' check (state in ('open','closed')), unique (tournament_id, name));
 create table if not exists lm_demo_teams (id uuid primary key, category_id uuid not null references lm_demo_categories(id), name text not null, unique (category_id, name), unique (category_id, id));
 create table if not exists lm_demo_delegate_assignments (user_id uuid not null references lm_demo_users(id), category_id uuid not null references lm_demo_categories(id), team_id uuid references lm_demo_teams(id), primary key (user_id, category_id, team_id));
