@@ -35,6 +35,9 @@ const request = (base, route, method = "GET", payload, token) => fetch(`${base}$
   const fixture = await request(base, "/api/fixtures", "POST", { categoryId: "c", actorId: "attacker", matches: [] }, token);
   assert.equal(fixture.status, 201);
   assert.equal(calls[1].actorId, "organizer");
+  const delegateToken = (await (await request(base, "/api/auth/dev-login", "POST", { userId: "delegate" })).json()).token;
+  const forbidden = await request(base, "/api/fixtures", "POST", { categoryId: "c", actorId: "organizer", matches: [] }, delegateToken);
+  assert.equal(forbidden.status, 400);
   await new Promise((resolve) => server.close(resolve));
   console.log("AUTH_SERVER_CONTRACT_OK");
 })().catch((error) => { console.error(error); process.exitCode = 1; });
