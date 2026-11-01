@@ -51,6 +51,17 @@ jobs:
       - run: node tests/postgres-http-integration.cjs
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      - name: Create isolated security test database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+        run: |
+          node -e 'const {Pool}=require("pg"); const p=new Pool({connectionString:process.env.DATABASE_URL}); p.query("CREATE DATABASE liga_maxi_auth").then(()=>p.end()).catch(e=>{console.error(e);process.exitCode=1;p.end()})'
+      - name: PostgreSQL auth and organization isolation
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_auth
+          LM_REQUIRE_AUTH: "1"
+          LM_DEMO_AUTH_SECRET: ci-synthetic-isolation-only
+        run: node tests/postgres-auth-isolation-integration.cjs
       - run: npx playwright install --with-deps chromium
       - name: Start local HTTP backend
         run: node demo_2027_postgres_server.js > postgres-server.log 2>&1 &
