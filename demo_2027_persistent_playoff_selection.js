@@ -1,11 +1,17 @@
 (() => {
   const Provider = window.SyntheticDataProvider;
   if (!Provider || Provider.prototype.__persistentPlayoffSelectionPatched) return;
+  const readSelectedFormat = () => {
+    const selector = document.querySelector("#pg-playoff-top");
+    const value = selector ? Number(selector.value) : 4;
+    return [4, 6, 8].includes(value) ? value : 4;
+  };
+  const syncSelectedFormat = () => { window.__persistentPlayoffFormat = readSelectedFormat(); };
+  document.addEventListener("change", (event) => { if (event.target?.id === "pg-playoff-top") syncSelectedFormat(); }, true);
+  new MutationObserver(syncSelectedFormat).observe(document.body, { childList: true, subtree: true });
   const original = Provider.prototype.generatePlayoffs;
   Provider.prototype.generatePlayoffs = function generatePersistentPlayoffs(categoryId, classified, options = {}) {
-    const selector = document.querySelector("#pg-playoff-top");
-    const selected = selector ? Number(selector.value) : Number(classified);
-    const format = [4, 6, 8].includes(selected) ? selected : Number(classified);
+    const format = window.__persistentPlayoffFormat || readSelectedFormat();
     const seriesGames = format === 6 ? 2 : Number(options.seriesGames || 1);
     const bracket = original.call(this, categoryId, format, { ...options, seriesGames });
     if (bracket.formato !== `top${format}`) throw new Error(`El formato generado (${bracket.formato}) no coincide con el seleccionado (top${format}).`);

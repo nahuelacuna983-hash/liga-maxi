@@ -38,6 +38,9 @@ test("completa Top 6 persistente con repechaje, semifinales, final y recuperaciÃ
   let persistedPayload = null;
   try { generationPayload = JSON.parse(generation.body); } catch (_) { /* included in diagnostic below */ }
   try { persistedPayload = JSON.parse(persisted.body); } catch (_) { /* included in diagnostic below */ }
+  expect(generationPayload?.format).toBe("top6");
+  expect(persistedPayload?.playoff?.format).toBe("top6");
+  expect(persistedPayload?.playoff?.payload?.formato).toBe("top6");
   const payloadMatches = persistedPayload?.playoff?.payload?.matches || generationPayload?.payload?.matches || [];
   if (payloadMatches.filter((match) => match.ronda === "repechaje").length !== 4 || selectorOptions.filter((option) => option.value).length !== 4) {
     throw new Error(`Top 6 divergence after generation: expected=4 payload=${JSON.stringify(payloadMatches.map(({ partido_numero, ronda, llave, serie_partido, puntos_local, puntos_visitante }) => ({ partido_numero, ronda, llave, serie_partido, puntos_local, puntos_visitante })))} generation=${JSON.stringify(generation)} persisted=${JSON.stringify(persisted)} selector=${JSON.stringify(selectorOptions)} state=${JSON.stringify(stateText)} status=${JSON.stringify(await page.locator("#circuit-status").textContent())} errors=${JSON.stringify(errors)}`);
