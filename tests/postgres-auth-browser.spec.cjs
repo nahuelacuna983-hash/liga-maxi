@@ -2,7 +2,8 @@ const { test, expect } = require("@playwright/test");
 const { Pool } = require("pg");
 const crypto = require("node:crypto");
 
-const base = process.env.POSTGRES_AUTH_UI_BASE_URL;
+const configuredBase = process.env.POSTGRES_AUTH_UI_BASE_URL;
+const base = configuredBase ? (() => { const url = new URL(configuredBase); url.searchParams.set("api", url.origin); return url.toString(); })() : undefined;
 test.skip(!base, "Requiere PostgreSQL 16, backend con LM_REQUIRE_AUTH=1 y usuarios sintéticos preparados.");
 
 test("Chromium usa sesión de desarrollo y respeta autorización del backend", async ({ page }) => {
@@ -14,11 +15,14 @@ test("Chromium usa sesión de desarrollo y respeta autorización del backend", a
   await db.query("insert into lm_demo_memberships(user_id,organization_id) values('00000000-0000-4000-8000-000000000201','00000000-0000-4000-8000-000000000101'),('00000000-0000-4000-8000-000000000203','00000000-0000-4000-8000-000000000101') on conflict do nothing");
   await db.end();
   const responses = [];
+  const apiOrigin = new URL(base).origin;
   page.on("response", (response) => { if (response.url().includes("/api/")) responses.push({ url: response.url(), status: response.status() }); });
   await page.goto(base);
   await page.getByRole("button", { name: "Asociación" }).click();
   await page.locator("#pg-login-user").fill(process.env.POSTGRES_AUTH_USER || "dev-organizer");
+  const loginResponse = page.waitForResponse((response) => response.url() === `${apiOrigin}/api/auth/dev-login` && response.request().method() === "POST");
   await page.locator("#pg-login").click();
+  expect((await loginResponse).status()).toBe(200);
   await expect(page.locator("#circuit-status")).toContainText("Sesión de desarrollo iniciada");
   await page.locator("#pg-tournament").fill("Chromium autenticado");
   const create = page.waitForResponse((response) => response.url().endsWith("/api/tournaments") && response.request().method() === "POST");
@@ -26,11 +30,11 @@ test("Chromium usa sesión de desarrollo y respeta autorización del backend", a
   expect((await create).status()).toBe(201);
   await page.locator("#pg-logout").click();
   await expect(page.locator("#circuit-status")).toContainText("Sesión cerrada");
-  const anonymous = await page.request.post(new URL("/api/tournaments", base).toString(), { data: { id: crypto.randomUUID(), organizationId: "00000000-0000-4000-8000-000000000101", name: "Anónimo", season: 2027 } });
+  const anonymous = await page.request.post(`${apiOrigin}/api/tournaments`, { data: { id: crypto.randomUUID(), organizationId: "00000000-0000-4000-8000-000000000101", name: "Anónimo", season: 2027 } });
   expect(anonymous.status()).toBe(400);
-  const delegateLogin = await page.request.post(new URL("/api/auth/dev-login", base).toString(), { data: { userId: "dev-delegate" } });
+  const delegateLogin = await page.request.post(`${apiOrigin}/api/auth/dev-login`, { data: { userId: "dev-delegate" } });
   const delegateToken = (await delegateLogin.json()).token;
-  const forbidden = await page.request.post(new URL("/api/fixtures", base).toString(), { headers: { authorization: `Bearer ${delegateToken}` }, data: { categoryId: "00000000-0000-4000-8000-000000000000", matches: [] } });
+  const forbidden = await page.request.post(`${apiOrigin}/api/fixtures`, { headers: { authorization: `Bearer ${delegateToken}` }, data: { categoryId: "00000000-0000-4000-8000-000000000000", matches: [] } });
   expect(forbidden.status()).toBe(400);
   expect(responses.some((item) => item.url.endsWith("/api/tournaments") && item.status === 201)).toBe(true);
 });
