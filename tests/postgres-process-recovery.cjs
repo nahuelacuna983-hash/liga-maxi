@@ -1,41 +1,42 @@
 "use strict";
-
 const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { Pool } = require("pg");
-
-const ids = { tournament: "00000000-0000-4000-8000-000000000601", category: "00000000-0000-4000-8000-000000000602", teams: ["00000000-0000-4000-8000-000000000603", "00000000-0000-4000-8000-000000000604", "00000000-0000-4000-8000-000000000605", "00000000-0000-4000-8000-000000000606"], match: "00000000-0000-4000-8000-000000000607", actor: "00000000-0000-4000-8000-000000000608" };
+const { createDevelopmentAuth } = require("../demo_2027_auth.js");
+const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+const ids = { org: id(601), user: id(602), tournament: id(603), category: id(604), teams: [id(605), id(606), id(607), id(608)], match: id(609) };
+const secret = "recovery-development-secret";
 const dbUrl = process.env.DATABASE_URL;
 const port = Number(process.env.POSTGRES_RECOVERY_PORT || 8897);
 const base = `http://127.0.0.1:${port}`;
-const request = async (route, method = "GET", payload) => { const response = await fetch(`${base}${route}`, { method, headers: { "content-type": "application/json" }, body: payload === undefined ? undefined : JSON.stringify(payload) }); const data = await response.json(); if (!response.ok) throw new Error(`${method} ${route} HTTP ${response.status}: ${data.error || JSON.stringify(data)}`); return data; };
-const start = () => { const child = spawn(process.execPath, [path.join(__dirname, "..", "demo_2027_postgres_server.js")], { env: { ...process.env, DATABASE_URL: dbUrl, PORT: String(port), LM_REQUIRE_AUTH: "0" }, stdio: ["ignore", "pipe", "pipe"] }); return child; };
+const auth = createDevelopmentAuth({ secret, users: { recovery: { id: ids.user, role: "organizer", organizationId: ids.org } } });
+const call = async (route, method = "GET", payload, token) => { const response = await fetch(`${base}${route}`, { method, headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: payload === undefined ? undefined : JSON.stringify(payload) }); const data = await response.json(); if (!response.ok) throw new Error(`${method} ${route} HTTP ${response.status}: ${data.error || JSON.stringify(data)}`); return data; };
+const start = () => spawn(process.execPath, [path.join(__dirname, "..", "demo_2027_postgres_server.js")], { env: { ...process.env, DATABASE_URL: dbUrl, PORT: String(port), NODE_ENV: "development", LM_REQUIRE_AUTH: "1", LM_DEMO_AUTH_SECRET: secret }, stdio: ["ignore", "pipe", "pipe"] });
 const stop = (child) => new Promise((resolve, reject) => { child.once("exit", resolve); child.once("error", reject); child.kill("SIGTERM"); });
-const waitForServer = async () => { for (let i = 0; i < 50; i += 1) { try { await request("/health"); return; } catch { await new Promise((resolve) => setTimeout(resolve, 100)); } } throw new Error("El backend no inició a tiempo."); };
-
+async function waitForServer() { for (let i = 0; i < 60; i += 1) { try { await call("/health"); return; } catch { await new Promise((resolve) => setTimeout(resolve, 100)); } } throw new Error("El backend no inició a tiempo."); }
 (async () => {
   if (!dbUrl) throw new Error("DATABASE_URL es obligatorio para la recuperación PostgreSQL.");
-  const setup = new Pool({ connectionString: dbUrl });
-  await setup.query(await fs.readFile(path.join(__dirname, "..", "docs", "demo-2027-postgres-schema.sql"), "utf8"));
-  await setup.query("insert into lm_demo_tournaments(id,organization_id,name,season,state) values($1,'00000000-0000-4000-8000-000000000101','Recovery física',2027,'draft') on conflict (id) do nothing", [ids.tournament]);
-  await setup.query("insert into lm_demo_categories(id,tournament_id,name) values($1,$2,'Recovery') on conflict (id) do nothing", [ids.category, ids.tournament]);
-  await setup.query("insert into lm_demo_teams(id,category_id,name) values($1,$5,'R1'),($2,$5,'R2'),($3,$5,'R3'),($4,$5,'R4') on conflict (id) do nothing", [...ids.teams, ids.category]);
-  await setup.end();
-
-  let server = start(); await waitForServer();
-  await request(`/api/fixtures`, "POST", { categoryId: ids.category, actorId: ids.actor, matches: [{ id: ids.match, round: 0, homeTeamId: ids.teams[0], awayTeamId: ids.teams[1] }] });
-  await request(`/api/matches/${ids.match}/result`, "POST", { actorId: ids.actor, homeScore: 80, awayScore: 70 });
-  const before = await request(`/api/categories/${ids.category}`);
-  assert.equal(before.matches[0].home_score, 80);
-  assert.ok(before.history.some((entry) => entry.action === "result_saved"));
-  await stop(server);
-
-  server = start(); await waitForServer();
-  const after = await request(`/api/categories/${ids.category}`);
-  assert.deepEqual(after.matches, before.matches, "el partido debe conservarse tras reiniciar el proceso");
-  assert.deepEqual(after.history, before.history, "el historial debe conservarse tras reiniciar el proceso");
-  await stop(server);
-  console.log("POSTGRES_PROCESS_RECOVERY_OK");
+  const db = new Pool({ connectionString: dbUrl });
+  await db.query(await fs.readFile(path.join(__dirname, "..", "docs", "demo-2027-postgres-schema.sql"), "utf8"));
+  await db.query("insert into lm_demo_organizations(id,name) values($1,'Recovery autenticada') on conflict (id) do nothing", [ids.org]);
+  await db.query("insert into lm_demo_users(id,username,role) values($1,'recovery-organizer','organizer') on conflict (id) do nothing", [ids.user]);
+  await db.query("insert into lm_demo_memberships(user_id,organization_id) values($1,$2) on conflict do nothing", [ids.user, ids.org]);
+  const serverSeed = start(); await waitForServer(); const token = auth.issue("recovery");
+  const tournament = await call("/api/tournaments", "POST", { id: ids.tournament, organizationId: id(999), name: "Recovery autenticada", season: 2027 }, token);
+  const category = await call("/api/categories", "POST", { id: ids.category, tournamentId: tournament.id, name: "Maxi Recovery" }, token);
+  for (const [index, teamId] of ids.teams.entries()) await call("/api/teams", "POST", { id: teamId, categoryId: category.id, name: `Recovery ${index + 1}` }, token);
+  const matches = [{ id: ids.match, round: 0, homeTeamId: ids.teams[0], awayTeamId: ids.teams[1] }];
+  await call("/api/fixtures", "POST", { categoryId: category.id, matches }, token);
+  await call(`/api/matches/${ids.match}/result`, "POST", { homeScore: 80, awayScore: 70 }, token);
+  const playoff = { formato: "top4", estado: "finalizado", champion: "Recovery 1", matches: [{ ronda: "final", local: "Recovery 1", visitante: "Recovery 2", puntos_local: 80, puntos_visitante: 70 }] };
+  await call("/api/playoffs", "POST", { categoryId: category.id, format: "top4", state: "finalizado", champion: "Recovery 1", payload: playoff }, token);
+  const before = { category: await call(`/api/categories/${category.id}`, "GET", undefined, token), playoffs: await call(`/api/categories/${category.id}/playoffs`, "GET", undefined, token) };
+  assert.equal(before.category.matches[0].home_score, 80); assert.equal(before.playoffs.playoff.champion, "Recovery 1");
+  await stop(serverSeed); const serverRecovered = start(); await waitForServer();
+  const newToken = auth.issue("recovery");
+  const after = { category: await call(`/api/categories/${category.id}`, "GET", undefined, newToken), playoffs: await call(`/api/categories/${category.id}/playoffs`, "GET", undefined, newToken) };
+  assert.deepEqual(after.category.matches, before.category.matches); assert.deepEqual(after.category.history, before.category.history); assert.deepEqual(after.playoffs.playoff.payload, before.playoffs.playoff.payload); assert.equal(after.playoffs.playoff.champion, "Recovery 1"); assert.ok(after.playoffs.history.length >= 1);
+  await stop(serverRecovered); await db.end(); console.log("POSTGRES_PROCESS_RECOVERY_OK");
 })().catch((error) => { console.error(error); process.exitCode = 1; });
