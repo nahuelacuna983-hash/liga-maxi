@@ -62,6 +62,19 @@ jobs:
           LM_REQUIRE_AUTH: "1"
           LM_DEMO_AUTH_SECRET: ci-synthetic-isolation-only
         run: node tests/postgres-auth-isolation-integration.cjs
+      - name: Create isolated XXXL security database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+        run: |
+          node -e 'const {Pool}=require("pg");const p=new Pool({connectionString:process.env.DATABASE_URL});p.query("CREATE DATABASE liga_maxi_security").then(()=>p.end()).catch(async e=>{console.error(e);await p.end();process.exitCode=1})'
+      - name: PostgreSQL XXXL concurrency and revocation
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_security
+        run: node tests/postgres-concurrency-revocation.cjs
+      - name: PostgreSQL XXXL authenticated process recovery
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_security
+        run: node tests/postgres-process-recovery.cjs
       - run: npx playwright install --with-deps chromium
       - name: Start local HTTP backend
         run: node demo_2027_postgres_server.js > postgres-server.log 2>&1 &
@@ -89,3 +102,26 @@ jobs:
       - run: npx playwright test tests/postgres-top8-browser.spec.cjs
         env:
           POSTGRES_UI_BASE_URL: http://127.0.0.1:8787/demo_circuito_2027.html?mode=postgres
+      - name: Start isolated authenticated backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_security
+          LM_REQUIRE_AUTH: "1"
+          LM_DEMO_AUTH_SECRET: ci-xxxl-development-only-secret
+          NODE_ENV: development
+          PORT: "8788"
+        run: node demo_2027_postgres_server.js > postgres-auth-server.log 2>&1 &
+      - name: Wait for authenticated backend
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8788/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat postgres-auth-server.log || true
+          exit 1
+      - name: Chromium XXXL authenticated access
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_security
+          POSTGRES_AUTH_UI_BASE_URL: http://127.0.0.1:8788/demo_circuito_2027.html?mode=postgres
+        run: npx playwright test tests/postgres-auth-browser.spec.cjs
