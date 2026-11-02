@@ -4,7 +4,7 @@
 
 Rama: `codex/demo-2027-visual`
 
-SHA final: `1768d5c4b9a2c74ee42ca036edeb633b876b6681`
+SHA final: `afc6d8bfc8b166afb65d4c85f39b706396a67e50`
 
 No se modificaron `main`, workflows protegidos, Supabase, PR #2 ni datos 2026.
 
@@ -15,6 +15,7 @@ No se modificaron `main`, workflows protegidos, Supabase, PR #2 ni datos 2026.
 - `17365c0`: prueba de recuperacion tras detener y reiniciar el proceso HTTP.
 - `05f114f`: aserciones deterministas para carrera de revocacion y resultado.
 - `1768d5c`: recuperación autenticada con IDs reconocidos por el servidor, timeouts y limpieza garantizada.
+- `afc6d8b`: alineación final del UUID/rol/membresía de `dev-organizer` y corrección del `organizationId` del torneo.
 
 ## Implementado
 
@@ -54,6 +55,8 @@ No ejecutadas localmente por falta de PostgreSQL en `127.0.0.1:5432`:
 La ejecución directa de las pruebas PostgreSQL localmente devuelve `ECONNREFUSED`; no se informa ninguna como validada.
 
 La prueba de recuperación ahora usa `/api/auth/dev-login` con `dev-organizer`, comprueba que la organización enviada por el cliente sea reemplazada por la de la sesión, compara partidos, historial, playoff y campeón antes/después del reinicio y garantiza el cierre de ambos procesos y del pool mediante `finally`.
+
+La corrección adicional verifica antes del login que PostgreSQL contenga el UUID `00000000-0000-4000-8000-000000000201` con rol `organizer` y membresía en `00000000-0000-4000-8000-000000000101`; también valida localmente las claims emitidas y envía el mismo `organizationId` coherente al crear el torneo.
 
 ## Propuesta de CI (no aplicada)
 
