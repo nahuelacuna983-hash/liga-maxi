@@ -63,6 +63,7 @@
       state.selectedMatchId = $("#pg-match").value;
     };
     bind();
+    enhancePlayoffs();
   };
   const bind = () => {
     const on = (id, fn) => {
@@ -224,6 +225,7 @@
         .join("")}`;
       $("#pg-playoff-state").innerHTML = playoffRows();
     };
+    render();
     $("#pg-playoff-generate").onclick = () =>
       request(async () => {
         const engine = playoffEngine();
@@ -289,7 +291,5 @@
         status("Avance de playoff confirmado por PostgreSQL.");
       });
   }
-  const associationObserver = new MutationObserver(() => enhancePlayoffs());
-  associationObserver.observe($("#view-association"), { childList: true });
   enhancePlayoffs();
 })();
