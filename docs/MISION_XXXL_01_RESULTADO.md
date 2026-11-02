@@ -4,7 +4,7 @@
 
 Rama: `codex/demo-2027-visual`
 
-SHA final: `fd7976453a5ca0c97dc32c12ae21138ce503a20c`
+SHA final: `8432fc9edc001241d303637a42275bb08817cfb5`
 
 No se modificaron `main`, workflows protegidos, Supabase, PR #2 ni datos 2026.
 
@@ -17,6 +17,7 @@ No se modificaron `main`, workflows protegidos, Supabase, PR #2 ni datos 2026.
 - `1768d5c`: recuperación autenticada con IDs reconocidos por el servidor, timeouts y limpieza garantizada.
 - `afc6d8b`: alineación final del UUID/rol/membresía de `dev-organizer` y corrección del `organizationId` del torneo.
 - `fd79764`: verificación HMAC del token de recuperación indexada por el UUID de `sub`.
+- `8432fc9`: contrato compartido de autenticación: login por alias y verificación por UUID.
 
 ## Implementado
 
@@ -58,6 +59,8 @@ La ejecución directa de las pruebas PostgreSQL localmente devuelve `ECONNREFUSE
 La prueba de recuperación ahora usa `/api/auth/dev-login` con `dev-organizer`, comprueba que la organización enviada por el cliente sea reemplazada por la de la sesión, compara partidos, historial, playoff y campeón antes/después del reinicio y garantiza el cierre de ambos procesos y del pool mediante `finally`.
 
 La corrección adicional verifica antes del login que PostgreSQL contenga el UUID `00000000-0000-4000-8000-000000000201` con rol `organizer` y membresía en `00000000-0000-4000-8000-000000000101`; también valida localmente las claims emitidas y envía el mismo `organizationId` coherente al crear el torneo.
+
+El contrato HTTP verifica ahora los tres roles sintéticos, usuario desconocido, token manipulado y resolución de `sub` UUID usando la misma instancia de autenticación que el servidor.
 
 ## Propuesta de CI (no aplicada)
 
