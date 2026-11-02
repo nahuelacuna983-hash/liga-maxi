@@ -75,6 +75,16 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_security
         run: node tests/postgres-process-recovery.cjs
+      - name: Create isolated XXXL 02 platform database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+        run: |
+          node -e 'const {Pool}=require("pg");const p=new Pool({connectionString:process.env.DATABASE_URL});p.query("CREATE DATABASE liga_maxi_platform").then(()=>p.end()).catch(async e=>{console.error(e);await p.end();process.exitCode=1})'
+      - name: PostgreSQL XXXL 02 platform integration
+        timeout-minutes: 2
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_platform
+        run: node tests/postgres-platform-integration.cjs
       - run: npx playwright install --with-deps chromium
       - name: Start local HTTP backend
         run: node demo_2027_postgres_server.js > postgres-server.log 2>&1 &
