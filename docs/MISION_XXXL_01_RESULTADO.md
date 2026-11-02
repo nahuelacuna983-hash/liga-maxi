@@ -4,7 +4,7 @@
 
 Rama: `codex/demo-2027-visual`
 
-SHA final: `afc6d8bfc8b166afb65d4c85f39b706396a67e50`
+SHA final: `fd7976453a5ca0c97dc32c12ae21138ce503a20c`
 
 No se modificaron `main`, workflows protegidos, Supabase, PR #2 ni datos 2026.
 
@@ -16,6 +16,7 @@ No se modificaron `main`, workflows protegidos, Supabase, PR #2 ni datos 2026.
 - `05f114f`: aserciones deterministas para carrera de revocacion y resultado.
 - `1768d5c`: recuperación autenticada con IDs reconocidos por el servidor, timeouts y limpieza garantizada.
 - `afc6d8b`: alineación final del UUID/rol/membresía de `dev-organizer` y corrección del `organizationId` del torneo.
+- `fd79764`: verificación HMAC del token de recuperación indexada por el UUID de `sub`.
 
 ## Implementado
 
