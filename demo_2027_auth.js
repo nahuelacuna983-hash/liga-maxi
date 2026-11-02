@@ -16,7 +16,8 @@ function createDevelopmentAuth({ secret, ttlMs = 15 * 60 * 1000, users = {} } = 
   const verify = (token) => {
     if (!token || typeof token !== "string") throw new Error("Autenticación requerida.");
     const [body, signature] = token.split(".");
-    if (!body || !signature || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(sign(body)))) throw new Error("Sesión inválida.");
+    const expected = body ? sign(body) : "";
+    if (!body || !signature || signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) throw new Error("Sesión inválida.");
     const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
     if (!payload.exp || payload.exp <= Date.now()) throw new Error("Sesión vencida.");
     const current = users[payload.sub];
