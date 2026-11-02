@@ -27,6 +27,10 @@ class PostgresHttpClient {
   seasons() { return this.request("/api/seasons"); }
   lifecycle(categoryId, state) { return this.request(`/api/categories/${categoryId}/lifecycle`, state ? "POST" : "GET", state ? { state } : undefined); }
   organizationUsers(organizationId) { return this.request(`/api/organizations/${organizationId}/users`); }
+  membership(input) { return this.request("/api/memberships", "POST", input); }
+  revokeMembership(input) { return this.request("/api/memberships", "DELETE", input); }
+  delegateAssignment(input) { return this.request("/api/delegate-assignments", "POST", input); }
+  revokeDelegateAssignment(input) { return this.request("/api/delegate-assignments", "DELETE", input); }
 }
 
 if (typeof module !== "undefined") module.exports = PostgresHttpClient;
