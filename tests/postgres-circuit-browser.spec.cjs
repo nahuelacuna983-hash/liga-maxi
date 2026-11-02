@@ -15,7 +15,11 @@ test("opera y recupera el circuito principal contra PostgreSQL", async ({ page }
   await expect(page.locator("#view-association")).toBeAttached();
   await page.getByRole("button", { name: "Asociación" }).click();
   await page.locator("#pg-tournament").fill("Browser PostgreSQL 2027");
+  const tournamentResponse = page.waitForResponse((response) => response.url().endsWith("/api/tournaments") && response.request().method() === "POST");
   await page.locator("#pg-create-tournament").click();
+  const tournament = await tournamentResponse;
+  expect(tournament.status(), await tournament.text()).toBe(201);
+  await expect(page.locator("#circuit-status")).toContainText("Torneo confirmado");
   await page.locator("#pg-category").fill("Maxi +35 Browser");
   await page.locator("#pg-create-category").click();
   await expect(page.locator("#circuit-status")).toContainText("Categoría confirmada");

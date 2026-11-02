@@ -1,5 +1,9 @@
 -- PostgreSQL 16 aislado para el adaptador Liga Maxi 2027. Nunca ejecutar en producción.
 create table if not exists lm_demo_organizations (id uuid primary key, name text not null unique);
+-- Fixture estable para los recorridos visuales locales; no representa una organización real.
+insert into lm_demo_organizations(id, name)
+values ('00000000-0000-4000-8000-000000000101', 'Liga Maxi 2027 - organización visual sintética')
+on conflict (id) do nothing;
 create table if not exists lm_demo_users (id uuid primary key, username text not null unique, role text not null check (role in ('platform_admin','organizer','delegate')));
 create table if not exists lm_demo_memberships (user_id uuid not null references lm_demo_users(id), organization_id uuid not null references lm_demo_organizations(id), primary key (user_id, organization_id));
 create table if not exists lm_demo_tournaments (id uuid primary key, organization_id uuid not null references lm_demo_organizations(id), name text not null, season integer not null, state text not null check (state in ('draft','active','closed')));

@@ -5,6 +5,7 @@
   const client = new PostgresHttpClient(
     new URLSearchParams(location.search).get("api") || "http://127.0.0.1:8787",
   );
+  const developmentOrganizationId = "00000000-0000-4000-8000-000000000101";
   const state = {
     category: null,
     teams: [],
@@ -78,7 +79,7 @@
     on("#pg-create-tournament", async () => {
       window.pgTournament = await client.tournament({
         id: crypto.randomUUID(),
-        organizationId: crypto.randomUUID(),
+        organizationId: developmentOrganizationId,
         name: $("#pg-tournament").value || "Torneo PostgreSQL 2027",
         season: 2027,
       });
