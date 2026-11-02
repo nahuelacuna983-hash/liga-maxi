@@ -4,7 +4,7 @@
 
 Rama: `codex/demo-2027-visual`
 
-SHA final: `05f114f57e01b5cfa83adb6a5ecab9079fe38992`
+SHA final: `1768d5c4b9a2c74ee42ca036edeb633b876b6681`
 
 No se modificaron `main`, workflows protegidos, Supabase, PR #2 ni datos 2026.
 
@@ -14,6 +14,7 @@ No se modificaron `main`, workflows protegidos, Supabase, PR #2 ni datos 2026.
 - `d3c7e90`: prueba Chromium con login de desarrollo, token Bearer y logout.
 - `17365c0`: prueba de recuperacion tras detener y reiniciar el proceso HTTP.
 - `05f114f`: aserciones deterministas para carrera de revocacion y resultado.
+- `1768d5c`: recuperación autenticada con IDs reconocidos por el servidor, timeouts y limpieza garantizada.
 
 ## Implementado
 
@@ -51,6 +52,8 @@ No ejecutadas localmente por falta de PostgreSQL en `127.0.0.1:5432`:
 - Top 4, Top 6 y Top 8 contra PostgreSQL.
 
 La ejecución directa de las pruebas PostgreSQL localmente devuelve `ECONNREFUSED`; no se informa ninguna como validada.
+
+La prueba de recuperación ahora usa `/api/auth/dev-login` con `dev-organizer`, comprueba que la organización enviada por el cliente sea reemplazada por la de la sesión, compara partidos, historial, playoff y campeón antes/después del reinicio y garantiza el cierre de ambos procesos y del pool mediante `finally`.
 
 ## Propuesta de CI (no aplicada)
 
