@@ -85,7 +85,7 @@ async function run() {
     stage("iniciando primer proceso HTTP"); serverSeed = startServer(); await waitForServer();
     const login = await fetchJson("/api/auth/dev-login", "POST", { userId: "dev-organizer" });
     const token = login.token; assert.ok(token, "el login debe emitir token");
-    const verifier = createDevelopmentAuth({ secret: authSecret, users: { "dev-organizer": { id: ids.user, role: "organizer", organizationId: ids.org } } });
+    const verifier = createDevelopmentAuth({ secret: authSecret, users: { [ids.user]: { id: ids.user, role: "organizer", organizationId: ids.org } } });
     const claims = verifier.verify(token);
     assert.deepEqual({ sub: claims.sub, role: claims.role, organizationId: claims.organizationId }, { sub: ids.user, role: "organizer", organizationId: ids.org }, "el token debe identificar al organizador esperado");
     stage("sesión inicial emitida con identidad y organización verificadas");
