@@ -29,6 +29,8 @@ const request = (base, route, method = "GET", payload, token) => fetch(`${base}$
   const base = `http://127.0.0.1:${server.address().port}`;
   const anonymous = await request(base, "/api/tournaments", "POST", { id: "t", organizationId: "attacker", name: "x", season: 2027 });
   assert.equal(anonymous.status, 400);
+  const malformed = await request(base, "/api/tournaments", "GET", undefined, "malformed.token");
+  assert.equal(malformed.status, 400);
   const login = await request(base, "/api/auth/dev-login", "POST", { userId: "organizer" });
   const { token } = await login.json();
   const created = await request(base, "/api/tournaments", "POST", { id: "t", organizationId: "attacker", name: "x", season: 2027 }, token);
