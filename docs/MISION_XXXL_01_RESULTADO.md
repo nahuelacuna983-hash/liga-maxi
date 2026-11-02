@@ -4,7 +4,7 @@
 
 Rama: `codex/demo-2027-visual`
 
-SHA final: `17365c0e494d21797913cbaec9ea0a62b42e11f7`
+SHA final: `05f114f57e01b5cfa83adb6a5ecab9079fe38992`
 
 No se modificaron `main`, workflows protegidos, Supabase, PR #2 ni datos 2026.
 
@@ -13,6 +13,7 @@ No se modificaron `main`, workflows protegidos, Supabase, PR #2 ni datos 2026.
 - `b98e314`: endurecimiento de pertenencia organizacional, firmas manipuladas y prueba de concurrencia/revocacion.
 - `d3c7e90`: prueba Chromium con login de desarrollo, token Bearer y logout.
 - `17365c0`: prueba de recuperacion tras detener y reiniciar el proceso HTTP.
+- `05f114f`: aserciones deterministas para carrera de revocacion y resultado.
 
 ## Implementado
 
@@ -21,9 +22,9 @@ No se modificaron `main`, workflows protegidos, Supabase, PR #2 ni datos 2026.
 - La creacion de torneos autenticada comprueba membresia efectiva de la organizacion.
 - Revocacion de membresias y asignaciones comprueba pertenencia del organizador.
 - Las asignaciones requieren que el delegado objetivo tenga membresia vigente y rol `delegate` en la organizacion de la categoria.
-- Se agrego una prueba de orden transaccional entre resultado y revocacion (`tests/postgres-concurrency-revocation.cjs`).
-- Se agrego una prueba de reinicio fisico del proceso (`tests/postgres-process-recovery.cjs`).
-- Se agrego una prueba Chromium autenticada (`tests/postgres-auth-browser.spec.cjs`).
+- Se agrego una prueba con conexiones independientes que usa `saveDelegateResult()` y `revokeMembership()`; cubre carrera concurrente y ambos ordenes efectivos (`tests/postgres-concurrency-revocation.cjs`).
+- Se agrego una prueba de reinicio fisico del proceso con autenticacion, campeonato persistido, playoff, campeon e historial (`tests/postgres-process-recovery.cjs`).
+- Se agrego una prueba Chromium autenticada que siembra usuarios/membresias UUID, valida Bearer, logout, anonimo y delegado sin permisos (`tests/postgres-auth-browser.spec.cjs`).
 - Se mantuvieron las regresiones Top 4, Top 6 y Top 8 existentes.
 
 ## Pruebas ejecutadas
@@ -35,6 +36,7 @@ Superadas localmente:
 - `AUTH_SERVER_CONTRACT_OK`, incluido token malformado.
 - `POSTGRES_SERVER_CONTRACT_OK`.
 - `DEMO_PLAYOFF_FORMATS_OK`.
+- Sintaxis de los tres scripts de XXXL y `AUTH_SERVER_CONTRACT_OK` con token malformado.
 - Sintaxis JavaScript de los módulos y pruebas nuevas.
 - `git diff --check`.
 
@@ -50,9 +52,31 @@ No ejecutadas localmente por falta de PostgreSQL en `127.0.0.1:5432`:
 
 La ejecución directa de las pruebas PostgreSQL localmente devuelve `ECONNREFUSED`; no se informa ninguna como validada.
 
-## CI pendiente
+## Propuesta de CI (no aplicada)
 
 Para validar los nuevos bloques se necesita ejecutar PostgreSQL 16 temporal, con el esquema aplicado y el backend levantado con `LM_REQUIRE_AUTH=1`. El workflow existente valida el adaptador, HTTP, aislamiento y campeonatos, pero todavía no incorpora automáticamente los scripts nuevos. No se modifico `main` ni se agregaron pasos al workflow protegido.
+
+Pasos mínimos a agregar al workflow, previa autorización sobre `main`:
+
+```yaml
+- name: PostgreSQL concurrency and revocation
+  run: node tests/postgres-concurrency-revocation.cjs
+  env:
+    DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_security
+- name: PostgreSQL process recovery
+  run: node tests/postgres-process-recovery.cjs
+  env:
+    DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_security
+- name: Authenticated Chromium recovery and authorization
+  run: npx playwright test tests/postgres-auth-browser.spec.cjs
+  env:
+    DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_security
+    LM_REQUIRE_AUTH: "1"
+    LM_DEMO_AUTH_SECRET: ci-ephemeral-development-secret
+    POSTGRES_AUTH_UI_BASE_URL: http://127.0.0.1:8787/demo_circuito_2027.html?mode=postgres
+```
+
+El backend debe iniciarse con `LM_REQUIRE_AUTH=1`, `LM_DEMO_AUTH_SECRET` y la misma `DATABASE_URL`; la base de seguridad debe ser nueva o limpiarse antes de la batería.
 
 Variables mínimas para una futura ejecución aislada:
 
