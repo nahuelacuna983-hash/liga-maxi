@@ -14,6 +14,8 @@
     playoffs: null,
     playoffFormat: 4,
     selectedMatchId: "",
+    lifecycle: { state: "draft" },
+    users: [],
     view: "public",
   };
   const $ = (id) => document.querySelector(id);
@@ -46,6 +48,7 @@
     state.teams = result.teams || state.teams;
     const persistedPlayoffs = await client.playoffs(state.category.id);
     state.playoffs = persistedPlayoffs.playoff?.payload || null;
+    if (client.token) state.lifecycle = await client.lifecycle(state.category.id);
     if (state.playoffs?.formato) state.playoffFormat = Number(state.playoffs.formato.replace("top", ""));
     renderPublic();
     renderAssociation();
@@ -63,6 +66,12 @@
       state.selectedMatchId = $("#pg-match").value;
     };
     bind();
+    const tools = document.createElement("section");
+    tools.id = "pg-administration-tools";
+    tools.innerHTML = `<h3>Administración de la organización sintética</h3><div class="result-actions"><input id="pg-season-name" placeholder="Temporada"><input id="pg-season-year" type="number" value="2027"><button id="pg-season-create">Crear temporada</button><button id="pg-users-refresh">Consultar usuarios</button></div><div class="result-actions"><select id="pg-category-state"><option value="draft">Borrador</option><option value="officialized">Oficializada</option><option value="closed">Cerrada</option></select><button id="pg-category-state-save">Guardar estado de categoría</button></div><p id="pg-admin-state">Estado de categoría: ${state.lifecycle.state}</p><div id="pg-users-state"></div>`;
+    $("#view-association").appendChild(tools);
+    $("#pg-category-state").value = state.lifecycle.state;
+    bind();
     enhancePlayoffs();
   };
   const bind = () => {
@@ -77,6 +86,9 @@
     };
     on("#pg-login", async () => { await client.login($("#pg-login-user").value.trim()); status("Sesión de desarrollo iniciada."); await reload(); });
     on("#pg-logout", async () => { client.logout(); state.category = null; state.matches = []; state.teams = []; state.table = []; state.playoffs = null; renderAssociation(); status("Sesión cerrada."); });
+    on("#pg-season-create", async () => { const season = await client.season({ id: crypto.randomUUID(), organizationId: developmentOrganizationId, name: $("#pg-season-name").value || "Temporada 2027", year: Number($("#pg-season-year").value) || 2027 }); status(`Temporada ${season.name} confirmada por PostgreSQL.`); });
+    on("#pg-category-state-save", async () => { if (!state.category) throw new Error("Creá primero una categoría."); state.lifecycle = await client.lifecycle(state.category.id, $("#pg-category-state").value); $("#pg-admin-state").textContent = `Estado de categoría: ${state.lifecycle.state}`; status("Estado de categoría confirmado por PostgreSQL."); });
+    on("#pg-users-refresh", async () => { state.users = await client.organizationUsers(developmentOrganizationId); $("#pg-users-state").textContent = state.users.map((user) => `${user.username} · ${user.role}`).join(" | ") || "Sin usuarios"; status("Usuarios y membresías recuperados."); });
     on("#pg-create-tournament", async () => {
       window.pgTournament = await client.tournament({
         id: crypto.randomUUID(),

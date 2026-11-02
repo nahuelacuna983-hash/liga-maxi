@@ -27,6 +27,7 @@ function createServer({ repository, staticRoot = null, auth = null, requireAuth 
         if (!header.startsWith("Bearer ")) throw new Error("Autenticación requerida.");
         return auth.verify(header.slice("Bearer ".length));
       };
+      const optionalAuthenticate = () => request.headers.authorization ? authenticate() : null;
       if (request.method === "GET" && staticRoot && ["/", "/demo_persistencia_2027.html", "/demo_circuito_2027.html", "/demo_2027_http_client.js", "/demo_circuito_2027_persistent.js", "/demo_2027_fixture.js", "/demo_2027_sports.js", "/demo_2027_provider.js", "/demo_circuito_2027.js", "/style.css"].includes(url.pathname)) {
         const file = url.pathname === "/" ? "demo_persistencia_2027.html" : url.pathname.slice(1);
         const target = path.resolve(staticRoot, file);
@@ -37,6 +38,11 @@ function createServer({ repository, staticRoot = null, auth = null, requireAuth 
         return response.end(fs.readFileSync(target));
       }
       if (request.method === "GET" && url.pathname === "/health") return json(response, 200, { ok: true, persistence: "postgresql" });
+      if (request.method === "GET" && url.pathname === "/api/public/organizations") { const organizations = await repository.pool.query("select id,name from lm_demo_organizations order by name"); return json(response, 200, organizations.rows); }
+      if (request.method === "GET" && url.pathname === "/api/public/tournaments") { const organizationId = url.searchParams.get("organizationId"); if (!organizationId) throw new Error("organizationId es obligatorio para la consulta pública."); return json(response, 200, (await repository.readTournaments()).filter((item) => item.organization_id === organizationId)); }
+      if (request.method === "GET" && /^\/api\/public\/organizations\/[^/]+\/tournaments$/.test(url.pathname)) return json(response, 200, (await repository.readTournaments()).filter((item) => item.organization_id === url.pathname.split("/")[4]));
+      if (request.method === "GET" && /^\/api\/public\/categories\/[^/]+\/competition$/.test(url.pathname)) { const state = await repository.readCategory(url.pathname.split("/")[4]); const names = new Map(state.teams.map((team) => [team.id, team.name])); const matches = state.matches.map((match) => ({ ...match, local: names.get(match.home_team_id), visitante: names.get(match.away_team_id), puntos_local: match.home_score, puntos_visitante: match.away_score, estado_resultado: match.result_state })); return json(response, 200, { ...state, matches, table: sports.calcularTabla(matches) }); }
+      if (request.method === "GET" && /^\/api\/public\/categories\/[^/]+\/playoffs$/.test(url.pathname)) return json(response, 200, await repository.readPlayoffs(url.pathname.split("/")[4]));
       if (request.method === "POST" && url.pathname === "/api/auth/dev-login") {
         if (!auth) throw new Error("Autenticación de desarrollo no configurada.");
         const input = await body(request);
@@ -53,7 +59,7 @@ function createServer({ repository, staticRoot = null, auth = null, requireAuth 
       if (request.method === "POST" && /^\/api\/matches\/[^/]+\/result$/.test(url.pathname)) { const actor = authenticate(); const input = await body(request); input.matchId = url.pathname.split("/")[3]; if (actor?.role === "delegate") { if (requireAuth && repository.saveDelegateResult) return json(response, 200, await repository.saveDelegateResult({ ...input, actor })); if (requireAuth) throw new Error("El repositorio no ofrece autorización transaccional de delegado."); if (repository.assertDelegateResultAccess) await repository.assertDelegateResultAccess(input.matchId, actor); else { const match = await repository.readMatch(input.matchId); if (!match || !actor.categories.includes(match.category_id) || !actor.teams.includes(match.home_team_id) && !actor.teams.includes(match.away_team_id)) throw new Error("El delegado no tiene alcance sobre este partido."); } } if (actor) input.actorId = actor.sub; return json(response, 200, await repository.saveResult(input)); }
       if (request.method === "GET" && /^\/api\/categories\/[^/]+$/.test(url.pathname)) { const actor = authenticate(); if (actor && repository.assertCategoryAccess) await repository.assertCategoryAccess(url.pathname.split("/")[3], actor); return json(response, 200, await repository.readCategory(url.pathname.split("/")[3])); }
       if (request.method === "GET" && /^\/api\/categories\/[^/]+\/competition$/.test(url.pathname)) {
-        const actor = authenticate();
+        const actor = optionalAuthenticate();
         if (actor && repository.assertCategoryAccess) await repository.assertCategoryAccess(url.pathname.split("/")[3], actor);
         const state = await repository.readCategory(url.pathname.split("/")[3]);
         const names = new Map(state.teams.map((team) => [team.id, team.name]));
@@ -67,6 +73,11 @@ function createServer({ repository, staticRoot = null, auth = null, requireAuth 
       if (request.method === "DELETE" && url.pathname === "/api/memberships") { const actor = authenticate(); return json(response, 200, await repository.revokeMembership(await body(request), actor)); }
       if (request.method === "POST" && url.pathname === "/api/delegate-assignments") { const actor = authenticate(); return json(response, 200, await repository.setDelegateAssignment(await body(request), actor)); }
       if (request.method === "DELETE" && url.pathname === "/api/delegate-assignments") { const actor = authenticate(); return json(response, 200, await repository.revokeDelegateAssignment(await body(request), actor)); }
+      if (request.method === "POST" && url.pathname === "/api/seasons") { const actor = authenticate(); return json(response, 201, await repository.createSeason(await body(request), actor)); }
+      if (request.method === "GET" && url.pathname === "/api/seasons") { const actor = authenticate(); return json(response, 200, await repository.readSeasonsForActor(actor)); }
+      if (request.method === "POST" && /^\/api\/categories\/[^/]+\/lifecycle$/.test(url.pathname)) { const actor = authenticate(); const input = await body(request); return json(response, 200, await repository.setCategoryLifecycle(url.pathname.split("/")[3], input.state, actor)); }
+      if (request.method === "GET" && /^\/api\/categories\/[^/]+\/lifecycle$/.test(url.pathname)) { const actor = authenticate(); if (actor && repository.assertCategoryAccess) await repository.assertCategoryAccess(url.pathname.split("/")[3], actor); return json(response, 200, await repository.readCategoryLifecycle(url.pathname.split("/")[3])); }
+      if (request.method === "GET" && /^\/api\/organizations\/[^/]+\/users$/.test(url.pathname)) { const actor = authenticate(); return json(response, 200, await repository.readUsersForOrganization(url.pathname.split("/")[3], actor)); }
       return json(response, 404, { error: "Ruta no encontrada" });
     } catch (error) { return json(response, 400, { error: error.message, code: error.code || "PERSISTENCE_ERROR" }); }
   });
