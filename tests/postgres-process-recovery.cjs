@@ -5,6 +5,7 @@ const { spawn } = require("node:child_process");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { Pool } = require("pg");
+const { createDevelopmentAuth } = require("../demo_2027_auth.js");
 
 const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const ids = { org: id(101), user: id(201), tournament: id(603), category: id(604), teams: [id(605), id(606), id(607), id(608)], match: id(609) };
@@ -76,11 +77,19 @@ async function run() {
     await db.query("insert into lm_demo_organizations(id,name) values($1,'Recovery autenticada') on conflict (id) do nothing", [ids.org]);
     await db.query("insert into lm_demo_users(id,username,role) values($1,'dev-organizer','organizer') on conflict (id) do nothing", [ids.user]);
     await db.query("insert into lm_demo_memberships(user_id,organization_id) values($1,$2) on conflict do nothing", [ids.user, ids.org]);
+    const persistedUser = (await db.query("select id,role from lm_demo_users where id=$1", [ids.user])).rows[0];
+    const persistedMembership = (await db.query("select user_id,organization_id from lm_demo_memberships where user_id=$1 and organization_id=$2", [ids.user, ids.org])).rows[0];
+    assert.deepEqual(persistedUser, { id: ids.user, role: "organizer" }, "el usuario de recuperación debe tener UUID y rol esperados");
+    assert.deepEqual(persistedMembership, { user_id: ids.user, organization_id: ids.org }, "la membresía de recuperación debe existir antes del login");
 
     stage("iniciando primer proceso HTTP"); serverSeed = startServer(); await waitForServer();
     const login = await fetchJson("/api/auth/dev-login", "POST", { userId: "dev-organizer" });
-    const token = login.token; assert.ok(token, "el login debe emitir token"); stage("sesión inicial emitida");
-    const tournament = await fetchJson("/api/tournaments", "POST", { id: ids.tournament, organizationId: id(999), name: "Recovery autenticada", season: 2027 }, token);
+    const token = login.token; assert.ok(token, "el login debe emitir token");
+    const verifier = createDevelopmentAuth({ secret: authSecret, users: { "dev-organizer": { id: ids.user, role: "organizer", organizationId: ids.org } } });
+    const claims = verifier.verify(token);
+    assert.deepEqual({ sub: claims.sub, role: claims.role, organizationId: claims.organizationId }, { sub: ids.user, role: "organizer", organizationId: ids.org }, "el token debe identificar al organizador esperado");
+    stage("sesión inicial emitida con identidad y organización verificadas");
+    const tournament = await fetchJson("/api/tournaments", "POST", { id: ids.tournament, organizationId: ids.org, name: "Recovery autenticada", season: 2027 }, token);
     assert.equal(tournament.organization_id, ids.org); stage("torneo persistido con organización derivada de sesión");
     const category = await fetchJson("/api/categories", "POST", { id: ids.category, tournamentId: tournament.id, name: "Maxi Recovery" }, token);
     for (const [index, teamId] of ids.teams.entries()) await fetchJson("/api/teams", "POST", { id: teamId, categoryId: category.id, name: `Recovery ${index + 1}` }, token);
