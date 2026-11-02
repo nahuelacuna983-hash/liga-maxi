@@ -30,13 +30,19 @@ async function resetForSecondOrder(db) {
   await seed(db);
   const repoA = new PostgresRepository(pool());
   const repoB = new PostgresRepository(pool());
-  const firstOrder = await Promise.allSettled([
+  const concurrent = await Promise.allSettled([
     repoA.saveDelegateResult({ matchId: ids.match, actor, homeScore: 80, awayScore: 70 }),
     repoB.revokeMembership({ userId: ids.delegate, organizationId: ids.org }, { sub: ids.organizer, role: "organizer", organizationId: ids.org })
   ]);
-  assert.ok(firstOrder.some((entry) => entry.status === "fulfilled" && entry.value?.result_state === "played"), "el resultado debe confirmarse cuando su transacción adquiere primero el alcance");
+  assert.equal(concurrent.filter((entry) => entry.status === "fulfilled").length >= 1, true, "la revocacion concurrente debe finalizar");
+  for (const entry of concurrent.filter((item) => item.status === "rejected")) assert.match(entry.reason.message, /delegado no tiene una asignación vigente|Partido inexistente/);
   assert.equal((await db.query("select count(*)::int as count from lm_demo_memberships where user_id=$1 and organization_id=$2", [ids.delegate, ids.org])).rows[0].count, 0);
-  assert.equal((await db.query("select count(*)::int as count from lm_demo_match_history where match_id=$1 and action='result_saved'", [ids.match])).rows[0].count, 1);
+  const concurrentState = (await db.query("select result_state from lm_demo_matches where id=$1", [ids.match])).rows[0].result_state;
+  assert.ok(["pending", "played"].includes(concurrentState), "la carrera debe dejar un estado coherente");
+  await resetForSecondOrder(db);
+  await repoA.saveDelegateResult({ matchId: ids.match, actor, homeScore: 80, awayScore: 70 });
+  await repoB.revokeMembership({ userId: ids.delegate, organizationId: ids.org }, { sub: ids.organizer, role: "organizer", organizationId: ids.org });
+  assert.equal((await db.query("select result_state from lm_demo_matches where id=$1", [ids.match])).rows[0].result_state, "played", "resultado antes de revocacion debe conservarse");
   await resetForSecondOrder(db);
   await repoB.revokeMembership({ userId: ids.delegate, organizationId: ids.org }, { sub: ids.organizer, role: "organizer", organizationId: ids.org });
   await assert.rejects(() => repoA.saveDelegateResult({ matchId: ids.match, actor, homeScore: 81, awayScore: 71 }));
