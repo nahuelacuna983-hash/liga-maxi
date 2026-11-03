@@ -4,9 +4,11 @@
 
 Rama: `codex/demo-2027-visual`
 
-SHA final: `3f563497001e470cf3f2e7d110958749bd5dc6af`
+SHA final: `d9e5abb0a25e2ec981f173d235af2e0abd5437b4`
 
 No se modificaron `main`, producción 2026, Supabase, PR #2 ni workflows protegidos.
+
+Corrección adicional: `d9e5abb` usa la organización propia en la temporada, agrega la negativa de organización ajena, diagnósticos HTTP y limpieza garantizada del test de plataforma.
 
 ## Capacidades implementadas
 
