@@ -15,6 +15,7 @@
     playoffFormat: 4,
     selectedMatchId: "",
     lifecycle: { state: "draft" },
+    documents: { documents: [], history: [] },
     users: [],
     view: "public",
   };
@@ -38,7 +39,7 @@
       .join("") || "<p>No hay partidos persistidos.</p>";
   const renderPublic = () => {
     $("#view-public").innerHTML =
-      `<h2>Público · PostgreSQL local</h2><p>Datos recuperados del backend.</p><table><thead><tr><th>Equipo</th><th>PJ</th><th>PG</th><th>PP</th><th>PTS</th></tr></thead><tbody>${state.table.map((r) => `<tr><td>${r.equipo}</td><td>${r.pj}</td><td>${r.pg}</td><td>${r.pp}</td><td>${r.pts}</td></tr>`).join("")}</tbody></table><h3>Fixture</h3>${rows()}`;
+      `<h2>Público · PostgreSQL local</h2><p>Datos recuperados del backend.</p><table><thead><tr><th>Equipo</th><th>PJ</th><th>PG</th><th>PP</th><th>PF</th><th>PC</th><th>DIF</th><th>PTS</th></tr></thead><tbody>${state.table.map((r) => `<tr><td>${r.equipo}</td><td>${r.pj}</td><td>${r.pg}</td><td>${r.pp}</td><td>${r.pf}</td><td>${r.pc}</td><td>${r.dif}</td><td>${r.pts}</td></tr>`).join("")}</tbody></table><h3>Fixture</h3>${rows()}`;
   };
   const reload = async () => {
     if (!state.category) return;
@@ -48,7 +49,10 @@
     state.teams = result.teams || state.teams;
     const persistedPlayoffs = await client.playoffs(state.category.id);
     state.playoffs = persistedPlayoffs.playoff?.payload || null;
-    if (client.token) state.lifecycle = await client.lifecycle(state.category.id);
+    if (client.token) {
+      state.lifecycle = await client.lifecycle(state.category.id);
+      state.documents = await client.documents(state.category.id);
+    }
     if (state.playoffs?.formato) state.playoffFormat = Number(state.playoffs.formato.replace("top", ""));
     renderPublic();
     renderAssociation();

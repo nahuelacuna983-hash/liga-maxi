@@ -35,3 +35,15 @@ Resultado: todas las pruebas anteriores superadas.
 Debe ejecutarse en PostgreSQL 16 aislado el flujo completo de la plataforma, incluyendo la nueva columna `publication_state`, la negativa con fase regular incompleta, la oficialización posterior, historial, Top 4/6/8 y recuperación tras reinicio. Chromium autenticado y la prueba integral de aceptación también requieren ejecución en CI para considerarse evidencia real.
 
 La autenticación de desarrollo sigue siendo exclusivamente sintética y no constituye autenticación institucional.
+
+## Bloques 2 al 8 - alcance comprobado
+
+- **Persistencia:** el circuito principal lee competencia, tabla derivada, programación, resultados y playoffs desde el backend PostgreSQL; la tabla visible incluye `PJ/PG/PP/PF/PC/DIF/PTS`.
+- **Documentación:** la interfaz persistente conserva altas de jugadores, revisiones e historial mediante el repositorio; no procesa archivos médicos reales ni convierte aprobación documental en habilitación deportiva.
+- **Programación:** utiliza las operaciones persistentes existentes y rechaza cambios sobre partidos disputados; las restricciones avanzadas deben validarse en CI con PostgreSQL.
+- **Seguridad:** las comprobaciones de organización, membresía y delegado viven en servidor; el login actual es sólo de desarrollo.
+- **Aceptación:** las regresiones sintéticas y contratos pasan localmente. Las pruebas Chromium/PostgreSQL, recuperación física y aislamiento real requieren CI.
+
+## Bloqueos para piloto privado
+
+Faltan autenticación institucional, almacenamiento privado de documentación, backups/restauración ensayados, revisión de políticas de seguridad y una ejecución CI exitosa del recorrido integral. La demo persistente es utilizable con datos ficticios; no es producción ni piloto habilitado.

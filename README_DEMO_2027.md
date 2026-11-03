@@ -12,9 +12,9 @@ npm run demo
 
 Abrir `http://127.0.0.1:4173/demo_circuito_2027.html`. Cerrar el servidor con `Ctrl+C`.
 
-La entrada integrada permite recorrer Público, Programación, Delegados y Asociación. Dentro de Asociación están Competencia, Jugadores y Documentación, Torneos, Programación y Administración.
+La entrada integrada permite recorrer Público, Programación, Delegados y Asociación. Dentro de Asociación están Competencia, Jugadores y Documentación, Torneos, Programación y Administración. Con `?mode=postgres&api=http://127.0.0.1:8787` usa el backend PostgreSQL local.
 
-No requiere usuarios ni contraseñas: el selector de Delegados representa identidades sintéticas y permite comprobar sus alcances. Los cambios viven en memoria y se reinician al recargar la página; no se presentan como persistencia real.
+El modo sintético no requiere usuarios y vive en memoria. El modo PostgreSQL usa el login de desarrollo del backend, conserva los datos tras recarga/reinicio y no debe considerarse autenticación institucional.
 
 ## Prueba Playwright
 
