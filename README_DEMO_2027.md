@@ -1,4 +1,4 @@
-# Demo visual Liga Maxi 2027
+# Demostración operativa APdB 2027
 
 Esta rama contiene una demostración local aislada. Usa `style.css` del proyecto y lógica deportiva sintética; no carga `app_online.js`, Supabase, Storage ni service workers.
 
@@ -7,10 +7,14 @@ Esta rama contiene una demostración local aislada. Usa `style.css` del proyecto
 Desde esta carpeta:
 
 ```powershell
-python -m http.server 4173
+npm run demo
 ```
 
-Abrir `http://127.0.0.1:4173/demo_2027.html`. Cerrar el servidor con `Ctrl+C`.
+Abrir `http://127.0.0.1:4173/demo_circuito_2027.html`. Cerrar el servidor con `Ctrl+C`.
+
+La entrada integrada permite recorrer Público, Programación, Delegados y Asociación. Dentro de Asociación están Competencia, Jugadores y Documentación, Torneos, Programación y Administración.
+
+No requiere usuarios ni contraseñas: el selector de Delegados representa identidades sintéticas y permite comprobar sus alcances. Los cambios viven en memoria y se reinician al recargar la página; no se presentan como persistencia real.
 
 ## Prueba Playwright
 
