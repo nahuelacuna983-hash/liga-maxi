@@ -31,6 +31,9 @@ class PostgresHttpClient {
   revokeMembership(input) { return this.request("/api/memberships", "DELETE", input); }
   delegateAssignment(input) { return this.request("/api/delegate-assignments", "POST", input); }
   revokeDelegateAssignment(input) { return this.request("/api/delegate-assignments", "DELETE", input); }
+  player(input) { return this.request("/api/players", "POST", input); }
+  reviewDocument(input) { return this.request("/api/documents/reviews", "POST", input); }
+  documents(categoryId) { return this.request(`/api/categories/${categoryId}/documents`); }
 }
 
 if (typeof module !== "undefined") module.exports = PostgresHttpClient;

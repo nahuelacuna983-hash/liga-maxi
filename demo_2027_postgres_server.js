@@ -78,6 +78,9 @@ function createServer({ repository, staticRoot = null, auth = null, requireAuth 
       if (request.method === "POST" && /^\/api\/categories\/[^/]+\/lifecycle$/.test(url.pathname)) { const actor = authenticate(); const input = await body(request); return json(response, 200, await repository.setCategoryLifecycle(url.pathname.split("/")[3], input.state, actor)); }
       if (request.method === "GET" && /^\/api\/categories\/[^/]+\/lifecycle$/.test(url.pathname)) { const actor = authenticate(); if (actor && repository.assertCategoryAccess) await repository.assertCategoryAccess(url.pathname.split("/")[3], actor); return json(response, 200, await repository.readCategoryLifecycle(url.pathname.split("/")[3])); }
       if (request.method === "GET" && /^\/api\/organizations\/[^/]+\/users$/.test(url.pathname)) { const actor = authenticate(); return json(response, 200, await repository.readUsersForOrganization(url.pathname.split("/")[3], actor)); }
+      if (request.method === "POST" && url.pathname === "/api/players") { const actor = authenticate(); return json(response, 201, await repository.createPlayer(await body(request), actor)); }
+      if (request.method === "POST" && url.pathname === "/api/documents/reviews") { const actor = authenticate(); return json(response, 200, await repository.reviewDocument(await body(request), actor)); }
+      if (request.method === "GET" && /^\/api\/categories\/[^/]+\/documents$/.test(url.pathname)) { const actor = authenticate(); return json(response, 200, await repository.readDocuments(url.pathname.split("/")[3], actor)); }
       return json(response, 404, { error: "Ruta no encontrada" });
     } catch (error) { return json(response, 400, { error: error.message, code: error.code || "PERSISTENCE_ERROR" }); }
   });
