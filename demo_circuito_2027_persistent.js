@@ -226,7 +226,7 @@
     if (!panel || $("#pg-playoffs")) return;
     const box = document.createElement("div");
     box.id = "pg-playoffs";
-    box.innerHTML = `<h3>Playoffs persistentes</h3><div class="result-actions"><select id="pg-playoff-top"><option value="4">Top 4</option><option value="6">Top 6</option><option value="8">Top 8</option></select><button id="pg-playoff-generate">Generar llaves</button><select id="pg-playoff-match"><option value="">Partido playoff</option></select><input id="pg-playoff-local" type="number" placeholder="Local"><input id="pg-playoff-away" type="number" placeholder="Visitante"><button id="pg-playoff-result">Guardar resultado</button><button id="pg-playoff-advance">Avanzar ronda</button></div><div id="pg-playoff-state">${playoffRows()}</div>`;
+    box.innerHTML = `<h3>Playoffs persistentes</h3><div class="result-actions"><select id="pg-playoff-top"><option value="4">Top 4</option><option value="6">Top 6</option><option value="8">Top 8</option></select><button id="pg-playoff-generate">Generar proyección</button><button id="pg-playoff-officialize">Oficializar llave</button><select id="pg-playoff-match"><option value="">Partido playoff</option></select><input id="pg-playoff-local" type="number" placeholder="Local"><input id="pg-playoff-away" type="number" placeholder="Visitante"><button id="pg-playoff-result">Guardar resultado</button><button id="pg-playoff-advance">Avanzar ronda</button></div><div id="pg-playoff-state">${playoffRows()}</div>`;
     panel.appendChild(box);
     $("#pg-playoff-top").value = String(state.playoffFormat);
     $("#pg-playoff-top").onchange = () => { state.playoffFormat = Number($("#pg-playoff-top").value); };
@@ -259,6 +259,7 @@
           actorId: crypto.randomUUID(),
           format: `top${count}`,
           state: bracket.estado,
+          publicationState: "projection",
           champion: bracket.champion,
           payload: bracket,
         });
@@ -308,6 +309,12 @@
         render();
         status("Avance de playoff confirmado por PostgreSQL.");
       });
+    $("#pg-playoff-officialize").onclick = () => request(async () => {
+      if (!state.category || !state.playoffs) throw new Error("Generá primero una proyección de playoffs.");
+      state.playoffs = await client.officializePlayoffs(state.category.id);
+      render();
+      status("Llave oficializada por PostgreSQL.");
+    });
   }
   enhancePlayoffs();
 })();

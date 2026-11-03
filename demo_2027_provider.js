@@ -93,6 +93,7 @@
       if (!this.categories[categoryId]) throw new Error("Categoría sintética inexistente.");
       if (![4, 6, 8].includes(Number(classified))) throw new Error("Formato de playoffs no definido en la demo.");
       const table = this.getTable(categoryId).slice(0, Number(classified));
+      const regularPending = (this.matches[categoryId] || []).some((match) => match.estado_resultado === "pendiente");
       if (table.length < Number(classified)) {
         this.playoffs[categoryId] = { formato: `top${classified}`, estado: "pendiente_clasificados", clasificados_requeridos: Number(classified), matches: [] };
         return clone(this.playoffs[categoryId]);
@@ -116,7 +117,9 @@
         puntos_local: null,
         puntos_visitante: null,
       })));
-      this.playoffs[categoryId] = { formato: `top${classified}`, estado: "listo", modo_repechaje: mode, series_games: Number(options.seriesGames || 1), matches, direct_teams: Number(classified) === 6 ? [table[0].equipo, table[1].equipo] : [], seed_order: table.map((row, index) => ({ equipo: row.equipo, posicion: index + 1 })), next_round: null, champion: null };
+      const publicationState = options.publicationState || "projection";
+      if (publicationState === "official" && regularPending) throw new Error("No se pueden oficializar playoffs con fase regular pendiente.");
+      this.playoffs[categoryId] = { formato: `top${classified}`, estado: "listo", publicationState, provisional: regularPending, modo_repechaje: mode, series_games: Number(options.seriesGames || 1), matches, direct_teams: Number(classified) === 6 ? [table[0].equipo, table[1].equipo] : [], seed_order: table.map((row, index) => ({ equipo: row.equipo, posicion: index + 1 })), next_round: null, champion: null };
       return clone(this.playoffs[categoryId]);
     }
     getPlayoffMatches(categoryId) { return clone(this.playoffs[categoryId]?.matches || []); }

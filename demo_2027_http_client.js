@@ -22,6 +22,7 @@ class PostgresHttpClient {
   categoryState(categoryId) { return this.request(`/api/categories/${categoryId}`); }
   competition(categoryId) { return this.request(`/api/categories/${categoryId}/competition`); }
   savePlayoffs(input) { return this.request("/api/playoffs", "POST", input); }
+  officializePlayoffs(categoryId) { return this.request(`/api/categories/${categoryId}/playoffs/officialize`, "POST", {}); }
   playoffs(categoryId) { return this.request(`/api/categories/${categoryId}/playoffs`); }
   season(input) { return this.request("/api/seasons", "POST", input); }
   seasons() { return this.request("/api/seasons"); }
