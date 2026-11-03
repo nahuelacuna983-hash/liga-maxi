@@ -47,3 +47,7 @@ La autenticación de desarrollo sigue siendo exclusivamente sintética y no cons
 ## Bloqueos para piloto privado
 
 Faltan autenticación institucional, almacenamiento privado de documentación, backups/restauración ensayados, revisión de políticas de seguridad y una ejecución CI exitosa del recorrido integral. La demo persistente es utilizable con datos ficticios; no es producción ni piloto habilitado.
+
+## Decisión reglamentaria pendiente
+
+La persistencia ahora conserva por categoría la modalidad `fixed` (Opción A) o `reseed` (Opción B), con confirmación administrativa e historial. La interfaz no elige una modalidad por defecto y la oficialización se rechaza mientras APdB no confirme una de ellas. Las llaves ya oficializadas no pueden cambiar de modalidad.

@@ -16,6 +16,7 @@
     selectedMatchId: "",
     lifecycle: { state: "draft" },
     documents: { documents: [], history: [] },
+    playoffRule: { crossing_mode: null, confirmed: false },
     users: [],
     view: "public",
   };
@@ -53,6 +54,7 @@
       state.lifecycle = await client.lifecycle(state.category.id);
       state.documents = await client.documents(state.category.id);
     }
+    state.playoffRule = await client.playoffRule(state.category.id);
     if (state.playoffs?.formato) state.playoffFormat = Number(state.playoffs.formato.replace("top", ""));
     renderPublic();
     renderAssociation();
@@ -230,10 +232,12 @@
     if (!panel || $("#pg-playoffs")) return;
     const box = document.createElement("div");
     box.id = "pg-playoffs";
-    box.innerHTML = `<h3>Playoffs persistentes</h3><div class="result-actions"><select id="pg-playoff-top"><option value="4">Top 4</option><option value="6">Top 6</option><option value="8">Top 8</option></select><button id="pg-playoff-generate">Generar proyección</button><button id="pg-playoff-officialize">Oficializar llave</button><select id="pg-playoff-match"><option value="">Partido playoff</option></select><input id="pg-playoff-local" type="number" placeholder="Local"><input id="pg-playoff-away" type="number" placeholder="Visitante"><button id="pg-playoff-result">Guardar resultado</button><button id="pg-playoff-advance">Avanzar ronda</button></div><div id="pg-playoff-state">${playoffRows()}</div>`;
+    box.innerHTML = `<h3>Playoffs persistentes</h3><div class="result-actions"><select id="pg-playoff-top"><option value="4">Top 4</option><option value="6">Top 6</option><option value="8">Top 8</option></select><select id="pg-playoff-rule"><option value="">Modalidad pendiente</option><option value="fixed">Opción A · Llaves fijas</option><option value="reseed">Opción B · Reordenamiento</option></select><button id="pg-playoff-rule-save">Guardar modalidad</button><button id="pg-playoff-generate">Generar proyección</button><button id="pg-playoff-officialize">Oficializar llave</button><select id="pg-playoff-match"><option value="">Partido playoff</option></select><input id="pg-playoff-local" type="number" placeholder="Local"><input id="pg-playoff-away" type="number" placeholder="Visitante"><button id="pg-playoff-result">Guardar resultado</button><button id="pg-playoff-advance">Avanzar ronda</button></div><div id="pg-playoff-state">${playoffRows()}</div>`;
     panel.appendChild(box);
     $("#pg-playoff-top").value = String(state.playoffFormat);
+    $("#pg-playoff-rule").value = state.playoffRule.crossing_mode || "";
     $("#pg-playoff-top").onchange = () => { state.playoffFormat = Number($("#pg-playoff-top").value); };
+    $("#pg-playoff-rule-save").onclick = () => request(async () => { if (!state.category) throw new Error("Creá primero una categoría."); state.playoffRule = await client.playoffRule(state.category.id, $("#pg-playoff-rule").value); status("Modalidad de cruces registrada para revisión APdB."); });
     const render = () => {
       const select = $("#pg-playoff-match");
       select.innerHTML = `<option value="">Partido playoff</option>${(

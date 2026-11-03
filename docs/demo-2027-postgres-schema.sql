@@ -20,5 +20,12 @@ create table if not exists lm_demo_matches (id uuid primary key, category_id uui
 create table if not exists lm_demo_match_history (id bigserial primary key, match_id uuid not null references lm_demo_matches(id), actor_id uuid not null, action text not null, payload jsonb not null, created_at timestamptz not null default now());
 create table if not exists lm_demo_playoffs (category_id uuid primary key references lm_demo_categories(id), format text not null check (format in ('top4','top6','top8')), state text not null, champion text, payload jsonb not null, updated_at timestamptz not null default now());
 alter table lm_demo_playoffs add column if not exists publication_state text not null default 'projection' check (publication_state in ('projection','official'));
+create table if not exists lm_demo_playoff_rules (
+  category_id uuid primary key references lm_demo_categories(id),
+  crossing_mode text not null check (crossing_mode in ('fixed','reseed')),
+  confirmed boolean not null default false,
+  actor_id uuid,
+  updated_at timestamptz not null default now()
+);
 create table if not exists lm_demo_playoff_history (id bigserial primary key, category_id uuid not null references lm_demo_categories(id), actor_id uuid not null, action text not null, payload jsonb not null, created_at timestamptz not null default now());
 create index if not exists lm_demo_matches_category on lm_demo_matches(category_id, round_no);

@@ -23,6 +23,7 @@ class PostgresHttpClient {
   competition(categoryId) { return this.request(`/api/categories/${categoryId}/competition`); }
   savePlayoffs(input) { return this.request("/api/playoffs", "POST", input); }
   officializePlayoffs(categoryId) { return this.request(`/api/categories/${categoryId}/playoffs/officialize`, "POST", {}); }
+  playoffRule(categoryId, crossingMode) { return this.request(`/api/categories/${categoryId}/playoffs/rule`, crossingMode ? "POST" : "GET", crossingMode ? { crossingMode } : undefined); }
   playoffs(categoryId) { return this.request(`/api/categories/${categoryId}/playoffs`); }
   season(input) { return this.request("/api/seasons", "POST", input); }
   seasons() { return this.request("/api/seasons"); }
