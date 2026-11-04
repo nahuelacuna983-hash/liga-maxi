@@ -29,7 +29,8 @@ $frontend = Start-Process -FilePath "node" -ArgumentList "tools\demo-server.cjs"
 try {
   Start-Sleep -Seconds 2
   Invoke-WebRequest "http://127.0.0.1:8787/health" | Select-Object -ExpandProperty Content
-  Start-Process "msedge.exe" "http://127.0.0.1:4173/demo_persistencia_2027.html"
+  $edge = @("C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe", "C:\Program Files\Microsoft\Edge\Application\msedge.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+  if ($edge) { Start-Process $edge "http://127.0.0.1:4173/demo_persistencia_2027.html" } else { Write-Host "Edge no encontrado; abrí manualmente la URL indicada." -ForegroundColor Yellow }
   Write-Host "Frontend: http://127.0.0.1:4173/demo_persistencia_2027.html" -ForegroundColor Green
   Write-Host "Backend:  http://127.0.0.1:8787/health" -ForegroundColor Green
   Write-Host "Presioná Ctrl+C para detener ambos servicios." -ForegroundColor Yellow
