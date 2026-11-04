@@ -28,23 +28,42 @@ if ([int]$tableCount -eq 0) {
 }
 Write-Host "Iniciando backend persistente en http://127.0.0.1:8787" -ForegroundColor Green
 $env:PORT = "8787"
-$backend = Start-Process -FilePath "node" -ArgumentList "demo_2027_postgres_server.js" -WorkingDirectory $repo -PassThru
+$backendLog = Join-Path $env:TEMP "apdb-2027-backend-$PID.log"
+$backendError = Join-Path $env:TEMP "apdb-2027-backend-$PID.error.log"
+$frontendLog = Join-Path $env:TEMP "apdb-2027-frontend-$PID.log"
+$frontendError = Join-Path $env:TEMP "apdb-2027-frontend-$PID.error.log"
+$backend = Start-Process -FilePath "node" -ArgumentList "demo_2027_postgres_server.js" -WorkingDirectory $repo -RedirectStandardOutput $backendLog -RedirectStandardError $backendError -PassThru
 $env:PORT = "4173"
-$frontend = Start-Process -FilePath "node" -ArgumentList "tools\demo-server.cjs" -WorkingDirectory $repo -PassThru
+$frontend = Start-Process -FilePath "node" -ArgumentList "tools\demo-server.cjs" -WorkingDirectory $repo -RedirectStandardOutput $frontendLog -RedirectStandardError $frontendError -PassThru
 try {
-  Start-Sleep -Seconds 2
-  Invoke-WebRequest "http://127.0.0.1:8787/health" | Select-Object -ExpandProperty Content
+  $ready = $false
+  for ($attempt = 0; $attempt -lt 20; $attempt++) {
+    if ($backend.HasExited) { throw "El backend terminó durante el arranque. $((Get-Content $backendError -Raw -ErrorAction SilentlyContinue).Trim())" }
+    if ($frontend.HasExited) { throw "El frontend terminó durante el arranque. $((Get-Content $frontendError -Raw -ErrorAction SilentlyContinue).Trim())" }
+    try {
+      $health = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:8787/health"
+      $front = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:4173/demo_circuito_2027.html?mode=postgres&api=http://127.0.0.1:8787"
+      if ($health.StatusCode -eq 200 -and $front.StatusCode -eq 200) { $ready = $true; break }
+    } catch { Start-Sleep -Milliseconds 250 }
+  }
+  if (-not $ready) { throw "No respondieron ambos servicios dentro del tiempo de arranque." }
+  Write-Host ($health.Content) -ForegroundColor Green
   $edge = @("C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe", "C:\Program Files\Microsoft\Edge\Application\msedge.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
   $url = "http://127.0.0.1:4173/demo_circuito_2027.html?mode=postgres&api=http://127.0.0.1:8787"
   if ($edge) { Start-Process $edge $url } else { Write-Host "Edge no encontrado; abrí manualmente la URL indicada." -ForegroundColor Yellow }
   Write-Host "Interfaz integrada: $url" -ForegroundColor Green
   Write-Host "Backend:  http://127.0.0.1:8787/health" -ForegroundColor Green
   Write-Host "Presioná Ctrl+C para detener ambos servicios." -ForegroundColor Yellow
-  Wait-Process -Id $backend.Id
+  while ($true) {
+    if ($backend.HasExited) { throw "El backend terminó. Revisá $backendError" }
+    if ($frontend.HasExited) { throw "El frontend terminó. Revisá $frontendError" }
+    Start-Sleep -Seconds 1
+  }
 }
 finally {
   if ($frontend -and -not $frontend.HasExited) { Stop-Process -Id $frontend.Id -Force }
   if ($backend -and -not $backend.HasExited) { Stop-Process -Id $backend.Id -Force }
   Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
   Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
+  Remove-Item $backendLog,$backendError,$frontendLog,$frontendError -Force -ErrorAction SilentlyContinue
 }
