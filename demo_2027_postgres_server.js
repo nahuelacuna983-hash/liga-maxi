@@ -12,6 +12,14 @@ function json(response, status, body) {
   response.writeHead(status, { "content-type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(body));
 }
+function cors(response, request) {
+  if (request.headers.origin === "http://127.0.0.1:4173") {
+    response.setHeader("access-control-allow-origin", "http://127.0.0.1:4173");
+    response.setHeader("access-control-allow-headers", "authorization, content-type");
+    response.setHeader("access-control-allow-methods", "GET, POST, DELETE, OPTIONS");
+    response.setHeader("vary", "Origin");
+  }
+}
 async function body(request) {
   let raw = "";
   for await (const chunk of request) raw += chunk;
@@ -20,6 +28,11 @@ async function body(request) {
 function createServer({ repository, staticRoot = null, auth = null, requireAuth = false }) {
   return http.createServer(async (request, response) => {
     try {
+      cors(response, request);
+      if (request.method === "OPTIONS") {
+        if (request.headers.origin !== "http://127.0.0.1:4173") return json(response, 403, { error: "Origen local no autorizado." });
+        response.writeHead(204); return response.end();
+      }
       const url = new URL(request.url, "http://127.0.0.1");
       const authenticate = () => {
         if (!requireAuth) return null;

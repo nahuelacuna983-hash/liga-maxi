@@ -3,9 +3,12 @@
 class PostgresHttpClient {
   constructor(baseUrl) { this.baseUrl = baseUrl.replace(/\/$/, ""); this.token = null; }
   async request(path, method = "GET", payload) {
-    const response = await fetch(`${this.baseUrl}${path}`, { method, headers: { "content-type": "application/json", ...(this.token ? { authorization: `Bearer ${this.token}` } : {}) }, body: payload === undefined ? undefined : JSON.stringify(payload) });
+    const headers = { ...(payload === undefined ? {} : { "content-type": "application/json" }), ...(this.token ? { authorization: `Bearer ${this.token}` } : {}) };
+    let response;
+    try { response = await fetch(`${this.baseUrl}${path}`, { method, headers, body: payload === undefined ? undefined : JSON.stringify(payload) }); }
+    catch (error) { throw new Error(`No se pudo conectar con el backend local (red o CORS): ${error.message}`); }
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status}`);
+    if (!response.ok) throw new Error(`Error HTTP ${response.status}: ${data.error || "respuesta rechazada"}`);
     return data;
   }
   health() { return this.request("/health"); }
