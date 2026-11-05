@@ -28,6 +28,10 @@ finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
 $env:PGPASSWORD = $password
 $env:PGHOST = $hostName; $env:PGPORT = $port; $env:PGUSER = $user; $env:PGDATABASE = $database
 $env:DATABASE_URL = "postgres://$user@$hostName`:$port/$database"
+$env:LM_REQUIRE_AUTH = "1"
+$secretBytes = New-Object byte[] 32
+[Security.Cryptography.RandomNumberGenerator]::Fill($secretBytes)
+$env:LM_DEMO_AUTH_SECRET = [Convert]::ToHexString($secretBytes)
 Assert-PortFree 8787
 Assert-PortFree 4173
 
@@ -42,6 +46,19 @@ if ([int]$tableCount -eq 0) {
   if ($LASTEXITCODE -ne 0 -or [int]$required -ne 1) { throw "La base contiene un esquema lm_demo_* incompatible; no se modificó ni se reaplicó." }
   Write-Host "Esquema existente compatible; se reutilizan los datos sin borrar ni reaplicar." -ForegroundColor Green
 }
+$seedSql = @"
+insert into lm_demo_users(id,username,role) values
+('00000000-0000-4000-8000-000000000201','dev-organizer','organizer'),
+('00000000-0000-4000-8000-000000000202','dev-admin','platform_admin'),
+('00000000-0000-4000-8000-000000000203','dev-delegate','delegate')
+on conflict (id) do nothing;
+insert into lm_demo_memberships(user_id,organization_id) values
+('00000000-0000-4000-8000-000000000201','00000000-0000-4000-8000-000000000101'),
+('00000000-0000-4000-8000-000000000203','00000000-0000-4000-8000-000000000101')
+on conflict do nothing;
+"@
+$seedSql | & $psql -X -v ON_ERROR_STOP=1
+if ($LASTEXITCODE -ne 0) { throw "Falló la preparación de identidades sintéticas." }
 Write-Host "Iniciando backend persistente en http://127.0.0.1:8787" -ForegroundColor Green
 $env:PORT = "8787"
 $backendLog = Join-Path $env:TEMP "apdb-2027-backend-$PID.log"
@@ -81,6 +98,8 @@ finally {
   if ($backend -and -not $backend.HasExited) { Stop-Process -Id $backend.Id -Force }
   Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
   Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
+  Remove-Item Env:LM_REQUIRE_AUTH -ErrorAction SilentlyContinue
+  Remove-Item Env:LM_DEMO_AUTH_SECRET -ErrorAction SilentlyContinue
   Write-Host "Logs conservados para diagnóstico:" -ForegroundColor Yellow
   Write-Host "  Backend:  $backendLog / $backendError"
   Write-Host "  Frontend: $frontendLog / $frontendError"
