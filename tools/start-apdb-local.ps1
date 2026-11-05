@@ -6,6 +6,20 @@ $hostName = "127.0.0.1"
 $port = "5432"
 $user = "postgres"
 if (-not (Test-Path $psql)) { throw "No se encontró psql.exe en $psql" }
+function Assert-PortFree([int]$portNumber) {
+  $listeners = Get-NetTCPConnection -LocalPort $portNumber -State Listen -ErrorAction SilentlyContinue
+  if ($listeners) {
+    $details = $listeners | ForEach-Object { try { $process = Get-Process -Id $_.OwningProcess -ErrorAction Stop; "PID $($_.OwningProcess) $($process.ProcessName)" } catch { "PID $($_.OwningProcess)" } }
+    throw "El puerto $portNumber ya está ocupado: $($details -join ', '). Cerrá ese proceso o liberá el puerto antes de iniciar."
+  }
+}
+function Show-LogTail([string]$path, [string]$label) {
+  if (Test-Path $path) {
+    Write-Host "--- Últimas líneas de $label ($path) ---" -ForegroundColor Yellow
+    Get-Content $path -Tail 20 -ErrorAction SilentlyContinue
+    Write-Host "--- Fin de $label ---" -ForegroundColor Yellow
+  }
+}
 
 $secure = Read-Host "Contraseña de PostgreSQL para $user@$database (no se guarda en archivos)" -AsSecureString
 $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
@@ -14,6 +28,8 @@ finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
 $env:PGPASSWORD = $password
 $env:PGHOST = $hostName; $env:PGPORT = $port; $env:PGUSER = $user; $env:PGDATABASE = $database
 $env:DATABASE_URL = "postgres://$user@$hostName`:$port/$database"
+Assert-PortFree 8787
+Assert-PortFree 4173
 
 $tableCount = & $psql -X -qAt -c "select count(*) from pg_tables where schemaname='public' and tablename like 'lm_demo_%';"
 if ($LASTEXITCODE -ne 0) { throw "No se pudo conectar a PostgreSQL." }
@@ -38,8 +54,8 @@ $frontend = Start-Process -FilePath "node" -ArgumentList "tools\demo-server.cjs"
 try {
   $ready = $false
   for ($attempt = 0; $attempt -lt 20; $attempt++) {
-    if ($backend.HasExited) { throw "El backend terminó durante el arranque. $((Get-Content $backendError -Raw -ErrorAction SilentlyContinue).Trim())" }
-    if ($frontend.HasExited) { throw "El frontend terminó durante el arranque. $((Get-Content $frontendError -Raw -ErrorAction SilentlyContinue).Trim())" }
+    if ($backend.HasExited) { Show-LogTail $backendError "error del backend"; throw "El backend terminó durante el arranque. El log se conservó en $backendError" }
+    if ($frontend.HasExited) { Show-LogTail $frontendError "error del frontend"; throw "El frontend terminó durante el arranque. El log se conservó en $frontendError" }
     try {
       $health = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:8787/health"
       $front = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:4173/demo_circuito_2027.html?mode=postgres&api=http://127.0.0.1:8787"
@@ -55,8 +71,8 @@ try {
   Write-Host "Backend:  http://127.0.0.1:8787/health" -ForegroundColor Green
   Write-Host "Presioná Ctrl+C para detener ambos servicios." -ForegroundColor Yellow
   while ($true) {
-    if ($backend.HasExited) { throw "El backend terminó. Revisá $backendError" }
-    if ($frontend.HasExited) { throw "El frontend terminó. Revisá $frontendError" }
+    if ($backend.HasExited) { Show-LogTail $backendError "error del backend"; throw "El backend terminó. El log se conservó en $backendError" }
+    if ($frontend.HasExited) { Show-LogTail $frontendError "error del frontend"; throw "El frontend terminó. El log se conservó en $frontendError" }
     Start-Sleep -Seconds 1
   }
 }
@@ -65,5 +81,7 @@ finally {
   if ($backend -and -not $backend.HasExited) { Stop-Process -Id $backend.Id -Force }
   Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
   Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
-  Remove-Item $backendLog,$backendError,$frontendLog,$frontendError -Force -ErrorAction SilentlyContinue
+  Write-Host "Logs conservados para diagnóstico:" -ForegroundColor Yellow
+  Write-Host "  Backend:  $backendLog / $backendError"
+  Write-Host "  Frontend: $frontendLog / $frontendError"
 }
