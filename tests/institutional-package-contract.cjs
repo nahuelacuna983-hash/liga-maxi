@@ -1,0 +1,13 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const root = path.join(__dirname, "..");
+const required = ["index_online.html", "app_online.js", "style.css", "manifest.json", "sw.js", "icon-192.png", "icon-512.png"];
+for (const file of required) assert.ok(fs.existsSync(path.join(root, file)), `falta ${file}`);
+const html = fs.readFileSync(path.join(root, "index_online.html"), "utf8");
+for (const category of ["Maxi +35 A", "Maxi +35 B", "Maxi +48", "Femenino"]) assert.ok(html.includes(category) || fs.readFileSync(path.join(root, "app_online.js"), "utf8").includes(category), `falta ${category}`);
+assert.equal(html.includes("app_online.js"), true);
+const forbidden = [".env", "service_role", "DATABASE_URL", "PGPASSWORD"];
+for (const token of forbidden) assert.equal(html.includes(token), false, `secreto o conexión en HTML: ${token}`);
+console.log("INSTITUTIONAL_PACKAGE_CONTRACT_OK");
