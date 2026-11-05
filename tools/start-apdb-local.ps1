@@ -1,4 +1,6 @@
 $ErrorActionPreference = "Stop"
+$minimumPowerShell = 5
+if ($PSVersionTable.PSVersion.Major -lt $minimumPowerShell) { throw "Se requiere Windows PowerShell $minimumPowerShell o superior; versión detectada: $($PSVersionTable.PSVersion)." }
 $repo = Split-Path -Parent $PSScriptRoot
 $psql = "C:\Program Files\PostgreSQL\16\bin\psql.exe"
 $database = "liga_maxi_2027_demo"
@@ -30,8 +32,10 @@ $env:PGHOST = $hostName; $env:PGPORT = $port; $env:PGUSER = $user; $env:PGDATABA
 $env:DATABASE_URL = "postgres://$user@$hostName`:$port/$database"
 $env:LM_REQUIRE_AUTH = "1"
 $secretBytes = New-Object byte[] 32
-[Security.Cryptography.RandomNumberGenerator]::Fill($secretBytes)
-$env:LM_DEMO_AUTH_SECRET = [Convert]::ToHexString($secretBytes)
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+try { $rng.GetBytes($secretBytes) }
+finally { $rng.Dispose() }
+$env:LM_DEMO_AUTH_SECRET = (([BitConverter]::ToString($secretBytes)) -replace "-", "").ToLowerInvariant()
 Assert-PortFree 8787
 Assert-PortFree 4173
 
