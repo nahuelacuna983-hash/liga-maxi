@@ -54,3 +54,13 @@ node tests/institutional-package-subpath.cjs C:\temp\apdb-2027-prueba
 ```
 
 La prueba comprueba navegación bajo `/apdb-2027-prueba/`, HTML, JavaScript, CSS, manifiesto, service worker e iconos. No demuestra por sí sola que Supabase, fixtures, tablas, resultados o inscripciones funcionen en las cuatro categorías.
+
+## Rutas institucionales
+
+Las rutas canónicas verificadas son `/35-a/`, `/35-b/`, `/48/` y `/femenino/`. El enlace histórico `/liga/?categoria=Maxi+%2B35+B` no debe utilizarse: el parche concreto está en `docs/parche-enlaces-categorias-institucional.md`. La prueba reproducible de navegación es:
+
+```powershell
+node tools/verify-category-routes.cjs
+```
+
+La prueba valida HTTP, encabezado e iframe; no sustituye una validación autorizada de datos deportivos de Femenino.
