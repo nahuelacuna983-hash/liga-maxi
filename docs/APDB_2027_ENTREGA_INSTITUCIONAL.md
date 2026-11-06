@@ -35,6 +35,8 @@ Los módulos históricos de documentación, auditoría y Supabase se conservan c
 6. Verificar HTTPS, login, lectura pública, delegado, programación y consola.
 7. Revertir eliminando sólo la carpeta de prueba y restaurando el backup si cualquier comprobación falla.
 
+El ZIP de instalación no incluye `.htaccess`, para no sobrescribir el archivo de autenticación creado por cPanel. La referencia opcional para impedir listados es `docs/cpanel-options-indexes.htaccess`; debe revisarse y aplicarse por separado, conservando las reglas de Directory Privacy.
+
 No se ejecutó despliegue ni se accedió al dominio institucional.
 
 ## Bloqueos concretos

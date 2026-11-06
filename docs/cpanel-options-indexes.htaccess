@@ -1,0 +1,4 @@
+# Referencia para revisar con el administrador de cPanel.
+# NO copiar sobre public_html/apdb-2027-prueba/.htaccess: Directory Privacy
+# administra allí reglas de autenticación que deben conservarse.
+Options -Indexes

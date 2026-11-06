@@ -5,6 +5,7 @@ const http = require("node:http");
 const path = require("node:path");
 const root = path.resolve(process.argv[2] || "");
 if (!root || !fs.existsSync(path.join(root, "index.html"))) throw new Error("Uso: node tests/institutional-package-subpath.cjs <directorio-extraido>");
+assert.equal(fs.existsSync(path.join(root, ".htaccess")), false, "el paquete desplegable no debe incluir .htaccess");
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg" };
 const server = http.createServer((request, response) => {
   const url = new URL(request.url, "http://127.0.0.1");

@@ -28,18 +28,10 @@ Copy-Item (Join-Path $repo "app_online.js"),(Join-Path $repo "style.css"),(Join-
 } | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $stage "manifest.json") -Encoding ASCII
 if (Test-Path (Join-Path $repo "assets")) { Copy-Item (Join-Path $repo "assets\*") (Join-Path $stage "assets") -Recurse -Force -ErrorAction SilentlyContinue }
 @"
-RewriteEngine On
-RewriteCond %{HTTPS} !=on
-RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-<Files "sw.js">
-  Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
-  Header set Pragma "no-cache"
-  Header set Expires "0"
-</Files>
-"@ | Set-Content (Join-Path $stage ".htaccess") -Encoding ASCII
-@"
 # Instalacion privada APdB 2027
 # Proteger esta carpeta desde cPanel Directory Privacy o equivalente antes de compartirla.
+# El ZIP no incluye .htaccess: conservar el archivo creado por cPanel.
+# Revisar docs/cpanel-options-indexes.htaccess antes de añadir Options -Indexes.
 # No contiene credenciales. No subir archivos SQL, docs internos ni backups.
 "@ | Set-Content (Join-Path $stage "INSTALL-PRIVATE.txt") -Encoding ASCII
 
@@ -52,5 +44,5 @@ if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path (Get-ChildItem $stage -Force | Select-Object -ExpandProperty FullName) -DestinationPath $zip -CompressionLevel Optimal
 Remove-Item $stage -Recurse -Force
 Write-Host "Paquete privado creado: $zip"
-Write-Host "Archivos: index.html, app_online.js, style.css, manifest.json, sw.js, iconos, assets y .htaccess"
+Write-Host "Archivos: index.html, app_online.js, style.css, manifest.json, sw.js, iconos y assets"
 Write-Host "No incluye SQL, docs, private, credenciales ni node_modules."
