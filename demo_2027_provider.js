@@ -10,11 +10,12 @@
       this.categories = {
         "maxi-a": { id: "maxi-a", nombre: "Maxi +35 A", torneo_id: "demo-2027", organizador: "org-demo", equipos: ["Sud América", "Gonnet", "Banco Provincia", "Estudiantes"], blocked: ["2027-04-11"] },
         "maxi-b": { id: "maxi-b", nombre: "Maxi +35 B", torneo_id: "demo-2027", organizador: "org-demo", equipos: ["Estrella de Berisso", "Mayo", "Universal", "Los Hornos"], blocked: [] },
+        "femenino": { id: "femenino", nombre: "Femenino", torneo_id: "demo-2027", organizador: "org-demo", equipos: ["Femenino Norte", "Femenino Sur", "Femenino Centro", "Femenino Oeste"], blocked: [] },
       };
       this.matches = {};
       this.playoffs = {};
       this.delegates = { "delegado-a": { nombre: "Delegado A", equipos: ["Sud América"] }, "delegado-b": { nombre: "Delegado B", equipos: ["Gonnet"] } };
-      this.tournaments = { "demo-2027": { id: "demo-2027", nombre: "Apertura de prueba 2027", temporada: 2027, estado: "activo", categorias: ["maxi-a", "maxi-b"], organizador: "org-demo" } };
+      this.tournaments = { "demo-2027": { id: "demo-2027", nombre: "Apertura de prueba 2027", temporada: 2027, estado: "activo", categorias: ["maxi-a", "maxi-b", "femenino"], organizador: "org-demo" } };
       this.activeTournamentId = "demo-2027";
       this.permissions = { "admin-demo": { role: "administrador", organizador: "org-demo" }, "asoc-demo": { role: "asociacion", organizador: "org-demo" }, "delegado-a": { role: "delegado", organizador: "org-demo", equipos: ["Sud América"] }, "delegado-b": { role: "delegado", organizador: "org-demo", equipos: ["Gonnet"] } };
       this.players = {};

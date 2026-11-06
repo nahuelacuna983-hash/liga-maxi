@@ -3070,14 +3070,6 @@ async function copiarAlertasVencimientoDelegado() {
 
 function renderDocumentacionJugadoresDelegado(categoria, equiposDelegado, documentosJugador) {
   if (!documentosJugador.length) return "";
-  if (categoria === "Femenino") {
-    return `
-      <div class="doc-player-section">
-        <h4>Documentos por jugador</h4>
-        <div class="empty">La carga de jugadores no esta habilitada para Femenino desde Delegados.</div>
-      </div>
-    `;
-  }
 
   return `
     <div class="doc-player-section">
@@ -4896,11 +4888,6 @@ async function agregarJugadorDelegado() {
 
   if (!categoria || !equipoNombre) {
     setStatus(status, "Seleccioná categoría y equipo.", "warn");
-    return;
-  }
-
-  if (categoriaNombre === "Femenino") {
-    setStatus(status, "La carga de jugadores no esta habilitada para Femenino desde Delegados.", "warn");
     return;
   }
 
