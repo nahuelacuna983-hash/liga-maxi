@@ -7,7 +7,7 @@ $zip = "$output.zip"
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item $stage -ItemType Directory -Force | Out-Null
 Copy-Item (Join-Path $repo "demo_circuito_2027.html") (Join-Path $stage "circuito.html")
-foreach ($file in @("style.css", "demo_2027_fixture.js", "demo_2027_sports.js", "demo_2027_provider.js", "demo_circuito_2027.js", "demo_2027_http_client.js", "demo_circuito_2027_persistent.js")) {
+foreach ($file in @("style.css", "demo_2027_fixture.js", "demo_2027_sports.js", "demo_2027_provider.js", "demo_circuito_2027.js", "demo_2027_http_client.js", "demo_circuito_2027_persistent.js", "demo_2027_documentation_ui.js")) {
   Copy-Item (Join-Path $repo $file) (Join-Path $stage $file)
 }
 @'

@@ -1,0 +1,23 @@
+const { test, expect } = require('@playwright/test');
+
+test('flujo documental sintético de delegado a Asociación', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/demo_circuito_2027.html');
+  await page.getByRole('button', { name: 'Asociación' }).click();
+  await page.getByRole('button', { name: 'Documentación' }).click();
+  await page.getByPlaceholder('ID ficticio').fill('doc-player-browser');
+  await page.getByPlaceholder('Nombre ficticio').fill('Jugadora documental demo');
+  await page.getByRole('button', { name: 'Inscribir jugador' }).click();
+  await page.getByRole('button', { name: 'Delegados' }).click();
+  await expect(page.getByRole('heading', { name: 'Obligaciones documentales' })).toBeVisible();
+  await page.locator('[data-doc-player="doc-player-browser"][data-doc-requirement="Apto físico"]').fill('apto-ficticio.pdf');
+  await page.locator('[data-doc-submit="doc-player-browser"][data-doc-requirement="Apto físico"]').click();
+  await expect(page.getByText('Presentación documental sintética registrada. Queda pendiente de revisión humana.')).toBeVisible();
+  await page.getByRole('button', { name: 'Asociación' }).click();
+  await page.getByRole('button', { name: 'Documentación' }).click();
+  await page.getByPlaceholder('Requisito documental').fill('Apto físico');
+  await page.getByRole('combobox').filter({ has: page.locator('option[value="aprobado"]') }).selectOption('aprobado');
+  await page.getByPlaceholder('Archivo o evidencia sintética').fill('apto-ficticio.pdf');
+  await page.getByRole('button', { name: 'Registrar auditoría' }).click();
+  await expect(page.getByText('Apto físico: aprobado · apto-ficticio.pdf')).toBeVisible();
+  await expect(page.locator('.status-pill', { hasText: 'APROBADO' })).toBeVisible();
+});

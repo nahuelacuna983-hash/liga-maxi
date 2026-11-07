@@ -1,0 +1,21 @@
+"use strict";
+const assert = require("node:assert/strict");
+const Provider = require("../demo_2027_provider.js");
+
+const provider = new Provider();
+provider.createUser("admin-demo", "delegado-femenino", { role: "delegado", organizador: "org-demo" });
+provider.setPermission("asoc-demo", "delegado-femenino", { role: "delegado", organizador: "org-demo", equipos: ["Femenino Norte"], categorias: ["femenino"] });
+provider.setDocumentRequirements("asoc-demo", "femenino", "Femenino Norte", ["Apto físico", "Lista de buena fe"]);
+provider.registerPlayer("asoc-demo", { id: "female-doc-player", nombre: "Jugadora documental sintética", equipo: "Femenino Norte", categoria: "femenino" });
+assert.equal(provider.getPlayerEligibility("asoc-demo", "female-doc-player"), "incompleta");
+provider.submitDocument("delegado-femenino", "female-doc-player", "Apto físico", "apto-ficticio.pdf");
+assert.equal(provider.getPlayerEligibility("asoc-demo", "female-doc-player"), "incompleta");
+assert.throws(() => provider.submitDocument("delegado-femenino", "female-doc-player", "Certificado ajeno", "evidencia"), /no configurado/);
+provider.setDocumentStatus("asoc-demo", "female-doc-player", "Apto físico", "aprobado", "apto-ficticio.pdf");
+assert.equal(provider.getPlayerEligibility("asoc-demo", "female-doc-player"), "incompleta");
+provider.submitDocument("delegado-femenino", "female-doc-player", "Lista de buena fe", "lista-ficticia.pdf");
+assert.equal(provider.getPlayerEligibility("asoc-demo", "female-doc-player"), "revision_humana_pendiente");
+provider.setDocumentStatus("asoc-demo", "female-doc-player", "Lista de buena fe", "aprobado", "lista-ficticia.pdf");
+assert.equal(provider.getPlayerEligibility("asoc-demo", "female-doc-player"), "documentacion_completa");
+assert.equal(provider.getDocumentHistory("asoc-demo", "female-doc-player").length, 4);
+console.log("DEMO_DOCUMENTATION_FLOW_OK");

@@ -15,7 +15,7 @@ assert.throws(() => provider.registerPlayer("delegado-a", { id: "wrong", nombre:
 provider.setPermission("asoc-demo", "delegado-a", { categorias: ["maxi-a"], equipos: ["Sud América"] });
 assert.throws(() => provider.registerPlayer("delegado-a", { id: "wrong", nombre: "Fuera", equipo: "Gonnet", categoria: "maxi-b" }), /no puede registrar/);
 assert.throws(() => provider.setPermission("asoc-demo", "asoc-b", { organizador: "org-b" }), /otro organizador/);
-assert.throws(() => provider.getPlayers("delegado-a"), /no autorizada/);
+assert.deepStrictEqual(provider.getPlayers("delegado-a"), []);
 assert.throws(() => provider.getPermissions("delegado-a"), /no autorizada/);
 const before = JSON.stringify(provider.getPermissions("admin-demo"));
 assert.throws(() => provider.setPermission("asoc-demo", "asoc-b", { role: "administrador", organizador: "org-b" }), /otro organizador/);
