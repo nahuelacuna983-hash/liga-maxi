@@ -37,6 +37,9 @@ class PostgresHttpClient {
   delegateAssignment(input) { return this.request("/api/delegate-assignments", "POST", input); }
   revokeDelegateAssignment(input) { return this.request("/api/delegate-assignments", "DELETE", input); }
   player(input) { return this.request("/api/players", "POST", input); }
+  documentRequirement(input) { return this.request("/api/document-requirements", "POST", input); }
+  documentRequirements(categoryId) { return this.request(`/api/categories/${categoryId}/document-requirements`); }
+  submitDocument(input) { return this.request("/api/documents/submissions", "POST", input); }
   reviewDocument(input) { return this.request("/api/documents/reviews", "POST", input); }
   documents(categoryId) { return this.request(`/api/categories/${categoryId}/documents`); }
 }
