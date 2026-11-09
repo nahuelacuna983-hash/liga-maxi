@@ -28,6 +28,9 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-logout').click();
   await page.locator('#pg-login-user').fill('dev-delegate');
   await page.locator('#pg-login').click();
+  await page.locator('#pg-existing-category').fill(fixture.category);
+  await page.locator('#pg-select-category').click();
+  await expect(page.locator('#circuit-status')).toContainText('Categoría autorizada recuperada');
   await page.locator('#pg-document-id').fill(documentId);
   await page.locator('#pg-document-player').fill(fixture.player);
   await page.locator('#pg-document-requirement').fill(fixture.requirement);
@@ -37,6 +40,9 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-logout').click();
   await page.locator('#pg-login-user').fill('dev-organizer');
   await page.locator('#pg-login').click();
+  await page.locator('#pg-existing-category').fill(fixture.category);
+  await page.locator('#pg-select-category').click();
+  await expect(page.locator('#circuit-status')).toContainText('Categoría autorizada recuperada');
   await page.locator('#pg-review-document-id').fill(documentId);
   await page.locator('#pg-review-player').fill(fixture.player);
   await page.locator('#pg-review-team').fill(fixture.team);
@@ -58,6 +64,9 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-logout').click();
   await page.locator('#pg-login-user').fill('dev-delegate');
   await page.locator('#pg-login').click();
+  await page.locator('#pg-existing-category').fill(fixture.category);
+  await page.locator('#pg-select-category').click();
+  await expect(page.locator('#circuit-status')).toContainText('Categoría autorizada recuperada');
   const secondDocumentId = crypto.randomUUID();
   await page.locator('#pg-document-id').fill(secondDocumentId);
   await page.locator('#pg-document-player').fill(fixture.player);
@@ -68,6 +77,9 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-logout').click();
   await page.locator('#pg-login-user').fill('dev-organizer');
   await page.locator('#pg-login').click();
+  await page.locator('#pg-existing-category').fill(fixture.category);
+  await page.locator('#pg-select-category').click();
+  await expect(page.locator('#circuit-status')).toContainText('Categoría autorizada recuperada');
   await page.locator('#pg-review-document-id').fill(secondDocumentId);
   await page.locator('#pg-review-player').fill(fixture.player);
   await page.locator('#pg-review-team').fill(fixture.team);

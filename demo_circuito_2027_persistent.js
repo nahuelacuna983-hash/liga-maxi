@@ -31,6 +31,22 @@
       status(`Error persistente: ${error.message}`);
     }
   };
+  const clearCategoryContext = () => { state.category = null; state.matches = []; state.teams = []; state.table = []; state.playoffs = null; state.documents = { documents: [], history: [] }; };
+  const restoreSelectedCategory = async () => {
+    const categoryId = localStorage.getItem("pg-category-id");
+    if (!categoryId || !client.token) { clearCategoryContext(); return false; }
+    try {
+      const result = await client.categoryState(categoryId);
+      if (!result.category?.id) throw new Error("La categoría no existe o no está autorizada.");
+      state.category = result.category;
+      return true;
+    } catch (error) {
+      localStorage.removeItem("pg-category-id");
+      clearCategoryContext();
+      status(`Categoría no disponible para esta sesión: ${error.message}`);
+      return false;
+    }
+  };
   const rows = () =>
     state.matches
       .map(
@@ -91,9 +107,9 @@
       if (!matchId) throw new Error("Seleccioná un partido persistido.");
       return matchId;
     };
-    on("#pg-login", async () => { await client.login($("#pg-login-user").value.trim()); renderAssociation(); status("Sesión de desarrollo iniciada."); await reload(); });
+    on("#pg-login", async () => { await client.login($("#pg-login-user").value.trim()); const restored = await restoreSelectedCategory(); renderAssociation(); status(restored ? "Sesión de desarrollo iniciada; categoría autorizada recuperada." : "Sesión de desarrollo iniciada; seleccioná una categoría autorizada."); if (restored) await reload(); });
     on("#pg-select-category", async () => { const categoryId = $("#pg-existing-category").value.trim(); if (!categoryId) throw new Error("Ingresá el UUID de una categoría."); const result = await client.categoryState(categoryId); if (!result.category?.id) throw new Error("La categoría no existe o no está autorizada."); state.category = result.category; localStorage.setItem("pg-category-id", result.category.id); await reload(); status("Categoría autorizada recuperada desde PostgreSQL."); });
-    on("#pg-logout", async () => { client.logout(); state.category = null; state.matches = []; state.teams = []; state.table = []; state.playoffs = null; renderAssociation(); status("Sesión cerrada."); });
+    on("#pg-logout", async () => { client.logout(); clearCategoryContext(); renderAssociation(); status("Sesión cerrada."); });
     on("#pg-season-create", async () => { const season = await client.season({ id: crypto.randomUUID(), organizationId: developmentOrganizationId, name: $("#pg-season-name").value || "Temporada 2027", year: Number($("#pg-season-year").value) || 2027 }); status(`Temporada ${season.name} confirmada por PostgreSQL.`); });
     on("#pg-category-state-save", async () => { if (!state.category) throw new Error("Creá primero una categoría."); state.lifecycle = await client.lifecycle(state.category.id, $("#pg-category-state").value); $("#pg-admin-state").textContent = `Estado de categoría: ${state.lifecycle.state}`; status("Estado de categoría confirmado por PostgreSQL."); });
     on("#pg-users-refresh", async () => { state.users = await client.organizationUsers(developmentOrganizationId); $("#pg-users-state").textContent = state.users.map((user) => `${user.username} · ${user.role}`).join(" | ") || "Sin usuarios"; status("Usuarios y membresías recuperados."); });
@@ -186,10 +202,8 @@
       "Modo persistente PostgreSQL local. No es autenticación productiva.";
     await request(async () => {
       await client.health();
-      const savedCategory = localStorage.getItem("pg-category-id");
-      if (savedCategory) {
-        state.category = { id: savedCategory };
-        await reload();
+      if (client.token) {
+        if (await restoreSelectedCategory()) await reload();
       } else {
         const tournaments = await client.tournaments();
         if (tournaments[0]) {
