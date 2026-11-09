@@ -208,16 +208,12 @@
       if (client.token) {
         if (await restoreSelectedCategory()) await reload();
       } else {
-        const tournaments = await client.tournaments();
-        if (tournaments[0]) {
-          const categories = await client.categories(tournaments[0].id);
-          if (categories[0]) {
-            state.category = categories[0];
-            await reload();
-          }
-        }
+        clearCategoryContext();
+        renderAssociation();
+        status("Iniciá sesión para consultar datos persistidos.");
       }
-      status("PostgreSQL local conectado.");
+      if (!client.token) status("PostgreSQL local conectado. Iniciá sesión para consultar datos persistidos.");
+      else status("PostgreSQL local conectado.");
       document.body.dataset.pgUi = "ready";
     });
     document.querySelectorAll("[data-view]").forEach((button) => {

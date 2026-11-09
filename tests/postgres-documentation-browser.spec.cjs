@@ -100,4 +100,16 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await expect(page.locator('#pg-document-eligibility')).toContainText('DOCUMENTACIÓN COMPLETA');
   await page.reload();
   await expect(page.locator('#circuit-status')).toContainText('PostgreSQL local conectado');
+  await expect(page.locator('#circuit-status')).toContainText('Iniciá sesión');
+  await page.locator('#pg-login-user').fill('dev-organizer');
+  await page.locator('#pg-login').click();
+  await expect(page.locator('body')).toHaveAttribute('data-pg-ui', 'ready');
+  await page.locator('#pg-existing-category').fill(fixture.category);
+  await page.locator('#pg-select-category').click();
+  await expect(page.locator('#circuit-status')).toContainText('Categoría autorizada recuperada');
+  await expect(page.locator('#pg-document-state')).toContainText('Documentos recuperados: 2');
+  await expect(page.locator('#pg-document-state')).toContainText('Historial: 4');
+  await page.locator('#pg-document-player').fill(fixture.player);
+  await page.locator('#pg-document-status-check').click();
+  await expect(page.locator('#pg-document-eligibility')).toContainText('DOCUMENTACIÓN COMPLETA');
 });
