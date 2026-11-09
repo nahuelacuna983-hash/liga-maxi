@@ -1,6 +1,7 @@
 "use strict";
 const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
+const crypto = require("node:crypto");
 const { Pool } = require("pg");
 const { createDevelopmentAuth } = require("../demo_2027_auth.js");
 const { createServer } = require("../demo_2027_postgres_server.js");
@@ -10,13 +11,13 @@ const path = require("node:path");
 
 const ids = {
   org: "00000000-0000-4000-8000-000000000101", organizer: "00000000-0000-4000-8000-000000000201",
-  delegate: "00000000-0000-4000-8000-000000000203", tournament: "00000000-0000-4000-8000-000000000901",
-  category: "00000000-0000-4000-8000-000000000902", team: "00000000-0000-4000-8000-000000000903",
-  player: "00000000-0000-4000-8000-000000000904",
+  delegate: "00000000-0000-4000-8000-000000000203", otherDelegate: "00000000-0000-4000-8000-000000000204", tournament: crypto.randomUUID(),
+  category: crypto.randomUUID(), team: crypto.randomUUID(), player: crypto.randomUUID(),
 };
 const users = {
   "dev-organizer": { id: ids.organizer, role: "organizer", organizationId: ids.org },
   "dev-delegate": { id: ids.delegate, role: "delegate", organizationId: ids.org },
+  "dev-other-delegate": { id: ids.otherDelegate, role: "delegate", organizationId: ids.org },
 };
 const secret = "documentation-e2e-secret-2027";
 
@@ -37,8 +38,8 @@ async function waitFor(url, timeout = 10000) {
   try {
     await db.query(await fs.readFile(path.join(__dirname, "..", "docs", "demo-2027-postgres-schema.sql"), "utf8"));
     await db.query("insert into lm_demo_organizations(id,name) values($1,'Documentación E2E') on conflict do nothing", [ids.org]);
-    await db.query("insert into lm_demo_users(id,username,role) values($1,'dev-organizer','organizer'),($2,'dev-delegate','delegate') on conflict do nothing", [ids.organizer, ids.delegate]);
-    await db.query("insert into lm_demo_memberships(user_id,organization_id) values($1,$2),($3,$2) on conflict do nothing", [ids.organizer, ids.org, ids.delegate]);
+    await db.query("insert into lm_demo_users(id,username,role) values($1,'dev-organizer','organizer'),($2,'dev-delegate','delegate'),($3,'dev-other-delegate','delegate') on conflict do nothing", [ids.organizer, ids.delegate, ids.otherDelegate]);
+    await db.query("insert into lm_demo_memberships(user_id,organization_id) values($1,$2),($3,$2),($4,$2) on conflict do nothing", [ids.organizer, ids.org, ids.delegate, ids.otherDelegate]);
     await db.query("insert into lm_demo_tournaments(id,organization_id,name,season,state) values($1,$2,'Documentación E2E',2027,'draft') on conflict do nothing", [ids.tournament, ids.org]);
     await db.query("insert into lm_demo_categories(id,tournament_id,name) values($1,$2,'Femenino E2E') on conflict do nothing", [ids.category, ids.tournament]);
     await db.query("insert into lm_demo_teams(id,category_id,name) values($1,$2,'Equipo E2E') on conflict do nothing", [ids.team, ids.category]);
@@ -68,6 +69,13 @@ async function waitFor(url, timeout = 10000) {
     const statusResponse = await fetch(`${base}/api/categories/${ids.category}/players/${ids.player}/document-status`, { headers: { authorization: `Bearer ${token}` } });
     assert.equal(statusResponse.status, 200);
     assert.equal((await statusResponse.json()).state, "complete");
+    const otherToken = auth.issue("dev-other-delegate");
+    const denied = await fetch(`${base}/api/documents/submissions`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${otherToken}` }, body: JSON.stringify({ id: crypto.randomUUID(), playerId: ids.player, requirement: "Apto físico", evidenceRef: "ajeno.pdf" }) });
+    assert.equal(denied.status, 400);
+    const locked = await fetch(`${base}/api/documents/submissions`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${auth.issue("dev-delegate")}` }, body: JSON.stringify({ id: state.documents[0].id, playerId: ids.player, requirement: "Apto físico", evidenceRef: "modificacion.pdf" }) });
+    assert.equal(locked.status, 400);
+    const docsAfterNegative = await (await fetch(`${base}/api/categories/${ids.category}/documents`, { headers: { authorization: `Bearer ${token}` } })).json();
+    assert.equal(docsAfterNegative.history.length, 4);
     console.log("POSTGRES_DOCUMENTATION_E2E_OK");
   } finally {
     if (server) await new Promise((resolve) => server.close(resolve));

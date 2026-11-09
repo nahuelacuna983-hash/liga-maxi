@@ -17,6 +17,9 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-login-user').fill('dev-organizer');
   await page.locator('#pg-login').click();
   await expect(page.locator('#circuit-status')).toContainText('Sesión de desarrollo iniciada');
+  await page.locator('#pg-existing-category').fill(fixture.category);
+  await page.locator('#pg-select-category').click();
+  await expect(page.locator('#circuit-status')).toContainText('Categoría autorizada recuperada');
   await page.locator('#pg-requirement-id').fill(crypto.randomUUID());
   await page.locator('#pg-requirement-name').fill(fixture.requirement);
   await page.locator('#pg-player-team').fill(fixture.team);
