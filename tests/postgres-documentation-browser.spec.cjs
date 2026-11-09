@@ -16,6 +16,7 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.getByRole('button', { name: 'Asociación' }).click();
   await page.locator('#pg-login-user').fill('dev-organizer');
   await page.locator('#pg-login').click();
+  await expect(page.locator('body')).toHaveAttribute('data-pg-ui', 'ready');
   await expect(page.locator('#circuit-status')).toContainText('Sesión de desarrollo iniciada');
   await page.locator('#pg-existing-category').fill(fixture.category);
   await page.locator('#pg-select-category').click();
@@ -28,6 +29,7 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-logout').click();
   await page.locator('#pg-login-user').fill('dev-delegate');
   await page.locator('#pg-login').click();
+  await expect(page.locator('body')).toHaveAttribute('data-pg-ui', 'ready');
   await page.locator('#pg-existing-category').fill(fixture.category);
   await page.locator('#pg-select-category').click();
   await expect(page.locator('#circuit-status')).toContainText('Categoría autorizada recuperada');
@@ -40,6 +42,7 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-logout').click();
   await page.locator('#pg-login-user').fill('dev-organizer');
   await page.locator('#pg-login').click();
+  await expect(page.locator('body')).toHaveAttribute('data-pg-ui', 'ready');
   await page.locator('#pg-existing-category').fill(fixture.category);
   await page.locator('#pg-select-category').click();
   await expect(page.locator('#circuit-status')).toContainText('Categoría autorizada recuperada');
@@ -64,6 +67,7 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-logout').click();
   await page.locator('#pg-login-user').fill('dev-delegate');
   await page.locator('#pg-login').click();
+  await expect(page.locator('body')).toHaveAttribute('data-pg-ui', 'ready');
   await page.locator('#pg-existing-category').fill(fixture.category);
   await page.locator('#pg-select-category').click();
   await expect(page.locator('#circuit-status')).toContainText('Categoría autorizada recuperada');
@@ -77,6 +81,7 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-logout').click();
   await page.locator('#pg-login-user').fill('dev-organizer');
   await page.locator('#pg-login').click();
+  await expect(page.locator('body')).toHaveAttribute('data-pg-ui', 'ready');
   await page.locator('#pg-existing-category').fill(fixture.category);
   await page.locator('#pg-select-category').click();
   await expect(page.locator('#circuit-status')).toContainText('Categoría autorizada recuperada');
