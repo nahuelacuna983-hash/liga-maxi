@@ -19,5 +19,13 @@ test('flujo documental sintético de delegado a Asociación', async ({ page }) =
   await page.getByPlaceholder('Archivo o evidencia sintética').fill('apto-ficticio.pdf');
   await page.getByRole('button', { name: 'Registrar auditoría' }).click();
   await expect(page.getByText('Apto físico: aprobado · apto-ficticio.pdf')).toBeVisible();
-  await expect(page.locator('.status-pill', { hasText: 'APROBADO' })).toBeVisible();
+  await expect(page.locator('.status-pill', { hasText: 'PENDIENTE' })).toBeVisible();
+  await page.getByPlaceholder('Requisito documental').fill('Lista de buena fe');
+  await page.getByPlaceholder('Archivo o evidencia sintética').fill('lista-ficticia.pdf');
+  await page.getByRole('button', { name: 'Registrar auditoría' }).click();
+  await page.getByPlaceholder('Requisito documental').fill('Lista de buena fe');
+  await page.getByRole('combobox').filter({ has: page.locator('option[value="aprobado"]') }).selectOption('aprobado');
+  await page.getByPlaceholder('Archivo o evidencia sintética').fill('lista-ficticia.pdf');
+  await page.getByRole('button', { name: 'Registrar auditoría' }).click();
+  await expect(page.locator('.status-pill', { hasText: 'DOCUMENTACIÓN COMPLETA' })).toBeVisible();
 });
