@@ -26,11 +26,21 @@ Prueba Chromium persistente:
 $env:POSTGRES_UI_BASE_URL = "http://127.0.0.1:8787/demo_circuito_2027.html?mode=postgres&api=http://127.0.0.1:8787"
 $env:DOC_PLAYER_ID = "<UUID del jugador sintético>"
 $env:DOC_TEAM_ID = "<UUID del equipo sintético>"
+$env:DOC_CATEGORY_ID = "<UUID de la categoría sintética>"
 $env:DOC_REQUIREMENT = "Apto físico"
 npx playwright test tests/postgres-documentation-browser.spec.cjs
 ```
 
 Requiere un servidor autenticado conectado a PostgreSQL 16 y un fixture sintético preparado. No se declara aprobada en esta ejecución porque el entorno local no expone `DATABASE_URL` ni `psql`.
+
+Comando único de validación completa, incluida recreación del servidor y recuperación:
+
+```powershell
+$env:DATABASE_URL = "postgresql://<usuario>:<contraseña>@127.0.0.1:5432/<base-descartable>"
+node tests/postgres-documentation-e2e.cjs
+```
+
+El comando falla explícitamente si falta `DATABASE_URL`, si Chromium no está instalado o si una etapa es omitida; no usa `test.skip` para convertir una ausencia de infraestructura en aprobación.
 
 Pruebas locales sin PostgreSQL:
 
