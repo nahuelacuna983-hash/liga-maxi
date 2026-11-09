@@ -18,7 +18,9 @@ Prueba PostgreSQL/HTTP:
 node tests/postgres-documentation-integration.cjs
 ```
 
-Requiere `DATABASE_URL` apuntando a una base PostgreSQL 16 temporal. La prueba crea datos sintéticos, comprueba presentación autorizada, rechaza otro delegado, aprueba como Asociación y verifica dos eventos de historial.
+Certificación ejecutada en Windows sobre la base aislada `apdb_2027_certificacion_2`: Chromium 1/1 aprobado, duración 6,1 segundos, resultado `POSTGRES_DOCUMENTATION_E2E_OK`, commit certificado `859595791dba64cde97c0e49f1ae84780da409c8`.
+
+La certificación cubre exclusivamente el circuito documental persistente sintético. No extiende su alcance a producción, Supabase, cPanel, almacenamiento de documentos reales, ni a otros módulos no incluidos en esa ejecución.
 
 Prueba Chromium persistente:
 
@@ -31,7 +33,7 @@ $env:DOC_REQUIREMENT = "Apto físico"
 npx playwright test tests/postgres-documentation-browser.spec.cjs
 ```
 
-Requiere un servidor autenticado conectado a PostgreSQL 16 y un fixture sintético preparado. No se declara aprobada en esta ejecución porque el entorno local no expone `DATABASE_URL` ni `psql`.
+La prueba requiere un servidor autenticado conectado a PostgreSQL 16 y un fixture sintético preparado. La ejecución certificada se realizó sobre la base aislada indicada arriba.
 
 Comando único de validación completa, incluida recreación del servidor y recuperación:
 
@@ -57,7 +59,6 @@ El ZIP estático de `demo-femenino` no contiene servidor ni credenciales y no pu
 
 ## Pendientes para un piloto
 
-- Ejecutar `tests/postgres-documentation-integration.cjs` en CI con PostgreSQL 16.
-- Ejecutar la prueba HTTP y Chromium contra PostgreSQL 16 en CI o en una base local descartable.
+- Repetir la certificación en CI si se necesita evidencia automatizada compartida; no es requisito para afirmar el resultado local ya obtenido.
 - Definir almacenamiento privado y retención de evidencias antes de usar documentación real.
 - Confirmar requisitos y reglas oficiales de APdB.
