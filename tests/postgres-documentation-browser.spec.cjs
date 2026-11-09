@@ -26,6 +26,13 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-player-team').fill(fixture.team);
   await page.locator('#pg-requirement-save').click();
   await expect(page.locator('#circuit-status')).toContainText('Requisito documental confirmado');
+  await page.locator('#pg-requirement-id').fill(crypto.randomUUID());
+  await page.locator('#pg-requirement-name').fill(fixture.requirement2);
+  await page.locator('#pg-player-team').fill(fixture.team);
+  await page.locator('#pg-requirement-save').click();
+  await expect(page.locator('#pg-document-requirements-state')).toContainText('Requisitos activos recuperados: 2');
+  await expect(page.locator('#pg-document-requirements-state')).toContainText(fixture.requirement);
+  await expect(page.locator('#pg-document-requirements-state')).toContainText(fixture.requirement2);
   await page.locator('#pg-logout').click();
   await page.locator('#pg-login-user').fill('dev-delegate');
   await page.locator('#pg-login').click();
@@ -59,11 +66,6 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-document-player').fill(fixture.player);
   await page.locator('#pg-document-status-check').click();
   await expect(page.locator('#pg-document-eligibility')).toContainText('PENDIENTE');
-  await page.locator('#pg-requirement-id').fill(crypto.randomUUID());
-  await page.locator('#pg-requirement-name').fill(fixture.requirement2);
-  await page.locator('#pg-player-team').fill(fixture.team);
-  await page.locator('#pg-requirement-save').click();
-  await expect(page.locator('#circuit-status')).toContainText('Requisito documental confirmado');
   await page.locator('#pg-logout').click();
   await page.locator('#pg-login-user').fill('dev-delegate');
   await page.locator('#pg-login').click();
