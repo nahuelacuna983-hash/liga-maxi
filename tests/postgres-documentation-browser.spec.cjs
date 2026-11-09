@@ -11,9 +11,12 @@ const fixture = {
 if (!base || !fixture.player || !fixture.team || !fixture.category) throw new Error('POSTGRES_UI_BASE_URL, DOC_CATEGORY_ID, DOC_PLAYER_ID y DOC_TEAM_ID son obligatorios: la prueba documental no puede omitirse.');
 
 test('presenta y revisa documentación persistente desde Chromium', async ({ page }) => {
+  test.setTimeout(90_000);
+  const phase = (name) => console.log(`[documentation-e2e] ${name}`);
   const documentId = crypto.randomUUID();
   await page.goto(base);
   await page.getByRole('button', { name: 'Asociación' }).click();
+  phase('configuración');
   await page.locator('#pg-login-user').fill('dev-organizer');
   await page.locator('#pg-login').click();
   await expect(page.locator('body')).toHaveAttribute('data-pg-ui', 'ready');
@@ -45,6 +48,7 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-document-requirement').fill(fixture.requirement);
   await page.locator('#pg-document-evidence').fill('evidencia-browser-sintetica.pdf');
   await page.locator('#pg-document-submit').click();
+  phase('presentación');
   await expect(page.locator('#circuit-status')).toContainText('Presentación documental confirmada');
   await page.locator('#pg-logout').click();
   await page.locator('#pg-login-user').fill('dev-organizer');
@@ -60,6 +64,7 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-document-status').selectOption('approved');
   await page.locator('#pg-review-evidence').fill('revision-browser-sintetica.pdf');
   await page.locator('#pg-document-review').click();
+  phase('revisión');
   await expect(page.locator('#circuit-status')).toContainText('Revisión documental registrada');
   await expect(page.locator('#pg-document-state')).toContainText('Documentos recuperados: 1');
   await expect(page.locator('#pg-document-state')).toContainText('Historial: 2');
@@ -99,8 +104,12 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-document-status-check').click();
   await expect(page.locator('#pg-document-eligibility')).toContainText('DOCUMENTACIÓN COMPLETA');
   await page.reload();
+  phase('recarga sin sesión');
   await expect(page.locator('#circuit-status')).toContainText('PostgreSQL local conectado');
   await expect(page.locator('#circuit-status')).toContainText('Iniciá sesión');
+  await page.getByRole('button', { name: 'Asociación' }).click();
+  await expect(page.locator('#view-association')).toBeVisible();
+  phase('nueva autenticación');
   await page.locator('#pg-login-user').fill('dev-organizer');
   await page.locator('#pg-login').click();
   await expect(page.locator('body')).toHaveAttribute('data-pg-ui', 'ready');
@@ -112,4 +121,5 @@ test('presenta y revisa documentación persistente desde Chromium', async ({ pag
   await page.locator('#pg-document-player').fill(fixture.player);
   await page.locator('#pg-document-status-check').click();
   await expect(page.locator('#pg-document-eligibility')).toContainText('DOCUMENTACIÓN COMPLETA');
+  phase('recuperación completa');
 });
