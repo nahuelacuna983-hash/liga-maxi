@@ -52,3 +52,18 @@ Estas observaciones son **riesgos de configuración demostrados**, no pruebas de
 - Restauración: comprobación sobre backup aislado antes de cualquier despliegue.
 
 **Estado:** contrato y evidencia confirmados; cambios seguros de política y regresiones con identidades reales, todavía pendientes.
+
+## Matriz operativa aislada
+
+| Perfil sintético | Lectura deportiva pública | Escrituras deportivas | Documentos privados | Administración/RPC |
+|---|---|---|---|---|
+| Anónimo | Permitida sólo en catálogo publicado | Denegada por grant/RLS | Denegada | Denegada |
+| Autenticado sin permisos | Permitida sólo en catálogo publicado | Denegada | Denegada | Denegada |
+| Delegado autorizado | Catálogo y alcance asignado | Sólo resultado/documentación de su alcance, sujeto a RPC | Sólo su alcance | Denegada |
+| Delegado ajeno o revocado | Catálogo público | Denegada | Denegada | Denegada |
+| Asociación | Según organización vigente | Permitida dentro de su organización y reglas | Revisión dentro de su organización | Permitida con historial |
+
+La fixture local comprueba materialmente las dos primeras filas y el cierre de funciones
+`SECURITY DEFINER`; no representa Supabase Auth, `auth.uid()`, Storage ni RPC productivas.
+La matriz de delegados y Asociación queda pendiente de ejecutar contra un clon Supabase
+o un entorno PostgreSQL que reproduzca fielmente sus claims y funciones.

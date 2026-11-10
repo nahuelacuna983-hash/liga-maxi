@@ -23,6 +23,22 @@ begin
 end $$;
 reset role;
 
+set role authenticated;
+do $$
+begin
+  begin
+    insert into public.partidos(id) values ('00000000-0000-0000-0000-000000000902');
+    raise exception 'ASSERTION_FAILED: authenticated insert partidos succeeded';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform id from public.team_documents;
+    raise exception 'ASSERTION_FAILED: authenticated read team_documents succeeded';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+
 -- Sonda positiva controlada: demuestra que una política permisiva con grant
 -- sí permitiría escribir. Todo se revierte al finalizar esta transacción; no
 -- forma parte de la fixture aprobada.
@@ -33,6 +49,12 @@ grant insert on rls_insecure_probe to anon;
 create policy rls_insecure_probe_write on rls_insecure_probe for insert to anon with check (true);
 set role anon;
 insert into rls_insecure_probe values (1);
+do $$
+begin
+  if (select count(*) from rls_insecure_probe) <> 1 then
+    raise exception 'ASSERTION_FAILED: permissive probe did not persist the expected row';
+  end if;
+end $$;
 reset role;
 rollback;
 
