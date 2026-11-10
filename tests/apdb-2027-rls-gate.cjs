@@ -59,6 +59,9 @@ async function main() {
     `, [protectedTables]);
     const byName = new Map(tables.map((r) => [r.name, r]));
     const missing = protectedTables.filter((name) => !byName.has(name));
+    if (missing.length) {
+      throw new Error(`Faltan tablas críticas: ${missing.join(", ")}`);
+    }
     const issues = [];
     for (const row of tables) {
       if (!row.rls) issues.push(`RLS apagada: ${row.name}`);
@@ -75,17 +78,47 @@ async function main() {
       WHERE n.nspname = 'public' AND c.relkind = 'v'
         AND c.relname = ANY($1::text[])
     `, [sensitiveViews]);
+    const missingViews = sensitiveViews.filter((name) => !views.some((view) => view.name === name));
+    if (missingViews.length) {
+      throw new Error(`Faltan vistas administrativas requeridas: ${missingViews.join(", ")}`);
+    }
     for (const view of views) if (view.read_allowed)
       issues.push(`Vista administrativa accesible por anon: ${view.name}`);
+    const { rows: policies } = await client.query(`
+      SELECT tablename, count(*)::int AS policy_count,
+        bool_or('anon' = any(roles) AND cmd in ('INSERT','UPDATE','DELETE','ALL')) AS anon_write
+      FROM pg_policies
+      WHERE schemaname = 'public' AND tablename = ANY($1::text[])
+      GROUP BY tablename
+    `, [protectedTables]);
+    const policyCounts = new Map(policies.map((row) => [row.tablename, row]));
+    for (const table of protectedTables) {
+      const policy = policyCounts.get(table);
+      if (!policy || policy.policy_count < 1) issues.push(`Sin políticas RLS declaradas: ${table}`);
+      if (policy?.anon_write) issues.push(`Política de escritura anon presente: ${table}`);
+    }
     const { rows: funcs } = await client.query(`
       SELECT p.proname AS name,
-        pg_get_function_identity_arguments(p.oid) AS signature
+        pg_get_function_identity_arguments(p.oid) AS signature,
+        coalesce(array_to_string(p.proconfig, ','), '') AS config
       FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
       WHERE n.nspname = 'public' AND p.prosecdef
         AND has_function_privilege('anon', p.oid, 'EXECUTE')
     `);
     for (const fn of funcs)
       issues.push(`SECURITY DEFINER ejecutable por anon (revisar validaciones internas): ${fn.name}(${fn.signature})`);
+    const { rows: definerFunctions } = await client.query(`
+      SELECT p.proname AS name,
+        pg_get_function_identity_arguments(p.oid) AS signature,
+        coalesce(array_to_string(p.proconfig, ','), '') AS config
+      FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.prosecdef
+    `);
+    for (const fn of definerFunctions) {
+      if (!/(^|,)search_path=/.test(fn.config)) {
+        issues.push(`SECURITY DEFINER con search_path mutable: ${fn.name}(${fn.signature})`);
+      }
+    }
     await client.query("ROLLBACK");
     console.log(`APDB_RLS_GATE_SCANNED tables=${tables.length} views=${views.length} definer_anon=${funcs.length}`);
     if (missing.length) console.log("TABLAS_NO_PRESENTES " + missing.join(", "));

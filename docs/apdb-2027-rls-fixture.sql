@@ -51,6 +51,14 @@ create policy playoff_public_read on playoff_matches for select to anon, authent
 create policy schedules_public_read on match_schedules for select to anon, authenticated using (true);
 create policy requirements_public_read on document_requirements for select to anon, authenticated using (true);
 
+-- Las tablas sensibles tienen política explícita cerrada en la fixture. Esto
+-- evita confundir ausencia de política con una decisión autorizada de cierre.
+create policy player_documents_closed on player_documents for all to anon, authenticated using (false) with check (false);
+create policy team_documents_closed on team_documents for all to anon, authenticated using (false) with check (false);
+create policy app_users_closed on app_users for all to anon, authenticated using (false) with check (false);
+create policy app_permissions_closed on app_user_permissions for all to anon, authenticated using (false) with check (false);
+create policy team_players_closed on team_players for all to anon, authenticated using (false) with check (false);
+
 create view v_team_documents_admin as select id from team_documents;
 create view v_player_documents_admin as select id from player_documents;
 create view v_drive_player_documents_admin as select id from player_documents where false;
