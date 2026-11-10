@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Rama o SHA del PR que contiene tools/rls-local-test.sql"
+        description: "Rama autorizada de desarrollo a validar"
         required: true
-        default: codex/issue-1-bloque-1
+        default: codex/apdb-2027-operational-hardening
         type: string
 
 jobs:
@@ -29,6 +29,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
+      - name: Validate authorized ref
+        env:
+          SELECTED_REF: ${{ inputs.ref }}
+        run: |
+          test "$SELECTED_REF" = "codex/apdb-2027-operational-hardening"
       - name: Run isolated RLS/RPC matrix
         env:
           PGHOST: 127.0.0.1
@@ -37,3 +42,29 @@ jobs:
           PGPASSWORD: postgres
           PGDATABASE: liga_maxi_test
         run: psql -v ON_ERROR_STOP=1 -f tools/rls-local-test.sql
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Create isolated APdB gate database
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: createdb liga_maxi_gate
+      - name: Load APdB RLS catalog fixture
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: liga_maxi_gate
+        run: psql -v ON_ERROR_STOP=1 -f docs/apdb-2027-rls-fixture.sql
+      - name: Run APdB catalog gate
+        env:
+          APDB_ISOLATED_DATABASE: YES
+          APDB_ALLOWED_DATABASE: liga_maxi_gate
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_gate
+        run: node tests/apdb-2027-rls-gate.cjs
