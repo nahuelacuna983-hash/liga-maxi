@@ -23,9 +23,30 @@ async function main() {
   assert.equal(process.env.APDB_ISOLATED_DATABASE, "YES",
     "Refusado: indicá APDB_ISOLATED_DATABASE=YES únicamente para una base aislada");
   assert.ok(process.env.DATABASE_URL, "DATABASE_URL obligatorio");
+  const connection = new URL(process.env.DATABASE_URL);
+  const host = (connection.hostname || "").toLowerCase();
+  const database = decodeURIComponent(connection.pathname.replace(/^\//, ""));
+  const localHost = ["127.0.0.1", "localhost", "::1"].includes(host);
+  const allowedDatabase = process.env.APDB_ALLOWED_DATABASE || "";
+  const databaseNameAllowed = allowedDatabase
+    ? database === allowedDatabase
+    : /^(liga_maxi|apdb)[_-][a-z0-9_-]+$/i.test(database);
+  assert.ok(!host.endsWith("supabase.co") && !host.endsWith("supabase.com"),
+    "Refusado: el gate no puede conectarse a Supabase");
+  assert.ok(localHost || process.env.APDB_ALLOW_NONLOCAL_ISOLATED === "YES",
+    "Refusado: la base debe ser local; para staging aislado se requiere APDB_ALLOW_NONLOCAL_ISOLATED=YES");
+  assert.ok(databaseNameAllowed,
+    `Refusado: nombre de base no aislada (${database || "vacío"})`);
   const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
   const client = await pool.connect();
   try {
+    const { rows: identity } = await client.query(`
+      select current_database() as database,
+             inet_server_addr()::text as address,
+             current_setting('server_version') as server_version
+    `);
+    assert.equal(identity[0].database, database, "La base conectada no coincide con DATABASE_URL");
+    console.log(`APDB_RLS_TARGET_VERIFIED database=${identity[0].database} address=${identity[0].address || host} server=${identity[0].server_version}`);
     await client.query("BEGIN TRANSACTION READ ONLY");
     const { rows: tables } = await client.query(`
       SELECT c.relname AS name, c.relrowsecurity AS rls,
