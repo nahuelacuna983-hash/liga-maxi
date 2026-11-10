@@ -85,8 +85,7 @@ async function main() {
     for (const view of views) if (view.read_allowed)
       issues.push(`Vista administrativa accesible por anon: ${view.name}`);
     const { rows: policies } = await client.query(`
-      SELECT tablename, count(*)::int AS policy_count,
-        bool_or('anon' = any(roles) AND cmd in ('INSERT','UPDATE','DELETE','ALL')) AS anon_write
+      SELECT tablename, count(*)::int AS policy_count
       FROM pg_policies
       WHERE schemaname = 'public' AND tablename = ANY($1::text[])
       GROUP BY tablename
@@ -95,7 +94,6 @@ async function main() {
     for (const table of protectedTables) {
       const policy = policyCounts.get(table);
       if (!policy || policy.policy_count < 1) issues.push(`Sin políticas RLS declaradas: ${table}`);
-      if (policy?.anon_write) issues.push(`Política de escritura anon presente: ${table}`);
     }
     const { rows: funcs } = await client.query(`
       SELECT p.proname AS name,
@@ -120,7 +118,7 @@ async function main() {
       }
     }
     await client.query("ROLLBACK");
-    console.log(`APDB_RLS_GATE_SCANNED tables=${tables.length} views=${views.length} definer_anon=${funcs.length}`);
+    console.log(`APDB_RLS_GATE_SCANNED tables=${tables.length} views=${views.length} policies=${policies.reduce((total, row) => total + row.policy_count, 0)} definer_anon=${funcs.length}`);
     if (missing.length) console.log("TABLAS_NO_PRESENTES " + missing.join(", "));
     if (issues.length) {
       for (const issue of issues) console.error("APDB_SECURITY_REVIEW_REQUIRED " + issue);

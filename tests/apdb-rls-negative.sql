@@ -22,4 +22,18 @@ begin
   end;
 end $$;
 reset role;
+
+-- Sonda positiva controlada: demuestra que una política permisiva con grant
+-- sí permitiría escribir. Todo se revierte al finalizar esta transacción; no
+-- forma parte de la fixture aprobada.
+begin;
+create temporary table rls_insecure_probe (id integer primary key);
+alter table rls_insecure_probe enable row level security;
+grant insert on rls_insecure_probe to anon;
+create policy rls_insecure_probe_write on rls_insecure_probe for insert to anon with check (true);
+set role anon;
+insert into rls_insecure_probe values (1);
+reset role;
+rollback;
+
 select 'APDB_RLS_NEGATIVE_BEHAVIOR_OK' as result;
