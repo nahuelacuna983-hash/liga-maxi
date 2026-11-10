@@ -1937,6 +1937,14 @@ function slugify(value) {
     .replace(/^-+|-+$/g, "") || "sin-nombre";
 }
 
+function temporadaDocumentalActiva() {
+  const temporada = estado.torneoActivo?.temporada;
+  if (temporada === null || temporada === undefined || String(temporada).trim() === "") {
+    return null;
+  }
+  return String(temporada).trim();
+}
+
 function nombreArchivoSeguro(value) {
   const nombre = String(value || "documento").trim();
   const partes = nombre.split(".");
@@ -4799,10 +4807,18 @@ async function subirDocumentoDelegado(event) {
   input.disabled = true;
   setStatus(status, `Subiendo ${files.length} archivo${files.length === 1 ? "" : "s"}...`, "");
 
+  const temporada = temporadaDocumentalActiva();
+  if (!temporada) {
+    input.disabled = false;
+    input.value = "";
+    setStatus(status, "Seleccioná un torneo con temporada antes de subir documentación.", "error");
+    return;
+  }
+
   for (const file of files) {
     const storagePath = [
       APP_CONFIG.organizacionActiva.storageSlug,
-      "2026",
+      temporada,
       slugify(categoriaNombre),
       documento.equipo_id || slugify(documento.equipo_nombre),
       documento.requirement_id,
@@ -5281,9 +5297,17 @@ async function subirDocumentoJugadorDelegado(event) {
   input.disabled = true;
   setStatus(status, "Subiendo documento del jugador...", "");
 
+  const temporada = temporadaDocumentalActiva();
+  if (!temporada) {
+    input.disabled = false;
+    input.value = "";
+    setStatus(status, "Seleccioná un torneo con temporada antes de subir documentación.", "error");
+    return;
+  }
+
   const storagePath = [
     APP_CONFIG.organizacionActiva.storageSlug,
-    "2026",
+    temporada,
     slugify(categoriaNombre),
     documento.equipo_id || slugify(documento.equipo_nombre),
     "jugadores",
