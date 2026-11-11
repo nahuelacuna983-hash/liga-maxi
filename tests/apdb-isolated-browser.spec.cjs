@@ -18,7 +18,8 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   test.setTimeout(60000);
   page.on("pageerror", (error) => console.log(`APDB_BROWSER_PAGE_ERROR ${error.message}`));
   page.on("requestfailed", (request) => console.log(`APDB_BROWSER_REQUEST_FAILED ${request.url()} ${request.failure()?.errorText || "unknown"}`));
-  await page.goto("/index_online.html?secureResults=1", { waitUntil: "commit", timeout: 10000 });
+  const response = await page.goto("/index_online.html?secureResults=1", { waitUntil: "domcontentloaded", timeout: 15000 });
+  console.log(`APDB_BROWSER_PAGE_STATE status=${response?.status() || "none"} url=${page.url()} title=${await page.title()} html=${(await page.content()).length}`);
   await page.locator("#auth-login").waitFor({ state: "visible", timeout: 10000 });
   const credentials = require("node:fs").readFileSync(credentialsFile, "utf8");
   const { email, password } = JSON.parse(credentials);
