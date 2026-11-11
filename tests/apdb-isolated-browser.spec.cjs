@@ -208,6 +208,9 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
 });
 
 async function runVisualPlayoffFormat(page, format) {
+  const navigation = await page.goto("/index_online.html?secureResults=1", { waitUntil: "domcontentloaded", timeout: 20000 });
+  expect(navigation?.status()).toBe(200);
+  await expect(page.locator("#tab-acceso")).toHaveCount(1, { timeout: 10000 });
   const categories = JSON.parse(Buffer.from(process.env.APDB_BROWSER_PLAYOFF_CATEGORIES || "", "base64").toString("utf8"));
   const credentialsData = JSON.parse(require("node:fs").readFileSync(credentialsFile, "utf8"));
   const item = categories.find((candidate) => candidate.format === format);
