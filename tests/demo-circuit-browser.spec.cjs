@@ -45,6 +45,7 @@ test('inscribe un jugador y conserva el historial documental visible', async ({ 
   await expect(page.locator('.status-pill', { hasText: 'PENDIENTE' })).toBeVisible();
   await expect(page.getByText('Apto físico: aprobado · apto-demo.pdf')).toBeVisible();
   await page.getByPlaceholder('Requisito documental').fill('Lista de buena fe');
+  await page.getByRole('combobox').filter({ has: page.locator('option[value="observado"]') }).selectOption('aprobado');
   await page.getByPlaceholder('Archivo o evidencia sintética').fill('lista-demo.pdf');
   await page.getByRole('button', { name: 'Registrar auditoría' }).click();
   await expect(page.locator('.status-pill', { hasText: 'DOCUMENTACIÓN COMPLETA' })).toBeVisible();
