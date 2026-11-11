@@ -1,0 +1,13 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const config = fs.readFileSync("supabase/config.toml", "utf8");
+const migration = fs.readFileSync("supabase/migrations/20261111000001_apdb_isolated_auth_storage.sql", "utf8");
+assert.match(config, /project_id = "apdb-2027-isolated"/);
+assert.match(config, /enabled = true/);
+assert.match(migration, /public\.apdb_save_result/);
+assert.match(migration, /auth\.uid\(\)/);
+assert.match(migration, /bucket_id = 'documentos'/);
+assert.match(migration, /revoke all on function/);
+assert.doesNotMatch(migration, /grant execute on function[^;]+\bto\s+(public|anon)\b/i);
+console.log("APDB_SUPABASE_ISOLATED_CONTRACT_OK");

@@ -1,0 +1,46 @@
+name: APdB Supabase isolated integration
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Rama autorizada de desarrollo"
+        required: true
+        default: codex/apdb-2027-operational-hardening
+        type: string
+
+jobs:
+  isolated:
+    if: ${{ inputs.ref == 'codex/apdb-2027-operational-hardening' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Verify branch and isolated project
+        run: |
+          test "${{ inputs.ref }}" = "codex/apdb-2027-operational-hardening"
+          grep -q 'project_id = "apdb-2027-isolated"' supabase/config.toml
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start disposable Supabase
+        run: supabase start
+      - name: Apply isolated migrations and seed
+        run: |
+          supabase db reset --local
+          supabase db query --local < supabase/seed.sql
+      - name: Run local contracts
+        run: |
+          node tests/apdb-supabase-isolated-contract.cjs
+          node tests/apdb-isolated-migration-contract.cjs
+          node tests/apdb-2027-authorization-contract.cjs
+      - name: Stop disposable Supabase
+        if: always()
+        run: supabase stop --no-backup
