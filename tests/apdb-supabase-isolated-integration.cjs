@@ -12,6 +12,7 @@ const run = crypto.randomUUID().slice(0, 8);
 const password = `Aislamiento-${crypto.randomBytes(12).toString("hex")}!a1`;
 const users = {
   association: { email: `association-${run}@example.invalid` },
+  associationB: { email: `association-b-${run}@example.invalid` },
   delegateA: { email: `delegate-a-${run}@example.invalid` },
   delegateB: { email: `delegate-b-${run}@example.invalid` },
 };
@@ -52,7 +53,7 @@ async function login(email) {
   try {
     const ids = {};
     for (const [key, user] of Object.entries(users)) ids[key] = await createAuthUser(user.email);
-    await client.query("insert into app_users (id, auth_user_id, organizacion_id, display_name, role) values ($1,$1,$2,'Asociacion test','asociacion'),($3,$3,$2,'Delegado A','delegado'),($4,$4,$5,'Delegado B','delegado')", [ids.association, orgA, ids.delegateA, ids.delegateB, orgB]);
+    await client.query("insert into app_users (id, auth_user_id, organizacion_id, display_name, role) values ($1,$1,$2,'Asociacion test','asociacion'),($3,$3,$2,'Delegado A','delegado'),($4,$4,$5,'Delegado B','delegado'),($6,$6,$5,'Asociacion B test','asociacion')", [ids.association, orgA, ids.delegateA, ids.delegateB, orgB, ids.associationB]);
     await client.query("insert into app_user_permissions (user_id, organizacion_id, torneo_id, categoria_id, can_view, can_load_results) values ($1,$2,'20000000-0000-0000-0000-000000000001',$3,true,true)", [ids.delegateA, orgA, categoryA]);
     await client.query("insert into partidos (id, categoria_id, local, visitante) values ($1,$2,'Equipo sintético A','Equipo sintético A visitante')", [matchA, categoryA]);
     await client.query("insert into partidos (id, categoria_id, local, visitante) values ($1,$2,'Equipo sintético A','Equipo sintético A visitante')", [matchConcurrent, categoryA]);
@@ -132,6 +133,22 @@ async function login(email) {
     });
     assert(!directPlayoff.response.ok, "Direct playoff write unexpectedly succeeded");
 
+    const associationBToken = await login(users.associationB.email);
+    const publish = (token, categoryId, matches) => request("/rest/v1/rpc/apdb_publish_fixture", {
+      method: "POST", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ p_categoria_id: categoryId, p_category_payload: { estado: "publicada", formato: "Top 4", playoffs: true, clasificados: 4 }, p_matches: matches })
+    });
+    const fixturePayload = [
+      { local: "Equipo B 1", visitante: "Equipo B 2", jornada: 1, fecha: "2027-04-01", libre: null },
+      { local: "Equipo B 2", visitante: "Equipo B 1", jornada: 2, fecha: "2027-04-08", libre: null }
+    ];
+    const published = await publish(associationBToken, "30000000-0000-0000-0000-000000000002", fixturePayload);
+    assert.equal(published.response.status, 200, `Fixture publication RPC rejected: ${published.response.status} ${JSON.stringify(published.body)}`);
+    const publishedRows = await client.query("select count(*)::int as count from partidos where categoria_id = $1", ["30000000-0000-0000-0000-000000000002"]);
+    assert.equal(publishedRows.rows[0].count, 2, "Fixture publication did not persist both matches");
+    const duplicatePublish = await publish(associationBToken, "30000000-0000-0000-0000-000000000002", fixturePayload);
+    assert.notEqual(duplicatePublish.response.status, 200, "Published fixture was unexpectedly replaceable");
+
     const concurrentPayload = { p_match_id: matchConcurrent, p_home_score: 70, p_away_score: 60 };
     const concurrent = await Promise.all([callRpc(delegateToken, concurrentPayload), callRpc(delegateToken, { ...concurrentPayload, p_home_score: 71 })]);
     assert.equal(concurrent.filter((item) => item.response.status === 200).length, 1, "Concurrent result writes were not serialized");
@@ -173,6 +190,7 @@ async function login(email) {
     await client.query("delete from playoff_matches where categoria_id = $1 and llave = $2", [categoryA, `semi-${run}`]).catch(() => {});
     await client.query("delete from match_schedules where partido_id in ($1, $2)", [matchA, matchConcurrent]).catch(() => {});
     await client.query("delete from partidos where id in ($1, $2)", [matchA, matchConcurrent]).catch(() => {});
+    await client.query("delete from partidos where categoria_id = $1", ["30000000-0000-0000-0000-000000000002"]).catch(() => {});
     await client.end();
   }
 })().catch((error) => { console.error(`APDB_SUPABASE_ISOLATED_INTEGRATION_FAILED ${error.message}`); process.exitCode = 1; });

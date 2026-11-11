@@ -97,3 +97,51 @@ grant execute on function public.apdb_upsert_playoff_match(jsonb) to authenticat
 -- All writes must go through the authenticated RPCs above.
 revoke insert, update, delete on public.match_schedules from anon, authenticated;
 revoke insert, update, delete on public.playoff_matches from anon, authenticated;
+
+create or replace function public.apdb_publish_fixture(
+  p_categoria_id uuid,
+  p_category_payload jsonb,
+  p_matches jsonb
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare actor public.app_users; current_count integer; inserted_count integer;
+begin
+  actor := public.apdb_admin_actor_for_category(p_categoria_id);
+  select count(*) into current_count from public.partidos where categoria_id = p_categoria_id;
+  if current_count > 0 then
+    raise exception 'fixture already published for category' using errcode = '55006';
+  end if;
+  if jsonb_typeof(p_matches) <> 'array' or jsonb_array_length(p_matches) = 0 then
+    raise exception 'fixture must contain matches' using errcode = '22023';
+  end if;
+  insert into public.partidos (categoria_id, local, visitante, jornada, fecha, libre,
+    puntos_local, puntos_visitante, estado_resultado, cargado_por, cargado_en)
+  select p_categoria_id, x.local, x.visitante, x.jornada, x.fecha, x.libre,
+    null, null, 'pendiente', null, null
+  from jsonb_to_recordset(p_matches) as x(
+    local text, visitante text, jornada integer, fecha date, libre text
+  );
+  get diagnostics inserted_count = row_count;
+  update public.categorias set
+    estado = coalesce(p_category_payload->>'estado', estado),
+    formato = coalesce(p_category_payload->>'formato', formato),
+    playoffs = coalesce((p_category_payload->>'playoffs')::boolean, playoffs),
+    clasificados = coalesce((p_category_payload->>'clasificados')::integer, clasificados),
+    dia_juego = coalesce((p_category_payload->>'dia_juego')::integer, dia_juego),
+    fecha_inicio = coalesce((p_category_payload->>'fecha_inicio')::date, fecha_inicio),
+    fecha_fin = coalesce((p_category_payload->>'fecha_fin')::date, fecha_fin),
+    frecuencia = coalesce((p_category_payload->>'frecuencia')::integer, frecuencia),
+    fechas_bloqueadas = coalesce(p_category_payload->'fechas_bloqueadas', fechas_bloqueadas),
+    series_playoff = coalesce(p_category_payload->'series_playoff', series_playoff)
+  where id = p_categoria_id;
+  return inserted_count;
+end;
+$$;
+
+revoke all on function public.apdb_publish_fixture(uuid, jsonb, jsonb) from public, anon;
+grant execute on function public.apdb_publish_fixture(uuid, jsonb, jsonb) to authenticated;
+revoke insert, update, delete on public.categorias from anon, authenticated;

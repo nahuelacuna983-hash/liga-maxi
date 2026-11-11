@@ -10457,16 +10457,34 @@ async function publicarFixtureSimuladoPlanner() {
     }
 
     const payload = armarPayloadFixtureSimulado(simulacion, categoria.id);
-    const { error } = await supabaseClient
-      .from("partidos")
-      .insert(payload);
+    const { data: publishedCount, error } = usaRpcResultadosSeguros()
+      ? await supabaseClient.rpc("apdb_publish_fixture", {
+        p_categoria_id: categoria.id,
+        p_category_payload: {
+          estado: "publicada",
+          formato: simulacion.formato?.playoffsTexto || null,
+          playoffs: Number(simulacion.formato?.clasificados || 0) > 0,
+          clasificados: simulacion.formato?.clasificados || null,
+          dia_juego: simulacion.dia === "" || simulacion.dia == null ? null : Number(simulacion.dia),
+          fecha_inicio: simulacion.fechaInicio || null,
+          fecha_fin: simulacion.fechaFin || null,
+          frecuencia: simulacion.frecuencia || null,
+          fechas_bloqueadas: simulacion.fechasBloqueadas || [],
+          series_playoff: armarSeriesPlayoffCategoriaPlanner(simulacion.formato || {})
+        },
+        p_matches: payload.map((item) => ({
+          local: item.local, visitante: item.visitante, jornada: item.jornada,
+          fecha: item.fecha, libre: item.libre
+        }))
+      })
+      : await supabaseClient.from("partidos").insert(payload);
 
     if (error) {
       setStatus(status, `No se pudo publicar el fixture: ${error.message}`, "error");
       return;
     }
 
-    await guardarFormatoCategoriaPublicadaPlanner(categoria, simulacion);
+    if (!usaRpcResultadosSeguros()) await guardarFormatoCategoriaPublicadaPlanner(categoria, simulacion);
 
     await cargarTorneoActivo();
     const categoriasActualizadas = await cargarCategorias();
