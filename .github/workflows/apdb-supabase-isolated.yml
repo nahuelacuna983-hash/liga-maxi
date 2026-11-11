@@ -1,6 +1,11 @@
 name: APdB Supabase isolated integration
 
 on:
+  push:
+    branches:
+      - codex/apdb-2027-operational-hardening
+    paths:
+      - .github/workflows/apdb-supabase-isolated.trigger
   workflow_dispatch:
     inputs:
       ref:
