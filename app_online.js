@@ -5522,16 +5522,21 @@ async function guardarResultadoAsociacion() {
 
   setStatus(status, "Guardando corrección...", "");
 
-  const { error } = await supabaseClient
-    .from("partidos")
-    .update({
+  const { error } = usaRpcResultadosSeguros()
+    ? await supabaseClient.rpc("apdb_association_update_result", {
+      p_match_id: partidoId, p_home_score: pl, p_away_score: pv,
+      p_result_state: "jugado", p_action: "correccion"
+    })
+    : await supabaseClient
+      .from("partidos")
+      .update({
       puntos_local: pl,
       puntos_visitante: pv,
       estado_resultado: "jugado",
       cargado_por: "ADMIN",
       cargado_en: new Date().toISOString()
-    })
-    .eq("id", partidoId);
+      })
+      .eq("id", partidoId);
 
   if (error) {
     setStatus(status, `No se pudo guardar: ${error.message}`, "error");
@@ -5576,16 +5581,21 @@ async function guardarResultadoAdministrativoSinPuntos() {
   }
 
   setStatus(status, "Guardando 0-0 administrativo...", "");
-  const { error } = await supabaseClient
-    .from("partidos")
-    .update({
+  const { error } = usaRpcResultadosSeguros()
+    ? await supabaseClient.rpc("apdb_association_update_result", {
+      p_match_id: partidoId, p_home_score: 0, p_away_score: 0,
+      p_result_state: "administrativo_sin_puntos", p_action: "administrativo_sin_puntos"
+    })
+    : await supabaseClient
+      .from("partidos")
+      .update({
       puntos_local: 0,
       puntos_visitante: 0,
       estado_resultado: "administrativo_sin_puntos",
       cargado_por: "ADMIN - 0-0 SIN PUNTOS",
       cargado_en: new Date().toISOString()
-    })
-    .eq("id", partidoId);
+      })
+      .eq("id", partidoId);
 
   if (error) {
     setStatus(status, `No se pudo guardar: ${error.message}`, "error");
@@ -5636,16 +5646,21 @@ async function resolverPartidoAdministrativamente(ganador) {
 
   setStatus(status, "Guardando resolucion administrativa...", "");
 
-  const { error } = await supabaseClient
-    .from("partidos")
-    .update({
+  const { error } = usaRpcResultadosSeguros()
+    ? await supabaseClient.rpc("apdb_association_update_result", {
+      p_match_id: partidoId, p_home_score: ganaLocal ? 20 : 0, p_away_score: ganaLocal ? 0 : 20,
+      p_result_state: ganaLocal ? "resolucion_local" : "resolucion_visitante", p_action: "resolucion_admin"
+    })
+    : await supabaseClient
+      .from("partidos")
+      .update({
       puntos_local: ganaLocal ? 20 : 0,
       puntos_visitante: ganaLocal ? 0 : 20,
       estado_resultado: ganaLocal ? "resolucion_local" : "resolucion_visitante",
       cargado_por: "ADMIN - RESOLUCION",
       cargado_en: new Date().toISOString()
-    })
-    .eq("id", partidoId);
+      })
+      .eq("id", partidoId);
 
   if (error) {
     setStatus(status, `No se pudo guardar la resolucion: ${error.message}`, "error");
@@ -5693,16 +5708,21 @@ async function anularResultadoAsociacion() {
 
   setStatus(status, "Anulando resultado...", "");
 
-  const { error } = await supabaseClient
-    .from("partidos")
-    .update({
+  const { error } = usaRpcResultadosSeguros()
+    ? await supabaseClient.rpc("apdb_association_update_result", {
+      p_match_id: partidoId, p_home_score: null, p_away_score: null,
+      p_result_state: "pendiente", p_action: "anulacion"
+    })
+    : await supabaseClient
+      .from("partidos")
+      .update({
       puntos_local: null,
       puntos_visitante: null,
       estado_resultado: "pendiente",
       cargado_por: "ADMIN - ANULADO",
       cargado_en: new Date().toISOString()
-    })
-    .eq("id", partidoId);
+      })
+      .eq("id", partidoId);
 
   if (error) {
     setStatus(status, `No se pudo anular: ${error.message}`, "error");
