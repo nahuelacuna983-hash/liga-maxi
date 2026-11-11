@@ -17,6 +17,13 @@ test.beforeEach(async ({ page }) => {
 test("index_online usa Supabase aislado y conserva la sesión autorizada", async ({ page }) => {
   test.setTimeout(60000);
   page.on("pageerror", (error) => console.log(`APDB_BROWSER_PAGE_ERROR ${error.message}`));
+  page.on("console", (message) => console.log(`APDB_BROWSER_CONSOLE ${message.type()} ${message.text()}`));
+  page.on("request", (request) => {
+    if (request.url().includes("/auth/v1/token")) console.log(`APDB_BROWSER_AUTH_REQUEST ${request.method()} ${request.url()}`);
+  });
+  page.on("response", async (response) => {
+    if (response.url().includes("/auth/v1/token")) console.log(`APDB_BROWSER_AUTH_RESPONSE ${response.status()}`);
+  });
   page.on("requestfailed", (request) => console.log(`APDB_BROWSER_REQUEST_FAILED ${request.url()} ${request.failure()?.errorText || "unknown"}`));
   const response = await page.goto("/index_online.html?secureResults=1", { waitUntil: "domcontentloaded", timeout: 15000 });
   console.log(`APDB_BROWSER_PAGE_STATE status=${response?.status() || "none"} url=${page.url()} title=${await page.title()} html=${(await page.content()).length}`);
@@ -27,7 +34,10 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   await page.locator("#auth-email").fill(email);
   await page.locator("#auth-password").fill(password);
   await page.locator("#auth-login").click();
-  await expect(page.locator("#auth-status")).not.toHaveText("", { timeout: 15000 });
+  await expect.poll(() => page.locator("#auth-status").innerText(), {
+    timeout: 20000,
+    message: "La autenticación no alcanzó un estado terminal"
+  }).toMatch(/Ingreso correcto|No se pudo ingresar|Autenticación requerida|Identidad revocada/);
   const authStatus = await page.locator("#auth-status").innerText();
   console.log(`APDB_BROWSER_AUTH_STATUS ${authStatus}`);
   expect(authStatus).toContain("Ingreso correcto");
