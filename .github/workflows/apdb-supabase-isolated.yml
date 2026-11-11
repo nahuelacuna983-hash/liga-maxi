@@ -51,6 +51,18 @@ jobs:
           node tests/apdb-isolated-migration-contract.cjs
           node tests/apdb-2027-authorization-contract.cjs
           node tests/apdb-supabase-isolated-integration.cjs
+          node tests/apdb-championship-isolated-integration.cjs
+      - name: Install Chromium for isolated browser validation
+        run: npx playwright install --with-deps chromium
+      - name: Prepare isolated browser identity
+        run: node tests/apdb-isolated-browser-setup.cjs
+      - name: Start existing application server
+        run: node tools/demo-server.cjs > "$RUNNER_TEMP/apdb-browser-server.log" 2>&1 &
+        shell: bash
+      - name: Run isolated Chromium validation
+        env:
+          APDB_ISOLATED_BROWSER_URL: ${{ env.SUPABASE_URL }}
+        run: npx playwright test tests/apdb-isolated-browser.spec.cjs
       - name: Stop disposable Supabase
         if: always()
         run: supabase stop --no-backup
