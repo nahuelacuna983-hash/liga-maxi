@@ -55,7 +55,7 @@ begin
   if actor.id is null then raise exception 'APDB_AUTH_REQUIRED'; end if;
   select * into target from public.partidos where id = p_match_id for update;
   if target.id is null then raise exception 'APDB_MATCH_NOT_FOUND'; end if;
-  select (actor.role in ('association', 'admin', 'organizer') or exists (
+  select (actor.role in ('asociacion', 'admin_general') or exists (
     select 1 from public.app_user_permissions p
     where p.user_id = actor.id and p.categoria_id = target.categoria_id
       and p.can_load_results

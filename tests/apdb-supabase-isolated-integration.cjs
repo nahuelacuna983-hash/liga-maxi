@@ -57,12 +57,38 @@ async function login(email) {
     const delegateToken = await login(users.delegateA.email);
     const allowed = await request("/rest/v1/rpc/apdb_save_result", { method: "POST", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${delegateToken}`, "content-type": "application/json" }, body: JSON.stringify({ p_match_id: matchA, p_home_score: 80, p_away_score: 70 }) });
     assert.equal(allowed.response.status, 200, `Authorized delegate rejected: ${allowed.response.status}`);
+
+    const storagePath = `${orgA}/integration-${run}.txt`;
+    const storageRequest = (token, path) => request(`/storage/v1/object/documentos/${path}`, {
+      method: "POST",
+      headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}`, "content-type": "application/pdf" },
+      body: "synthetic APdB isolated document",
+    });
+    const storageRead = (token, path) => request(`/storage/v1/object/documentos/${path}`, {
+      headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
+    });
+    const uploaded = await storageRequest(delegateToken, storagePath);
+    assert(uploaded.response.ok, `Authorized storage upload rejected: ${uploaded.response.status}`);
+    const readable = await storageRead(delegateToken, storagePath);
+    assert(readable.response.ok, `Authorized storage read rejected: ${readable.response.status}`);
+    const otherToken = await login(users.delegateB.email);
+    const crossRead = await storageRead(otherToken, storagePath);
+    assert(!crossRead.response.ok, "Cross-organization storage read unexpectedly succeeded");
+    const crossUpload = await storageRequest(otherToken, `${orgA}/cross-${run}.pdf`);
+    assert(!crossUpload.response.ok, "Cross-organization storage upload unexpectedly succeeded");
+    const directPatch = await request(`/rest/v1/partidos?id=eq.${matchA}`, {
+      method: "PATCH",
+      headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${delegateToken}`, "content-type": "application/json", Prefer: "return=representation" },
+      body: JSON.stringify({ puntos_local: 99, puntos_visitante: 1 }),
+    });
+    assert(!directPatch.response.ok, "Direct REST result write unexpectedly succeeded");
     await client.query("update app_users set active = false where auth_user_id = $1", [ids.delegateA]);
     const revoked = await request("/rest/v1/rpc/apdb_save_result", { method: "POST", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${delegateToken}`, "content-type": "application/json" }, body: JSON.stringify({ p_match_id: matchA, p_home_score: 81, p_away_score: 70 }) });
     assert.notEqual(revoked.response.status, 200, "Revoked delegate modified a result");
-    const otherToken = await login(users.delegateB.email);
     const crossOrg = await request("/rest/v1/rpc/apdb_save_result", { method: "POST", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${otherToken}`, "content-type": "application/json" }, body: JSON.stringify({ p_match_id: matchA, p_home_score: 82, p_away_score: 70 }) });
     assert.notEqual(crossOrg.response.status, 200, "Cross-organization delegate modified a result");
+    const revokedStorage = await storageRequest(delegateToken, `${orgA}/revoked-${run}.txt`);
+    assert(!revokedStorage.response.ok, "Revoked delegate unexpectedly uploaded storage content");
     console.log("APDB_SUPABASE_ISOLATED_INTEGRATION_OK");
   } finally {
     await client.query("delete from partidos where id = $1", [matchA]).catch(() => {});
