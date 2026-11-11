@@ -6072,6 +6072,9 @@ async function aplicarPermisosAutenticados(permisos) {
     estado.asociacionDesbloqueada = true;
     estado.usuarioAsociacion = permisos[0];
     aplicarBloqueoAsociacion();
+    // The association panel may have initialized before Auth completed.
+    // Reconcile its category selector once the authenticated identity is known.
+    await inicializarAsociacion();
     cargarDatosAsociacionActual().catch((error) => {
       setStatus($("asociacion-status"), `No se pudieron cargar datos de asociacion: ${error.message}`, "error");
     });
