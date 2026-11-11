@@ -58,7 +58,7 @@ jobs:
           node tests/apdb-supabase-isolated-integration.cjs
           node tests/apdb-championship-isolated-integration.cjs
       - name: Install Chromium for isolated browser validation
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
       - name: Prepare isolated browser identity
         run: node tests/apdb-isolated-browser-setup.cjs
       - name: Start existing application server
