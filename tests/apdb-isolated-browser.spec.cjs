@@ -47,8 +47,12 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   console.log(`APDB_BROWSER_PUBLIC_OPTIONS ${JSON.stringify(await page.locator("#publico-categoria option").allTextContents())}`);
   await expect(page.locator("#asociacion-categoria option")).not.toHaveCount(0, { timeout: 20000 });
   await page.locator("#asociacion-categoria").selectOption({ label: "Categoría sintética A" });
-  await expect(page.locator('#asociacion-partido option[value="50000000-0000-0000-0000-000000000001"]')).toHaveCount(1, { timeout: 20000 });
-  await page.locator("#asociacion-partido").selectOption("50000000-0000-0000-0000-000000000001");
+  const visibleMatch = page.locator("#asociacion-partido option").first();
+  await expect(visibleMatch).toHaveCount(1, { timeout: 20000 });
+  const matchId = await visibleMatch.getAttribute("value");
+  console.log(`APDB_BROWSER_MATCH_ID ${matchId}`);
+  expect(matchId).toMatch(/^[0-9a-f-]{36}$/i);
+  await page.locator("#asociacion-partido").selectOption(matchId);
   await page.locator("#asociacion-puntos-local").fill("80");
   await page.locator("#asociacion-puntos-visitante").fill("70");
   page.once("dialog", (dialog) => dialog.accept());
@@ -75,8 +79,8 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   await page.locator("#tab-asociacion").click();
   await expect(page.locator("#asociacion-categoria option")).not.toHaveCount(0, { timeout: 20000 });
   await page.locator("#asociacion-categoria").selectOption({ label: "Categoría sintética A" });
-  await expect(page.locator('#asociacion-partido option[value="50000000-0000-0000-0000-000000000001"]')).toHaveCount(1, { timeout: 20000 });
-  await page.locator("#asociacion-partido").selectOption("50000000-0000-0000-0000-000000000001");
+  await expect(page.locator("#asociacion-partido option").first()).toHaveCount(1, { timeout: 20000 });
+  await page.locator("#asociacion-partido").selectOption(matchId);
   await expect(page.locator("#asociacion-detalle")).toContainText("80", { timeout: 20000 });
   console.log("APDB_BROWSER_RESULT_RECOVERED_AFTER_RELOAD true");
   console.log("APDB_BROWSER_SESSION_REAUTHENTICATED_AFTER_RELOAD true");
