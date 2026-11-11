@@ -1,1 +1,1 @@
-visual-ui-result-certification-schedule-delegate
+visual-ui-result-certification-schedule-sync
