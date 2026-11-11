@@ -19,6 +19,7 @@ const orgA = "10000000-0000-0000-0000-000000000001";
 const orgB = "10000000-0000-0000-0000-000000000002";
 const categoryA = "30000000-0000-0000-0000-000000000001";
 const matchA = crypto.randomUUID();
+const matchConcurrent = crypto.randomUUID();
 
 async function request(path, options = {}) {
   const response = await fetch(`${base}${path}`, options);
@@ -54,9 +55,43 @@ async function login(email) {
     await client.query("insert into app_users (id, auth_user_id, organizacion_id, display_name, role) values ($1,$1,$2,'Asociacion test','asociacion'),($3,$3,$2,'Delegado A','delegado'),($4,$4,$5,'Delegado B','delegado')", [ids.association, orgA, ids.delegateA, ids.delegateB, orgB]);
     await client.query("insert into app_user_permissions (user_id, organizacion_id, torneo_id, categoria_id, can_view, can_load_results) values ($1,$2,'20000000-0000-0000-0000-000000000001',$3,true,true)", [ids.delegateA, orgA, categoryA]);
     await client.query("insert into partidos (id, categoria_id, local, visitante) values ($1,$2,'Equipo sintético A','Equipo sintético A visitante')", [matchA, categoryA]);
+    await client.query("insert into partidos (id, categoria_id, local, visitante) values ($1,$2,'Equipo sintético A','Equipo sintético A visitante')", [matchConcurrent, categoryA]);
     const delegateToken = await login(users.delegateA.email);
+    const associationToken = await login(users.association.email);
     const allowed = await request("/rest/v1/rpc/apdb_save_result", { method: "POST", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${delegateToken}`, "content-type": "application/json" }, body: JSON.stringify({ p_match_id: matchA, p_home_score: 80, p_away_score: 70 }) });
     assert.equal(allowed.response.status, 200, `Authorized delegate rejected: ${allowed.response.status}`);
+
+    const callAssociation = (payload) => request("/rest/v1/rpc/apdb_association_update_result", {
+      method: "POST",
+      headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${associationToken}`, "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const associationPayload = (state, home, away, action) => ({
+      p_match_id: matchA, p_home_score: home, p_away_score: away,
+      p_result_state: state, p_action: action,
+    });
+    let corrected = await callAssociation(associationPayload("jugado", 81, 70, "correccion"));
+    assert.equal(corrected.response.status, 200, `Association correction rejected: ${corrected.response.status} ${JSON.stringify(corrected.body)}`);
+    let tie = await callAssociation(associationPayload("jugado", 75, 75, "correccion"));
+    assert.notEqual(tie.response.status, 200, "Association tie correction unexpectedly succeeded");
+    let annulled = await callAssociation(associationPayload("pendiente", null, null, "anulacion"));
+    assert.equal(annulled.response.status, 200, `Association annulment rejected: ${annulled.response.status}`);
+    for (const [state, home, away] of [["administrativo_sin_puntos", 0, 0], ["resolucion_local", 20, 0], ["resolucion_visitante", 0, 20]]) {
+      const resolved = await callAssociation(associationPayload(state, home, away, state));
+      assert.equal(resolved.response.status, 200, `Association ${state} rejected: ${resolved.response.status} ${JSON.stringify(resolved.body)}`);
+      const reset = await callAssociation(associationPayload("pendiente", null, null, "anulacion"));
+      assert.equal(reset.response.status, 200, `Reset after ${state} rejected: ${reset.response.status}`);
+    }
+    const audit = await client.query("select accion, estado_resultado_nuevo from result_change_logs where partido_id = $1 order by created_at", [matchA]);
+    assert(audit.rows.length >= 6, `Expected association audit history, got ${audit.rows.length}`);
+    assert(audit.rows.some((row) => row.accion === "correccion"));
+    assert(audit.rows.some((row) => row.estado_resultado_nuevo === "resolucion_local"));
+    assert(audit.rows.some((row) => row.estado_resultado_nuevo === "resolucion_visitante"));
+
+    const concurrentPayload = { p_match_id: matchConcurrent, p_home_score: 70, p_away_score: 60 };
+    const concurrent = await Promise.all([callRpc(delegateToken, concurrentPayload), callRpc(delegateToken, { ...concurrentPayload, p_home_score: 71 })]);
+    assert.equal(concurrent.filter((item) => item.response.status === 200).length, 1, "Concurrent result writes were not serialized");
+    assert.equal(concurrent.filter((item) => item.response.status !== 200).length, 1, "Concurrent duplicate result was not rejected");
 
     const storagePath = `${orgA}/integration-${run}.txt`;
     const storageRequest = (token, path) => request(`/storage/v1/object/documentos/${path}`, {
@@ -91,7 +126,7 @@ async function login(email) {
     assert(!revokedStorage.response.ok, "Revoked delegate unexpectedly uploaded storage content");
     console.log("APDB_SUPABASE_ISOLATED_INTEGRATION_OK");
   } finally {
-    await client.query("delete from partidos where id = $1", [matchA]).catch(() => {});
+    await client.query("delete from partidos where id in ($1, $2)", [matchA, matchConcurrent]).catch(() => {});
     await client.end();
   }
 })().catch((error) => { console.error(`APDB_SUPABASE_ISOLATED_INTEGRATION_FAILED ${error.message}`); process.exitCode = 1; });
