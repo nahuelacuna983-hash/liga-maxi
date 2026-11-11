@@ -1,6 +1,11 @@
 name: APdB Supabase isolated integration
 
 on:
+  push:
+    branches:
+      - codex/apdb-2027-operational-hardening
+    paths:
+      - .github/workflows/apdb-supabase-isolated.trigger
   workflow_dispatch:
     inputs:
       ref:
@@ -11,16 +16,18 @@ on:
 
 jobs:
   isolated:
-    if: ${{ inputs.ref == 'codex/apdb-2027-operational-hardening' }}
+    if: ${{ github.event_name == 'push' || inputs.ref == 'codex/apdb-2027-operational-hardening' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      AUTHORIZED_REF: ${{ github.event_name == 'push' && github.ref_name || inputs.ref }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ env.AUTHORIZED_REF }}
       - name: Verify branch and isolated project
         run: |
-          test "${{ inputs.ref }}" = "codex/apdb-2027-operational-hardening"
+          test "$AUTHORIZED_REF" = "codex/apdb-2027-operational-hardening"
           grep -q 'project_id = "apdb-2027-isolated"' supabase/config.toml
       - uses: supabase/setup-cli@v1
         with:
