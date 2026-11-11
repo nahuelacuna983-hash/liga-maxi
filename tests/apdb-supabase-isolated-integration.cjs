@@ -61,16 +61,16 @@ async function login(email) {
     const storagePath = `${orgA}/integration-${run}.txt`;
     const storageRequest = (token, path) => request(`/storage/v1/object/documentos/${path}`, {
       method: "POST",
-      headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}`, "content-type": "application/pdf" },
-      body: "synthetic APdB isolated document",
+      headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}`, "content-type": "application/pdf", "x-upsert": "false" },
+      body: Buffer.from("%PDF-1.4\n% synthetic APdB isolated document\n"),
     });
     const storageRead = (token, path) => request(`/storage/v1/object/documentos/${path}`, {
       headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
     });
     const uploaded = await storageRequest(delegateToken, storagePath);
-    assert(uploaded.response.ok, `Authorized storage upload rejected: ${uploaded.response.status}`);
+    assert(uploaded.response.ok, `Authorized storage upload rejected: ${uploaded.response.status} ${JSON.stringify(uploaded.body)}`);
     const readable = await storageRead(delegateToken, storagePath);
-    assert(readable.response.ok, `Authorized storage read rejected: ${readable.response.status}`);
+    assert(readable.response.ok, `Authorized storage read rejected: ${readable.response.status} ${JSON.stringify(readable.body)}`);
     const otherToken = await login(users.delegateB.email);
     const crossRead = await storageRead(otherToken, storagePath);
     assert(!crossRead.response.ok, "Cross-organization storage read unexpectedly succeeded");
