@@ -1,5 +1,27 @@
 # APdB Liga Maxi - Control del proyecto
 
+## Continuidad vigente - 2026-11-11
+
+- Rama de trabajo: `codex/apdb-2027-operational-hardening`.
+- Ultimo commit publicado: `eaface9caf9a42327c5f091545cc053eea23a65a`.
+- Piloto local aislado: `tools/start-apdb-isolated-pilot.ps1`; usa Supabase local descartable y puede ejecutar `db reset --local`.
+- Staging persistente: no creado. La plantilla y el procedimiento estan en `tools/apdb-staging-config.example.json` y `docs/APDB_2027_STAGING_RUNBOOK.md`.
+- No hay URL de staging habilitada ni credenciales persistentes en el repositorio.
+- La ejecucion GitHub Actions #47 (`bed16ad`) permanece en estado `Queued`; no se considera una certificacion visual.
+
+### Estado del ultimo bloque
+
+El Bloque 13 dejo publicado el servidor aislado con lista explicita de archivos publicos y validacion de configuracion staging. Las regresiones demo locales aprobaron contratos deportivos, autorizacion, aislamiento, programacion, playoffs y tres pruebas Chromium sinteticas.
+
+El siguiente trabajo es destrabar la validacion visual aislada de playoffs Top 4, Top 6 y Top 8. Debe comprobar generacion, avance, campeon y recuperacion desde `index_online.html`; las pruebas Node/RPC no sustituyen esa evidencia.
+
+### Referencias
+
+- Persistencia y continuidad: `docs/APDB_2027_PERSISTENCIA_CONTINUIDAD.md`.
+- Staging: `docs/APDB_2027_STAGING_RUNBOOK.md`.
+- Demostracion institucional: `docs/APDB_2027_DEMOSTRACION_INSTITUCIONAL.md`.
+- Paquetes y cPanel: `docs/paquete-cpanel.md` y `docs/prueba-controlada-dominio-cpanel.md`.
+
 ## Regla principal
 
 La app esta en uso real. Los cambios deben ser incrementales y reversibles.
