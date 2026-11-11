@@ -8,7 +8,7 @@ values
 
 insert into public.torneos (id, organizacion_id, nombre, temporada, estado)
 values
-  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Torneo sintético A', '2027-test', 'borrador'),
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Torneo sintético A', '2027-test', 'en_juego'),
   ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000002', 'Torneo sintético B', '2027-test', 'borrador');
 
 insert into public.categorias (id, torneo_id, nombre, estado)
@@ -19,4 +19,11 @@ values
 insert into public.equipos (id, categoria_id, nombre, orden_inicial)
 values
   ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'Equipo sintético A', 1),
+  ('40000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000001', 'Equipo sintético A visitante', 2),
   ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002', 'Equipo sintético B', 1);
+
+insert into public.partidos
+  (id, categoria_id, local, visitante, jornada, fecha, estado_resultado)
+values
+  ('50000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001',
+   'Equipo sintético A', 'Equipo sintético A visitante', 1, '2027-07-01', 'pendiente');
