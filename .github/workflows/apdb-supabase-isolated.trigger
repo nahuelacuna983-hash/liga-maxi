@@ -1,1 +1,1 @@
-visual-ui-result-certification-logout-panel
+visual-ui-result-certification-delegate-pending-match
