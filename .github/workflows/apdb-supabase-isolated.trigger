@@ -1,1 +1,1 @@
-championship-e2e-certification-v6
+championship-e2e-certification-v7

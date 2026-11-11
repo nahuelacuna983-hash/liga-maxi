@@ -4594,6 +4594,13 @@ async function refrescarPublicoCategoria(nombreCategoria) {
 function inicializarDatosInternosEnSegundoPlano(categoriaInicial) {
   window.setTimeout(async () => {
     try {
+      if (usaRpcResultadosSeguros()) {
+        const accessTab = $("tab-acceso");
+        if (accessTab) {
+          accessTab.hidden = false;
+          accessTab.removeAttribute("aria-hidden");
+        }
+      }
       await inicializarSesionAuth();
       await cargarRequisitosDocumentales();
       await refrescarCategoria(categoriaInicial, {
