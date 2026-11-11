@@ -78,6 +78,7 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   await page.locator("#asociacion-guardar").click();
   expect((await saveResponse).status()).toBe(200);
   await expect(page.locator("#asociacion-status")).toContainText("Corrección guardada correctamente.");
+  await page.locator("#asociacion-partido").selectOption(matchId);
   await expect(page.locator("#asociacion-puntos-local")).toHaveValue("80");
   await expect(page.locator("#asociacion-puntos-visitante")).toHaveValue("70");
   console.log("APDB_BROWSER_ASSOCIATION_RESULT_PERSISTED true");
@@ -127,7 +128,7 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   await expect(page.locator("#asociacion-categoria option")).not.toHaveCount(0, { timeout: 20000 });
   await page.locator("#asociacion-categoria").selectOption({ label: "Categoría sintética A" });
   await expect(page.locator("#asociacion-partido option").first()).toHaveCount(1, { timeout: 20000 });
-  await page.locator("#asociacion-partido").evaluate((select, id) => { select.value = id; }, matchId);
+  await page.locator("#asociacion-partido").selectOption(matchId);
   await expect(page.locator("#asociacion-puntos-local")).toHaveValue("80", { timeout: 20000 });
   await expect(page.locator("#asociacion-puntos-visitante")).toHaveValue("70", { timeout: 20000 });
   console.log("APDB_BROWSER_RESULT_RECOVERED_AFTER_RELOAD true");
