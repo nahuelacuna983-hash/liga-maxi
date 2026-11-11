@@ -1,6 +1,8 @@
 console.log("APP ONLINE NUEVA CARGADA");
-const SUPABASE_URL = "https://eshbydpsmypflfxpmhyk.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
+// Isolated runners may inject their local Supabase endpoint before this script loads.
+// The published application keeps its existing configuration by default.
+const SUPABASE_URL = window.APDB_SUPABASE_URL || "https://eshbydpsmypflfxpmhyk.supabase.co";
+const SUPABASE_ANON_KEY = window.APDB_SUPABASE_ANON_KEY || "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
 const TORNEO_ID_FALLBACK = "7d0971e3-66ee-4791-bcbf-bace1d2fefb9";
 let TORNEO_ID = TORNEO_ID_FALLBACK;
 let deferredInstallPrompt = null;
