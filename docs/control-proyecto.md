@@ -19,6 +19,8 @@ El Bloque 16 agrego ajustes responsive acotados en `index_online.html`: controle
 
 La ejecucion aislada #48 aprobo autenticacion, programacion, resultados, Top 6 y Top 8; Top 4 agotaba el timeout porque el panel reemplazaba el boton de generacion mientras se asentaba la categoria. La prueba ahora resuelve el boton vigente en el momento del clic y registra la fase, sin relajar la espera de la respuesta RPC. Falta repetir CI para certificar Top 4.
 
+En el Bloque 18 se agrego un indicador operativo en el panel de playoffs de Asociacion con fase actual, partidos pendientes, instruccion de avance y campeon cuando corresponde. La ejecucion #49 mantuvo Top 6/8 aprobados y reprodujo el fallo Top 4 sin RPC; la correccion ahora espera el estado `ready` del panel despues de completar la recarga de categoria antes de accionar Generar llave.
+
 ### Referencias
 
 - Persistencia y continuidad: `docs/APDB_2027_PERSISTENCIA_CONTINUIDAD.md`.

@@ -66,7 +66,7 @@ async function clickLiveControl(page, selector, label) {
 async function completeVisualPlayoff(page, format, categoryName, credentials) {
   await loginAssociation(page, credentials);
   await page.locator("#asociacion-categoria").selectOption({ label: categoryName });
-  await expect(page.locator(".playoff-generate-btn")).toBeVisible({ timeout: 20000 });
+  await expect(page.locator(`#asociacion-playoffs[data-category-render-state="ready"][data-category-name="${categoryName}"] .playoff-generate-btn`)).toBeVisible({ timeout: 20000 });
   const generateResponse = page.waitForResponse((item) => item.url().includes("/rest/v1/rpc/apdb_upsert_playoff_match") && item.request().method() === "POST");
   await clickLiveControl(page, ".playoff-generate-btn", `generate-top-${format}`);
   expect((await generateResponse).status()).toBe(200);

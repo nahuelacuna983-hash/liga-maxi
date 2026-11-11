@@ -5777,6 +5777,7 @@ function renderPlayoffsAsociacion(nombreCategoria) {
 
   const categoria = obtenerCategoriaPorNombre(nombreCategoria);
   const partidos = obtenerPartidosPlayoffEditables(nombreCategoria);
+  const cierre = calcularEstadoCierreTorneo(nombreCategoria);
 
   if (!categoria || !partidos.length) {
     container.innerHTML = `
@@ -5796,6 +5797,12 @@ function renderPlayoffsAsociacion(nombreCategoria) {
         <button class="secondary playoff-generate-btn" type="button">Generar llave</button>
         <button class="secondary playoff-advance-btn" type="button">Avanzar ronda</button>
       </div>
+    </div>
+    <div class="playoff-operation-status" role="status" aria-live="polite">
+      <strong>Estado de la llave</strong>
+      <span>Fase actual: ${escapeHtml(cierre.campeon ? "Finalizada" : (partidos.find((partido) => !partidoPlayoffTieneResultado(partido))?.fase || "Lista para generar"))}</span>
+      <span>Partidos pendientes: ${cierre.playoffsPendientes}</span>
+      <span>${cierre.campeon ? `Campeon: ${escapeHtml(cierre.campeon)}` : "Avanza cuando la fase actual este completa."}</span>
     </div>
     <div class="assoc-playoff-list">
       ${partidos.map((partido) => `
@@ -8281,6 +8288,11 @@ async function inicializarAsociacion() {
 
   $("asociacion-categoria").addEventListener("change", async (e) => {
     const categoria = e.target.value;
+    const playoffsPanel = $("asociacion-playoffs");
+    if (playoffsPanel) {
+      playoffsPanel.dataset.categoryRenderState = "loading";
+      playoffsPanel.dataset.categoryName = categoria;
+    }
     await refrescarCategoria(categoria, { actualizarPublico: false });
     poblarSelectPartidosAsociacion(categoria);
     renderPlayoffsAsociacion(categoria);
@@ -8298,6 +8310,7 @@ async function inicializarAsociacion() {
     if (panelActualAsociacion() === "auditoria-documental") {
       renderAuditoriaDocumentalAsociacion(categoria);
     }
+    if (playoffsPanel) playoffsPanel.dataset.categoryRenderState = "ready";
     setStatus($("asociacion-status"), "", "");
   });
 
