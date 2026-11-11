@@ -51,7 +51,7 @@ async function login(email) {
   try {
     const ids = {};
     for (const [key, user] of Object.entries(users)) ids[key] = await createAuthUser(user.email);
-    await client.query("insert into app_users (id, auth_user_id, organizacion_id, display_name, role) values ($1,$1,$2,'Asociacion test','association'),($3,$3,$2,'Delegado A','delegate'),($4,$4,$5,'Delegado B','delegate')", [ids.association, orgA, ids.delegateA, ids.delegateB, orgB]);
+    await client.query("insert into app_users (id, auth_user_id, organizacion_id, display_name, role) values ($1,$1,$2,'Asociacion test','asociacion'),($3,$3,$2,'Delegado A','delegado'),($4,$4,$5,'Delegado B','delegado')", [ids.association, orgA, ids.delegateA, ids.delegateB, orgB]);
     await client.query("insert into app_user_permissions (user_id, organizacion_id, torneo_id, categoria_id, can_view, can_load_results) values ($1,$2,'20000000-0000-0000-0000-000000000001',$3,true,true)", [ids.delegateA, orgA, categoryA]);
     await client.query("insert into partidos (id, categoria_id, local, visitante) values ($1,$2,'Equipo sintético A','Equipo sintético A visitante')", [matchA, categoryA]);
     const delegateToken = await login(users.delegateA.email);

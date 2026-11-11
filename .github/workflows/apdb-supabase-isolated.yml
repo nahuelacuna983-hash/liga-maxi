@@ -50,7 +50,6 @@ jobs:
       - name: Apply isolated migrations and seed
         run: |
           supabase db reset --local
-          psql "$DATABASE_URL" --file=supabase/seed.sql
       - name: Run local contracts
         run: |
           node tests/apdb-supabase-isolated-contract.cjs
