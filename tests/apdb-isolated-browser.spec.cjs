@@ -27,7 +27,10 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   await page.locator("#auth-email").fill(email);
   await page.locator("#auth-password").fill(password);
   await page.locator("#auth-login").click();
-  await expect(page.locator("#auth-status")).toContainText("Ingreso correcto", { timeout: 15000 });
+  await expect(page.locator("#auth-status")).not.toHaveText("", { timeout: 15000 });
+  const authStatus = await page.locator("#auth-status").innerText();
+  console.log(`APDB_BROWSER_AUTH_STATUS ${authStatus}`);
+  expect(authStatus).toContain("Ingreso correcto");
   await expect(page.locator("#auth-session-bar")).toContainText("Rol:");
   await page.reload({ waitUntil: "domcontentloaded", timeout: 20000 });
   await expect(page.locator("#auth-status")).toContainText(/iniciá sesión|Ingresá|sesión/i);
