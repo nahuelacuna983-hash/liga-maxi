@@ -27,6 +27,7 @@ async function loginAssociation(page, credentials) {
 }
 
 async function savePendingPlayoffRows(page, phase) {
+  console.log(`APDB_BROWSER_PLAYOFF_PHASE_START ${phase}`);
   while (true) {
     const pending = page.locator(`.assoc-playoff-row:has(.playoff-save-btn[data-fase="${phase}"])`).filter({ has: page.locator("input.playoff-puntos-local") });
     const rows = await pending.all();
@@ -36,7 +37,10 @@ async function savePendingPlayoffRows(page, phase) {
       const visitorScore = await row.locator(".playoff-puntos-visitante").inputValue();
       if (localScore === "" || visitorScore === "") { target = row; break; }
     }
-    if (!target) return;
+    if (!target) {
+      console.log(`APDB_BROWSER_PLAYOFF_PHASE_DONE ${phase}`);
+      return;
+    }
     const local = await target.locator(".playoff-local").inputValue();
     const visitor = await target.locator(".playoff-visitante").inputValue();
     expect(local).not.toMatch(/Ganador|Peor|Mejor/);
@@ -59,9 +63,11 @@ async function completeVisualPlayoff(page, format, categoryName, credentials) {
   await expect.poll(() => page.locator(".assoc-playoff-row").count(), { timeout: 20000 }).toBeGreaterThan(0);
   const firstPhase = format === 8 ? "cuartos" : format === 6 ? "repechaje" : "semifinales";
   await savePendingPlayoffRows(page, firstPhase);
-  for (const phase of format === 8 ? ["cuartos", "semifinales", "final"] : format === 6 ? ["repechaje", "semifinales", "final"] : ["semifinales", "final"]) {
+  const phases = format === 8 ? ["cuartos", "semifinales", "final"] : format === 6 ? ["repechaje", "semifinales", "final"] : ["semifinales", "final"];
+  for (const phase of phases) {
     if (phase !== firstPhase) {
       const advanceResponse = page.waitForResponse((item) => item.url().includes("/rest/v1/rpc/apdb_upsert_playoff_match") && item.request().method() === "POST");
+      console.log(`APDB_BROWSER_PLAYOFF_ADVANCE ${format} after=${phases[phases.indexOf(phase) - 1]}`);
       await page.locator(".playoff-advance-btn").click();
       expect((await advanceResponse).status()).toBe(200);
     }
@@ -201,11 +207,25 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   console.log("APDB_BROWSER_SESSION_REAUTHENTICATED_AFTER_RELOAD true");
 });
 
-test("index_online genera, avanza y recupera playoffs Top 4, Top 6 y Top 8", async ({ page }) => {
-  test.setTimeout(120000);
+async function runVisualPlayoffFormat(page, format) {
   const categories = JSON.parse(Buffer.from(process.env.APDB_BROWSER_PLAYOFF_CATEGORIES || "", "base64").toString("utf8"));
   const credentialsData = JSON.parse(require("node:fs").readFileSync(credentialsFile, "utf8"));
-  for (const item of categories) {
-    await completeVisualPlayoff(page, item.format, item.name, credentialsData.association);
-  }
+  const item = categories.find((candidate) => candidate.format === format);
+  if (!item) throw new Error(`No existe categoría sintética Top ${format} para Chromium`);
+  await completeVisualPlayoff(page, format, item.name, credentialsData.association);
+}
+
+test("index_online genera, avanza y recupera playoffs Top 4", async ({ page }) => {
+  test.setTimeout(90000);
+  await runVisualPlayoffFormat(page, 4);
+});
+
+test("index_online genera, avanza y recupera playoffs Top 6", async ({ page }) => {
+  test.setTimeout(90000);
+  await runVisualPlayoffFormat(page, 6);
+});
+
+test("index_online genera, avanza y recupera playoffs Top 8", async ({ page }) => {
+  test.setTimeout(90000);
+  await runVisualPlayoffFormat(page, 8);
 });
