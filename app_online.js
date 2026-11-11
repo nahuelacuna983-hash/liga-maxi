@@ -4063,6 +4063,14 @@ function aplicarAvanceAutomaticoPlayoffs(nombreCategoria, tabla, partidosPlayoff
 
   const clasificados = clasificadosPlayoffCategoria(nombreCategoria);
 
+  if (clasificados === 4) {
+    const ganadorSemi1 = ganadorSeriePlayoff(partidosPlayoff, "semi_1");
+    const ganadorSemi2 = ganadorSeriePlayoff(partidosPlayoff, "semi_2");
+    const final = buscar("final", "final", 1);
+    actualizarEquipo(final, "local", ganadorSemi1);
+    actualizarEquipo(final, "visitante", ganadorSemi2);
+  }
+
   if (clasificados === 8) {
     const ganadorA = ganadorPartidoPlayoff(buscar("cuartos", "llave_a"));
     const ganadorB = ganadorPartidoPlayoff(buscar("cuartos", "llave_b"));
