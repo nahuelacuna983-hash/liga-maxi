@@ -15,6 +15,8 @@ El Bloque 13 dejo publicado el servidor aislado con lista explicita de archivos 
 
 El recorrido visual aislado ya contiene pruebas separadas para Top 4, Top 6 y Top 8, con generacion, avance, campeon y recuperacion desde `index_online.html`. En local, la prueba falla de forma explicita cuando faltan `APDB_ISOLATED_BROWSER_URL`, `SUPABASE_ANON_KEY` y el archivo temporal de credenciales; no se omite ni se marca como aprobada. El siguiente bloqueo es ejecutar el workflow en un runner con Supabase local.
 
+El Bloque 16 agrego ajustes responsive acotados en `index_online.html`: controles tactiles de 44px, formularios a una columna, navegacion de Asociacion adaptable, acciones apiladas y tablas con desplazamiento horizontal contenido. No toca persistencia, permisos, tests ni workflows. La regresion Chromium movil existente continua aprobada; quedan pendientes pruebas visuales autenticadas en dispositivos reales.
+
 ### Referencias
 
 - Persistencia y continuidad: `docs/APDB_2027_PERSISTENCIA_CONTINUIDAD.md`.
