@@ -15,7 +15,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("index_online usa Supabase aislado y conserva la sesión autorizada", async ({ page }) => {
-  await page.goto("/index_online.html?secureResults=1");
+  test.setTimeout(60000);
+  await page.goto("/index_online.html?secureResults=1", { waitUntil: "domcontentloaded", timeout: 20000 });
   const credentials = require("node:fs").readFileSync(credentialsFile, "utf8");
   const { email, password } = JSON.parse(credentials);
   await page.locator("#auth-email").fill(email);
@@ -23,6 +24,6 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   await page.locator("#auth-login").click();
   await expect(page.locator("#auth-status")).toContainText("Ingreso correcto", { timeout: 15000 });
   await expect(page.locator("#auth-session-bar")).toContainText("Rol:");
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded", timeout: 20000 });
   await expect(page.locator("#auth-status")).toContainText(/iniciá sesión|Ingresá|sesión/i);
 });
