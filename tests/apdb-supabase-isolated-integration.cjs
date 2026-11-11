@@ -93,6 +93,40 @@ async function login(email) {
     assert(audit.rows.some((row) => row.estado_resultado_nuevo === "resolucion_local"));
     assert(audit.rows.some((row) => row.estado_resultado_nuevo === "resolucion_visitante"));
 
+    const callAdminRpc = (name, payload) => request(`/rest/v1/rpc/${name}`, {
+      method: "POST",
+      headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${associationToken}`, "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const schedule = await callAdminRpc("apdb_upsert_match_schedule", { p_payload: {
+      partido_id: matchA, categoria_id: categoryA, categoria_nombre: "Categoria sintética A",
+      fecha_partido: "2027-03-10", hora: "20:30", cancha: "Cancha sintética", estado: "enviado",
+      observacion: "Programación de prueba"
+    }});
+    assert.equal(schedule.response.status, 200, `Association schedule RPC rejected: ${schedule.response.status} ${JSON.stringify(schedule.body)}`);
+    const storedSchedule = await client.query("select fecha_partido, hora, cancha, estado from match_schedules where partido_id = $1", [matchA]);
+    assert.equal(storedSchedule.rows[0]?.cancha, "Cancha sintética");
+    assert.equal(storedSchedule.rows[0]?.estado, "enviado");
+
+    const playoffPayload = { categoria_id: categoryA, categoria_nombre: "Categoria sintética A", fase: "semifinales",
+      llave: `semi-${run}`, titulo: "Semifinal sintética", orden: 10, partido_numero: 1,
+      fecha: "2027-03-20", local: "Equipo sintético A", visitante: "Equipo sintético B",
+      puntos_local: null, puntos_visitante: null, estado: "pendiente" };
+    const playoff = await callAdminRpc("apdb_upsert_playoff_match", { p_payload: playoffPayload });
+    assert.equal(playoff.response.status, 200, `Association playoff RPC rejected: ${playoff.response.status} ${JSON.stringify(playoff.body)}`);
+    const storedPlayoff = await client.query("select fase, llave, estado from playoff_matches where categoria_id = $1 and llave = $2", [categoryA, playoffPayload.llave]);
+    assert.equal(storedPlayoff.rows.length, 1, "Playoff RPC did not persist its match");
+    const delegateSchedule = await request("/rest/v1/rpc/apdb_upsert_match_schedule", {
+      method: "POST", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${delegateToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ p_payload: { ...schedule.body, categoria_id: categoryA, partido_id: matchA } })
+    });
+    assert.notEqual(delegateSchedule.response.status, 200, "Delegate unexpectedly scheduled a match");
+    const directSchedule = await request(`/rest/v1/match_schedules?partido_id=eq.${matchA}`, {
+      method: "PATCH", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${delegateToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ cancha: "Cancha indebida" })
+    });
+    assert(!directSchedule.response.ok, "Direct schedule write unexpectedly succeeded");
+
     const concurrentPayload = { p_match_id: matchConcurrent, p_home_score: 70, p_away_score: 60 };
     const concurrent = await Promise.all([callRpc(delegateToken, concurrentPayload), callRpc(delegateToken, { ...concurrentPayload, p_home_score: 71 })]);
     assert.equal(concurrent.filter((item) => item.response.status === 200).length, 1, "Concurrent result writes were not serialized");
@@ -131,6 +165,8 @@ async function login(email) {
     assert(!revokedStorage.response.ok, "Revoked delegate unexpectedly uploaded storage content");
     console.log("APDB_SUPABASE_ISOLATED_INTEGRATION_OK");
   } finally {
+    await client.query("delete from playoff_matches where categoria_id = $1 and llave = $2", [categoryA, `semi-${run}`]).catch(() => {});
+    await client.query("delete from match_schedules where partido_id in ($1, $2)", [matchA, matchConcurrent]).catch(() => {});
     await client.query("delete from partidos where id in ($1, $2)", [matchA, matchConcurrent]).catch(() => {});
     await client.end();
   }

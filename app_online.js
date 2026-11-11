@@ -5885,9 +5885,11 @@ async function guardarResultadoPlayoffAsociacion(event) {
     updated_at: new Date().toISOString()
   };
 
-  const { error } = await supabaseClient
-    .from("playoff_matches")
-    .upsert(payload, { onConflict: "categoria_id,fase,llave,partido_numero" });
+  const { error } = usaRpcResultadosSeguros()
+    ? await supabaseClient.rpc("apdb_upsert_playoff_match", { p_payload: payload })
+    : await supabaseClient
+      .from("playoff_matches")
+      .upsert(payload, { onConflict: "categoria_id,fase,llave,partido_numero" });
 
   if (error) {
     button.disabled = false;
@@ -6385,9 +6387,11 @@ async function guardarProgramacionFila(row, estadoForzado = null) {
     payload.informado_en = now;
   }
 
-  const { error } = await supabaseClient
-    .from("match_schedules")
-    .upsert(payload, { onConflict: "partido_id" });
+  const { error } = usaRpcResultadosSeguros()
+    ? await supabaseClient.rpc("apdb_upsert_match_schedule", { p_payload: payload })
+    : await supabaseClient
+      .from("match_schedules")
+      .upsert(payload, { onConflict: "partido_id" });
 
   if (error) {
     setStatus(status, `No se pudo guardar programacion: ${error.message}. Si la tabla no existe, corre docs/ejecutar-en-supabase-programacion.sql.`, "error");
@@ -6686,9 +6690,11 @@ async function marcarProgramacionListaEnviada() {
     updated_at: now
   }));
 
-  const { error } = await supabaseClient
-    .from("match_schedules")
-    .upsert(payload, { onConflict: "partido_id" });
+  const { error } = usaRpcResultadosSeguros()
+    ? await supabaseClient.rpc("apdb_upsert_match_schedule", { p_payload: payload })
+    : await supabaseClient
+      .from("match_schedules")
+      .upsert(payload, { onConflict: "partido_id" });
 
   if (error) {
     setStatus(status, `No se pudo marcar como enviado: ${error.message}`, "error");
