@@ -49,18 +49,15 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   console.log(`APDB_BROWSER_PUBLIC_OPTIONS ${JSON.stringify(await page.locator("#publico-categoria option").allTextContents())}`);
   await expect(page.locator("#asociacion-categoria option")).not.toHaveCount(0, { timeout: 20000 });
   await page.locator("#asociacion-categoria").selectOption({ label: "Categoría sintética A" });
-  const visibleMatch = page.locator("#asociacion-partido option").first();
-  await expect(visibleMatch).toHaveCount(1, { timeout: 20000 });
-  const matchId = await visibleMatch.getAttribute("value");
-  console.log(`APDB_BROWSER_MATCH_ID ${matchId}`);
-  expect(matchId).toMatch(/^[0-9a-f-]{36}$/i);
-  await page.locator("#asociacion-partido").evaluate((select, id) => { select.value = id; }, matchId);
   await page.locator('.assoc-nav-btn[data-asociacion-panel="programacion"]').click();
   await expect.poll(() => page.locator(".programacion-row").count(), {
     timeout: 20000,
     message: "La programación no se reconstruyó para la categoría seleccionada"
   }).toBeGreaterThan(0);
   console.log(`APDB_BROWSER_SCHEDULE_ROWS ${JSON.stringify(await page.locator(".programacion-row").evaluateAll((rows) => rows.map((row) => row.dataset.partidoId)))}`);
+  const matchId = await page.locator(".programacion-row").first().getAttribute("data-partido-id");
+  console.log(`APDB_BROWSER_MATCH_ID ${matchId}`);
+  expect(matchId).toMatch(/^[0-9a-f-]{36}$/i);
   const scheduleRow = page.locator(`.programacion-row[data-partido-id="${matchId}"]`);
   await expect(scheduleRow).toHaveCount(1, { timeout: 20000 });
   await scheduleRow.locator(".programacion-fecha").fill("2027-08-21");
@@ -72,6 +69,8 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   await expect(scheduleRow).toContainText("Listo para informar");
   console.log("APDB_BROWSER_SCHEDULE_PERSISTED true");
   await page.locator('.assoc-nav-btn[data-asociacion-panel="operacion"]').click();
+  await expect(page.locator(`#asociacion-partido option[value="${matchId}"]`)).toHaveCount(1, { timeout: 20000 });
+  await page.locator("#asociacion-partido").evaluate((select, id) => { select.value = id; }, matchId);
   await page.locator("#asociacion-puntos-local").fill("80");
   await page.locator("#asociacion-puntos-visitante").fill("70");
   page.once("dialog", (dialog) => dialog.accept());
