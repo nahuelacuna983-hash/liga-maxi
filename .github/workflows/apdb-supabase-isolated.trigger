@@ -1,1 +1,1 @@
-visual-ui-result-certification-selector-diagnostics
+visual-ui-result-certification-select-prepared-category
