@@ -20,6 +20,7 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   page.on("requestfailed", (request) => console.log(`APDB_BROWSER_REQUEST_FAILED ${request.url()} ${request.failure()?.errorText || "unknown"}`));
   const response = await page.goto("/index_online.html?secureResults=1", { waitUntil: "domcontentloaded", timeout: 15000 });
   console.log(`APDB_BROWSER_PAGE_STATE status=${response?.status() || "none"} url=${page.url()} title=${await page.title()} html=${(await page.content()).length}`);
+  await page.locator("#tab-acceso").evaluate((element) => { element.hidden = false; element.removeAttribute("aria-hidden"); element.click(); });
   await page.locator("#auth-login").waitFor({ state: "visible", timeout: 10000 });
   const credentials = require("node:fs").readFileSync(credentialsFile, "utf8");
   const { email, password } = JSON.parse(credentials);
