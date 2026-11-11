@@ -23,6 +23,8 @@ const password = `Browser-${crypto.randomBytes(12).toString("hex")}!a1`;
   try {
     await client.query("insert into app_users (id, auth_user_id, organizacion_id, display_name, role) values ($1,$1,'10000000-0000-0000-0000-000000000001',$2,'asociacion')", [user.id, `Browser Asociación ${run}`]);
   } finally { await client.end(); }
-  require("node:fs").appendFileSync(process.env.GITHUB_ENV, `APDB_BROWSER_EMAIL=${email}\nAPDB_BROWSER_PASSWORD=${password}\n`);
+  const credentialsFile = require("node:path").join(process.env.RUNNER_TEMP || require("node:os").tmpdir(), `apdb-browser-${run}.json`);
+  require("node:fs").writeFileSync(credentialsFile, JSON.stringify({ email, password }), { encoding: "utf8", mode: 0o600 });
+  require("node:fs").appendFileSync(process.env.GITHUB_ENV, `APDB_BROWSER_CREDENTIALS_FILE=${credentialsFile}\n`);
   console.log("APDB_ISOLATED_BROWSER_USER_READY");
 })().catch((error) => { console.error(`APDB_ISOLATED_BROWSER_SETUP_FAILED ${error.message}`); process.exitCode = 1; });

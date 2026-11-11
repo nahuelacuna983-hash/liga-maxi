@@ -61,9 +61,6 @@ jobs:
         run: npx playwright install chromium
       - name: Prepare isolated browser identity
         run: node tests/apdb-isolated-browser-setup.cjs
-      - name: Start existing application server
-        run: node tools/demo-server.cjs > "$RUNNER_TEMP/apdb-browser-server.log" 2>&1 &
-        shell: bash
       - name: Run isolated Chromium validation
         env:
           APDB_ISOLATED_BROWSER_URL: ${{ env.SUPABASE_URL }}
