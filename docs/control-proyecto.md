@@ -17,6 +17,8 @@ El recorrido visual aislado ya contiene pruebas separadas para Top 4, Top 6 y To
 
 El Bloque 16 agrego ajustes responsive acotados en `index_online.html`: controles tactiles de 44px, formularios a una columna, navegacion de Asociacion adaptable, acciones apiladas y tablas con desplazamiento horizontal contenido. No toca persistencia, permisos, tests ni workflows. La regresion Chromium movil existente continua aprobada; quedan pendientes pruebas visuales autenticadas en dispositivos reales.
 
+La ejecucion aislada #48 aprobo autenticacion, programacion, resultados, Top 6 y Top 8; Top 4 agotaba el timeout porque el panel reemplazaba el boton de generacion mientras se asentaba la categoria. La prueba ahora resuelve el boton vigente en el momento del clic y registra la fase, sin relajar la espera de la respuesta RPC. Falta repetir CI para certificar Top 4.
+
 ### Referencias
 
 - Persistencia y continuidad: `docs/APDB_2027_PERSISTENCIA_CONTINUIDAD.md`.

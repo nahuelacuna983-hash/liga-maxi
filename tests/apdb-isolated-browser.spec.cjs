@@ -53,12 +53,22 @@ async function savePendingPlayoffRows(page, phase) {
   }
 }
 
+async function clickLiveControl(page, selector, label) {
+  const control = page.locator(selector);
+  await control.waitFor({ state: "visible", timeout: 20000 });
+  await expect(control).toBeEnabled({ timeout: 20000 });
+  console.log(`APDB_BROWSER_CLICK ${label} options=${await page.locator(".assoc-playoff-row").count()}`);
+  // The association panel can refresh after the category data settles. Resolve the
+  // current node at click time so a stale Playwright handle cannot wait forever.
+  await control.evaluate((element) => element.click());
+}
+
 async function completeVisualPlayoff(page, format, categoryName, credentials) {
   await loginAssociation(page, credentials);
   await page.locator("#asociacion-categoria").selectOption({ label: categoryName });
   await expect(page.locator(".playoff-generate-btn")).toBeVisible({ timeout: 20000 });
   const generateResponse = page.waitForResponse((item) => item.url().includes("/rest/v1/rpc/apdb_upsert_playoff_match") && item.request().method() === "POST");
-  await page.locator(".playoff-generate-btn").click();
+  await clickLiveControl(page, ".playoff-generate-btn", `generate-top-${format}`);
   expect((await generateResponse).status()).toBe(200);
   await expect.poll(() => page.locator(".assoc-playoff-row").count(), { timeout: 20000 }).toBeGreaterThan(0);
   const firstPhase = format === 8 ? "cuartos" : format === 6 ? "repechaje" : "semifinales";
