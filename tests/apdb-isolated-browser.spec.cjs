@@ -82,6 +82,8 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   await expect(page.locator("#asociacion-puntos-local")).toHaveValue("80");
   await expect(page.locator("#asociacion-puntos-visitante")).toHaveValue("70");
   console.log("APDB_BROWSER_ASSOCIATION_RESULT_PERSISTED true");
+  await page.locator("#tab-acceso").evaluate((element) => { element.hidden = false; element.removeAttribute("aria-hidden"); element.click(); });
+  await page.locator("#auth-logout").waitFor({ state: "visible", timeout: 10000 });
   await page.locator("#auth-logout").click();
   await expect(page.locator("#auth-status")).toContainText("Sesion cerrada.");
   await page.locator("#tab-acceso").evaluate((element) => { element.hidden = false; element.removeAttribute("aria-hidden"); element.click(); });

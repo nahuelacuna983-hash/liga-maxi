@@ -1,1 +1,1 @@
-visual-ui-result-certification-delegate-results
+visual-ui-result-certification-logout-panel
