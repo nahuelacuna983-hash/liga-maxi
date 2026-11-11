@@ -637,6 +637,7 @@ alter table public."team_players" enable row level security;
 alter table public."torneos" enable row level security;
 grant select on public."torneos" to anon, authenticated;
 create policy "torneos_isolated_public_read" on public."torneos" for select to anon, authenticated using (true);
+revoke insert, update, delete on public."partidos" from anon, authenticated;
 -- View definition recovered from metadata; private views are denied to anon below.
 create or replace view public."v_app_user_permissions" as select au.id AS user_id,
     au.display_name,

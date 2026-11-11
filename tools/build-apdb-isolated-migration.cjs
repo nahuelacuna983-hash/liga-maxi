@@ -50,6 +50,8 @@ for (const table of tables) {
   }
 }
 
+sql.push('revoke insert, update, delete on public."partidos" from anon, authenticated;');
+
 for (const view of source.views.filter((item) => item.name && item.definition)) {
   sql.push(`-- View definition recovered from metadata; private views are denied to anon below.`);
   sql.push(`create or replace view public.${quote(view.name)} as${String(view.definition).replace(/^\s*select/i, " select")};`);
