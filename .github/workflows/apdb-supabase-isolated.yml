@@ -32,6 +32,14 @@ jobs:
       - run: npm ci
       - name: Start disposable Supabase
         run: supabase start
+      - name: Export isolated service endpoints
+        shell: bash
+        run: |
+          eval "$(supabase status -o env)"
+          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=$DB_URL" >> "$GITHUB_ENV"
       - name: Apply isolated migrations and seed
         run: |
           supabase db reset --local
@@ -41,6 +49,7 @@ jobs:
           node tests/apdb-supabase-isolated-contract.cjs
           node tests/apdb-isolated-migration-contract.cjs
           node tests/apdb-2027-authorization-contract.cjs
+          node tests/apdb-supabase-isolated-integration.cjs
       - name: Stop disposable Supabase
         if: always()
         run: supabase stop --no-backup
