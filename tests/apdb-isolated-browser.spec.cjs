@@ -43,6 +43,7 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   expect(authStatus).toContain("Ingreso correcto");
   await expect(page.locator("#auth-session-bar")).toContainText("Rol:");
   await page.locator("#tab-asociacion").click();
+  await page.locator('.assoc-nav-btn[data-asociacion-panel="operacion"]').click();
   console.log(`APDB_BROWSER_ASSOCIATION_OPTIONS ${JSON.stringify(await page.locator("#asociacion-categoria option").allTextContents())}`);
   console.log(`APDB_BROWSER_PUBLIC_OPTIONS ${JSON.stringify(await page.locator("#publico-categoria option").allTextContents())}`);
   await expect(page.locator("#asociacion-categoria option")).not.toHaveCount(0, { timeout: 20000 });
@@ -77,6 +78,7 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   expect(restoredStatus).toContain("Ingreso correcto");
   await expect(page.locator("#auth-session-bar")).toContainText("Rol:", { timeout: 20000 });
   await page.locator("#tab-asociacion").click();
+  await page.locator('.assoc-nav-btn[data-asociacion-panel="operacion"]').click();
   await expect(page.locator("#asociacion-categoria option")).not.toHaveCount(0, { timeout: 20000 });
   await page.locator("#asociacion-categoria").selectOption({ label: "Categoría sintética A" });
   await expect(page.locator("#asociacion-partido option").first()).toHaveCount(1, { timeout: 20000 });

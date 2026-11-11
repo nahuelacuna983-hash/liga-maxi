@@ -1,1 +1,1 @@
-visual-ui-result-certification-submit-rpc
+visual-ui-result-certification-open-competition
