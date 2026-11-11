@@ -26,7 +26,13 @@ for (const table of tables) {
   sql.push(");");
 }
 
-for (const constraint of source.constraints.filter((item) => tableNames.has(item.table))) {
+const constraints = source.constraints.filter((item) => tableNames.has(item.table));
+const foreignKeys = constraints.filter((item) => /\bFOREIGN KEY\b/i.test(item.definition));
+const localConstraints = constraints.filter((item) => !/\bFOREIGN KEY\b/i.test(item.definition));
+
+// PostgreSQL requires the referenced primary/unique key to exist before a FK.
+// The metadata export is not guaranteed to be dependency ordered.
+for (const constraint of [...localConstraints, ...foreignKeys]) {
   sql.push(`alter table public.${quote(constraint.table)} add constraint ${quote(constraint.name)} ${constraint.definition};`);
 }
 for (const index of source.indexes.filter((item) => tableNames.has(item.table))) {
