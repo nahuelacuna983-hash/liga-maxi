@@ -4686,6 +4686,10 @@ async function refrescarCategoria(nombreCategoria, opciones = {}) {
   if (actualizarPublico) renderPublicoCategoria(nombreCategoria);
 }
 
+function usaRpcResultadosSeguros() {
+  return window.APDB_SECURE_RESULT_RPC === true || new URLSearchParams(window.location.search).get("secureResults") === "1";
+}
+
 async function guardarResultadoDelegado() {
   const categoria = $("delegado-categoria").value;
   const partidoId = $("delegado-partido").value;
@@ -4724,16 +4728,22 @@ async function guardarResultadoDelegado() {
 
   setStatus(status, "Guardando resultado...", "");
 
-  const { error } = await supabaseClient
-    .from("partidos")
-    .update({
-      puntos_local: pl,
-      puntos_visitante: pv,
-      estado_resultado: "jugado",
-      cargado_por: estado.delegado?.nombre || null,
-      cargado_en: new Date().toISOString()
+  const { error } = usaRpcResultadosSeguros()
+    ? await supabaseClient.rpc("apdb_save_result", {
+      p_match_id: partidoId,
+      p_home_score: pl,
+      p_away_score: pv
     })
-    .eq("id", partidoId);
+    : await supabaseClient
+      .from("partidos")
+      .update({
+        puntos_local: pl,
+        puntos_visitante: pv,
+        estado_resultado: "jugado",
+        cargado_por: estado.delegado?.nombre || null,
+        cargado_en: new Date().toISOString()
+      })
+      .eq("id", partidoId);
 
   if (error) {
     setStatus(status, `No se pudo guardar: ${error.message}`, "error");
