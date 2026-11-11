@@ -1,1 +1,1 @@
-visual-ui-result-certification
+visual-ui-result-certification-association-init
