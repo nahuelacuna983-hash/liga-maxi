@@ -136,7 +136,7 @@ async function login(email) {
     const associationBToken = await login(users.associationB.email);
     const publish = (token, categoryId, matches) => request("/rest/v1/rpc/apdb_publish_fixture", {
       method: "POST", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}`, "content-type": "application/json" },
-      body: JSON.stringify({ p_categoria_id: categoryId, p_category_payload: { estado: "publicada", formato: "Top 4", playoffs: true, clasificados: 4 }, p_matches: matches })
+      body: JSON.stringify({ p_categoria_id: categoryId, p_category_payload: { estado: "publicada", formato: "Top 4", playoffs: true, clasificados: 4, fechas_bloqueadas: ["2027-04-01"] }, p_matches: matches })
     });
     const fixturePayload = [
       { local: "Equipo B 1", visitante: "Equipo B 2", jornada: 1, fecha: "2027-04-01", libre: null },
@@ -146,6 +146,23 @@ async function login(email) {
     assert.equal(published.response.status, 200, `Fixture publication RPC rejected: ${published.response.status} ${JSON.stringify(published.body)}`);
     const publishedRows = await client.query("select count(*)::int as count from partidos where categoria_id = $1", ["30000000-0000-0000-0000-000000000002"]);
     assert.equal(publishedRows.rows[0].count, 2, "Fixture publication did not persist both matches");
+    const publishedMatches = await client.query("select id, fecha from partidos where categoria_id = $1 order by jornada", ["30000000-0000-0000-0000-000000000002"]);
+    const blockedSchedule = await request("/rest/v1/rpc/apdb_upsert_match_schedule", {
+      method: "POST", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${associationBToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ p_payload: { partido_id: publishedMatches.rows[0].id, categoria_id: "30000000-0000-0000-0000-000000000002", fecha_partido: "2027-04-01", hora: "20:00", cancha: "Cancha B", estado: "listo" } })
+    });
+    assert.notEqual(blockedSchedule.response.status, 200, "Blocked schedule date unexpectedly accepted");
+    const batchSchedules = publishedMatches.rows.map((row, index) => ({ partido_id: row.id, categoria_id: "30000000-0000-0000-0000-000000000002", fecha_partido: `2027-04-0${index + 2}`, hora: "20:00", cancha: `Cancha B ${index + 1}`, estado: "listo" }));
+    const batchResults = await Promise.all(batchSchedules.map((payload) => request("/rest/v1/rpc/apdb_upsert_match_schedule", {
+      method: "POST", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${associationBToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ p_payload: payload })
+    })));
+    assert(batchResults.every((item) => item.response.status === 200), "Batch schedule RPC did not persist all rows");
+    const concurrentSchedules = await Promise.all([1, 2].map((suffix) => request("/rest/v1/rpc/apdb_upsert_match_schedule", {
+      method: "POST", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${associationBToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ p_payload: { partido_id: publishedMatches.rows[1].id, categoria_id: "30000000-0000-0000-0000-000000000002", fecha_partido: "2027-04-08", hora: `20:0${suffix}`, cancha: `Cancha concurrente ${suffix}`, estado: "listo" } })
+    })));
+    assert(concurrentSchedules.every((item) => item.response.status === 200), "Concurrent schedule updates were not serialized");
     const duplicatePublish = await publish(associationBToken, "30000000-0000-0000-0000-000000000002", fixturePayload);
     assert.notEqual(duplicatePublish.response.status, 200, "Published fixture was unexpectedly replaceable");
 
@@ -189,6 +206,7 @@ async function login(email) {
   } finally {
     await client.query("delete from playoff_matches where categoria_id = $1 and llave = $2", [categoryA, `semi-${run}`]).catch(() => {});
     await client.query("delete from match_schedules where partido_id in ($1, $2)", [matchA, matchConcurrent]).catch(() => {});
+    await client.query("delete from match_schedules where categoria_id = $1", ["30000000-0000-0000-0000-000000000002"]).catch(() => {});
     await client.query("delete from partidos where id in ($1, $2)", [matchA, matchConcurrent]).catch(() => {});
     await client.query("delete from partidos where categoria_id = $1", ["30000000-0000-0000-0000-000000000002"]).catch(() => {});
     await client.end();

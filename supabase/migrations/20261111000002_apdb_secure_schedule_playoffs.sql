@@ -40,6 +40,13 @@ begin
   select * into match_row from public.partidos where id = (p_payload->>'partido_id')::uuid
     and categoria_id = (p_payload->>'categoria_id')::uuid for update;
   if match_row.id is null then raise exception 'match does not belong to category' using errcode = '23503'; end if;
+  if nullif(p_payload->>'fecha_partido','') is not null and exists (
+    select 1 from public.categorias c
+    where c.id = match_row.categoria_id
+      and (c.fechas_bloqueadas ? (p_payload->>'fecha_partido'))
+  ) then
+    raise exception 'scheduled date is blocked for category' using errcode = '22007';
+  end if;
 
   insert into public.match_schedules (partido_id, categoria_id, categoria_nombre, jornada, local, visitante,
     fecha_partido, hora, cancha, estado, observacion, informado_por, informado_en, updated_at)
