@@ -5784,6 +5784,10 @@ function renderPlayoffsAsociacion(nombreCategoria) {
         <h3>Playoffs</h3>
         <p class="note">Carga independiente de la fase regular. Estos resultados se muestran en la llave pública.</p>
       </div>
+      <div class="assoc-playoff-actions">
+        <button class="secondary playoff-generate-btn" type="button">Generar llave</button>
+        <button class="secondary playoff-advance-btn" type="button">Avanzar ronda</button>
+      </div>
     </div>
     <div class="assoc-playoff-list">
       ${partidos.map((partido) => `
@@ -5822,6 +5826,81 @@ function renderPlayoffsAsociacion(nombreCategoria) {
       `).join("")}
     </div>
   `;
+}
+
+function playoffPayload(categoria, partido) {
+  return {
+    categoria_id: categoria.id,
+    categoria_nombre: categoria.nombre,
+    fase: partido.fase,
+    llave: partido.llave,
+    titulo: partido.titulo,
+    orden: Number(partido.orden || 0),
+    partido_numero: Number(partido.partido_numero || 1),
+    fecha: partido.fecha || null,
+    local: partido.local || "",
+    visitante: partido.visitante || "",
+    puntos_local: partido.puntos_local ?? null,
+    puntos_visitante: partido.puntos_visitante ?? null,
+    estado: partido.estado || "pendiente"
+  };
+}
+
+async function persistirLlavePlayoffAsociacion(nombreCategoria, avanzar) {
+  const status = $("asociacion-status");
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Primero habilita Asociacion con la clave administrativa.", "warn");
+    return;
+  }
+  const categoria = obtenerCategoriaPorNombre(nombreCategoria);
+  if (!categoria?.id) {
+    setStatus(status, "Selecciona una categoria valida antes de gestionar playoffs.", "error");
+    return;
+  }
+  const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
+  const tabla = calcularTabla(partidos);
+  const clasificados = clasificadosPlayoffCategoria(nombreCategoria);
+  if (![4, 6, 8].includes(clasificados) || tabla.length < clasificados) {
+    setStatus(status, `La categoria necesita ${clasificados || "un formato Top 4, Top 6 o Top 8"} clasificados y tabla completa.`, "error");
+    return;
+  }
+  const existentes = estado.playoffsPorCategoria[nombreCategoria] || [];
+  const base = avanzar
+    ? mezclarPartidosPlayoff(generarPartidosPlayoff(nombreCategoria, tabla), existentes)
+    : generarPartidosPlayoff(nombreCategoria, tabla);
+  const candidatos = avanzar
+    ? aplicarAvanceAutomaticoPlayoffs(nombreCategoria, tabla, base)
+    : base;
+  const existentesPorClave = new Map(existentes.map((item) => [playoffKey(item), item]));
+  const cambios = candidatos.filter((item) => {
+    const previo = existentesPorClave.get(playoffKey(item));
+    if (!previo) return true;
+    if (partidoPlayoffTieneResultado(previo)) return false;
+    return previo.local !== item.local || previo.visitante !== item.visitante || previo.fecha !== item.fecha;
+  });
+  if (!cambios.length) {
+    setStatus(status, avanzar ? "No hay una ronda nueva habilitada: completa la ronda actual antes de avanzar." : "La llave ya esta persistida para esta categoria.", "warn");
+    return;
+  }
+  setStatus(status, avanzar ? "Persistiendo avance de playoffs..." : "Persistiendo llave de playoffs...", "");
+  for (const partido of cambios) {
+    const { error } = await supabaseClient.rpc("apdb_upsert_playoff_match", { p_payload: playoffPayload(categoria, partido) });
+    if (error) {
+      setStatus(status, `No se pudo ${avanzar ? "avanzar" : "generar"} la llave: ${error.message}`, "error");
+      return;
+    }
+  }
+  await cargarResultadosPlayoffCategoria(nombreCategoria, true);
+  renderPlayoffsAsociacion(nombreCategoria);
+  renderCierreAsociacion(nombreCategoria);
+  setStatus(status, avanzar ? "Ronda de playoffs persistida." : `Llave ${clasificados} persistida con ${cambios.length} encuentro(s).`, "ok");
+}
+
+async function gestionarPlayoffsAsociacion(event) {
+  const generate = event.target.closest(".playoff-generate-btn");
+  const advance = event.target.closest(".playoff-advance-btn");
+  if (!generate && !advance) return;
+  await persistirLlavePlayoffAsociacion($("asociacion-categoria")?.value || "", !!advance);
 }
 
 async function guardarResultadoPlayoffAsociacion(event) {
@@ -8220,7 +8299,13 @@ async function inicializarAsociacion() {
   $("asociacion-anular")?.addEventListener("click", anularResultadoAsociacion);
   $("asociacion-resuelve-local")?.addEventListener("click", () => resolverPartidoAdministrativamente("local"));
   $("asociacion-resuelve-visitante")?.addEventListener("click", () => resolverPartidoAdministrativamente("visitante"));
-  $("asociacion-playoffs")?.addEventListener("click", guardarResultadoPlayoffAsociacion);
+  $("asociacion-playoffs")?.addEventListener("click", (event) => {
+    if (event.target.closest(".playoff-generate-btn, .playoff-advance-btn")) {
+      gestionarPlayoffsAsociacion(event);
+    } else {
+      guardarResultadoPlayoffAsociacion(event);
+    }
+  });
   $("programacion-tabla")?.addEventListener("click", manejarProgramacionClick);
   $("programacion-copiar")?.addEventListener("click", copiarProgramacionAsociacion);
   $("programacion-abrir-correo")?.addEventListener("click", abrirCorreoProgramacion);

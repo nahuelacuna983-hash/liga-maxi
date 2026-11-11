@@ -75,15 +75,29 @@ language plpgsql
 security definer
 set search_path = public, auth
 as $$
-declare actor public.app_users; target public.playoff_matches; category_id uuid := (p_payload->>'categoria_id')::uuid;
+declare actor public.app_users; target public.playoff_matches; existing public.playoff_matches; v_category_id uuid := (p_payload->>'categoria_id')::uuid;
 begin
-  actor := public.apdb_admin_actor_for_category(category_id);
+  actor := public.apdb_admin_actor_for_category(v_category_id);
   if nullif(p_payload->>'fase','') is null or nullif(p_payload->>'llave','') is null then
     raise exception 'playoff phase and key are required' using errcode = '22023';
   end if;
+  select * into existing
+    from public.playoff_matches
+   where playoff_matches.categoria_id = v_category_id
+     and fase = p_payload->>'fase'
+     and llave = p_payload->>'llave'
+     and partido_numero = coalesce((p_payload->>'partido_numero')::integer, 1)
+   for update;
+  if existing.id is not null and existing.puntos_local is not null and existing.puntos_visitante is not null
+     and (existing.puntos_local is distinct from (p_payload->>'puntos_local')::integer
+       or existing.puntos_visitante is distinct from (p_payload->>'puntos_visitante')::integer
+       or existing.local is distinct from p_payload->>'local'
+       or existing.visitante is distinct from p_payload->>'visitante') then
+    raise exception 'playoff match already has an immutable result' using errcode = '55000';
+  end if;
   insert into public.playoff_matches (categoria_id, categoria_nombre, fase, llave, titulo, orden, partido_numero,
     fecha, local, visitante, puntos_local, puntos_visitante, estado, observacion, cargado_por, cargado_en, updated_at)
-  values (category_id, p_payload->>'categoria_nombre', p_payload->>'fase', p_payload->>'llave',
+  values (v_category_id, p_payload->>'categoria_nombre', p_payload->>'fase', p_payload->>'llave',
     p_payload->>'titulo', coalesce((p_payload->>'orden')::integer,0), coalesce((p_payload->>'partido_numero')::integer,1),
     nullif(p_payload->>'fecha','')::date, p_payload->>'local', p_payload->>'visitante',
     (p_payload->>'puntos_local')::integer, (p_payload->>'puntos_visitante')::integer,
