@@ -1,1 +1,1 @@
-visual-login-certification-auth-rpc
+visual-login-certification-session-restore
