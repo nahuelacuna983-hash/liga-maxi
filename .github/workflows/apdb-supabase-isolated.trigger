@@ -1,1 +1,1 @@
-visual-login-certification
+visual-login-certification-auth-rpc
