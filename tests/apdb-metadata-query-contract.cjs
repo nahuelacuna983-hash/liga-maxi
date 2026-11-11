@@ -1,0 +1,11 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const sql = fs.readFileSync("docs/apdb-2027-supabase-metadatos-readonly.sql", "utf8");
+assert.match(sql, /information_schema\.columns/);
+assert.match(sql, /pg_policies/);
+assert.match(sql, /storage\.buckets/);
+assert.doesNotMatch(sql, /insert\s+into|update\s+|delete\s+from|alter\s+table|drop\s+/i);
+assert.doesNotMatch(sql, /from\s+auth\.users/i, "No debe consultar identidades Auth ni PII");
+assert.doesNotMatch(sql, /player_documents\s*$/im);
+console.log("APDB_METADATA_QUERY_CONTRACT_OK");
