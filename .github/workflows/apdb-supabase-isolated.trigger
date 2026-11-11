@@ -1,1 +1,1 @@
-visual-ui-result-certification-association-selector
+visual-ui-result-certification-selector-diagnostics
