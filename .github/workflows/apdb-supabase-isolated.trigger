@@ -1,1 +1,1 @@
-visual-login-certification-session-bar
+visual-login-certification-reload-login
