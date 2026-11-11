@@ -1,0 +1,7421 @@
+{
+  "project": "liga-maxi",
+  "snapshot_date": "2026-11-11",
+  "source_sha256": "d143a0fe1958698b145259599899f1c1700e9d857fb54068ea40a8957eedaf86",
+  "object_catalog": [
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "app_usage_events",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "app_user_permissions",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "app_users",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "auditoria_resultados",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "categorias",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "delegado_categorias",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "delegados",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "document_ai_audits",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "document_audit_criteria_versions",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "document_audit_results",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "document_events",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "document_files",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "document_requirements",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "drive_player_documents",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "equipos",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "fechas",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "fixtures_publicos",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "match_schedules",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "organizaciones",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "partidos",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "player_document_events",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "player_documents",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "playoff_matches",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "result_change_logs",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "team_audit_closure_events",
+      "schema": "public",
+      "options": null,
+      "force_rls": true
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "team_documents",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "team_players",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "torneos",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "v",
+      "name": "v_app_user_permissions",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "v",
+      "name": "v_document_ai_audits_latest",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "v",
+      "name": "v_document_audit_results_admin",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "v",
+      "name": "v_drive_player_documents_admin",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "v",
+      "name": "v_player_documents_admin",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "v",
+      "name": "v_player_documents_admin_ai",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "v",
+      "name": "v_result_change_logs_admin",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "v",
+      "name": "v_team_documents_admin",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "v",
+      "name": "v_team_documents_admin_ai",
+      "schema": "public",
+      "options": null,
+      "force_rls": false
+    }
+  ],
+  "columns": [
+    {
+      "type": "uuid",
+      "table": "app_usage_events",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "timestamptz",
+      "table": "app_usage_events",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "app_usage_events",
+      "column": "event_type",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "app_usage_events",
+      "column": "area",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "app_usage_events",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "app_usage_events",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "app_usage_events",
+      "column": "user_role",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "text",
+      "table": "app_usage_events",
+      "column": "user_label",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "app_usage_events",
+      "column": "session_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "app_usage_events",
+      "column": "device_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "app_usage_events",
+      "column": "path",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "text",
+      "table": "app_usage_events",
+      "column": "user_agent",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "uuid",
+      "table": "app_user_permissions",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "app_user_permissions",
+      "column": "user_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "app_user_permissions",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "app_user_permissions",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "uuid",
+      "table": "app_user_permissions",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "uuid",
+      "table": "app_user_permissions",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "app_user_permissions",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "bool",
+      "table": "app_user_permissions",
+      "column": "can_view",
+      "default": "true",
+      "nullable": "NO",
+      "position": 8
+    },
+    {
+      "type": "bool",
+      "table": "app_user_permissions",
+      "column": "can_load_results",
+      "default": "false",
+      "nullable": "NO",
+      "position": 9
+    },
+    {
+      "type": "bool",
+      "table": "app_user_permissions",
+      "column": "can_load_documents",
+      "default": "false",
+      "nullable": "NO",
+      "position": 10
+    },
+    {
+      "type": "bool",
+      "table": "app_user_permissions",
+      "column": "can_review_documents",
+      "default": "false",
+      "nullable": "NO",
+      "position": 11
+    },
+    {
+      "type": "bool",
+      "table": "app_user_permissions",
+      "column": "can_correct_results",
+      "default": "false",
+      "nullable": "NO",
+      "position": 12
+    },
+    {
+      "type": "bool",
+      "table": "app_user_permissions",
+      "column": "can_manage_tournaments",
+      "default": "false",
+      "nullable": "NO",
+      "position": 13
+    },
+    {
+      "type": "bool",
+      "table": "app_user_permissions",
+      "column": "can_manage_users",
+      "default": "false",
+      "nullable": "NO",
+      "position": 14
+    },
+    {
+      "type": "bool",
+      "table": "app_user_permissions",
+      "column": "can_emergency_override",
+      "default": "false",
+      "nullable": "NO",
+      "position": 15
+    },
+    {
+      "type": "timestamptz",
+      "table": "app_user_permissions",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 16
+    },
+    {
+      "type": "uuid",
+      "table": "app_users",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "app_users",
+      "column": "auth_user_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "app_users",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "app_users",
+      "column": "display_name",
+      "default": null,
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "app_users",
+      "column": "email",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "app_users",
+      "column": "role",
+      "default": null,
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "app_users",
+      "column": "legacy_key",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "bool",
+      "table": "app_users",
+      "column": "active",
+      "default": "true",
+      "nullable": "NO",
+      "position": 8
+    },
+    {
+      "type": "bool",
+      "table": "app_users",
+      "column": "emergency_access",
+      "default": "false",
+      "nullable": "NO",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "app_users",
+      "column": "notes",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "timestamptz",
+      "table": "app_users",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 11
+    },
+    {
+      "type": "timestamptz",
+      "table": "app_users",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 12
+    },
+    {
+      "type": "uuid",
+      "table": "auditoria_resultados",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "auditoria_resultados",
+      "column": "partido_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "auditoria_resultados",
+      "column": "delegado_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "int4",
+      "table": "auditoria_resultados",
+      "column": "puntos_local",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "int4",
+      "table": "auditoria_resultados",
+      "column": "puntos_visitante",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "auditoria_resultados",
+      "column": "accion",
+      "default": "'carga'::text",
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "timestamptz",
+      "table": "auditoria_resultados",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 7
+    },
+    {
+      "type": "uuid",
+      "table": "categorias",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "categorias",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "categorias",
+      "column": "nombre",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "categorias",
+      "column": "estado",
+      "default": "'borrador'::text",
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "categorias",
+      "column": "formato",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "bool",
+      "table": "categorias",
+      "column": "playoffs",
+      "default": "false",
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "int4",
+      "table": "categorias",
+      "column": "clasificados",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "int4",
+      "table": "categorias",
+      "column": "dia_juego",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "date",
+      "table": "categorias",
+      "column": "fecha_inicio",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "date",
+      "table": "categorias",
+      "column": "fecha_fin",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "int4",
+      "table": "categorias",
+      "column": "frecuencia",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "jsonb",
+      "table": "categorias",
+      "column": "fechas_bloqueadas",
+      "default": "'[]'::jsonb",
+      "nullable": "NO",
+      "position": 12
+    },
+    {
+      "type": "jsonb",
+      "table": "categorias",
+      "column": "series_playoff",
+      "default": "'{}'::jsonb",
+      "nullable": "NO",
+      "position": 13
+    },
+    {
+      "type": "timestamptz",
+      "table": "categorias",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 14
+    },
+    {
+      "type": "uuid",
+      "table": "delegado_categorias",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "delegado_categorias",
+      "column": "delegado_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "delegado_categorias",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "timestamptz",
+      "table": "delegado_categorias",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "uuid",
+      "table": "delegados",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "delegados",
+      "column": "auth_user_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "delegados",
+      "column": "nombre",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "delegados",
+      "column": "email",
+      "default": null,
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "bool",
+      "table": "delegados",
+      "column": "activo",
+      "default": "true",
+      "nullable": "NO",
+      "position": 5
+    },
+    {
+      "type": "timestamptz",
+      "table": "delegados",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "uuid",
+      "table": "document_ai_audits",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "scope",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "document_ai_audits",
+      "column": "team_document_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "document_ai_audits",
+      "column": "player_document_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "uuid",
+      "table": "document_ai_audits",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "uuid",
+      "table": "document_ai_audits",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "uuid",
+      "table": "document_ai_audits",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "uuid",
+      "table": "document_ai_audits",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "uuid",
+      "table": "document_ai_audits",
+      "column": "player_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "player_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "uuid",
+      "table": "document_ai_audits",
+      "column": "requirement_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "requirement_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "storage_path",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "file_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "file_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "audit_status",
+      "default": "'pendiente'::text",
+      "nullable": "NO",
+      "position": 17
+    },
+    {
+      "type": "numeric",
+      "table": "document_ai_audits",
+      "column": "confidence",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "summary",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "jsonb",
+      "table": "document_ai_audits",
+      "column": "findings",
+      "default": "'{}'::jsonb",
+      "nullable": "NO",
+      "position": 20
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "extracted_text",
+      "default": null,
+      "nullable": "YES",
+      "position": 21
+    },
+    {
+      "type": "jsonb",
+      "table": "document_ai_audits",
+      "column": "detected_dates",
+      "default": "'[]'::jsonb",
+      "nullable": "NO",
+      "position": 22
+    },
+    {
+      "type": "date",
+      "table": "document_ai_audits",
+      "column": "valid_until",
+      "default": null,
+      "nullable": "YES",
+      "position": 23
+    },
+    {
+      "type": "jsonb",
+      "table": "document_ai_audits",
+      "column": "checks",
+      "default": "'{}'::jsonb",
+      "nullable": "NO",
+      "position": 24
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "model",
+      "default": null,
+      "nullable": "YES",
+      "position": 25
+    },
+    {
+      "type": "jsonb",
+      "table": "document_ai_audits",
+      "column": "raw_response",
+      "default": null,
+      "nullable": "YES",
+      "position": 26
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "audited_by",
+      "default": "'auditoria-ia'::text",
+      "nullable": "NO",
+      "position": 27
+    },
+    {
+      "type": "timestamptz",
+      "table": "document_ai_audits",
+      "column": "audited_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 28
+    },
+    {
+      "type": "timestamptz",
+      "table": "document_ai_audits",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 29
+    },
+    {
+      "type": "timestamptz",
+      "table": "document_ai_audits",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 30
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "criteria_version",
+      "default": "'APDB_MAXI_2026_V1'::text",
+      "nullable": "NO",
+      "position": 31
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "unresolved_reason",
+      "default": null,
+      "nullable": "YES",
+      "position": 32
+    },
+    {
+      "type": "jsonb",
+      "table": "document_ai_audits",
+      "column": "page_evidence",
+      "default": "'[]'::jsonb",
+      "nullable": "NO",
+      "position": 33
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "source_kind",
+      "default": "'supabase_storage'::text",
+      "nullable": "NO",
+      "position": 34
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "source_file_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 35
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "source_file_url",
+      "default": null,
+      "nullable": "YES",
+      "position": 36
+    },
+    {
+      "type": "timestamptz",
+      "table": "document_ai_audits",
+      "column": "source_modified_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 37
+    },
+    {
+      "type": "text",
+      "table": "document_ai_audits",
+      "column": "source_hash",
+      "default": null,
+      "nullable": "YES",
+      "position": 38
+    },
+    {
+      "type": "text",
+      "table": "document_audit_criteria_versions",
+      "column": "version",
+      "default": null,
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "text",
+      "table": "document_audit_criteria_versions",
+      "column": "title",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "jsonb",
+      "table": "document_audit_criteria_versions",
+      "column": "criteria",
+      "default": "'{}'::jsonb",
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "bool",
+      "table": "document_audit_criteria_versions",
+      "column": "active",
+      "default": "true",
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "timestamptz",
+      "table": "document_audit_criteria_versions",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 5
+    },
+    {
+      "type": "uuid",
+      "table": "document_audit_results",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "document_audit_results",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "document_audit_results",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "document_audit_results",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "uuid",
+      "table": "document_audit_results",
+      "column": "player_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "player_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "alcance",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "planilla_arbitro",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "document_type",
+      "default": null,
+      "nullable": "NO",
+      "position": 11
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "declared_status",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "located_status",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "validated_status",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "valid_until",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "audit_status",
+      "default": "'pendiente'::text",
+      "nullable": "NO",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "risk_level",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "observation",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "evidence_url",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "source_sheet",
+      "default": null,
+      "nullable": "YES",
+      "position": 20
+    },
+    {
+      "type": "date",
+      "table": "document_audit_results",
+      "column": "cutoff_date",
+      "default": null,
+      "nullable": "YES",
+      "position": 21
+    },
+    {
+      "type": "text",
+      "table": "document_audit_results",
+      "column": "imported_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 22
+    },
+    {
+      "type": "timestamptz",
+      "table": "document_audit_results",
+      "column": "imported_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 23
+    },
+    {
+      "type": "timestamptz",
+      "table": "document_audit_results",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 24
+    },
+    {
+      "type": "timestamptz",
+      "table": "document_audit_results",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 25
+    },
+    {
+      "type": "uuid",
+      "table": "document_events",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "document_events",
+      "column": "team_document_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "document_events",
+      "column": "event_type",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "document_events",
+      "column": "actor",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "document_events",
+      "column": "detail",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "timestamptz",
+      "table": "document_events",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "uuid",
+      "table": "document_files",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "document_files",
+      "column": "team_document_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "document_files",
+      "column": "uploaded_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "document_files",
+      "column": "storage_path",
+      "default": null,
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "document_files",
+      "column": "file_name",
+      "default": null,
+      "nullable": "NO",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "document_files",
+      "column": "file_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "int8",
+      "table": "document_files",
+      "column": "file_size",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "timestamptz",
+      "table": "document_files",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 8
+    },
+    {
+      "type": "uuid",
+      "table": "document_requirements",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "document_requirements",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "document_requirements",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "document_requirements",
+      "column": "nombre",
+      "default": null,
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "document_requirements",
+      "column": "descripcion",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "uuid",
+      "table": "document_requirements",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "bool",
+      "table": "document_requirements",
+      "column": "obligatorio",
+      "default": "true",
+      "nullable": "NO",
+      "position": 7
+    },
+    {
+      "type": "bool",
+      "table": "document_requirements",
+      "column": "requiere_vencimiento",
+      "default": "false",
+      "nullable": "NO",
+      "position": 8
+    },
+    {
+      "type": "bool",
+      "table": "document_requirements",
+      "column": "activo",
+      "default": "true",
+      "nullable": "NO",
+      "position": 9
+    },
+    {
+      "type": "timestamptz",
+      "table": "document_requirements",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "document_requirements",
+      "column": "scope",
+      "default": "'team'::text",
+      "nullable": "NO",
+      "position": 11
+    },
+    {
+      "type": "bool",
+      "table": "document_requirements",
+      "column": "allows_multiple_files",
+      "default": "false",
+      "nullable": "NO",
+      "position": 12
+    },
+    {
+      "type": "uuid",
+      "table": "drive_player_documents",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "drive_player_documents",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "drive_player_documents",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "drive_player_documents",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "uuid",
+      "table": "drive_player_documents",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "uuid",
+      "table": "drive_player_documents",
+      "column": "player_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "player_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "document_type",
+      "default": null,
+      "nullable": "NO",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "title",
+      "default": null,
+      "nullable": "NO",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "drive_file_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 11
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "drive_url",
+      "default": null,
+      "nullable": "NO",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "mime_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "status",
+      "default": "'cargado'::text",
+      "nullable": "NO",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "observation",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "match_status",
+      "default": "'sin_asociar'::text",
+      "nullable": "NO",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "source_folder",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "text",
+      "table": "drive_player_documents",
+      "column": "reviewed_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "timestamptz",
+      "table": "drive_player_documents",
+      "column": "reviewed_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "timestamptz",
+      "table": "drive_player_documents",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 20
+    },
+    {
+      "type": "timestamptz",
+      "table": "drive_player_documents",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 21
+    },
+    {
+      "type": "uuid",
+      "table": "equipos",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "equipos",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "equipos",
+      "column": "nombre",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "int4",
+      "table": "equipos",
+      "column": "orden_inicial",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "bool",
+      "table": "equipos",
+      "column": "activo",
+      "default": "true",
+      "nullable": "NO",
+      "position": 5
+    },
+    {
+      "type": "timestamptz",
+      "table": "equipos",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "uuid",
+      "table": "fechas",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "fechas",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "int4",
+      "table": "fechas",
+      "column": "numero",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "date",
+      "table": "fechas",
+      "column": "fecha_programada",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "fechas",
+      "column": "label",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "bool",
+      "table": "fechas",
+      "column": "bloqueada",
+      "default": "false",
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "fechas",
+      "column": "equipo_libre",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "timestamptz",
+      "table": "fechas",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 8
+    },
+    {
+      "type": "uuid",
+      "table": "fixtures_publicos",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "text",
+      "table": "fixtures_publicos",
+      "column": "categoria",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "jsonb",
+      "table": "fixtures_publicos",
+      "column": "data",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "timestamptz",
+      "table": "fixtures_publicos",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "uuid",
+      "table": "match_schedules",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "match_schedules",
+      "column": "partido_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "match_schedules",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "match_schedules",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "int4",
+      "table": "match_schedules",
+      "column": "jornada",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "match_schedules",
+      "column": "local",
+      "default": null,
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "match_schedules",
+      "column": "visitante",
+      "default": null,
+      "nullable": "NO",
+      "position": 7
+    },
+    {
+      "type": "date",
+      "table": "match_schedules",
+      "column": "fecha_partido",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "time",
+      "table": "match_schedules",
+      "column": "hora",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "match_schedules",
+      "column": "cancha",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "match_schedules",
+      "column": "estado",
+      "default": "'pendiente'::text",
+      "nullable": "NO",
+      "position": 11
+    },
+    {
+      "type": "text",
+      "table": "match_schedules",
+      "column": "observacion",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "match_schedules",
+      "column": "informado_por",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "timestamptz",
+      "table": "match_schedules",
+      "column": "informado_en",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "match_schedules",
+      "column": "confirmado_por",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "timestamptz",
+      "table": "match_schedules",
+      "column": "confirmado_en",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "timestamptz",
+      "table": "match_schedules",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 17
+    },
+    {
+      "type": "timestamptz",
+      "table": "match_schedules",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 18
+    },
+    {
+      "type": "uuid",
+      "table": "organizaciones",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "text",
+      "table": "organizaciones",
+      "column": "nombre",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "organizaciones",
+      "column": "slug",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "timestamptz",
+      "table": "organizaciones",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "uuid",
+      "table": "partidos",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "partidos",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "partidos",
+      "column": "fecha_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "partidos",
+      "column": "fase",
+      "default": "'regular'::text",
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "int4",
+      "table": "partidos",
+      "column": "orden",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "partidos",
+      "column": "local",
+      "default": null,
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "partidos",
+      "column": "visitante",
+      "default": null,
+      "nullable": "NO",
+      "position": 7
+    },
+    {
+      "type": "int4",
+      "table": "partidos",
+      "column": "puntos_local",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "int4",
+      "table": "partidos",
+      "column": "puntos_visitante",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "partidos",
+      "column": "estado_resultado",
+      "default": "'pendiente'::text",
+      "nullable": "NO",
+      "position": 10
+    },
+    {
+      "type": "timestamptz",
+      "table": "partidos",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 11
+    },
+    {
+      "type": "timestamptz",
+      "table": "partidos",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 12
+    },
+    {
+      "type": "int4",
+      "table": "partidos",
+      "column": "jornada",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "date",
+      "table": "partidos",
+      "column": "fecha",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "partidos",
+      "column": "libre",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "partidos",
+      "column": "cargado_por",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "timestamp",
+      "table": "partidos",
+      "column": "cargado_en",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "uuid",
+      "table": "player_document_events",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "player_document_events",
+      "column": "player_document_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "player_document_events",
+      "column": "event_type",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "player_document_events",
+      "column": "actor",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "player_document_events",
+      "column": "detail",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "timestamptz",
+      "table": "player_document_events",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "uuid",
+      "table": "player_documents",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "player_documents",
+      "column": "player_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "player_documents",
+      "column": "requirement_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "player_documents",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "uuid",
+      "table": "player_documents",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "uuid",
+      "table": "player_documents",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "uuid",
+      "table": "player_documents",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "text",
+      "table": "player_documents",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "NO",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "player_documents",
+      "column": "uploaded_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "player_documents",
+      "column": "storage_path",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "player_documents",
+      "column": "file_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "text",
+      "table": "player_documents",
+      "column": "file_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "int8",
+      "table": "player_documents",
+      "column": "file_size",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "player_documents",
+      "column": "status",
+      "default": "'pendiente'::text",
+      "nullable": "NO",
+      "position": 14
+    },
+    {
+      "type": "date",
+      "table": "player_documents",
+      "column": "vencimiento",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "player_documents",
+      "column": "observacion",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "player_documents",
+      "column": "reviewed_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "timestamptz",
+      "table": "player_documents",
+      "column": "reviewed_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "timestamptz",
+      "table": "player_documents",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 19
+    },
+    {
+      "type": "timestamptz",
+      "table": "player_documents",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 20
+    },
+    {
+      "type": "uuid",
+      "table": "playoff_matches",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "playoff_matches",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "playoff_matches",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "playoff_matches",
+      "column": "fase",
+      "default": null,
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "playoff_matches",
+      "column": "llave",
+      "default": null,
+      "nullable": "NO",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "playoff_matches",
+      "column": "titulo",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "int4",
+      "table": "playoff_matches",
+      "column": "orden",
+      "default": "0",
+      "nullable": "NO",
+      "position": 7
+    },
+    {
+      "type": "int4",
+      "table": "playoff_matches",
+      "column": "partido_numero",
+      "default": "1",
+      "nullable": "NO",
+      "position": 8
+    },
+    {
+      "type": "date",
+      "table": "playoff_matches",
+      "column": "fecha",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "playoff_matches",
+      "column": "local",
+      "default": null,
+      "nullable": "NO",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "playoff_matches",
+      "column": "visitante",
+      "default": null,
+      "nullable": "NO",
+      "position": 11
+    },
+    {
+      "type": "int4",
+      "table": "playoff_matches",
+      "column": "puntos_local",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "int4",
+      "table": "playoff_matches",
+      "column": "puntos_visitante",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "playoff_matches",
+      "column": "estado",
+      "default": "'pendiente'::text",
+      "nullable": "NO",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "playoff_matches",
+      "column": "observacion",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "playoff_matches",
+      "column": "cargado_por",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "timestamptz",
+      "table": "playoff_matches",
+      "column": "cargado_en",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "timestamptz",
+      "table": "playoff_matches",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 18
+    },
+    {
+      "type": "timestamptz",
+      "table": "playoff_matches",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 19
+    },
+    {
+      "type": "uuid",
+      "table": "result_change_logs",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "result_change_logs",
+      "column": "partido_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "result_change_logs",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "result_change_logs",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "result_change_logs",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "result_change_logs",
+      "column": "fase",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "int4",
+      "table": "result_change_logs",
+      "column": "jornada",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "date",
+      "table": "result_change_logs",
+      "column": "fecha",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "result_change_logs",
+      "column": "local",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "result_change_logs",
+      "column": "visitante",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "int4",
+      "table": "result_change_logs",
+      "column": "puntos_local_anterior",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "int4",
+      "table": "result_change_logs",
+      "column": "puntos_visitante_anterior",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "result_change_logs",
+      "column": "estado_resultado_anterior",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "result_change_logs",
+      "column": "cargado_por_anterior",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "timestamptz",
+      "table": "result_change_logs",
+      "column": "cargado_en_anterior",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "int4",
+      "table": "result_change_logs",
+      "column": "puntos_local_nuevo",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "int4",
+      "table": "result_change_logs",
+      "column": "puntos_visitante_nuevo",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "text",
+      "table": "result_change_logs",
+      "column": "estado_resultado_nuevo",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "text",
+      "table": "result_change_logs",
+      "column": "cargado_por_nuevo",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "timestamptz",
+      "table": "result_change_logs",
+      "column": "cargado_en_nuevo",
+      "default": null,
+      "nullable": "YES",
+      "position": 20
+    },
+    {
+      "type": "text",
+      "table": "result_change_logs",
+      "column": "accion",
+      "default": null,
+      "nullable": "NO",
+      "position": 21
+    },
+    {
+      "type": "text",
+      "table": "result_change_logs",
+      "column": "actor",
+      "default": null,
+      "nullable": "YES",
+      "position": 22
+    },
+    {
+      "type": "text",
+      "table": "result_change_logs",
+      "column": "origen",
+      "default": "'trigger_partidos'::text",
+      "nullable": "NO",
+      "position": 23
+    },
+    {
+      "type": "jsonb",
+      "table": "result_change_logs",
+      "column": "detalle",
+      "default": "'{}'::jsonb",
+      "nullable": "NO",
+      "position": 24
+    },
+    {
+      "type": "timestamptz",
+      "table": "result_change_logs",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 25
+    },
+    {
+      "type": "uuid",
+      "table": "team_audit_closure_events",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "team_audit_closure_events",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "team_audit_closure_events",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "team_audit_closure_events",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "uuid",
+      "table": "team_audit_closure_events",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "team_audit_closure_events",
+      "column": "equipo_nombre_snapshot",
+      "default": null,
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "team_audit_closure_events",
+      "column": "estado",
+      "default": null,
+      "nullable": "NO",
+      "position": 7
+    },
+    {
+      "type": "text",
+      "table": "team_audit_closure_events",
+      "column": "observacion",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "jsonb",
+      "table": "team_audit_closure_events",
+      "column": "resumen_snapshot",
+      "default": "'{}'::jsonb",
+      "nullable": "NO",
+      "position": 9
+    },
+    {
+      "type": "uuid",
+      "table": "team_audit_closure_events",
+      "column": "cerrado_por_user_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "team_audit_closure_events",
+      "column": "cerrado_por_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "timestamptz",
+      "table": "team_audit_closure_events",
+      "column": "cerrado_en",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 12
+    },
+    {
+      "type": "timestamptz",
+      "table": "team_audit_closure_events",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 13
+    },
+    {
+      "type": "timestamptz",
+      "table": "team_audit_closure_events",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 14
+    },
+    {
+      "type": "uuid",
+      "table": "team_documents",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "team_documents",
+      "column": "requirement_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "team_documents",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "team_documents",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "uuid",
+      "table": "team_documents",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "uuid",
+      "table": "team_documents",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "team_documents",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "NO",
+      "position": 7
+    },
+    {
+      "type": "text",
+      "table": "team_documents",
+      "column": "uploaded_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "team_documents",
+      "column": "storage_path",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "team_documents",
+      "column": "file_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "team_documents",
+      "column": "file_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "int8",
+      "table": "team_documents",
+      "column": "file_size",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "team_documents",
+      "column": "status",
+      "default": "'pendiente'::text",
+      "nullable": "NO",
+      "position": 13
+    },
+    {
+      "type": "date",
+      "table": "team_documents",
+      "column": "vencimiento",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "team_documents",
+      "column": "observacion",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "team_documents",
+      "column": "reviewed_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "timestamptz",
+      "table": "team_documents",
+      "column": "reviewed_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "timestamptz",
+      "table": "team_documents",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 18
+    },
+    {
+      "type": "timestamptz",
+      "table": "team_documents",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 19
+    },
+    {
+      "type": "uuid",
+      "table": "team_players",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "team_players",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "team_players",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "team_players",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "uuid",
+      "table": "team_players",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "team_players",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "team_players",
+      "column": "nombre",
+      "default": null,
+      "nullable": "NO",
+      "position": 7
+    },
+    {
+      "type": "text",
+      "table": "team_players",
+      "column": "dni",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "team_players",
+      "column": "dorsal",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "bool",
+      "table": "team_players",
+      "column": "activo",
+      "default": "true",
+      "nullable": "NO",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "team_players",
+      "column": "created_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "timestamptz",
+      "table": "team_players",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 12
+    },
+    {
+      "type": "timestamptz",
+      "table": "team_players",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 13
+    },
+    {
+      "type": "bool",
+      "table": "team_players",
+      "column": "baja_solicitada",
+      "default": "false",
+      "nullable": "NO",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "team_players",
+      "column": "baja_motivo",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "team_players",
+      "column": "baja_solicitada_por",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "timestamptz",
+      "table": "team_players",
+      "column": "baja_solicitada_en",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "text",
+      "table": "team_players",
+      "column": "baja_resuelta_por",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "timestamptz",
+      "table": "team_players",
+      "column": "baja_resuelta_en",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "uuid",
+      "table": "torneos",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "torneos",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "NO",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "torneos",
+      "column": "nombre",
+      "default": null,
+      "nullable": "NO",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "torneos",
+      "column": "temporada",
+      "default": null,
+      "nullable": "NO",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "torneos",
+      "column": "tipo",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "torneos",
+      "column": "estado",
+      "default": "'borrador'::text",
+      "nullable": "NO",
+      "position": 6
+    },
+    {
+      "type": "timestamptz",
+      "table": "torneos",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO",
+      "position": 7
+    },
+    {
+      "type": "uuid",
+      "table": "v_app_user_permissions",
+      "column": "user_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 1
+    },
+    {
+      "type": "text",
+      "table": "v_app_user_permissions",
+      "column": "display_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "v_app_user_permissions",
+      "column": "email",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "v_app_user_permissions",
+      "column": "role",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "v_app_user_permissions",
+      "column": "legacy_key",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "bool",
+      "table": "v_app_user_permissions",
+      "column": "active",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "bool",
+      "table": "v_app_user_permissions",
+      "column": "emergency_access",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "uuid",
+      "table": "v_app_user_permissions",
+      "column": "permission_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "uuid",
+      "table": "v_app_user_permissions",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "v_app_user_permissions",
+      "column": "organizacion_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "uuid",
+      "table": "v_app_user_permissions",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "text",
+      "table": "v_app_user_permissions",
+      "column": "torneo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "uuid",
+      "table": "v_app_user_permissions",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "v_app_user_permissions",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "uuid",
+      "table": "v_app_user_permissions",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "v_app_user_permissions",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "bool",
+      "table": "v_app_user_permissions",
+      "column": "can_view",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "bool",
+      "table": "v_app_user_permissions",
+      "column": "can_load_results",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "bool",
+      "table": "v_app_user_permissions",
+      "column": "can_load_documents",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "bool",
+      "table": "v_app_user_permissions",
+      "column": "can_review_documents",
+      "default": null,
+      "nullable": "YES",
+      "position": 20
+    },
+    {
+      "type": "bool",
+      "table": "v_app_user_permissions",
+      "column": "can_correct_results",
+      "default": null,
+      "nullable": "YES",
+      "position": 21
+    },
+    {
+      "type": "bool",
+      "table": "v_app_user_permissions",
+      "column": "can_manage_tournaments",
+      "default": null,
+      "nullable": "YES",
+      "position": 22
+    },
+    {
+      "type": "bool",
+      "table": "v_app_user_permissions",
+      "column": "can_manage_users",
+      "default": null,
+      "nullable": "YES",
+      "position": 23
+    },
+    {
+      "type": "bool",
+      "table": "v_app_user_permissions",
+      "column": "can_emergency_override",
+      "default": null,
+      "nullable": "YES",
+      "position": 24
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_ai_audits_latest",
+      "column": "id",
+      "default": null,
+      "nullable": "YES",
+      "position": 1
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "scope",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_ai_audits_latest",
+      "column": "team_document_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_ai_audits_latest",
+      "column": "player_document_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_ai_audits_latest",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_ai_audits_latest",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_ai_audits_latest",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_ai_audits_latest",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_ai_audits_latest",
+      "column": "player_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "player_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_ai_audits_latest",
+      "column": "requirement_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "requirement_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "storage_path",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "file_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "file_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "audit_status",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "numeric",
+      "table": "v_document_ai_audits_latest",
+      "column": "confidence",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "summary",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "jsonb",
+      "table": "v_document_ai_audits_latest",
+      "column": "findings",
+      "default": null,
+      "nullable": "YES",
+      "position": 20
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "extracted_text",
+      "default": null,
+      "nullable": "YES",
+      "position": 21
+    },
+    {
+      "type": "jsonb",
+      "table": "v_document_ai_audits_latest",
+      "column": "detected_dates",
+      "default": null,
+      "nullable": "YES",
+      "position": 22
+    },
+    {
+      "type": "date",
+      "table": "v_document_ai_audits_latest",
+      "column": "valid_until",
+      "default": null,
+      "nullable": "YES",
+      "position": 23
+    },
+    {
+      "type": "jsonb",
+      "table": "v_document_ai_audits_latest",
+      "column": "checks",
+      "default": null,
+      "nullable": "YES",
+      "position": 24
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "criteria_version",
+      "default": null,
+      "nullable": "YES",
+      "position": 25
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "unresolved_reason",
+      "default": null,
+      "nullable": "YES",
+      "position": 26
+    },
+    {
+      "type": "jsonb",
+      "table": "v_document_ai_audits_latest",
+      "column": "page_evidence",
+      "default": null,
+      "nullable": "YES",
+      "position": 27
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "source_kind",
+      "default": null,
+      "nullable": "YES",
+      "position": 28
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "source_file_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 29
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "source_file_url",
+      "default": null,
+      "nullable": "YES",
+      "position": 30
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_document_ai_audits_latest",
+      "column": "source_modified_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 31
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "source_hash",
+      "default": null,
+      "nullable": "YES",
+      "position": 32
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "model",
+      "default": null,
+      "nullable": "YES",
+      "position": 33
+    },
+    {
+      "type": "text",
+      "table": "v_document_ai_audits_latest",
+      "column": "audited_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 34
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_document_ai_audits_latest",
+      "column": "audited_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 35
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_document_ai_audits_latest",
+      "column": "created_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 36
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_document_ai_audits_latest",
+      "column": "updated_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 37
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_audit_results_admin",
+      "column": "id",
+      "default": null,
+      "nullable": "YES",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_audit_results_admin",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_audit_results_admin",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_audit_results_admin",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "uuid",
+      "table": "v_document_audit_results_admin",
+      "column": "player_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "player_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "alcance",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "planilla_arbitro",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "document_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "declared_status",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "located_status",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "validated_status",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "valid_until",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "audit_status",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "risk_level",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "int4",
+      "table": "v_document_audit_results_admin",
+      "column": "risk_order",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "observation",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "evidence_url",
+      "default": null,
+      "nullable": "YES",
+      "position": 20
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "source_sheet",
+      "default": null,
+      "nullable": "YES",
+      "position": 21
+    },
+    {
+      "type": "date",
+      "table": "v_document_audit_results_admin",
+      "column": "cutoff_date",
+      "default": null,
+      "nullable": "YES",
+      "position": 22
+    },
+    {
+      "type": "text",
+      "table": "v_document_audit_results_admin",
+      "column": "imported_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 23
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_document_audit_results_admin",
+      "column": "imported_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 24
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_document_audit_results_admin",
+      "column": "created_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 25
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_document_audit_results_admin",
+      "column": "updated_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 26
+    },
+    {
+      "type": "uuid",
+      "table": "v_drive_player_documents_admin",
+      "column": "id",
+      "default": null,
+      "nullable": "YES",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "v_drive_player_documents_admin",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "organizacion_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "v_drive_player_documents_admin",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "torneo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "uuid",
+      "table": "v_drive_player_documents_admin",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "uuid",
+      "table": "v_drive_player_documents_admin",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "uuid",
+      "table": "v_drive_player_documents_admin",
+      "column": "player_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "player_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "player_dni",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "player_dorsal",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "document_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "title",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "drive_file_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "drive_url",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "mime_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "status",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "observation",
+      "default": null,
+      "nullable": "YES",
+      "position": 20
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "match_status",
+      "default": null,
+      "nullable": "YES",
+      "position": 21
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "source_folder",
+      "default": null,
+      "nullable": "YES",
+      "position": 22
+    },
+    {
+      "type": "text",
+      "table": "v_drive_player_documents_admin",
+      "column": "reviewed_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 23
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_drive_player_documents_admin",
+      "column": "reviewed_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 24
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_drive_player_documents_admin",
+      "column": "created_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 25
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_drive_player_documents_admin",
+      "column": "updated_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 26
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin",
+      "column": "id",
+      "default": null,
+      "nullable": "YES",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin",
+      "column": "player_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "jugador_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "jugador_dni",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "jugador_dorsal",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "bool",
+      "table": "v_player_documents_admin",
+      "column": "baja_solicitada",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "baja_motivo",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "baja_solicitada_por",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_player_documents_admin",
+      "column": "baja_solicitada_en",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin",
+      "column": "requirement_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "requirement_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "organizacion_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "torneo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "uploaded_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 20
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "storage_path",
+      "default": null,
+      "nullable": "YES",
+      "position": 21
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "file_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 22
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "file_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 23
+    },
+    {
+      "type": "int8",
+      "table": "v_player_documents_admin",
+      "column": "file_size",
+      "default": null,
+      "nullable": "YES",
+      "position": 24
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "status",
+      "default": null,
+      "nullable": "YES",
+      "position": 25
+    },
+    {
+      "type": "date",
+      "table": "v_player_documents_admin",
+      "column": "vencimiento",
+      "default": null,
+      "nullable": "YES",
+      "position": 26
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "observacion",
+      "default": null,
+      "nullable": "YES",
+      "position": 27
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin",
+      "column": "reviewed_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 28
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_player_documents_admin",
+      "column": "reviewed_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 29
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_player_documents_admin",
+      "column": "created_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 30
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_player_documents_admin",
+      "column": "updated_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 31
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin_ai",
+      "column": "id",
+      "default": null,
+      "nullable": "YES",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin_ai",
+      "column": "player_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "jugador_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "jugador_dni",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "jugador_dorsal",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "bool",
+      "table": "v_player_documents_admin_ai",
+      "column": "baja_solicitada",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "baja_motivo",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "baja_solicitada_por",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_player_documents_admin_ai",
+      "column": "baja_solicitada_en",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin_ai",
+      "column": "requirement_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "requirement_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin_ai",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "organizacion_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin_ai",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "torneo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin_ai",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "uuid",
+      "table": "v_player_documents_admin_ai",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "uploaded_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 20
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "storage_path",
+      "default": null,
+      "nullable": "YES",
+      "position": 21
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "file_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 22
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "file_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 23
+    },
+    {
+      "type": "int8",
+      "table": "v_player_documents_admin_ai",
+      "column": "file_size",
+      "default": null,
+      "nullable": "YES",
+      "position": 24
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "status",
+      "default": null,
+      "nullable": "YES",
+      "position": 25
+    },
+    {
+      "type": "date",
+      "table": "v_player_documents_admin_ai",
+      "column": "vencimiento",
+      "default": null,
+      "nullable": "YES",
+      "position": 26
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "observacion",
+      "default": null,
+      "nullable": "YES",
+      "position": 27
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "reviewed_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 28
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_player_documents_admin_ai",
+      "column": "reviewed_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 29
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_player_documents_admin_ai",
+      "column": "created_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 30
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_player_documents_admin_ai",
+      "column": "updated_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 31
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_audit_status",
+      "default": null,
+      "nullable": "YES",
+      "position": 32
+    },
+    {
+      "type": "numeric",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_confidence",
+      "default": null,
+      "nullable": "YES",
+      "position": 33
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_summary",
+      "default": null,
+      "nullable": "YES",
+      "position": 34
+    },
+    {
+      "type": "jsonb",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_findings",
+      "default": null,
+      "nullable": "YES",
+      "position": 35
+    },
+    {
+      "type": "jsonb",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_detected_dates",
+      "default": null,
+      "nullable": "YES",
+      "position": 36
+    },
+    {
+      "type": "date",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_valid_until",
+      "default": null,
+      "nullable": "YES",
+      "position": 37
+    },
+    {
+      "type": "jsonb",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_checks",
+      "default": null,
+      "nullable": "YES",
+      "position": 38
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_criteria_version",
+      "default": null,
+      "nullable": "YES",
+      "position": 39
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_unresolved_reason",
+      "default": null,
+      "nullable": "YES",
+      "position": 40
+    },
+    {
+      "type": "jsonb",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_page_evidence",
+      "default": null,
+      "nullable": "YES",
+      "position": 41
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_source_kind",
+      "default": null,
+      "nullable": "YES",
+      "position": 42
+    },
+    {
+      "type": "text",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_source_file_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 43
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_player_documents_admin_ai",
+      "column": "ai_audited_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 44
+    },
+    {
+      "type": "uuid",
+      "table": "v_result_change_logs_admin",
+      "column": "id",
+      "default": null,
+      "nullable": "YES",
+      "position": 1
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_result_change_logs_admin",
+      "column": "created_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "uuid",
+      "table": "v_result_change_logs_admin",
+      "column": "partido_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "v_result_change_logs_admin",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "torneo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "temporada",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "uuid",
+      "table": "v_result_change_logs_admin",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "fase",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "int4",
+      "table": "v_result_change_logs_admin",
+      "column": "jornada",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "date",
+      "table": "v_result_change_logs_admin",
+      "column": "fecha",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "local",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "visitante",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "int4",
+      "table": "v_result_change_logs_admin",
+      "column": "puntos_local_anterior",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "int4",
+      "table": "v_result_change_logs_admin",
+      "column": "puntos_visitante_anterior",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "estado_resultado_anterior",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "cargado_por_anterior",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_result_change_logs_admin",
+      "column": "cargado_en_anterior",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "int4",
+      "table": "v_result_change_logs_admin",
+      "column": "puntos_local_nuevo",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "int4",
+      "table": "v_result_change_logs_admin",
+      "column": "puntos_visitante_nuevo",
+      "default": null,
+      "nullable": "YES",
+      "position": 20
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "estado_resultado_nuevo",
+      "default": null,
+      "nullable": "YES",
+      "position": 21
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "cargado_por_nuevo",
+      "default": null,
+      "nullable": "YES",
+      "position": 22
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_result_change_logs_admin",
+      "column": "cargado_en_nuevo",
+      "default": null,
+      "nullable": "YES",
+      "position": 23
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "accion",
+      "default": null,
+      "nullable": "YES",
+      "position": 24
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "actor",
+      "default": null,
+      "nullable": "YES",
+      "position": 25
+    },
+    {
+      "type": "text",
+      "table": "v_result_change_logs_admin",
+      "column": "origen",
+      "default": null,
+      "nullable": "YES",
+      "position": 26
+    },
+    {
+      "type": "jsonb",
+      "table": "v_result_change_logs_admin",
+      "column": "detalle",
+      "default": null,
+      "nullable": "YES",
+      "position": 27
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin",
+      "column": "id",
+      "default": null,
+      "nullable": "YES",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin",
+      "column": "requirement_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "requirement_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "organizacion_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "torneo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "uploaded_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "storage_path",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "file_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "file_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "int8",
+      "table": "v_team_documents_admin",
+      "column": "file_size",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "status",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "date",
+      "table": "v_team_documents_admin",
+      "column": "vencimiento",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "observacion",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin",
+      "column": "reviewed_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 20
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_team_documents_admin",
+      "column": "reviewed_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 21
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_team_documents_admin",
+      "column": "created_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 22
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_team_documents_admin",
+      "column": "updated_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 23
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin_ai",
+      "column": "id",
+      "default": null,
+      "nullable": "YES",
+      "position": 1
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin_ai",
+      "column": "requirement_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 2
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "requirement_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 3
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin_ai",
+      "column": "organizacion_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 4
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "organizacion_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 5
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin_ai",
+      "column": "torneo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 6
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "torneo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 7
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin_ai",
+      "column": "categoria_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 8
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "categoria_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 9
+    },
+    {
+      "type": "uuid",
+      "table": "v_team_documents_admin_ai",
+      "column": "equipo_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 10
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "equipo_nombre",
+      "default": null,
+      "nullable": "YES",
+      "position": 11
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "uploaded_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 12
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "storage_path",
+      "default": null,
+      "nullable": "YES",
+      "position": 13
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "file_name",
+      "default": null,
+      "nullable": "YES",
+      "position": 14
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "file_type",
+      "default": null,
+      "nullable": "YES",
+      "position": 15
+    },
+    {
+      "type": "int8",
+      "table": "v_team_documents_admin_ai",
+      "column": "file_size",
+      "default": null,
+      "nullable": "YES",
+      "position": 16
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "status",
+      "default": null,
+      "nullable": "YES",
+      "position": 17
+    },
+    {
+      "type": "date",
+      "table": "v_team_documents_admin_ai",
+      "column": "vencimiento",
+      "default": null,
+      "nullable": "YES",
+      "position": 18
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "observacion",
+      "default": null,
+      "nullable": "YES",
+      "position": 19
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "reviewed_by",
+      "default": null,
+      "nullable": "YES",
+      "position": 20
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_team_documents_admin_ai",
+      "column": "reviewed_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 21
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_team_documents_admin_ai",
+      "column": "created_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 22
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_team_documents_admin_ai",
+      "column": "updated_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 23
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_audit_status",
+      "default": null,
+      "nullable": "YES",
+      "position": 24
+    },
+    {
+      "type": "numeric",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_confidence",
+      "default": null,
+      "nullable": "YES",
+      "position": 25
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_summary",
+      "default": null,
+      "nullable": "YES",
+      "position": 26
+    },
+    {
+      "type": "jsonb",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_findings",
+      "default": null,
+      "nullable": "YES",
+      "position": 27
+    },
+    {
+      "type": "jsonb",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_detected_dates",
+      "default": null,
+      "nullable": "YES",
+      "position": 28
+    },
+    {
+      "type": "date",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_valid_until",
+      "default": null,
+      "nullable": "YES",
+      "position": 29
+    },
+    {
+      "type": "jsonb",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_checks",
+      "default": null,
+      "nullable": "YES",
+      "position": 30
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_criteria_version",
+      "default": null,
+      "nullable": "YES",
+      "position": 31
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_unresolved_reason",
+      "default": null,
+      "nullable": "YES",
+      "position": 32
+    },
+    {
+      "type": "jsonb",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_page_evidence",
+      "default": null,
+      "nullable": "YES",
+      "position": 33
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_source_kind",
+      "default": null,
+      "nullable": "YES",
+      "position": 34
+    },
+    {
+      "type": "text",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_source_file_id",
+      "default": null,
+      "nullable": "YES",
+      "position": 35
+    },
+    {
+      "type": "timestamptz",
+      "table": "v_team_documents_admin_ai",
+      "column": "ai_audited_at",
+      "default": null,
+      "nullable": "YES",
+      "position": 36
+    }
+  ],
+  "constraints": [
+    {
+      "name": "app_usage_events_pkey",
+      "type": "p",
+      "table": "app_usage_events",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "app_user_permissions_categoria_id_fkey",
+      "type": "f",
+      "table": "app_user_permissions",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id)"
+    },
+    {
+      "name": "app_user_permissions_equipo_id_fkey",
+      "type": "f",
+      "table": "app_user_permissions",
+      "definition": "FOREIGN KEY (equipo_id) REFERENCES equipos(id)"
+    },
+    {
+      "name": "app_user_permissions_organizacion_id_fkey",
+      "type": "f",
+      "table": "app_user_permissions",
+      "definition": "FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id)"
+    },
+    {
+      "name": "app_user_permissions_pkey",
+      "type": "p",
+      "table": "app_user_permissions",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "app_user_permissions_torneo_id_fkey",
+      "type": "f",
+      "table": "app_user_permissions",
+      "definition": "FOREIGN KEY (torneo_id) REFERENCES torneos(id)"
+    },
+    {
+      "name": "app_user_permissions_user_id_fkey",
+      "type": "f",
+      "table": "app_user_permissions",
+      "definition": "FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "app_users_auth_user_id_key",
+      "type": "u",
+      "table": "app_users",
+      "definition": "UNIQUE (auth_user_id)"
+    },
+    {
+      "name": "app_users_legacy_key_key",
+      "type": "u",
+      "table": "app_users",
+      "definition": "UNIQUE (legacy_key)"
+    },
+    {
+      "name": "app_users_organizacion_id_fkey",
+      "type": "f",
+      "table": "app_users",
+      "definition": "FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id)"
+    },
+    {
+      "name": "app_users_pkey",
+      "type": "p",
+      "table": "app_users",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "app_users_role_check",
+      "type": "c",
+      "table": "app_users",
+      "definition": "CHECK ((role = ANY (ARRAY['admin_general'::text, 'asociacion'::text, 'delegado'::text, 'jugador'::text, 'publico'::text])))"
+    },
+    {
+      "name": "auditoria_resultados_delegado_id_fkey",
+      "type": "f",
+      "table": "auditoria_resultados",
+      "definition": "FOREIGN KEY (delegado_id) REFERENCES delegados(id) ON DELETE SET NULL"
+    },
+    {
+      "name": "auditoria_resultados_partido_id_fkey",
+      "type": "f",
+      "table": "auditoria_resultados",
+      "definition": "FOREIGN KEY (partido_id) REFERENCES partidos(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "auditoria_resultados_pkey",
+      "type": "p",
+      "table": "auditoria_resultados",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "categorias_pkey",
+      "type": "p",
+      "table": "categorias",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "categorias_torneo_id_fkey",
+      "type": "f",
+      "table": "categorias",
+      "definition": "FOREIGN KEY (torneo_id) REFERENCES torneos(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "delegado_categorias_categoria_id_fkey",
+      "type": "f",
+      "table": "delegado_categorias",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "delegado_categorias_delegado_id_categoria_id_key",
+      "type": "u",
+      "table": "delegado_categorias",
+      "definition": "UNIQUE (delegado_id, categoria_id)"
+    },
+    {
+      "name": "delegado_categorias_delegado_id_fkey",
+      "type": "f",
+      "table": "delegado_categorias",
+      "definition": "FOREIGN KEY (delegado_id) REFERENCES delegados(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "delegado_categorias_pkey",
+      "type": "p",
+      "table": "delegado_categorias",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "delegados_auth_user_id_key",
+      "type": "u",
+      "table": "delegados",
+      "definition": "UNIQUE (auth_user_id)"
+    },
+    {
+      "name": "delegados_email_key",
+      "type": "u",
+      "table": "delegados",
+      "definition": "UNIQUE (email)"
+    },
+    {
+      "name": "delegados_pkey",
+      "type": "p",
+      "table": "delegados",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "document_ai_audits_audit_status_check",
+      "type": "c",
+      "table": "document_ai_audits",
+      "definition": "CHECK ((audit_status = ANY (ARRAY['pendiente'::text, 'validado'::text, 'listo_aprobar'::text, 'revisar'::text, 'observado'::text, 'rechazado'::text, 'vencido'::text, 'error'::text])))"
+    },
+    {
+      "name": "document_ai_audits_categoria_id_fkey",
+      "type": "f",
+      "table": "document_ai_audits",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id)"
+    },
+    {
+      "name": "document_ai_audits_document_check",
+      "type": "c",
+      "table": "document_ai_audits",
+      "definition": "CHECK ((((scope = 'team'::text) AND (team_document_id IS NOT NULL) AND (player_document_id IS NULL)) OR ((scope = 'player'::text) AND (player_document_id IS NOT NULL) AND (team_document_id IS NULL))))"
+    },
+    {
+      "name": "document_ai_audits_equipo_id_fkey",
+      "type": "f",
+      "table": "document_ai_audits",
+      "definition": "FOREIGN KEY (equipo_id) REFERENCES equipos(id)"
+    },
+    {
+      "name": "document_ai_audits_organizacion_id_fkey",
+      "type": "f",
+      "table": "document_ai_audits",
+      "definition": "FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id)"
+    },
+    {
+      "name": "document_ai_audits_pkey",
+      "type": "p",
+      "table": "document_ai_audits",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "document_ai_audits_player_document_id_fkey",
+      "type": "f",
+      "table": "document_ai_audits",
+      "definition": "FOREIGN KEY (player_document_id) REFERENCES player_documents(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "document_ai_audits_player_id_fkey",
+      "type": "f",
+      "table": "document_ai_audits",
+      "definition": "FOREIGN KEY (player_id) REFERENCES team_players(id) ON DELETE SET NULL"
+    },
+    {
+      "name": "document_ai_audits_requirement_id_fkey",
+      "type": "f",
+      "table": "document_ai_audits",
+      "definition": "FOREIGN KEY (requirement_id) REFERENCES document_requirements(id)"
+    },
+    {
+      "name": "document_ai_audits_scope_check",
+      "type": "c",
+      "table": "document_ai_audits",
+      "definition": "CHECK ((scope = ANY (ARRAY['team'::text, 'player'::text])))"
+    },
+    {
+      "name": "document_ai_audits_team_document_id_fkey",
+      "type": "f",
+      "table": "document_ai_audits",
+      "definition": "FOREIGN KEY (team_document_id) REFERENCES team_documents(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "document_ai_audits_torneo_id_fkey",
+      "type": "f",
+      "table": "document_ai_audits",
+      "definition": "FOREIGN KEY (torneo_id) REFERENCES torneos(id)"
+    },
+    {
+      "name": "document_audit_criteria_versions_pkey",
+      "type": "p",
+      "table": "document_audit_criteria_versions",
+      "definition": "PRIMARY KEY (version)"
+    },
+    {
+      "name": "document_audit_results_categoria_id_fkey",
+      "type": "f",
+      "table": "document_audit_results",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id)"
+    },
+    {
+      "name": "document_audit_results_organizacion_id_fkey",
+      "type": "f",
+      "table": "document_audit_results",
+      "definition": "FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id)"
+    },
+    {
+      "name": "document_audit_results_pkey",
+      "type": "p",
+      "table": "document_audit_results",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "document_audit_results_player_id_fkey",
+      "type": "f",
+      "table": "document_audit_results",
+      "definition": "FOREIGN KEY (player_id) REFERENCES team_players(id) ON DELETE SET NULL"
+    },
+    {
+      "name": "document_audit_results_torneo_id_fkey",
+      "type": "f",
+      "table": "document_audit_results",
+      "definition": "FOREIGN KEY (torneo_id) REFERENCES torneos(id)"
+    },
+    {
+      "name": "document_events_pkey",
+      "type": "p",
+      "table": "document_events",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "document_events_team_document_id_fkey",
+      "type": "f",
+      "table": "document_events",
+      "definition": "FOREIGN KEY (team_document_id) REFERENCES team_documents(id)"
+    },
+    {
+      "name": "document_files_pkey",
+      "type": "p",
+      "table": "document_files",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "document_files_team_document_id_fkey",
+      "type": "f",
+      "table": "document_files",
+      "definition": "FOREIGN KEY (team_document_id) REFERENCES team_documents(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "document_requirements_categoria_id_fkey",
+      "type": "f",
+      "table": "document_requirements",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id)"
+    },
+    {
+      "name": "document_requirements_organizacion_id_fkey",
+      "type": "f",
+      "table": "document_requirements",
+      "definition": "FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id)"
+    },
+    {
+      "name": "document_requirements_pkey",
+      "type": "p",
+      "table": "document_requirements",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "document_requirements_scope_check",
+      "type": "c",
+      "table": "document_requirements",
+      "definition": "CHECK ((scope = ANY (ARRAY['team'::text, 'player'::text])))"
+    },
+    {
+      "name": "document_requirements_torneo_id_fkey",
+      "type": "f",
+      "table": "document_requirements",
+      "definition": "FOREIGN KEY (torneo_id) REFERENCES torneos(id)"
+    },
+    {
+      "name": "drive_player_documents_categoria_id_fkey",
+      "type": "f",
+      "table": "drive_player_documents",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id)"
+    },
+    {
+      "name": "drive_player_documents_equipo_id_fkey",
+      "type": "f",
+      "table": "drive_player_documents",
+      "definition": "FOREIGN KEY (equipo_id) REFERENCES equipos(id)"
+    },
+    {
+      "name": "drive_player_documents_file_unique",
+      "type": "u",
+      "table": "drive_player_documents",
+      "definition": "UNIQUE (drive_file_id, document_type)"
+    },
+    {
+      "name": "drive_player_documents_match_status_check",
+      "type": "c",
+      "table": "drive_player_documents",
+      "definition": "CHECK ((match_status = ANY (ARRAY['exacto'::text, 'dudoso'::text, 'sin_jugador'::text, 'sin_asociar'::text])))"
+    },
+    {
+      "name": "drive_player_documents_organizacion_id_fkey",
+      "type": "f",
+      "table": "drive_player_documents",
+      "definition": "FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id)"
+    },
+    {
+      "name": "drive_player_documents_pkey",
+      "type": "p",
+      "table": "drive_player_documents",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "drive_player_documents_player_id_fkey",
+      "type": "f",
+      "table": "drive_player_documents",
+      "definition": "FOREIGN KEY (player_id) REFERENCES team_players(id) ON DELETE SET NULL"
+    },
+    {
+      "name": "drive_player_documents_status_check",
+      "type": "c",
+      "table": "drive_player_documents",
+      "definition": "CHECK ((status = ANY (ARRAY['cargado'::text, 'pendiente'::text, 'revisar'::text, 'vencido'::text])))"
+    },
+    {
+      "name": "drive_player_documents_torneo_id_fkey",
+      "type": "f",
+      "table": "drive_player_documents",
+      "definition": "FOREIGN KEY (torneo_id) REFERENCES torneos(id)"
+    },
+    {
+      "name": "equipos_categoria_id_fkey",
+      "type": "f",
+      "table": "equipos",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "equipos_pkey",
+      "type": "p",
+      "table": "equipos",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "fechas_categoria_id_fkey",
+      "type": "f",
+      "table": "fechas",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "fechas_pkey",
+      "type": "p",
+      "table": "fechas",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "fixtures_publicos_pkey",
+      "type": "p",
+      "table": "fixtures_publicos",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "match_schedules_categoria_id_fkey",
+      "type": "f",
+      "table": "match_schedules",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "match_schedules_estado_valid",
+      "type": "c",
+      "table": "match_schedules",
+      "definition": "CHECK ((estado = ANY (ARRAY['pendiente'::text, 'listo'::text, 'enviado'::text, 'confirmado'::text])))"
+    },
+    {
+      "name": "match_schedules_partido_id_fkey",
+      "type": "f",
+      "table": "match_schedules",
+      "definition": "FOREIGN KEY (partido_id) REFERENCES partidos(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "match_schedules_partido_unique",
+      "type": "u",
+      "table": "match_schedules",
+      "definition": "UNIQUE (partido_id)"
+    },
+    {
+      "name": "match_schedules_pkey",
+      "type": "p",
+      "table": "match_schedules",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "organizaciones_pkey",
+      "type": "p",
+      "table": "organizaciones",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "organizaciones_slug_key",
+      "type": "u",
+      "table": "organizaciones",
+      "definition": "UNIQUE (slug)"
+    },
+    {
+      "name": "partidos_categoria_id_fkey",
+      "type": "f",
+      "table": "partidos",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "partidos_fecha_id_fkey",
+      "type": "f",
+      "table": "partidos",
+      "definition": "FOREIGN KEY (fecha_id) REFERENCES fechas(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "partidos_pkey",
+      "type": "p",
+      "table": "partidos",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "player_document_events_pkey",
+      "type": "p",
+      "table": "player_document_events",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "player_document_events_player_document_id_fkey",
+      "type": "f",
+      "table": "player_document_events",
+      "definition": "FOREIGN KEY (player_document_id) REFERENCES player_documents(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "player_documents_categoria_id_fkey",
+      "type": "f",
+      "table": "player_documents",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id)"
+    },
+    {
+      "name": "player_documents_equipo_id_fkey",
+      "type": "f",
+      "table": "player_documents",
+      "definition": "FOREIGN KEY (equipo_id) REFERENCES equipos(id)"
+    },
+    {
+      "name": "player_documents_organizacion_id_fkey",
+      "type": "f",
+      "table": "player_documents",
+      "definition": "FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id)"
+    },
+    {
+      "name": "player_documents_pkey",
+      "type": "p",
+      "table": "player_documents",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "player_documents_player_id_fkey",
+      "type": "f",
+      "table": "player_documents",
+      "definition": "FOREIGN KEY (player_id) REFERENCES team_players(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "player_documents_requirement_id_fkey",
+      "type": "f",
+      "table": "player_documents",
+      "definition": "FOREIGN KEY (requirement_id) REFERENCES document_requirements(id)"
+    },
+    {
+      "name": "player_documents_status_check",
+      "type": "c",
+      "table": "player_documents",
+      "definition": "CHECK ((status = ANY (ARRAY['pendiente'::text, 'cargado'::text, 'observado'::text, 'aprobado'::text, 'rechazado'::text, 'vencido'::text])))"
+    },
+    {
+      "name": "player_documents_torneo_id_fkey",
+      "type": "f",
+      "table": "player_documents",
+      "definition": "FOREIGN KEY (torneo_id) REFERENCES torneos(id)"
+    },
+    {
+      "name": "player_documents_unique_requirement",
+      "type": "u",
+      "table": "player_documents",
+      "definition": "UNIQUE (player_id, requirement_id)"
+    },
+    {
+      "name": "playoff_matches_categoria_id_fkey",
+      "type": "f",
+      "table": "playoff_matches",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "playoff_matches_pkey",
+      "type": "p",
+      "table": "playoff_matches",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "playoff_matches_scores_valid",
+      "type": "c",
+      "table": "playoff_matches",
+      "definition": "CHECK ((((puntos_local IS NULL) AND (puntos_visitante IS NULL)) OR ((puntos_local >= 0) AND (puntos_visitante >= 0))))"
+    },
+    {
+      "name": "playoff_matches_unique_match",
+      "type": "u",
+      "table": "playoff_matches",
+      "definition": "UNIQUE (categoria_id, fase, llave, partido_numero)"
+    },
+    {
+      "name": "result_change_logs_partido_id_fkey",
+      "type": "f",
+      "table": "result_change_logs",
+      "definition": "FOREIGN KEY (partido_id) REFERENCES partidos(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "result_change_logs_pkey",
+      "type": "p",
+      "table": "result_change_logs",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "team_audit_closure_events_estado_check",
+      "type": "c",
+      "table": "team_audit_closure_events",
+      "definition": "CHECK ((estado = ANY (ARRAY['CERRADO_CONFORME'::text, 'CERRADO_CON_OBSERVACIONES'::text, 'REABIERTO'::text])))"
+    },
+    {
+      "name": "team_audit_closure_events_observation_check",
+      "type": "c",
+      "table": "team_audit_closure_events",
+      "definition": "CHECK (((estado = 'CERRADO_CONFORME'::text) OR (NULLIF(btrim(COALESCE(observacion, ''::text)), ''::text) IS NOT NULL)))"
+    },
+    {
+      "name": "team_audit_closure_events_pkey",
+      "type": "p",
+      "table": "team_audit_closure_events",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "team_audit_closure_events_snapshot_check",
+      "type": "c",
+      "table": "team_audit_closure_events",
+      "definition": "CHECK ((jsonb_typeof(resumen_snapshot) = 'object'::text))"
+    },
+    {
+      "name": "team_documents_categoria_id_fkey",
+      "type": "f",
+      "table": "team_documents",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id)"
+    },
+    {
+      "name": "team_documents_equipo_id_fkey",
+      "type": "f",
+      "table": "team_documents",
+      "definition": "FOREIGN KEY (equipo_id) REFERENCES equipos(id)"
+    },
+    {
+      "name": "team_documents_organizacion_id_fkey",
+      "type": "f",
+      "table": "team_documents",
+      "definition": "FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id)"
+    },
+    {
+      "name": "team_documents_pkey",
+      "type": "p",
+      "table": "team_documents",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "team_documents_requirement_id_fkey",
+      "type": "f",
+      "table": "team_documents",
+      "definition": "FOREIGN KEY (requirement_id) REFERENCES document_requirements(id)"
+    },
+    {
+      "name": "team_documents_status_check",
+      "type": "c",
+      "table": "team_documents",
+      "definition": "CHECK ((status = ANY (ARRAY['pendiente'::text, 'cargado'::text, 'observado'::text, 'aprobado'::text, 'rechazado'::text, 'vencido'::text])))"
+    },
+    {
+      "name": "team_documents_torneo_id_fkey",
+      "type": "f",
+      "table": "team_documents",
+      "definition": "FOREIGN KEY (torneo_id) REFERENCES torneos(id)"
+    },
+    {
+      "name": "team_players_categoria_id_fkey",
+      "type": "f",
+      "table": "team_players",
+      "definition": "FOREIGN KEY (categoria_id) REFERENCES categorias(id)"
+    },
+    {
+      "name": "team_players_equipo_id_fkey",
+      "type": "f",
+      "table": "team_players",
+      "definition": "FOREIGN KEY (equipo_id) REFERENCES equipos(id)"
+    },
+    {
+      "name": "team_players_organizacion_id_fkey",
+      "type": "f",
+      "table": "team_players",
+      "definition": "FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id)"
+    },
+    {
+      "name": "team_players_pkey",
+      "type": "p",
+      "table": "team_players",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "team_players_torneo_id_fkey",
+      "type": "f",
+      "table": "team_players",
+      "definition": "FOREIGN KEY (torneo_id) REFERENCES torneos(id)"
+    },
+    {
+      "name": "torneos_organizacion_id_fkey",
+      "type": "f",
+      "table": "torneos",
+      "definition": "FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "torneos_pkey",
+      "type": "p",
+      "table": "torneos",
+      "definition": "PRIMARY KEY (id)"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "app_usage_events_pkey",
+      "table": "app_usage_events",
+      "definition": "CREATE UNIQUE INDEX app_usage_events_pkey ON public.app_usage_events USING btree (id)"
+    },
+    {
+      "name": "idx_app_usage_events_categoria",
+      "table": "app_usage_events",
+      "definition": "CREATE INDEX idx_app_usage_events_categoria ON public.app_usage_events USING btree (categoria_nombre)"
+    },
+    {
+      "name": "idx_app_usage_events_created_at",
+      "table": "app_usage_events",
+      "definition": "CREATE INDEX idx_app_usage_events_created_at ON public.app_usage_events USING btree (created_at DESC)"
+    },
+    {
+      "name": "idx_app_usage_events_event_type",
+      "table": "app_usage_events",
+      "definition": "CREATE INDEX idx_app_usage_events_event_type ON public.app_usage_events USING btree (event_type)"
+    },
+    {
+      "name": "app_user_permissions_pkey",
+      "table": "app_user_permissions",
+      "definition": "CREATE UNIQUE INDEX app_user_permissions_pkey ON public.app_user_permissions USING btree (id)"
+    },
+    {
+      "name": "idx_app_user_permissions_scope",
+      "table": "app_user_permissions",
+      "definition": "CREATE INDEX idx_app_user_permissions_scope ON public.app_user_permissions USING btree (organizacion_id, torneo_id, categoria_id, equipo_id)"
+    },
+    {
+      "name": "idx_app_user_permissions_user",
+      "table": "app_user_permissions",
+      "definition": "CREATE INDEX idx_app_user_permissions_user ON public.app_user_permissions USING btree (user_id)"
+    },
+    {
+      "name": "app_users_auth_user_id_key",
+      "table": "app_users",
+      "definition": "CREATE UNIQUE INDEX app_users_auth_user_id_key ON public.app_users USING btree (auth_user_id)"
+    },
+    {
+      "name": "app_users_legacy_key_key",
+      "table": "app_users",
+      "definition": "CREATE UNIQUE INDEX app_users_legacy_key_key ON public.app_users USING btree (legacy_key)"
+    },
+    {
+      "name": "app_users_pkey",
+      "table": "app_users",
+      "definition": "CREATE UNIQUE INDEX app_users_pkey ON public.app_users USING btree (id)"
+    },
+    {
+      "name": "idx_app_users_legacy_key",
+      "table": "app_users",
+      "definition": "CREATE INDEX idx_app_users_legacy_key ON public.app_users USING btree (legacy_key)"
+    },
+    {
+      "name": "idx_app_users_role",
+      "table": "app_users",
+      "definition": "CREATE INDEX idx_app_users_role ON public.app_users USING btree (role)"
+    },
+    {
+      "name": "auditoria_resultados_pkey",
+      "table": "auditoria_resultados",
+      "definition": "CREATE UNIQUE INDEX auditoria_resultados_pkey ON public.auditoria_resultados USING btree (id)"
+    },
+    {
+      "name": "idx_auditoria_resultados_partido_id",
+      "table": "auditoria_resultados",
+      "definition": "CREATE INDEX idx_auditoria_resultados_partido_id ON public.auditoria_resultados USING btree (partido_id)"
+    },
+    {
+      "name": "categorias_pkey",
+      "table": "categorias",
+      "definition": "CREATE UNIQUE INDEX categorias_pkey ON public.categorias USING btree (id)"
+    },
+    {
+      "name": "idx_categorias_torneo_id",
+      "table": "categorias",
+      "definition": "CREATE INDEX idx_categorias_torneo_id ON public.categorias USING btree (torneo_id)"
+    },
+    {
+      "name": "delegado_categorias_delegado_id_categoria_id_key",
+      "table": "delegado_categorias",
+      "definition": "CREATE UNIQUE INDEX delegado_categorias_delegado_id_categoria_id_key ON public.delegado_categorias USING btree (delegado_id, categoria_id)"
+    },
+    {
+      "name": "delegado_categorias_pkey",
+      "table": "delegado_categorias",
+      "definition": "CREATE UNIQUE INDEX delegado_categorias_pkey ON public.delegado_categorias USING btree (id)"
+    },
+    {
+      "name": "idx_delegado_categorias_categoria_id",
+      "table": "delegado_categorias",
+      "definition": "CREATE INDEX idx_delegado_categorias_categoria_id ON public.delegado_categorias USING btree (categoria_id)"
+    },
+    {
+      "name": "idx_delegado_categorias_delegado_id",
+      "table": "delegado_categorias",
+      "definition": "CREATE INDEX idx_delegado_categorias_delegado_id ON public.delegado_categorias USING btree (delegado_id)"
+    },
+    {
+      "name": "delegados_auth_user_id_key",
+      "table": "delegados",
+      "definition": "CREATE UNIQUE INDEX delegados_auth_user_id_key ON public.delegados USING btree (auth_user_id)"
+    },
+    {
+      "name": "delegados_email_key",
+      "table": "delegados",
+      "definition": "CREATE UNIQUE INDEX delegados_email_key ON public.delegados USING btree (email)"
+    },
+    {
+      "name": "delegados_pkey",
+      "table": "delegados",
+      "definition": "CREATE UNIQUE INDEX delegados_pkey ON public.delegados USING btree (id)"
+    },
+    {
+      "name": "document_ai_audits_pkey",
+      "table": "document_ai_audits",
+      "definition": "CREATE UNIQUE INDEX document_ai_audits_pkey ON public.document_ai_audits USING btree (id)"
+    },
+    {
+      "name": "idx_document_ai_audits_audited_at",
+      "table": "document_ai_audits",
+      "definition": "CREATE INDEX idx_document_ai_audits_audited_at ON public.document_ai_audits USING btree (audited_at DESC)"
+    },
+    {
+      "name": "idx_document_ai_audits_categoria_equipo",
+      "table": "document_ai_audits",
+      "definition": "CREATE INDEX idx_document_ai_audits_categoria_equipo ON public.document_ai_audits USING btree (categoria_id, equipo_id)"
+    },
+    {
+      "name": "idx_document_ai_audits_criteria_version",
+      "table": "document_ai_audits",
+      "definition": "CREATE INDEX idx_document_ai_audits_criteria_version ON public.document_ai_audits USING btree (criteria_version)"
+    },
+    {
+      "name": "idx_document_ai_audits_player_document",
+      "table": "document_ai_audits",
+      "definition": "CREATE INDEX idx_document_ai_audits_player_document ON public.document_ai_audits USING btree (player_document_id)"
+    },
+    {
+      "name": "idx_document_ai_audits_source",
+      "table": "document_ai_audits",
+      "definition": "CREATE INDEX idx_document_ai_audits_source ON public.document_ai_audits USING btree (source_kind, source_file_id)"
+    },
+    {
+      "name": "idx_document_ai_audits_status",
+      "table": "document_ai_audits",
+      "definition": "CREATE INDEX idx_document_ai_audits_status ON public.document_ai_audits USING btree (audit_status)"
+    },
+    {
+      "name": "idx_document_ai_audits_team_document",
+      "table": "document_ai_audits",
+      "definition": "CREATE INDEX idx_document_ai_audits_team_document ON public.document_ai_audits USING btree (team_document_id)"
+    },
+    {
+      "name": "document_audit_criteria_versions_pkey",
+      "table": "document_audit_criteria_versions",
+      "definition": "CREATE UNIQUE INDEX document_audit_criteria_versions_pkey ON public.document_audit_criteria_versions USING btree (version)"
+    },
+    {
+      "name": "document_audit_results_pkey",
+      "table": "document_audit_results",
+      "definition": "CREATE UNIQUE INDEX document_audit_results_pkey ON public.document_audit_results USING btree (id)"
+    },
+    {
+      "name": "idx_document_audit_results_categoria",
+      "table": "document_audit_results",
+      "definition": "CREATE INDEX idx_document_audit_results_categoria ON public.document_audit_results USING btree (categoria_id)"
+    },
+    {
+      "name": "idx_document_audit_results_equipo",
+      "table": "document_audit_results",
+      "definition": "CREATE INDEX idx_document_audit_results_equipo ON public.document_audit_results USING btree (equipo_nombre)"
+    },
+    {
+      "name": "idx_document_audit_results_player",
+      "table": "document_audit_results",
+      "definition": "CREATE INDEX idx_document_audit_results_player ON public.document_audit_results USING btree (player_id)"
+    },
+    {
+      "name": "idx_document_audit_results_risk",
+      "table": "document_audit_results",
+      "definition": "CREATE INDEX idx_document_audit_results_risk ON public.document_audit_results USING btree (risk_level)"
+    },
+    {
+      "name": "idx_document_audit_results_status",
+      "table": "document_audit_results",
+      "definition": "CREATE INDEX idx_document_audit_results_status ON public.document_audit_results USING btree (audit_status)"
+    },
+    {
+      "name": "document_events_pkey",
+      "table": "document_events",
+      "definition": "CREATE UNIQUE INDEX document_events_pkey ON public.document_events USING btree (id)"
+    },
+    {
+      "name": "idx_document_events_document",
+      "table": "document_events",
+      "definition": "CREATE INDEX idx_document_events_document ON public.document_events USING btree (team_document_id)"
+    },
+    {
+      "name": "document_files_pkey",
+      "table": "document_files",
+      "definition": "CREATE UNIQUE INDEX document_files_pkey ON public.document_files USING btree (id)"
+    },
+    {
+      "name": "idx_document_files_document",
+      "table": "document_files",
+      "definition": "CREATE INDEX idx_document_files_document ON public.document_files USING btree (team_document_id)"
+    },
+    {
+      "name": "document_requirements_pkey",
+      "table": "document_requirements",
+      "definition": "CREATE UNIQUE INDEX document_requirements_pkey ON public.document_requirements USING btree (id)"
+    },
+    {
+      "name": "idx_document_requirements_categoria",
+      "table": "document_requirements",
+      "definition": "CREATE INDEX idx_document_requirements_categoria ON public.document_requirements USING btree (categoria_id)"
+    },
+    {
+      "name": "idx_document_requirements_torneo",
+      "table": "document_requirements",
+      "definition": "CREATE INDEX idx_document_requirements_torneo ON public.document_requirements USING btree (torneo_id)"
+    },
+    {
+      "name": "drive_player_documents_file_unique",
+      "table": "drive_player_documents",
+      "definition": "CREATE UNIQUE INDEX drive_player_documents_file_unique ON public.drive_player_documents USING btree (drive_file_id, document_type)"
+    },
+    {
+      "name": "drive_player_documents_pkey",
+      "table": "drive_player_documents",
+      "definition": "CREATE UNIQUE INDEX drive_player_documents_pkey ON public.drive_player_documents USING btree (id)"
+    },
+    {
+      "name": "idx_drive_player_documents_categoria",
+      "table": "drive_player_documents",
+      "definition": "CREATE INDEX idx_drive_player_documents_categoria ON public.drive_player_documents USING btree (categoria_id)"
+    },
+    {
+      "name": "idx_drive_player_documents_match_status",
+      "table": "drive_player_documents",
+      "definition": "CREATE INDEX idx_drive_player_documents_match_status ON public.drive_player_documents USING btree (match_status)"
+    },
+    {
+      "name": "idx_drive_player_documents_player",
+      "table": "drive_player_documents",
+      "definition": "CREATE INDEX idx_drive_player_documents_player ON public.drive_player_documents USING btree (player_id)"
+    },
+    {
+      "name": "idx_drive_player_documents_status",
+      "table": "drive_player_documents",
+      "definition": "CREATE INDEX idx_drive_player_documents_status ON public.drive_player_documents USING btree (status)"
+    },
+    {
+      "name": "equipos_pkey",
+      "table": "equipos",
+      "definition": "CREATE UNIQUE INDEX equipos_pkey ON public.equipos USING btree (id)"
+    },
+    {
+      "name": "idx_equipos_categoria_id",
+      "table": "equipos",
+      "definition": "CREATE INDEX idx_equipos_categoria_id ON public.equipos USING btree (categoria_id)"
+    },
+    {
+      "name": "fechas_pkey",
+      "table": "fechas",
+      "definition": "CREATE UNIQUE INDEX fechas_pkey ON public.fechas USING btree (id)"
+    },
+    {
+      "name": "idx_fechas_categoria_id",
+      "table": "fechas",
+      "definition": "CREATE INDEX idx_fechas_categoria_id ON public.fechas USING btree (categoria_id)"
+    },
+    {
+      "name": "fixtures_publicos_pkey",
+      "table": "fixtures_publicos",
+      "definition": "CREATE UNIQUE INDEX fixtures_publicos_pkey ON public.fixtures_publicos USING btree (id)"
+    },
+    {
+      "name": "idx_fixtures_publicos_categoria",
+      "table": "fixtures_publicos",
+      "definition": "CREATE UNIQUE INDEX idx_fixtures_publicos_categoria ON public.fixtures_publicos USING btree (categoria)"
+    },
+    {
+      "name": "match_schedules_categoria_idx",
+      "table": "match_schedules",
+      "definition": "CREATE INDEX match_schedules_categoria_idx ON public.match_schedules USING btree (categoria_id, fecha_partido, hora)"
+    },
+    {
+      "name": "match_schedules_partido_unique",
+      "table": "match_schedules",
+      "definition": "CREATE UNIQUE INDEX match_schedules_partido_unique ON public.match_schedules USING btree (partido_id)"
+    },
+    {
+      "name": "match_schedules_pkey",
+      "table": "match_schedules",
+      "definition": "CREATE UNIQUE INDEX match_schedules_pkey ON public.match_schedules USING btree (id)"
+    },
+    {
+      "name": "organizaciones_pkey",
+      "table": "organizaciones",
+      "definition": "CREATE UNIQUE INDEX organizaciones_pkey ON public.organizaciones USING btree (id)"
+    },
+    {
+      "name": "organizaciones_slug_key",
+      "table": "organizaciones",
+      "definition": "CREATE UNIQUE INDEX organizaciones_slug_key ON public.organizaciones USING btree (slug)"
+    },
+    {
+      "name": "idx_partidos_categoria_id",
+      "table": "partidos",
+      "definition": "CREATE INDEX idx_partidos_categoria_id ON public.partidos USING btree (categoria_id)"
+    },
+    {
+      "name": "idx_partidos_fecha_id",
+      "table": "partidos",
+      "definition": "CREATE INDEX idx_partidos_fecha_id ON public.partidos USING btree (fecha_id)"
+    },
+    {
+      "name": "partidos_pkey",
+      "table": "partidos",
+      "definition": "CREATE UNIQUE INDEX partidos_pkey ON public.partidos USING btree (id)"
+    },
+    {
+      "name": "player_document_events_pkey",
+      "table": "player_document_events",
+      "definition": "CREATE UNIQUE INDEX player_document_events_pkey ON public.player_document_events USING btree (id)"
+    },
+    {
+      "name": "idx_player_documents_categoria_equipo",
+      "table": "player_documents",
+      "definition": "CREATE INDEX idx_player_documents_categoria_equipo ON public.player_documents USING btree (categoria_id, equipo_id)"
+    },
+    {
+      "name": "idx_player_documents_player",
+      "table": "player_documents",
+      "definition": "CREATE INDEX idx_player_documents_player ON public.player_documents USING btree (player_id)"
+    },
+    {
+      "name": "idx_player_documents_status",
+      "table": "player_documents",
+      "definition": "CREATE INDEX idx_player_documents_status ON public.player_documents USING btree (status)"
+    },
+    {
+      "name": "player_documents_pkey",
+      "table": "player_documents",
+      "definition": "CREATE UNIQUE INDEX player_documents_pkey ON public.player_documents USING btree (id)"
+    },
+    {
+      "name": "player_documents_unique_requirement",
+      "table": "player_documents",
+      "definition": "CREATE UNIQUE INDEX player_documents_unique_requirement ON public.player_documents USING btree (player_id, requirement_id)"
+    },
+    {
+      "name": "playoff_matches_categoria_idx",
+      "table": "playoff_matches",
+      "definition": "CREATE INDEX playoff_matches_categoria_idx ON public.playoff_matches USING btree (categoria_id, orden, partido_numero)"
+    },
+    {
+      "name": "playoff_matches_pkey",
+      "table": "playoff_matches",
+      "definition": "CREATE UNIQUE INDEX playoff_matches_pkey ON public.playoff_matches USING btree (id)"
+    },
+    {
+      "name": "playoff_matches_unique_match",
+      "table": "playoff_matches",
+      "definition": "CREATE UNIQUE INDEX playoff_matches_unique_match ON public.playoff_matches USING btree (categoria_id, fase, llave, partido_numero)"
+    },
+    {
+      "name": "idx_result_change_logs_categoria",
+      "table": "result_change_logs",
+      "definition": "CREATE INDEX idx_result_change_logs_categoria ON public.result_change_logs USING btree (categoria_id, created_at DESC)"
+    },
+    {
+      "name": "idx_result_change_logs_partido",
+      "table": "result_change_logs",
+      "definition": "CREATE INDEX idx_result_change_logs_partido ON public.result_change_logs USING btree (partido_id, created_at DESC)"
+    },
+    {
+      "name": "idx_result_change_logs_torneo",
+      "table": "result_change_logs",
+      "definition": "CREATE INDEX idx_result_change_logs_torneo ON public.result_change_logs USING btree (torneo_id, created_at DESC)"
+    },
+    {
+      "name": "result_change_logs_pkey",
+      "table": "result_change_logs",
+      "definition": "CREATE UNIQUE INDEX result_change_logs_pkey ON public.result_change_logs USING btree (id)"
+    },
+    {
+      "name": "idx_team_audit_closure_events_scope",
+      "table": "team_audit_closure_events",
+      "definition": "CREATE INDEX idx_team_audit_closure_events_scope ON public.team_audit_closure_events USING btree (torneo_id, categoria_id, equipo_id, created_at DESC, id DESC)"
+    },
+    {
+      "name": "team_audit_closure_events_pkey",
+      "table": "team_audit_closure_events",
+      "definition": "CREATE UNIQUE INDEX team_audit_closure_events_pkey ON public.team_audit_closure_events USING btree (id)"
+    },
+    {
+      "name": "idx_team_documents_categoria_equipo",
+      "table": "team_documents",
+      "definition": "CREATE INDEX idx_team_documents_categoria_equipo ON public.team_documents USING btree (categoria_id, equipo_id)"
+    },
+    {
+      "name": "idx_team_documents_status",
+      "table": "team_documents",
+      "definition": "CREATE INDEX idx_team_documents_status ON public.team_documents USING btree (status)"
+    },
+    {
+      "name": "idx_team_documents_torneo",
+      "table": "team_documents",
+      "definition": "CREATE INDEX idx_team_documents_torneo ON public.team_documents USING btree (torneo_id)"
+    },
+    {
+      "name": "team_documents_pkey",
+      "table": "team_documents",
+      "definition": "CREATE UNIQUE INDEX team_documents_pkey ON public.team_documents USING btree (id)"
+    },
+    {
+      "name": "idx_team_players_categoria_equipo",
+      "table": "team_players",
+      "definition": "CREATE INDEX idx_team_players_categoria_equipo ON public.team_players USING btree (categoria_id, equipo_id)"
+    },
+    {
+      "name": "team_players_pkey",
+      "table": "team_players",
+      "definition": "CREATE UNIQUE INDEX team_players_pkey ON public.team_players USING btree (id)"
+    },
+    {
+      "name": "idx_torneos_organizacion_id",
+      "table": "torneos",
+      "definition": "CREATE INDEX idx_torneos_organizacion_id ON public.torneos USING btree (organizacion_id)"
+    },
+    {
+      "name": "torneos_pkey",
+      "table": "torneos",
+      "definition": "CREATE UNIQUE INDEX torneos_pkey ON public.torneos USING btree (id)"
+    }
+  ],
+  "views": [
+    {
+      "name": "v_app_user_permissions",
+      "options": null,
+      "definition": " SELECT au.id AS user_id,\n    au.display_name,\n    au.email,\n    au.role,\n    au.legacy_key,\n    au.active,\n    au.emergency_access,\n    aup.id AS permission_id,\n    aup.organizacion_id,\n    o.nombre AS organizacion_nombre,\n    aup.torneo_id,\n    t.nombre AS torneo_nombre,\n    aup.categoria_id,\n    c.nombre AS categoria_nombre,\n    aup.equipo_id,\n    COALESCE(e.nombre, aup.equipo_nombre) AS equipo_nombre,\n    aup.can_view,\n    aup.can_load_results,\n    aup.can_load_documents,\n    aup.can_review_documents,\n    aup.can_correct_results,\n    aup.can_manage_tournaments,\n    aup.can_manage_users,\n    aup.can_emergency_override\n   FROM app_users au\n     LEFT JOIN app_user_permissions aup ON aup.user_id = au.id\n     LEFT JOIN organizaciones o ON o.id = aup.organizacion_id\n     LEFT JOIN torneos t ON t.id = aup.torneo_id\n     LEFT JOIN categorias c ON c.id = aup.categoria_id\n     LEFT JOIN equipos e ON e.id = aup.equipo_id;",
+      "anon_select": false,
+      "authenticated_select": true
+    },
+    {
+      "name": "v_document_ai_audits_latest",
+      "options": null,
+      "definition": " SELECT DISTINCT ON ((COALESCE(team_document_id, player_document_id)), scope) id,\n    scope,\n    team_document_id,\n    player_document_id,\n    organizacion_id,\n    torneo_id,\n    categoria_id,\n    equipo_id,\n    equipo_nombre,\n    player_id,\n    player_name,\n    requirement_id,\n    requirement_nombre,\n    storage_path,\n    file_name,\n    file_type,\n    audit_status,\n    confidence,\n    summary,\n    findings,\n    extracted_text,\n    detected_dates,\n    valid_until,\n    checks,\n    criteria_version,\n    unresolved_reason,\n    page_evidence,\n    source_kind,\n    source_file_id,\n    source_file_url,\n    source_modified_at,\n    source_hash,\n    model,\n    audited_by,\n    audited_at,\n    created_at,\n    updated_at\n   FROM document_ai_audits\n  ORDER BY (COALESCE(team_document_id, player_document_id)), scope, audited_at DESC;",
+      "anon_select": true,
+      "authenticated_select": true
+    },
+    {
+      "name": "v_document_audit_results_admin",
+      "options": null,
+      "definition": " SELECT dar.id,\n    dar.organizacion_id,\n    dar.torneo_id,\n    dar.categoria_id,\n    COALESCE(c.nombre, dar.categoria_nombre) AS categoria_nombre,\n    dar.equipo_nombre,\n    dar.player_id,\n    COALESCE(tp.nombre, dar.player_name) AS player_name,\n    dar.alcance,\n    dar.planilla_arbitro,\n    dar.document_type,\n    dar.declared_status,\n    dar.located_status,\n    dar.validated_status,\n    dar.valid_until,\n    dar.audit_status,\n    dar.risk_level,\n        CASE\n            WHEN lower(COALESCE(dar.risk_level, dar.audit_status, ''::text)) ~~ '%critica%'::text OR lower(COALESCE(dar.risk_level, dar.audit_status, ''::text)) ~~ '%crítica%'::text THEN 1\n            WHEN lower(COALESCE(dar.risk_level, dar.audit_status, ''::text)) ~~ '%alta%'::text THEN 2\n            WHEN lower(COALESCE(dar.risk_level, dar.audit_status, ''::text)) ~~ '%media%'::text THEN 3\n            WHEN lower(COALESCE(dar.risk_level, dar.audit_status, ''::text)) ~~ '%validado%'::text OR lower(COALESCE(dar.risk_level, dar.audit_status, ''::text)) ~~ '%conforme%'::text THEN 9\n            ELSE 5\n        END AS risk_order,\n    dar.observation,\n    dar.evidence_url,\n    dar.source_sheet,\n    dar.cutoff_date,\n    dar.imported_by,\n    dar.imported_at,\n    dar.created_at,\n    dar.updated_at\n   FROM document_audit_results dar\n     LEFT JOIN categorias c ON c.id = dar.categoria_id\n     LEFT JOIN team_players tp ON tp.id = dar.player_id;",
+      "anon_select": false,
+      "authenticated_select": true
+    },
+    {
+      "name": "v_drive_player_documents_admin",
+      "options": null,
+      "definition": " SELECT dpd.id,\n    dpd.organizacion_id,\n    o.nombre AS organizacion_nombre,\n    dpd.torneo_id,\n    t.nombre AS torneo_nombre,\n    dpd.categoria_id,\n    c.nombre AS categoria_nombre,\n    dpd.equipo_id,\n    dpd.equipo_nombre,\n    dpd.player_id,\n    COALESCE(tp.nombre, dpd.player_name) AS player_name,\n    tp.dni AS player_dni,\n    tp.dorsal AS player_dorsal,\n    dpd.document_type,\n    dpd.title,\n    dpd.drive_file_id,\n    dpd.drive_url,\n    dpd.mime_type,\n    dpd.status,\n    dpd.observation,\n    dpd.match_status,\n    dpd.source_folder,\n    dpd.reviewed_by,\n    dpd.reviewed_at,\n    dpd.created_at,\n    dpd.updated_at\n   FROM drive_player_documents dpd\n     LEFT JOIN team_players tp ON tp.id = dpd.player_id\n     LEFT JOIN organizaciones o ON o.id = dpd.organizacion_id\n     LEFT JOIN torneos t ON t.id = dpd.torneo_id\n     LEFT JOIN categorias c ON c.id = dpd.categoria_id;",
+      "anon_select": false,
+      "authenticated_select": true
+    },
+    {
+      "name": "v_player_documents_admin",
+      "options": null,
+      "definition": " SELECT pd.id,\n    pd.player_id,\n    tp.nombre AS jugador_nombre,\n    tp.dni AS jugador_dni,\n    tp.dorsal AS jugador_dorsal,\n    tp.baja_solicitada,\n    tp.baja_motivo,\n    tp.baja_solicitada_por,\n    tp.baja_solicitada_en,\n    pd.requirement_id,\n    dr.nombre AS requirement_nombre,\n    pd.organizacion_id,\n    o.nombre AS organizacion_nombre,\n    pd.torneo_id,\n    t.nombre AS torneo_nombre,\n    pd.categoria_id,\n    c.nombre AS categoria_nombre,\n    pd.equipo_id,\n    pd.equipo_nombre,\n    pd.uploaded_by,\n    pd.storage_path,\n    pd.file_name,\n    pd.file_type,\n    pd.file_size,\n    pd.status,\n    pd.vencimiento,\n    pd.observacion,\n    pd.reviewed_by,\n    pd.reviewed_at,\n    pd.created_at,\n    pd.updated_at\n   FROM player_documents pd\n     JOIN team_players tp ON tp.id = pd.player_id\n     LEFT JOIN document_requirements dr ON dr.id = pd.requirement_id\n     LEFT JOIN organizaciones o ON o.id = pd.organizacion_id\n     LEFT JOIN torneos t ON t.id = pd.torneo_id\n     LEFT JOIN categorias c ON c.id = pd.categoria_id\n  WHERE tp.activo = true;",
+      "anon_select": false,
+      "authenticated_select": true
+    },
+    {
+      "name": "v_player_documents_admin_ai",
+      "options": null,
+      "definition": " SELECT pd.id,\n    pd.player_id,\n    pd.jugador_nombre,\n    pd.jugador_dni,\n    pd.jugador_dorsal,\n    pd.baja_solicitada,\n    pd.baja_motivo,\n    pd.baja_solicitada_por,\n    pd.baja_solicitada_en,\n    pd.requirement_id,\n    pd.requirement_nombre,\n    pd.organizacion_id,\n    pd.organizacion_nombre,\n    pd.torneo_id,\n    pd.torneo_nombre,\n    pd.categoria_id,\n    pd.categoria_nombre,\n    pd.equipo_id,\n    pd.equipo_nombre,\n    pd.uploaded_by,\n    pd.storage_path,\n    pd.file_name,\n    pd.file_type,\n    pd.file_size,\n    pd.status,\n    pd.vencimiento,\n    pd.observacion,\n    pd.reviewed_by,\n    pd.reviewed_at,\n    pd.created_at,\n    pd.updated_at,\n    ai.audit_status AS ai_audit_status,\n    ai.confidence AS ai_confidence,\n    ai.summary AS ai_summary,\n    ai.findings AS ai_findings,\n    ai.detected_dates AS ai_detected_dates,\n    ai.valid_until AS ai_valid_until,\n    ai.checks AS ai_checks,\n    ai.criteria_version AS ai_criteria_version,\n    ai.unresolved_reason AS ai_unresolved_reason,\n    ai.page_evidence AS ai_page_evidence,\n    ai.source_kind AS ai_source_kind,\n    ai.source_file_id AS ai_source_file_id,\n    ai.audited_at AS ai_audited_at\n   FROM v_player_documents_admin pd\n     LEFT JOIN v_document_ai_audits_latest ai ON ai.scope = 'player'::text AND ai.player_document_id = pd.id;",
+      "anon_select": false,
+      "authenticated_select": true
+    },
+    {
+      "name": "v_result_change_logs_admin",
+      "options": null,
+      "definition": " SELECT rcl.id,\n    rcl.created_at,\n    rcl.partido_id,\n    rcl.torneo_id,\n    t.nombre AS torneo_nombre,\n    t.temporada,\n    rcl.categoria_id,\n    rcl.categoria_nombre,\n    rcl.fase,\n    rcl.jornada,\n    rcl.fecha,\n    rcl.local,\n    rcl.visitante,\n    rcl.puntos_local_anterior,\n    rcl.puntos_visitante_anterior,\n    rcl.estado_resultado_anterior,\n    rcl.cargado_por_anterior,\n    rcl.cargado_en_anterior,\n    rcl.puntos_local_nuevo,\n    rcl.puntos_visitante_nuevo,\n    rcl.estado_resultado_nuevo,\n    rcl.cargado_por_nuevo,\n    rcl.cargado_en_nuevo,\n    rcl.accion,\n    rcl.actor,\n    rcl.origen,\n    rcl.detalle\n   FROM result_change_logs rcl\n     LEFT JOIN torneos t ON t.id = rcl.torneo_id\n  ORDER BY rcl.created_at DESC;",
+      "anon_select": false,
+      "authenticated_select": true
+    },
+    {
+      "name": "v_team_documents_admin",
+      "options": null,
+      "definition": " SELECT td.id,\n    td.requirement_id,\n    dr.nombre AS requirement_nombre,\n    td.organizacion_id,\n    o.nombre AS organizacion_nombre,\n    td.torneo_id,\n    t.nombre AS torneo_nombre,\n    td.categoria_id,\n    c.nombre AS categoria_nombre,\n    td.equipo_id,\n    td.equipo_nombre,\n    td.uploaded_by,\n    td.storage_path,\n    td.file_name,\n    td.file_type,\n    td.file_size,\n    td.status,\n    td.vencimiento,\n    td.observacion,\n    td.reviewed_by,\n    td.reviewed_at,\n    td.created_at,\n    td.updated_at\n   FROM team_documents td\n     LEFT JOIN document_requirements dr ON dr.id = td.requirement_id\n     LEFT JOIN organizaciones o ON o.id = td.organizacion_id\n     LEFT JOIN torneos t ON t.id = td.torneo_id\n     LEFT JOIN categorias c ON c.id = td.categoria_id;",
+      "anon_select": false,
+      "authenticated_select": true
+    },
+    {
+      "name": "v_team_documents_admin_ai",
+      "options": null,
+      "definition": " SELECT td.id,\n    td.requirement_id,\n    td.requirement_nombre,\n    td.organizacion_id,\n    td.organizacion_nombre,\n    td.torneo_id,\n    td.torneo_nombre,\n    td.categoria_id,\n    td.categoria_nombre,\n    td.equipo_id,\n    td.equipo_nombre,\n    td.uploaded_by,\n    td.storage_path,\n    td.file_name,\n    td.file_type,\n    td.file_size,\n    td.status,\n    td.vencimiento,\n    td.observacion,\n    td.reviewed_by,\n    td.reviewed_at,\n    td.created_at,\n    td.updated_at,\n    ai.audit_status AS ai_audit_status,\n    ai.confidence AS ai_confidence,\n    ai.summary AS ai_summary,\n    ai.findings AS ai_findings,\n    ai.detected_dates AS ai_detected_dates,\n    ai.valid_until AS ai_valid_until,\n    ai.checks AS ai_checks,\n    ai.criteria_version AS ai_criteria_version,\n    ai.unresolved_reason AS ai_unresolved_reason,\n    ai.page_evidence AS ai_page_evidence,\n    ai.source_kind AS ai_source_kind,\n    ai.source_file_id AS ai_source_file_id,\n    ai.audited_at AS ai_audited_at\n   FROM v_team_documents_admin td\n     LEFT JOIN v_document_ai_audits_latest ai ON ai.scope = 'team'::text AND ai.team_document_id = td.id;",
+      "anon_select": false,
+      "authenticated_select": true
+    }
+  ],
+  "documentos_bucket": [
+    {
+      "id": "documentos",
+      "public": false,
+      "file_size_limit": 10485760,
+      "allowed_mime_types": [
+        "application/pdf",
+        "image/jpeg",
+        "image/png"
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "name": "app_usage_events_insert_anon",
+      "roles": [
+        "anon"
+      ],
+      "table": "app_usage_events",
+      "using": null,
+      "schema": "public",
+      "command": "INSERT",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "app_usage_events_insert_authenticated",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "app_usage_events",
+      "using": null,
+      "schema": "public",
+      "command": "INSERT",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "app_usage_events_select_anon",
+      "roles": [
+        "anon"
+      ],
+      "table": "app_usage_events",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "app_usage_events_select_authenticated",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "app_usage_events",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "solo logueados",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "auditoria_resultados",
+      "using": "true",
+      "schema": "public",
+      "command": "ALL",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "categorias escritura logueada",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "categorias",
+      "using": null,
+      "schema": "public",
+      "command": "INSERT",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "categorias lectura",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "categorias",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "categorias update app",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "categorias",
+      "using": "true",
+      "schema": "public",
+      "command": "UPDATE",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "solo logueados",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "delegado_categorias",
+      "using": "true",
+      "schema": "public",
+      "command": "ALL",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "solo logueados",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "delegados",
+      "using": "true",
+      "schema": "public",
+      "command": "ALL",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "criteria_versions_public_read",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "document_audit_criteria_versions",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "Leer requisitos documentales activos",
+      "roles": [
+        "public"
+      ],
+      "table": "document_requirements",
+      "using": "(activo = true)",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "escritura logueada",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "equipos",
+      "using": "true",
+      "schema": "public",
+      "command": "ALL",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "lectura publica",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "equipos",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "escritura logueada",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "fechas",
+      "using": "true",
+      "schema": "public",
+      "command": "ALL",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "lectura publica",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "fechas",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "escritura logueada",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "fixtures_publicos",
+      "using": "true",
+      "schema": "public",
+      "command": "ALL",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "lectura publica",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "fixtures_publicos",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "match_schedules_insert",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "match_schedules",
+      "using": null,
+      "schema": "public",
+      "command": "INSERT",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "match_schedules_select",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "match_schedules",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "match_schedules_update",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "match_schedules",
+      "using": "true",
+      "schema": "public",
+      "command": "UPDATE",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "escritura logueada",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "organizaciones",
+      "using": "true",
+      "schema": "public",
+      "command": "ALL",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "lectura publica",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "organizaciones",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "partidos escritura app",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "partidos",
+      "using": null,
+      "schema": "public",
+      "command": "INSERT",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "partidos lectura",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "partidos",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "partidos update app",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "partidos",
+      "using": "true",
+      "schema": "public",
+      "command": "UPDATE",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "playoff_matches_insert",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "playoff_matches",
+      "using": null,
+      "schema": "public",
+      "command": "INSERT",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "playoff_matches_select",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "playoff_matches",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "playoff_matches_update",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "playoff_matches",
+      "using": "true",
+      "schema": "public",
+      "command": "UPDATE",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "result_change_logs_select_compat_app",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "result_change_logs",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "team_audit_closure_events_select_authorized",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "team_audit_closure_events",
+      "using": "(EXISTS ( SELECT 1\n   FROM (app_users au\n     JOIN app_user_permissions aup ON ((aup.user_id = au.id)))\n  WHERE ((au.auth_user_id = auth.uid()) AND (au.active = true) AND (au.role = ANY (ARRAY['asociacion'::text, 'admin_general'::text])) AND (aup.organizacion_id = team_audit_closure_events.organizacion_id) AND (aup.torneo_id = team_audit_closure_events.torneo_id) AND (aup.categoria_id IS NULL) AND (aup.equipo_id IS NULL) AND (aup.can_review_documents = true))))",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "Leer estados documentales",
+      "roles": [
+        "public"
+      ],
+      "table": "team_documents",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "escritura logueada",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "torneos",
+      "using": "true",
+      "schema": "public",
+      "command": "ALL",
+      "permissive": "PERMISSIVE",
+      "with_check": "true"
+    },
+    {
+      "name": "lectura publica",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "table": "torneos",
+      "using": "true",
+      "schema": "public",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "Leer documentos de equipos",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "objects",
+      "using": "(bucket_id = 'documentos'::text)",
+      "schema": "storage",
+      "command": "SELECT",
+      "permissive": "PERMISSIVE",
+      "with_check": null
+    },
+    {
+      "name": "Subir documentos de equipos",
+      "roles": [
+        "public"
+      ],
+      "table": "objects",
+      "using": null,
+      "schema": "storage",
+      "command": "INSERT",
+      "permissive": "PERMISSIVE",
+      "with_check": "(bucket_id = 'documentos'::text)"
+    }
+  ],
+  "functions": [
+    {
+      "schema": null,
+      "name": "add_team_document_file",
+      "identity_arguments": "p_document_id uuid, p_uploaded_by text, p_storage_path text, p_file_name text, p_file_type text, p_file_size bigint",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "add_team_player",
+      "identity_arguments": "p_organizacion_id uuid, p_torneo_id uuid, p_categoria_id uuid, p_equipo_id uuid, p_equipo_nombre text, p_nombre text, p_dni text, p_dorsal text, p_created_by text",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "agent_worker_claim_job",
+      "identity_arguments": "p_token text",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, agent_private"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": false
+    },
+    {
+      "schema": null,
+      "name": "agent_worker_claim_write_job",
+      "identity_arguments": "p_token text",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, agent_private"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": false
+    },
+    {
+      "schema": null,
+      "name": "agent_worker_finish_job",
+      "identity_arguments": "p_token text, p_job_id uuid, p_status text, p_result_text text, p_error_text text, p_result_meta jsonb",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, agent_private"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": false
+    },
+    {
+      "schema": null,
+      "name": "anular_resultado_asociacion",
+      "identity_arguments": "p_partido_id uuid",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog"
+      ],
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "audit_partidos_result_changes",
+      "identity_arguments": "",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "create_document_reminder",
+      "identity_arguments": "p_document_id uuid, p_actor text, p_detail text",
+      "security_definer": false,
+      "settings": null,
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "create_player_from_drive_review",
+      "identity_arguments": "p_document_id uuid, p_organizacion_id uuid, p_torneo_id uuid, p_categoria_id uuid, p_equipo_id uuid, p_equipo_nombre text, p_nombre text, p_actor text",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "deactivate_team_player",
+      "identity_arguments": "p_player_id uuid, p_actor text, p_reason text",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "ensure_app_user",
+      "identity_arguments": "p_display_name text, p_role text, p_legacy_key text, p_email text, p_organizacion_id uuid, p_emergency_access boolean, p_notes text",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "schema": null,
+      "name": "ensure_player_documents",
+      "identity_arguments": "p_player_id uuid",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "get_current_app_user_permissions",
+      "identity_arguments": "",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "guardar_resultado_asociacion",
+      "identity_arguments": "p_partido_id uuid, p_puntos_local integer, p_puntos_visitante integer",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog"
+      ],
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "mark_player_document_uploaded",
+      "identity_arguments": "p_document_id uuid, p_uploaded_by text, p_storage_path text, p_file_name text, p_file_type text, p_file_size bigint, p_vencimiento date",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "mark_player_document_uploaded",
+      "identity_arguments": "p_document_id uuid, p_uploaded_by text, p_storage_path text, p_file_name text, p_file_type text, p_file_size bigint, p_vencimiento date, p_observacion text",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "mark_team_document_uploaded",
+      "identity_arguments": "p_document_id uuid, p_uploaded_by text, p_storage_path text, p_file_name text, p_file_type text, p_file_size bigint, p_vencimiento date",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "reabrir_cierre_auditoria_equipo",
+      "identity_arguments": "p_equipo_id uuid, p_motivo text, p_resumen_snapshot jsonb",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog"
+      ],
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "rechazar_mutacion_historial_cierre",
+      "identity_arguments": "",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog"
+      ],
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "schema": null,
+      "name": "registrar_cierre_auditoria_equipo",
+      "identity_arguments": "p_equipo_id uuid, p_estado text, p_observacion text, p_resumen_snapshot jsonb",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog"
+      ],
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "request_team_player_deactivation",
+      "identity_arguments": "p_player_id uuid, p_actor text, p_reason text",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "resolver_partido_administrativamente",
+      "identity_arguments": "p_partido_id uuid, p_ganador text",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog"
+      ],
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "review_drive_player_document",
+      "identity_arguments": "p_document_id uuid, p_status text, p_match_status text, p_player_id uuid, p_player_name text, p_observation text, p_actor text",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "review_player_document",
+      "identity_arguments": "p_document_id uuid, p_status text, p_actor text, p_observacion text",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "review_team_document",
+      "identity_arguments": "p_document_id uuid, p_status text, p_actor text, p_observacion text",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "save_player_document_precontrol",
+      "identity_arguments": "p_document_id uuid, p_original_observacion text, p_original_updated_at timestamp with time zone, p_precontrol text, p_actor text",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog"
+      ],
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "set_updated_at",
+      "identity_arguments": "",
+      "security_definer": false,
+      "settings": null,
+      "anon_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "schema": null,
+      "name": "set_user_permission",
+      "identity_arguments": "p_user_id uuid, p_organizacion_id uuid, p_torneo_id uuid, p_categoria_id uuid, p_equipo_id uuid, p_equipo_nombre text, p_can_view boolean, p_can_load_results boolean, p_can_load_documents boolean, p_can_review_documents boolean, p_can_correct_results boolean, p_can_manage_tournaments boolean, p_can_manage_users boolean, p_can_emergency_override boolean",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "schema": null,
+      "name": "upsert_team_document_metadata",
+      "identity_arguments": "p_requirement_id uuid, p_organizacion_id uuid, p_torneo_id uuid, p_categoria_id uuid, p_equipo_id uuid, p_equipo_nombre text, p_uploaded_by text, p_storage_path text, p_file_name text, p_file_type text, p_file_size bigint, p_vencimiento date",
+      "security_definer": false,
+      "settings": null,
+      "anon_execute": true,
+      "authenticated_execute": true
+    }
+  ]
+}

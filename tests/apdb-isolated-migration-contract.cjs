@@ -1,0 +1,14 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const source = JSON.parse(fs.readFileSync("docs/APDB_2027_SUPABASE_METADATA_SOURCE.json", "utf8"));
+assert.equal(source.object_catalog.filter((item) => item.kind === "r").length, 28);
+assert.equal(source.views.length, 9);
+assert.equal(source.functions.length, 29);
+assert.ok(source.documentos_bucket.every((bucket) => bucket.public === false));
+assert.match(fs.readFileSync("supabase/seed.sql", "utf8"), /Torneo sintético A/);
+const migration = fs.readFileSync("supabase/migrations/20261111000000_apdb_isolated_schema.sql", "utf8");
+assert.doesNotMatch(migration, /security\s+definer|grant\s+.*\b(insert|update|delete)\b/i);
+assert.doesNotMatch(migration, /(?:insert\s+into|from)\s+auth\.users/i);
+assert.match(migration, /create policy/);
+console.log("APDB_ISOLATED_MIGRATION_SOURCE_CONTRACT_OK");
