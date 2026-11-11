@@ -1,0 +1,14 @@
+{
+  "purpose": "synthetic-only-auth-seed-template",
+  "organizations": [
+    { "id": "10000000-0000-0000-0000-000000000001", "slug": "apdb-a-test" },
+    { "id": "10000000-0000-0000-0000-000000000002", "slug": "apdb-b-test" }
+  ],
+  "users": [
+    { "key": "association-a", "role": "association", "organizationId": "10000000-0000-0000-0000-000000000001" },
+    { "key": "delegate-a", "role": "delegate", "organizationId": "10000000-0000-0000-0000-000000000001" },
+    { "key": "delegate-b", "role": "delegate", "organizationId": "10000000-0000-0000-0000-000000000002" },
+    { "key": "delegate-revoked", "role": "delegate", "organizationId": "10000000-0000-0000-0000-000000000001", "revoked": true }
+  ],
+  "authUserCreation": "must be performed by isolated Supabase Auth; these records are not auth.users rows"
+}
