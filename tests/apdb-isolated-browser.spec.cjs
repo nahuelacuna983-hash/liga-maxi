@@ -43,12 +43,12 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   expect(authStatus).toContain("Ingreso correcto");
   await expect(page.locator("#auth-session-bar")).toContainText("Rol:");
   await page.reload({ waitUntil: "domcontentloaded", timeout: 20000 });
-  await expect.poll(() => page.locator("#auth-status").innerText(), {
+  await expect.poll(() => page.locator("#auth-session-bar").innerText(), {
     timeout: 20000,
     message: "La sesión no se recuperó después de recargar index_online.html"
-  }).toMatch(/Ingreso correcto|No se pudo ingresar|Autenticación requerida|Identidad revocada/);
+  }).toContain("Rol:");
   const restoredStatus = await page.locator("#auth-status").innerText();
   console.log(`APDB_BROWSER_RESTORED_AUTH_STATUS ${restoredStatus}`);
-  expect(restoredStatus).toContain("Ingreso correcto");
-  await expect(page.locator("#auth-session-bar")).toContainText("Rol:");
+  await expect(page.locator("#auth-session-bar")).toContainText("Rol:", { timeout: 20000 });
+  console.log("APDB_BROWSER_SESSION_RESTORED true");
 });

@@ -1,1 +1,1 @@
-visual-login-certification-session-restore
+visual-login-certification-session-bar
