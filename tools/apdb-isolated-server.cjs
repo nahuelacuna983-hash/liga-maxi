@@ -14,6 +14,8 @@ if (!supabaseUrl || !anonKey || !/^https?:\/\/127\.0\.0\.1(?::\d+)?$/.test(supab
 }
 
 const mime = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".json": "application/json" };
+// Keep the pilot server deliberately narrow: it must never become a file browser.
+const PUBLIC_FILES = new Set(["index_online.html", "app_online.js", "style.css", "manifest.json", "icon-192.png", "icon-512.png"]);
 const html = fs.readFileSync(path.join(root, "index_online.html"), "utf8");
 const bootstrap = `<script>window.APDB_SUPABASE_URL=${JSON.stringify(supabaseUrl)};window.APDB_SUPABASE_ANON_KEY=${JSON.stringify(anonKey)};</script>`;
 
@@ -24,9 +26,12 @@ function serve(request, response) {
     response.end(html.replace("<head>", `<head>${bootstrap}`));
     return;
   }
-  const relative = pathname.replace(/^\/+/, "");
-  const file = path.resolve(root, relative);
-  if (!file.startsWith(`${root}${path.sep}`) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+  const relative = decodeURIComponent(pathname).replace(/^\/+/, "");
+  if (!PUBLIC_FILES.has(relative)) {
+    response.writeHead(404); response.end("Not found"); return;
+  }
+  const file = path.join(root, relative);
+  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
     response.writeHead(404); response.end("Not found"); return;
   }
   response.writeHead(200, { "content-type": mime[path.extname(file)] || "application/octet-stream", "cache-control": "no-store" });

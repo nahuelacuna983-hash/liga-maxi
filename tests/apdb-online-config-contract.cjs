@@ -5,4 +5,8 @@ const source = fs.readFileSync("app_online.js", "utf8");
 assert.match(source, /window\.APDB_SUPABASE_URL/);
 assert.match(source, /window\.APDB_SUPABASE_ANON_KEY/);
 assert.match(source, /secureResults/);
+const server = fs.readFileSync("tools/apdb-isolated-server.cjs", "utf8");
+assert.match(server, /PUBLIC_FILES/);
+assert.doesNotMatch(server, /path\.resolve\(root, relative\)/);
+assert.match(fs.readFileSync("tools/validate-apdb-staging-config.cjs", "utf8"), /service_role/);
 console.log("APDB_ONLINE_ISOLATED_CONFIG_CONTRACT_OK");
