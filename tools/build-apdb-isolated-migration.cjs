@@ -35,7 +35,8 @@ const localConstraints = constraints.filter((item) => !/\bFOREIGN KEY\b/i.test(i
 for (const constraint of [...localConstraints, ...foreignKeys]) {
   sql.push(`alter table public.${quote(constraint.table)} add constraint ${quote(constraint.name)} ${constraint.definition};`);
 }
-for (const index of source.indexes.filter((item) => tableNames.has(item.table))) {
+const constraintNames = new Set(constraints.map((constraint) => constraint.name));
+for (const index of source.indexes.filter((item) => tableNames.has(item.table) && !constraintNames.has(item.name))) {
   const definition = String(index.definition).replace(/^CREATE\s+/i, "create ");
   sql.push(`${definition};`);
 }
