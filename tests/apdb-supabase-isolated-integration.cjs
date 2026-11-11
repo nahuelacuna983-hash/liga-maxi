@@ -58,7 +58,12 @@ async function login(email) {
     await client.query("insert into partidos (id, categoria_id, local, visitante) values ($1,$2,'Equipo sintético A','Equipo sintético A visitante')", [matchConcurrent, categoryA]);
     const delegateToken = await login(users.delegateA.email);
     const associationToken = await login(users.association.email);
-    const allowed = await request("/rest/v1/rpc/apdb_save_result", { method: "POST", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${delegateToken}`, "content-type": "application/json" }, body: JSON.stringify({ p_match_id: matchA, p_home_score: 80, p_away_score: 70 }) });
+    const callRpc = (token, payload) => request("/rest/v1/rpc/apdb_save_result", {
+      method: "POST",
+      headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const allowed = await callRpc(delegateToken, { p_match_id: matchA, p_home_score: 80, p_away_score: 70 });
     assert.equal(allowed.response.status, 200, `Authorized delegate rejected: ${allowed.response.status}`);
 
     const callAssociation = (payload) => request("/rest/v1/rpc/apdb_association_update_result", {
