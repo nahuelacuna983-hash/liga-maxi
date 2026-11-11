@@ -26,4 +26,6 @@ insert into public.partidos
   (id, categoria_id, local, visitante, jornada, fecha, estado_resultado)
 values
   ('50000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001',
-   'Equipo sintético A', 'Equipo sintético A visitante', 1, '2027-07-01', 'pendiente');
+   'Equipo sintético A', 'Equipo sintético A visitante', 1, '2027-07-01', 'pendiente'),
+  ('50000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001',
+   'Equipo sintético A visitante', 'Equipo sintético A', 2, '2027-07-08', 'pendiente');
