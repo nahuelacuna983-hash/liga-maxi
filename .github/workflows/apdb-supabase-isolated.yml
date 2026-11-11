@@ -1,11 +1,6 @@
 name: APdB Supabase isolated integration
 
 on:
-  push:
-    branches:
-      - codex/apdb-2027-operational-hardening
-    paths:
-      - .ci/apdb-playoffs-trigger
   workflow_dispatch:
     inputs:
       ref:
