@@ -14,6 +14,67 @@ test.beforeEach(async ({ page }) => {
   }, { url: isolatedUrl, key: anonKey });
 });
 
+async function loginAssociation(page, credentials) {
+  await page.locator("#tab-acceso").evaluate((element) => { element.hidden = false; element.removeAttribute("aria-hidden"); element.click(); });
+  await page.locator("#auth-login").waitFor({ state: "visible", timeout: 10000 });
+  await page.locator("#auth-email").fill(credentials.email);
+  await page.locator("#auth-password").fill(credentials.password);
+  await page.locator("#auth-login").click();
+  await expect.poll(() => page.locator("#auth-status").innerText(), { timeout: 20000 }).toMatch(/Ingreso correcto|No se pudo ingresar|Autenticación requerida|Identidad revocada/);
+  await expect(page.locator("#auth-status")).toContainText("Ingreso correcto");
+  await page.locator("#tab-asociacion").click();
+  await page.locator('.assoc-nav-btn[data-asociacion-panel="operacion"]').click();
+}
+
+async function savePendingPlayoffRows(page, phase) {
+  while (true) {
+    const pending = page.locator(`.assoc-playoff-row:has(.playoff-save-btn[data-fase="${phase}"])`).filter({ has: page.locator("input.playoff-puntos-local") });
+    const rows = await pending.all();
+    let target = null;
+    for (const row of rows) {
+      const localScore = await row.locator(".playoff-puntos-local").inputValue();
+      const visitorScore = await row.locator(".playoff-puntos-visitante").inputValue();
+      if (localScore === "" || visitorScore === "") { target = row; break; }
+    }
+    if (!target) return;
+    const local = await target.locator(".playoff-local").inputValue();
+    const visitor = await target.locator(".playoff-visitante").inputValue();
+    expect(local).not.toMatch(/Ganador|Peor|Mejor/);
+    expect(visitor).not.toMatch(/Ganador|Peor|Mejor/);
+    await target.locator(".playoff-puntos-local").fill("80");
+    await target.locator(".playoff-puntos-visitante").fill("70");
+    const response = page.waitForResponse((item) => item.url().includes("/rest/v1/rpc/apdb_upsert_playoff_match") && item.request().method() === "POST");
+    await target.locator(".playoff-save-btn").click();
+    expect((await response).status()).toBe(200);
+  }
+}
+
+async function completeVisualPlayoff(page, format, categoryName, credentials) {
+  await loginAssociation(page, credentials);
+  await page.locator("#asociacion-categoria").selectOption({ label: categoryName });
+  await expect(page.locator(".playoff-generate-btn")).toBeVisible({ timeout: 20000 });
+  const generateResponse = page.waitForResponse((item) => item.url().includes("/rest/v1/rpc/apdb_upsert_playoff_match") && item.request().method() === "POST");
+  await page.locator(".playoff-generate-btn").click();
+  expect((await generateResponse).status()).toBe(200);
+  await expect.poll(() => page.locator(".assoc-playoff-row").count(), { timeout: 20000 }).toBeGreaterThan(0);
+  const firstPhase = format === 8 ? "cuartos" : format === 6 ? "repechaje" : "semifinales";
+  await savePendingPlayoffRows(page, firstPhase);
+  for (const phase of format === 8 ? ["cuartos", "semifinales", "final"] : format === 6 ? ["repechaje", "semifinales", "final"] : ["semifinales", "final"]) {
+    if (phase !== firstPhase) {
+      const advanceResponse = page.waitForResponse((item) => item.url().includes("/rest/v1/rpc/apdb_upsert_playoff_match") && item.request().method() === "POST");
+      await page.locator(".playoff-advance-btn").click();
+      expect((await advanceResponse).status()).toBe(200);
+    }
+    await savePendingPlayoffRows(page, phase);
+  }
+  await expect(page.locator("#asociacion-status")).toContainText("Resultado de playoff guardado", { timeout: 20000 });
+  await page.reload({ waitUntil: "domcontentloaded", timeout: 20000 });
+  await loginAssociation(page, credentials);
+  await page.locator("#asociacion-categoria").selectOption({ label: categoryName });
+  await expect(page.locator(".assoc-playoff-row")).not.toHaveCount(0, { timeout: 20000 });
+  console.log(`APDB_BROWSER_PLAYOFF_TOP${format}_RECOVERED true`);
+}
+
 test("index_online usa Supabase aislado y conserva la sesión autorizada", async ({ page }) => {
   test.setTimeout(60000);
   page.on("pageerror", (error) => console.log(`APDB_BROWSER_PAGE_ERROR ${error.message}`));
@@ -138,4 +199,13 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   await expect(page.locator("#asociacion-puntos-visitante")).toHaveValue("70", { timeout: 20000 });
   console.log("APDB_BROWSER_RESULT_RECOVERED_AFTER_RELOAD true");
   console.log("APDB_BROWSER_SESSION_REAUTHENTICATED_AFTER_RELOAD true");
+});
+
+test("index_online genera, avanza y recupera playoffs Top 4, Top 6 y Top 8", async ({ page }) => {
+  test.setTimeout(120000);
+  const categories = JSON.parse(Buffer.from(process.env.APDB_BROWSER_PLAYOFF_CATEGORIES || "", "base64").toString("utf8"));
+  const credentialsData = JSON.parse(require("node:fs").readFileSync(credentialsFile, "utf8"));
+  for (const item of categories) {
+    await completeVisualPlayoff(page, item.format, item.name, credentialsData.association);
+  }
 });
