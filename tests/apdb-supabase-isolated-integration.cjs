@@ -126,6 +126,11 @@ async function login(email) {
       body: JSON.stringify({ cancha: "Cancha indebida" })
     });
     assert(!directSchedule.response.ok, "Direct schedule write unexpectedly succeeded");
+    const directPlayoff = await request(`/rest/v1/playoff_matches?categoria_id=eq.${categoryA}&llave=eq.${playoffPayload.llave}`, {
+      method: "PATCH", headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${delegateToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ observacion: "Cambio indebido" })
+    });
+    assert(!directPlayoff.response.ok, "Direct playoff write unexpectedly succeeded");
 
     const concurrentPayload = { p_match_id: matchConcurrent, p_home_score: 70, p_away_score: 60 };
     const concurrent = await Promise.all([callRpc(delegateToken, concurrentPayload), callRpc(delegateToken, { ...concurrentPayload, p_home_score: 71 })]);

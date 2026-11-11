@@ -93,3 +93,7 @@ $$;
 
 revoke all on function public.apdb_upsert_playoff_match(jsonb) from public, anon;
 grant execute on function public.apdb_upsert_playoff_match(jsonb) to authenticated;
+
+-- All writes must go through the authenticated RPCs above.
+revoke insert, update, delete on public.match_schedules from anon, authenticated;
+revoke insert, update, delete on public.playoff_matches from anon, authenticated;
