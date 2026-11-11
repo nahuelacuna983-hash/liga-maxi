@@ -8184,7 +8184,10 @@ function descargarPlanPruebaDocumental() {
 }
 
 async function inicializarAsociacion() {
-  if (estado.asociacionInicializada) return;
+  if (estado.asociacionInicializada) {
+    poblarSelectCategorias("asociacion-categoria", estado.categorias);
+    return;
+  }
   estado.asociacionInicializada = true;
 
   poblarSelectCategorias("asociacion-categoria", estado.categorias);

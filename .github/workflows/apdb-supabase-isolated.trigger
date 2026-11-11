@@ -1,1 +1,1 @@
-visual-ui-result-certification-association-init
+visual-ui-result-certification-association-selector
