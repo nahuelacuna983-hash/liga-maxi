@@ -5845,6 +5845,13 @@ function renderPlayoffsAsociacion(nombreCategoria) {
   `;
 }
 
+function marcarPlayoffsAsociacionListos(nombreCategoria) {
+  const panel = $("asociacion-playoffs");
+  if (!panel) return;
+  panel.dataset.categoryName = nombreCategoria;
+  panel.dataset.categoryRenderState = "ready";
+}
+
 function playoffPayload(categoria, partido) {
   return {
     categoria_id: categoria.id,
@@ -7422,6 +7429,7 @@ async function cargarDatosAsociacionActual() {
   await refrescarCategoria(categoria, { actualizarPublico: false });
   poblarSelectPartidosAsociacion(categoria);
   renderPlayoffsAsociacion(categoria);
+  marcarPlayoffsAsociacionListos(categoria);
   renderDocumentacionAsociacion(categoria);
   const categoriaData = estado.categorias.find((cat) => cat.nombre === categoria);
   if (categoriaData) await cargarDocumentosDriveCategoria(categoriaData.id);
@@ -7430,11 +7438,7 @@ async function cargarDatosAsociacionActual() {
   renderProgramacionAsociacion(categoria);
   renderCierreAsociacion(categoria);
   renderInicioAsociacion(categoria);
-  const livePlayoffsPanel = $("asociacion-playoffs");
-  if (livePlayoffsPanel) {
-    livePlayoffsPanel.dataset.categoryName = categoria;
-    livePlayoffsPanel.dataset.categoryRenderState = "ready";
-  }
+  marcarPlayoffsAsociacionListos(categoria);
   setStatus(status, "", "");
 }
 
@@ -8332,6 +8336,7 @@ async function inicializarAsociacion() {
     await refrescarCategoria(categoria, { actualizarPublico: false });
     poblarSelectPartidosAsociacion(categoria);
     renderPlayoffsAsociacion(categoria);
+    marcarPlayoffsAsociacionListos(categoria);
     // Playoffs are usable as soon as their own data is rendered. Documental and
     // reporting refreshes below must not block the competition controls.
     renderDocumentacionAsociacion(categoria);
@@ -8351,11 +8356,7 @@ async function inicializarAsociacion() {
     // Several association subpanels can rebuild their HTML while the category
     // is settling. Mark the live playoffs node only after all renders finish;
     // otherwise Chromium can observe a stale/loading panel and miss its button.
-    const livePlayoffsPanel = $("asociacion-playoffs");
-    if (livePlayoffsPanel) {
-      livePlayoffsPanel.dataset.categoryName = categoria;
-      livePlayoffsPanel.dataset.categoryRenderState = "ready";
-    }
+    marcarPlayoffsAsociacionListos(categoria);
     setStatus($("asociacion-status"), "", "");
   });
 

@@ -124,6 +124,12 @@ categoría. Esto evita que el control `Generar llave` quede expuesto con estado
 `loading` en el primer acceso; la certificación Top 4 contra Supabase aislado
 sigue pendiente de ejecución.
 
+En la ejecución aislada #53 se comprobó que el botón Top 4 ya estaba renderizado,
+pero el panel seguía marcado `loading` mientras terminaba una carga documental
+secundaria. El panel ahora se marca `ready` inmediatamente después de renderizar
+la llave y vuelve a confirmarse al finalizar la carga; Top 4 requiere repetir
+CI para certificar la corrección.
+
 El cierre de sesión de la aplicación principal ahora limpia el estado privado
 de partidos, programación, playoffs, equipos, jugadores, documentos e
 historial antes de volver a bloquear Asociación y Delegados. Esto permite
