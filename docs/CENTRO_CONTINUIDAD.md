@@ -70,5 +70,18 @@ administrador sin tocar la raiz 2026.
 - Falta backup verificable de `public_html`, responsables, retencion y
   frecuencia de restauracion.
 
+## Prueba de restauracion aislada
+
+El 2026-11-12 se ejecutó `tools/postgres-backup-restore.cjs` con dos clusters
+PostgreSQL 16 temporales en `127.0.0.1:55432` y `127.0.0.1:55433`. Se creó un
+esquema sintético con organizaciones y equipos, se generó un dump custom fuera
+del repositorio y se restauró en el segundo cluster. La comparación verificó
+catálogo de tablas, columnas, relaciones y conteos de filas.
+
+La evidencia queda fuera de GitHub, en `%TEMP%\apdb-backups-evidence`, con un
+manifiesto `.dump.manifest.json` que registra fecha, tamaño, origen, destino y
+SHA-256. Resultado: `APDB_POSTGRES_BACKUP_RESTORE_OK`. No es una restauración
+de Supabase productivo ni cubre Storage, Auth administrado o cPanel.
+
 Hasta completar esos puntos, la continuidad productiva queda bloqueada aunque
 el codigo y la recreacion sintetica esten disponibles.
