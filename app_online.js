@@ -6230,6 +6230,7 @@ async function iniciarSesionAuth() {
     return;
   }
 
+  if (estado.authUser && estado.authUser.id !== data.user?.id) limpiarEstadoPrivadoAuth();
   estado.authSession = data.session || null;
   estado.authUser = data.user || null;
   const permisos = await cargarPermisosUsuarioActual();
@@ -6237,10 +6238,10 @@ async function iniciarSesionAuth() {
 }
 
 async function cerrarSesionAuth() {
+  limpiarEstadoPrivadoAuth();
   await supabaseClient.auth.signOut();
   estado.authSession = null;
   estado.authUser = null;
-  limpiarEstadoPrivadoAuth();
   setStatus($("auth-status"), "Sesion cerrada.", "ok");
   renderSesionAuth();
 }
@@ -6271,6 +6272,8 @@ function limpiarEstadoPrivadoAuth() {
     renderDocumentacionAsociacion($("asociacion-categoria").value || "");
     renderProgramacionAsociacion($("asociacion-categoria").value || "");
   }
+  if ($("delegado-info")) $("delegado-info").textContent = "";
+  if ($("auth-password")) $("auth-password").value = "";
   renderDocumentacionDelegado();
 }
 
@@ -6280,6 +6283,11 @@ async function inicializarSesionAuth() {
   estado.authUser = data?.session?.user || null;
 
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+    const previousUserId = estado.authUser?.id || "";
+    const nextUserId = session?.user?.id || "";
+    if (!nextUserId || (previousUserId && previousUserId !== nextUserId)) {
+      limpiarEstadoPrivadoAuth();
+    }
     estado.authSession = session || null;
     estado.authUser = session?.user || null;
     if (estado.authUser) {

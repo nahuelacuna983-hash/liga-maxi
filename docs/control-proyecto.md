@@ -137,3 +137,10 @@ volver a ingresar con otra identidad sin reutilizar datos de la sesión
 anterior; la recuperación posterior vuelve a consultar PostgreSQL/Supabase
 mediante las rutas existentes.
 
+La transición se endureció también para cambios de identidad detectados por
+`onAuthStateChange`: si entra otro usuario, se limpia el contexto anterior
+antes de cargar permisos y datos nuevos. Se agregó el recorrido Chromium
+aislado `tests/apdb-isolated-session-switch-browser.spec.cjs`; requiere el
+entorno Supabase descartable y credenciales sintéticas del workflow para su
+certificación real.
+

@@ -6,4 +6,6 @@ for (const field of ["partidosPorCategoria", "playoffsPorCategoria", "programaci
   assert.match(source, new RegExp(`estado\\.${field} = \\{\\}`));
 }
 assert.match(source, /authUser\) \{[\s\S]*?cargarPermisosUsuarioActual/);
+assert.match(source, /previousUserId = estado\.authUser\?\.id/);
+assert.match(source, /if \(!nextUserId \|\| \(previousUserId && previousUserId !== nextUserId\)\)/);
 console.log("APP_AUTH_SESSION_LIFECYCLE_OK");
