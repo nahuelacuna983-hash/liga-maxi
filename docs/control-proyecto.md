@@ -29,6 +29,8 @@ El paquete fue endurecido posteriormente: su `app_online.js` ya no contiene el f
 
 ### Referencias
 
+- Centro de continuidad y estado de respaldos: `docs/CENTRO_CONTINUIDAD.md`.
+
 - Persistencia y continuidad: `docs/APDB_2027_PERSISTENCIA_CONTINUIDAD.md`.
 - Staging: `docs/APDB_2027_STAGING_RUNBOOK.md`.
 - Demostracion institucional: `docs/APDB_2027_DEMOSTRACION_INSTITUCIONAL.md`.
