@@ -185,10 +185,16 @@
     simulateCompleteChampionship(categoryId) {
       const category = this.categories[categoryId];
       if (!category) throw new Error("Categoría sintética inexistente.");
-      this.generateFixture("admin-demo", categoryId, { start: "2027-04-04", blocked: category.blocked, gameDay: 0 });
-      for (const match of this.getMatches(categoryId)) this.loadResult(categoryId, match.partido_numero, 80, 70);
+      const existingMatches = this.matches[categoryId] || [];
+      if (!existingMatches.length) {
+        this.generateFixture("admin-demo", categoryId, { start: "2027-04-04", blocked: category.blocked, gameDay: 0 });
+      }
+      for (const match of this.getMatches(categoryId).filter((item) => item.puntos_local == null)) this.loadResult(categoryId, match.partido_numero, 80, 70);
       const format = category.equipos.length >= 8 ? 8 : category.equipos.length >= 6 ? 6 : 4;
-      this.generatePlayoffs(categoryId, format, { seriesGames: 1 });
+      const currentPlayoffs = this.playoffs[categoryId];
+      if (!currentPlayoffs || currentPlayoffs.estado === "pendiente_clasificados") {
+        this.generatePlayoffs(categoryId, format, { seriesGames: 1 });
+      }
       for (let guard = 0; guard < 6; guard += 1) {
         const pending = this.getPlayoffMatches(categoryId).filter((match) => match.puntos_local == null && match.local && match.visitante);
         for (const match of pending) this.loadPlayoffResult(categoryId, match.partido_numero, 70, 60);

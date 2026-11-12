@@ -14,7 +14,7 @@ New-Item (Join-Path $stage "assets") -ItemType Directory -Force | Out-Null
 # production client and therefore cannot contact Supabase without an explicit
 # future staging package.
 $html = Get-Content (Join-Path $repo "demo_circuito_2027.html") -Raw -Encoding UTF8
-$html = $html -replace '<body>', '<body><div id="apdb-private-backend-notice" class="notice" role="status"><strong>DATOS FICTICIOS - DEMOSTRACION NO OFICIAL.</strong> Este recorrido funciona en memoria; las operaciones persistentes no están disponibles sin un backend staging autorizado.</div>'
+$html = $html -replace '<body>', '<body><div id="apdb-private-backend-notice" class="notice" role="status"><strong>DATOS FICTICIOS - DEMOSTRACION NO OFICIAL.</strong> Este recorrido funciona en memoria; las operaciones persistentes no estan disponibles sin un backend staging autorizado.</div>'
 $html = $html -replace '</body>', '<script src="apdb-private-config.js"></script><script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js", { scope: "./" });</script></body>'
 $html = $html -replace '<title>APdB 2027 \| Demostración integral</title>', '<title>APdB 2027 | Piloto privado sintético</title>'
 $html = $html -replace '</head>', '<link rel="manifest" href="manifest.json"></head>'

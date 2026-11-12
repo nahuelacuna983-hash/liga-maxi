@@ -24,6 +24,8 @@ assert.ok(complete("maxi-a", ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
 const simulated = new Provider();
 const championship = simulated.simulateCompleteChampionship("maxi-a");
 assert.ok(championship.champion);
+const recoveredChampionship = simulated.simulateCompleteChampionship("maxi-a");
+assert.strictEqual(recoveredChampionship.champion, championship.champion);
 assert.strictEqual(simulated.getPlayoffs("maxi-b").length, 0);
 assert.strictEqual(simulated.getChampion("maxi-a"), championship.champion);
 

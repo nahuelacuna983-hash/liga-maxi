@@ -105,7 +105,7 @@ oficiales; no se presentan como persistentes. El paquete conserva el archivo
 pero no puede conectarse sin una configuración externa autorizada.
 
 ZIP: `private/apdb-2027-prueba-update.zip`
-SHA-256: `8F09DA734D3E9C8E7B33129BB5345594BD8A334F679C0E30387C411748EA16E9`
+SHA-256: `34A52B1517F3B9231908E9298BABBAE942AE2A5BDC336DDDD8C83891FAF04395`
 
 Pruebas ejecutadas: `APDB_PRIVATE_PACKAGE_SAFETY_OK`,
 `INSTITUTIONAL_PACKAGE_SUBPATH_OK` y Chromium offline del paquete. La
@@ -113,4 +113,8 @@ protección `.htaccess` de cPanel no se incluye ni se reemplaza. La corrección
 de renderizado de playoffs marca `ready` sobre el nodo vigente después de
 terminar las reconstrucciones de la categoría; Top 4 aún requiere una nueva
 ejecución aislada para certificarse.
+
+La simulación sintética ahora reutiliza fixtures y playoffs existentes cuando
+ya contienen resultados, en lugar de intentar regenerarlos. La repetición del
+recorrido fue comprobada con `DEMO_TOURNAMENTS_OK`.
 
