@@ -83,5 +83,19 @@ manifiesto `.dump.manifest.json` que registra fecha, tamaño, origen, destino y
 SHA-256. Resultado: `APDB_POSTGRES_BACKUP_RESTORE_OK`. No es una restauración
 de Supabase productivo ni cubre Storage, Auth administrado o cPanel.
 
+El ensayo de archivos sintéticos también fue comprobado con
+`tools/storage-backup-restore.cjs`: compara rutas, tamaños y SHA-256 y rechaza
+raíces, rutas dentro del repositorio, destinos anidados, destinos no vacíos y
+sobrescrituras implícitas. Resultado: `APDB_STORAGE_BACKUP_RESTORE_OK`.
+
+Para un Supabase local descartable, `tools/supabase-storage-backup.cjs` exporta
+objetos mediante la API local de Storage a un directorio externo y genera
+`storage-api-manifest.json`; opcionalmente los carga en otro endpoint local.
+Requiere `APDB_STORAGE_API_URL`, `APDB_STORAGE_API_KEY`,
+`APDB_STORAGE_BUCKET` y `APDB_STORAGE_EXPORT_DIR`. Nunca acepta endpoints
+hosted: el script exige `localhost` o `127.0.0.1`. La exportación de objetos no
+incluye metadatos ni políticas; éstos deben respaldarse por separado mediante
+metadatos de Storage y SQL versionado.
+
 Hasta completar esos puntos, la continuidad productiva queda bloqueada aunque
 el codigo y la recreacion sintetica esten disponibles.

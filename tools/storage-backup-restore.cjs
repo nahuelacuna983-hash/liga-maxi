@@ -4,11 +4,23 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const source = path.resolve(process.env.APDB_STORAGE_SOURCE || '');
-const target = path.resolve(process.env.APDB_STORAGE_TARGET || '');
+const rawSource = process.env.APDB_STORAGE_SOURCE;
+const rawTarget = process.env.APDB_STORAGE_TARGET;
+if (!rawSource || !rawTarget) throw new Error('APDB_STORAGE_SOURCE and APDB_STORAGE_TARGET are required');
+const source = path.resolve(rawSource);
+const target = path.resolve(rawTarget);
 const manifestPath = path.resolve(process.env.APDB_STORAGE_MANIFEST || path.join(target, 'storage-manifest.json'));
-if (!source || !target || source === path.parse(source).root || target === path.parse(target).root) throw new Error('APDB_STORAGE_SOURCE and APDB_STORAGE_TARGET are required');
+const repoRoot = path.resolve(__dirname, '..');
+function isWithin(parent, child) { return child === parent || child.startsWith(`${parent}${path.sep}`); }
+function assertSafeDirectory(name, directory) {
+  if (directory === path.parse(directory).root) throw new Error(`${name} cannot be a filesystem root`);
+  if (isWithin(repoRoot, directory)) throw new Error(`${name} cannot be inside the repository`);
+  if (isWithin(directory, repoRoot)) throw new Error(`${name} cannot contain the repository`);
+}
+assertSafeDirectory('APDB_STORAGE_SOURCE', source);
+assertSafeDirectory('APDB_STORAGE_TARGET', target);
 if (source === target) throw new Error('storage source and target must be different');
+if (isWithin(source, target) || isWithin(target, source)) throw new Error('storage source and target cannot be nested');
 function files(root) {
   const output = [];
   function walk(dir) {
@@ -36,6 +48,7 @@ function copy(root, destination) {
   }
 }
 if (!fs.existsSync(source) || !fs.statSync(source).isDirectory()) throw new Error('storage source must be a directory');
+if (fs.existsSync(target) && fs.readdirSync(target).length > 0 && process.env.APDB_STORAGE_ALLOW_NONEMPTY !== '1') throw new Error('storage target is not empty; use a new directory or explicitly set APDB_STORAGE_ALLOW_NONEMPTY=1');
 fs.mkdirSync(target, { recursive: true });
 const before = inventory(source);
 copy(source, target);
