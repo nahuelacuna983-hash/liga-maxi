@@ -144,3 +144,9 @@ aislado `tests/apdb-isolated-session-switch-browser.spec.cjs`; requiere el
 entorno Supabase descartable y credenciales sintéticas del workflow para su
 certificación real.
 
+La ejecución aislada #54 mostró que el panel de playoffs podía conservar el
+botón visible mientras su atributo seguía en `loading`; ahora cada transición
+registra categoría, motivo y revisión DOM mediante `APDB_PLAYOFF_RENDER`. El
+workflow aislado incorpora además `tests/apdb-isolated-session-switch-browser.spec.cjs`
+para validar Asociación → Delegado → Asociación sin herencia de estado privado.
+

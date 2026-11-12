@@ -60,6 +60,7 @@ const estado = {
   permisosAuth: [],
   asociacionInicializada: false
 };
+let playoffsRenderRevision = 0;
 
 function $(id) {
   return document.getElementById(id);
@@ -5845,11 +5846,18 @@ function renderPlayoffsAsociacion(nombreCategoria) {
   `;
 }
 
-function marcarPlayoffsAsociacionListos(nombreCategoria) {
+function actualizarEstadoRenderPlayoffs(nombreCategoria, estadoRender, motivo) {
   const panel = $("asociacion-playoffs");
   if (!panel) return;
+  const revision = ++playoffsRenderRevision;
   panel.dataset.categoryName = nombreCategoria;
-  panel.dataset.categoryRenderState = "ready";
+  panel.dataset.categoryRenderState = estadoRender;
+  panel.dataset.categoryRenderRevision = String(revision);
+  console.debug("APDB_PLAYOFF_RENDER", JSON.stringify({ categoria: nombreCategoria, estado: estadoRender, motivo, revision }));
+}
+
+function marcarPlayoffsAsociacionListos(nombreCategoria) {
+  actualizarEstadoRenderPlayoffs(nombreCategoria, "ready", "playoffs-rendered");
 }
 
 function playoffPayload(categoria, partido) {
@@ -8336,11 +8344,7 @@ async function inicializarAsociacion() {
 
   $("asociacion-categoria").addEventListener("change", async (e) => {
     const categoria = e.target.value;
-    const playoffsPanel = $("asociacion-playoffs");
-    if (playoffsPanel) {
-      playoffsPanel.dataset.categoryRenderState = "loading";
-      playoffsPanel.dataset.categoryName = categoria;
-    }
+    actualizarEstadoRenderPlayoffs(categoria, "loading", "category-change");
     await refrescarCategoria(categoria, { actualizarPublico: false });
     poblarSelectPartidosAsociacion(categoria);
     renderPlayoffsAsociacion(categoria);
