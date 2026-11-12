@@ -8296,6 +8296,9 @@ async function inicializarAsociacion() {
     await refrescarCategoria(categoria, { actualizarPublico: false });
     poblarSelectPartidosAsociacion(categoria);
     renderPlayoffsAsociacion(categoria);
+    // Playoffs are usable as soon as their own data is rendered. Documental and
+    // reporting refreshes below must not block the competition controls.
+    if (playoffsPanel) playoffsPanel.dataset.categoryRenderState = "ready";
     renderDocumentacionAsociacion(categoria);
     const categoriaData = estado.categorias.find((cat) => cat.nombre === categoria);
     if (categoriaData) await cargarDocumentosDriveCategoria(categoriaData.id);
@@ -8310,7 +8313,6 @@ async function inicializarAsociacion() {
     if (panelActualAsociacion() === "auditoria-documental") {
       renderAuditoriaDocumentalAsociacion(categoria);
     }
-    if (playoffsPanel) playoffsPanel.dataset.categoryRenderState = "ready";
     setStatus($("asociacion-status"), "", "");
   });
 

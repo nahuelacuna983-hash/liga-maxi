@@ -21,6 +21,8 @@ La ejecucion aislada #48 aprobo autenticacion, programacion, resultados, Top 6 y
 
 En el Bloque 18 se agrego un indicador operativo en el panel de playoffs de Asociacion con fase actual, partidos pendientes, instruccion de avance y campeon cuando corresponde. La ejecucion #49 mantuvo Top 6/8 aprobados y reprodujo el fallo Top 4 sin RPC; la correccion ahora espera el estado `ready` del panel despues de completar la recarga de categoria antes de accionar Generar llave.
 
+En la continuacion se comprobo en CI #50 que Top 4 tenia la categoria cargada, pero el estado `ready` se publicaba despues de refrescos documentales auxiliares. El panel ahora queda listo inmediatamente despues de renderizar sus propios datos, sin esperar cargas no deportivas. La suite local sigue aprobada; falta repetir CI para validar Top 4 en Supabase aislado.
+
 ### Referencias
 
 - Persistencia y continuidad: `docs/APDB_2027_PERSISTENCIA_CONTINUIDAD.md`.
