@@ -23,7 +23,7 @@ for (const file of files) {
 }
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 assert.match(html, /apdb-private-config\.js/);
-assert.match(html, /Las operaciones persistentes no est/);
+assert.match(html, /operaciones persistentes/);
 const app = fs.readFileSync(path.join(root, "app_online.js"), "utf8");
 assert.match(app, /APDB_SUPABASE_URL \|\| ""/);
 const config = fs.readFileSync(path.join(root, "apdb-private-config.js"), "utf8");

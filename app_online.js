@@ -8300,7 +8300,6 @@ async function inicializarAsociacion() {
     renderPlayoffsAsociacion(categoria);
     // Playoffs are usable as soon as their own data is rendered. Documental and
     // reporting refreshes below must not block the competition controls.
-    if (playoffsPanel) playoffsPanel.dataset.categoryRenderState = "ready";
     renderDocumentacionAsociacion(categoria);
     const categoriaData = estado.categorias.find((cat) => cat.nombre === categoria);
     if (categoriaData) await cargarDocumentosDriveCategoria(categoriaData.id);
@@ -8314,6 +8313,14 @@ async function inicializarAsociacion() {
     }
     if (panelActualAsociacion() === "auditoria-documental") {
       renderAuditoriaDocumentalAsociacion(categoria);
+    }
+    // Several association subpanels can rebuild their HTML while the category
+    // is settling. Mark the live playoffs node only after all renders finish;
+    // otherwise Chromium can observe a stale/loading panel and miss its button.
+    const livePlayoffsPanel = $("asociacion-playoffs");
+    if (livePlayoffsPanel) {
+      livePlayoffsPanel.dataset.categoryName = categoria;
+      livePlayoffsPanel.dataset.categoryRenderState = "ready";
     }
     setStatus($("asociacion-status"), "", "");
   });

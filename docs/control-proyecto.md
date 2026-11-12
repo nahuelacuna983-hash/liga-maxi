@@ -94,3 +94,23 @@ Crear un motor de fixture en modo simulacion dentro de Asociacion:
 - muestra calendario propuesto;
 - avisa si no entra en el rango de fechas.
 
+## Paquete privado APdB actualizado
+
+El constructor `tools/build-cpanel-private-package.ps1` genera ahora un ZIP
+offline navegable: su entrada carga el circuito sintético existente y no carga
+`app_online.js` ni contiene fallback hacia Supabase productivo. Las escrituras
+que se muestran son de demostración en memoria y se identifican como no
+oficiales; no se presentan como persistentes. El paquete conserva el archivo
+`app_online.js` saneado como referencia para una futura configuración staging,
+pero no puede conectarse sin una configuración externa autorizada.
+
+ZIP: `private/apdb-2027-prueba-update.zip`
+SHA-256: `8F09DA734D3E9C8E7B33129BB5345594BD8A334F679C0E30387C411748EA16E9`
+
+Pruebas ejecutadas: `APDB_PRIVATE_PACKAGE_SAFETY_OK`,
+`INSTITUTIONAL_PACKAGE_SUBPATH_OK` y Chromium offline del paquete. La
+protección `.htaccess` de cPanel no se incluye ni se reemplaza. La corrección
+de renderizado de playoffs marca `ready` sobre el nodo vigente después de
+terminar las reconstrucciones de la categoría; Top 4 aún requiere una nueva
+ejecución aislada para certificarse.
+

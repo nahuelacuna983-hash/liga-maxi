@@ -18,8 +18,8 @@ const server = http.createServer((request, response) => {
 });
 function get(base, route) { return new Promise((resolve, reject) => { http.get(`${base}${route}`, (response) => { let text = ""; response.on("data", (chunk) => { text += chunk; }); response.on("end", () => resolve({ response, text })); }).on("error", reject); }); }
 (async () => { await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve)); const base = `http://127.0.0.1:${server.address().port}`; try {
-  const html = await get(base, "/apdb-2027-prueba/"); assert.equal(html.response.statusCode, 200); assert.match(html.text, /app_online\.js/); assert.match(html.text, /manifest\.json/); assert.match(html.text, /sw\.js/);
-  for (const resource of ["app_online.js", "style.css", "manifest.json", "sw.js", "icon-192.png", "icon-512.png"]) assert.equal((await get(base, `/apdb-2027-prueba/${resource}`)).response.statusCode, 200, resource);
+  const html = await get(base, "/apdb-2027-prueba/"); assert.equal(html.response.statusCode, 200); assert.match(html.text, /demo_circuito_2027\.js/); assert.match(html.text, /apdb-private-config\.js/); assert.match(html.text, /manifest\.json/); assert.match(html.text, /sw\.js/);
+  for (const resource of ["app_online.js", "demo_circuito_2027.js", "demo_2027_provider.js", "apdb-private-config.js", "style.css", "manifest.json", "sw.js", "icon-192.png", "icon-512.png"]) assert.equal((await get(base, `/apdb-2027-prueba/${resource}`)).response.statusCode, 200, resource);
   const manifest = JSON.parse((await get(base, "/apdb-2027-prueba/manifest.json")).text); assert.equal(manifest.start_url, "./"); assert.equal(manifest.scope, "./");
   console.log("INSTITUTIONAL_PACKAGE_SUBPATH_OK");
 } finally { await new Promise((resolve) => server.close(resolve)); } })().catch((error) => { console.error(error); process.exitCode = 1; });
