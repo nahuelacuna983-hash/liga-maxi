@@ -23,6 +23,8 @@ En el Bloque 18 se agrego un indicador operativo en el panel de playoffs de Asoc
 
 En la continuacion se comprobo en CI #50 que Top 4 tenia la categoria cargada, pero el estado `ready` se publicaba despues de refrescos documentales auxiliares. El panel ahora queda listo inmediatamente despues de renderizar sus propios datos, sin esperar cargas no deportivas. La suite local sigue aprobada; falta repetir CI para validar Top 4 en Supabase aislado.
 
+La ejecucion #51 repitio el fallo porque el selector exigia tambien `data-category-name`; el estado real del boton no pudo verificarse con ese selector compuesto. La prueba ahora valida el valor seleccionado por separado y el panel `ready`, mientras el render del propio panel publica ambos atributos. Se preparo `private/apdb-2027-prueba-update.zip` para la instalacion privada: SHA-256 `C51A1FEE37290D72211DDB3E3A6871274B89A678FA437126AD4487F4B66B0850`. El ZIP no incluye `.htaccess`, SQL, credenciales ni archivos internos.
+
 ### Referencias
 
 - Persistencia y continuidad: `docs/APDB_2027_PERSISTENCIA_CONTINUIDAD.md`.

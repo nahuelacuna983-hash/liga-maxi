@@ -66,7 +66,9 @@ async function clickLiveControl(page, selector, label) {
 async function completeVisualPlayoff(page, format, categoryName, credentials) {
   await loginAssociation(page, credentials);
   await page.locator("#asociacion-categoria").selectOption({ label: categoryName });
-  await expect(page.locator(`#asociacion-playoffs[data-category-render-state="ready"][data-category-name="${categoryName}"] .playoff-generate-btn`)).toBeVisible({ timeout: 20000 });
+  await expect.poll(() => page.locator("#asociacion-categoria").inputValue(), { timeout: 20000 }).toBe(categoryName);
+  console.log(`APDB_BROWSER_PLAYOFF_PANEL ${JSON.stringify(await page.locator("#asociacion-playoffs").evaluate((panel) => ({ state: panel.dataset.categoryRenderState || "", category: panel.dataset.categoryName || "", buttons: panel.querySelectorAll(".playoff-generate-btn").length, text: panel.innerText.slice(0, 180) })))}`);
+  await expect(page.locator('#asociacion-playoffs[data-category-render-state="ready"] .playoff-generate-btn')).toBeVisible({ timeout: 20000 });
   const generateResponse = page.waitForResponse((item) => item.url().includes("/rest/v1/rpc/apdb_upsert_playoff_match") && item.request().method() === "POST");
   await clickLiveControl(page, ".playoff-generate-btn", `generate-top-${format}`);
   expect((await generateResponse).status()).toBe(200);

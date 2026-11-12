@@ -1866,6 +1866,8 @@ function renderListaHabilitadosArbitros(nombreCategoria) {
       </table>
     </div>
   `;
+  container.dataset.categoryRenderState = "ready";
+  container.dataset.categoryName = nombreCategoria;
 }
 
 function estadoDocumentoLabel(documento) {
