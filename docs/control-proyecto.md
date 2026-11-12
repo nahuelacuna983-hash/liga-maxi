@@ -118,3 +118,9 @@ La simulación sintética ahora reutiliza fixtures y playoffs existentes cuando
 ya contienen resultados, en lugar de intentar regenerarlos. La repetición del
 recorrido fue comprobada con `DEMO_TOURNAMENTS_OK`.
 
+La aplicación principal también marca el panel de playoffs como listo después
+de la carga inicial autenticada de Asociación, no sólo después de cambiar la
+categoría. Esto evita que el control `Generar llave` quede expuesto con estado
+`loading` en el primer acceso; la certificación Top 4 contra Supabase aislado
+sigue pendiente de ejecución.
+

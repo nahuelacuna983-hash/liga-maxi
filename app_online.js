@@ -7401,6 +7401,11 @@ async function cargarDatosAsociacionActual() {
   renderProgramacionAsociacion(categoria);
   renderCierreAsociacion(categoria);
   renderInicioAsociacion(categoria);
+  const livePlayoffsPanel = $("asociacion-playoffs");
+  if (livePlayoffsPanel) {
+    livePlayoffsPanel.dataset.categoryName = categoria;
+    livePlayoffsPanel.dataset.categoryRenderState = "ready";
+  }
   setStatus(status, "", "");
 }
 

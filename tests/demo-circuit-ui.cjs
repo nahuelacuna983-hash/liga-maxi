@@ -18,5 +18,5 @@ assert.match(js, /estado !== "finalizado"/);
 assert.match(html, /@media\(max-width:720px\)/);
 assert.match(html, /\.circuit \.assoc-panel\{display:block\}/);
 assert.match(html, /\.circuit \.assoc-panel\[hidden\]\{display:none\}/);
-for (const text of ["Fixture", "Playoffs", "Módulo sintético"]) assert.match(js, new RegExp(text));
+for (const text of ["Fixture", "Playoffs", "Proveedor sintético"]) assert.match(js, new RegExp(text));
 console.log("DEMO_CIRCUIT_UI_STATIC_OK");
