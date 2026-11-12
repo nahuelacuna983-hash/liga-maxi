@@ -25,6 +25,8 @@ En la continuacion se comprobo en CI #50 que Top 4 tenia la categoria cargada, p
 
 La ejecucion #51 repitio el fallo porque el selector exigia tambien `data-category-name`; el estado real del boton no pudo verificarse con ese selector compuesto. La prueba ahora valida el valor seleccionado por separado y el panel `ready`, mientras el render del propio panel publica ambos atributos. Se preparo `private/apdb-2027-prueba-update.zip` para la instalacion privada: SHA-256 `C51A1FEE37290D72211DDB3E3A6871274B89A678FA437126AD4487F4B66B0850`. El ZIP no incluye `.htaccess`, SQL, credenciales ni archivos internos.
 
+El paquete fue endurecido posteriormente: su `app_online.js` ya no contiene el fallback de Supabase productivo y `apdb-private-config.js` queda en modo offline hasta que se reemplace externamente por una configuracion publica de staging autorizada. La interfaz informa que las operaciones persistentes no estan disponibles sin backend. El ZIP regenerado queda en `private/apdb-2027-prueba-update.zip` con SHA-256 `08DE341F084285BBD0B6FB313711260198A989CA9865CAD5AE2749C0F569A5E8`.
+
 ### Referencias
 
 - Persistencia y continuidad: `docs/APDB_2027_PERSISTENCIA_CONTINUIDAD.md`.
