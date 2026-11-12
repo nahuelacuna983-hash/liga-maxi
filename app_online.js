@@ -6233,9 +6233,38 @@ async function cerrarSesionAuth() {
   await supabaseClient.auth.signOut();
   estado.authSession = null;
   estado.authUser = null;
-  estado.permisosAuth = [];
+  limpiarEstadoPrivadoAuth();
   setStatus($("auth-status"), "Sesion cerrada.", "ok");
   renderSesionAuth();
+}
+
+function limpiarEstadoPrivadoAuth() {
+  estado.permisosAuth = [];
+  estado.delegadoDesbloqueado = false;
+  estado.delegado = null;
+  estado.asociacionDesbloqueada = false;
+  estado.usuarioAsociacion = null;
+  estado.partidosPorCategoria = {};
+  estado.playoffsPorCategoria = {};
+  estado.programacionPorCategoriaId = {};
+  estado.equiposPorCategoriaId = {};
+  estado.documentosPorCategoriaId = {};
+  estado.jugadoresPorCategoriaId = {};
+  estado.documentosJugadoresPorCategoriaId = {};
+  estado.driveDocumentosPorCategoriaId = {};
+  estado.auditoriaDocumentalPorCategoriaId = {};
+  aplicarBloqueoDelegado();
+  aplicarBloqueoAsociacion();
+  if ($("delegado-categoria")) {
+    poblarSelectCategorias("delegado-categoria", estado.categorias);
+    poblarSelectPartidosDelegado(estado.categorias[0]?.nombre || "");
+  }
+  if ($("asociacion-categoria")) {
+    renderPlayoffsAsociacion($("asociacion-categoria").value || "");
+    renderDocumentacionAsociacion($("asociacion-categoria").value || "");
+    renderProgramacionAsociacion($("asociacion-categoria").value || "");
+  }
+  renderDocumentacionDelegado();
 }
 
 async function inicializarSesionAuth() {
@@ -6250,7 +6279,7 @@ async function inicializarSesionAuth() {
       const permisos = await cargarPermisosUsuarioActual();
       await aplicarPermisosAutenticados(permisos);
     } else {
-      estado.permisosAuth = [];
+      limpiarEstadoPrivadoAuth();
       renderSesionAuth();
     }
   });

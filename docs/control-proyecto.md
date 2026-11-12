@@ -124,3 +124,10 @@ categoría. Esto evita que el control `Generar llave` quede expuesto con estado
 `loading` en el primer acceso; la certificación Top 4 contra Supabase aislado
 sigue pendiente de ejecución.
 
+El cierre de sesión de la aplicación principal ahora limpia el estado privado
+de partidos, programación, playoffs, equipos, jugadores, documentos e
+historial antes de volver a bloquear Asociación y Delegados. Esto permite
+volver a ingresar con otra identidad sin reutilizar datos de la sesión
+anterior; la recuperación posterior vuelve a consultar PostgreSQL/Supabase
+mediante las rutas existentes.
+
