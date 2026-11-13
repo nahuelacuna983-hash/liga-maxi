@@ -75,8 +75,8 @@ async function completeVisualPlayoff(page, format, categoryName, credentials) {
   expect((await generateResponse).status()).toBe(200);
   await expect.poll(() => page.locator(".assoc-playoff-row").count(), { timeout: 20000 }).toBeGreaterThan(0);
   if (format === 4) {
-    await expect(page.locator('.assoc-playoff-row .assoc-playoff-title span').filter({ hasText: "semifinales" })).toHaveCount(2);
-    await expect(page.locator('.assoc-playoff-row .assoc-playoff-title span').filter({ hasText: "final" })).toHaveCount(1);
+    await expect(page.locator('.assoc-playoff-row .assoc-playoff-title span').filter({ hasText: /^semifinales(?:\s|$)/i })).toHaveCount(2);
+    await expect(page.locator('.assoc-playoff-row .assoc-playoff-title span').filter({ hasText: /^final(?:\s|$)/i })).toHaveCount(1);
   }
   const firstPhase = format === 8 ? "cuartos" : format === 6 ? "repechaje" : "semifinales";
   await savePendingPlayoffRows(page, firstPhase);
