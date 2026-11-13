@@ -67,12 +67,17 @@ async function completeVisualPlayoff(page, format, categoryName, credentials) {
   await loginAssociation(page, credentials);
   await page.locator("#asociacion-categoria").selectOption({ label: categoryName });
   await expect.poll(() => page.locator("#asociacion-categoria").inputValue(), { timeout: 20000 }).toBe(categoryName);
-  console.log(`APDB_BROWSER_PLAYOFF_PANEL ${JSON.stringify(await page.locator("#asociacion-playoffs").evaluate((panel) => ({ state: panel.dataset.categoryRenderState || "", category: panel.dataset.categoryName || "", buttons: panel.querySelectorAll(".playoff-generate-btn").length, text: panel.innerText.slice(0, 180) })))}`);
+  await expect.poll(() => page.locator("#asociacion-playoffs").getAttribute("data-category-name"), { timeout: 20000 }).toBe(categoryName);
   await expect(page.locator('#asociacion-playoffs[data-category-render-state="ready"] .playoff-generate-btn')).toBeVisible({ timeout: 20000 });
+  console.log(`APDB_BROWSER_PLAYOFF_PANEL ${JSON.stringify(await page.locator("#asociacion-playoffs").evaluate((panel) => ({ state: panel.dataset.categoryRenderState || "", category: panel.dataset.categoryName || "", buttons: panel.querySelectorAll(".playoff-generate-btn").length, rows: panel.querySelectorAll(".assoc-playoff-row").length, text: panel.innerText.slice(0, 180) })))}`);
   const generateResponse = page.waitForResponse((item) => item.url().includes("/rest/v1/rpc/apdb_upsert_playoff_match") && item.request().method() === "POST");
   await clickLiveControl(page, ".playoff-generate-btn", `generate-top-${format}`);
   expect((await generateResponse).status()).toBe(200);
   await expect.poll(() => page.locator(".assoc-playoff-row").count(), { timeout: 20000 }).toBeGreaterThan(0);
+  if (format === 4) {
+    await expect(page.locator('.assoc-playoff-row .assoc-playoff-title span').filter({ hasText: "semifinales" })).toHaveCount(2);
+    await expect(page.locator('.assoc-playoff-row .assoc-playoff-title span').filter({ hasText: "final" })).toHaveCount(1);
+  }
   const firstPhase = format === 8 ? "cuartos" : format === 6 ? "repechaje" : "semifinales";
   await savePendingPlayoffRows(page, firstPhase);
   const phases = format === 8 ? ["cuartos", "semifinales", "final"] : format === 6 ? ["repechaje", "semifinales", "final"] : ["semifinales", "final"];

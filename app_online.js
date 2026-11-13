@@ -3966,6 +3966,19 @@ function generarPartidosPlayoff(nombreCategoria, tabla) {
     });
   }
 
+  if (clasificados === 4 && tabla.length >= 4) {
+    const datosSemis = obtenerDatosRondaPlayoff(nombreCategoria, "semifinales");
+    const datosFinal = obtenerDatosRondaPlayoff(nombreCategoria, "final");
+
+    (datosSemis.fechas || [datosSemis.fecha || ""]).forEach((fecha, index) => {
+      partidos.push(crearPlayoffMatch("semifinales", "semi_1", `Semi 1 - Partido ${index + 1}`, 10 + index, index + 1, equipo(1), equipo(4), fecha || ""));
+      partidos.push(crearPlayoffMatch("semifinales", "semi_2", `Semi 2 - Partido ${index + 1}`, 20 + index, index + 1, equipo(2), equipo(3), fecha || ""));
+    });
+    (datosFinal.fechas || [datosFinal.fecha || ""]).forEach((fecha, index) => {
+      partidos.push(crearPlayoffMatch("final", "final", `Final ${index + 1}`, 30 + index, index + 1, "Ganador Semi 1", "Ganador Semi 2", fecha || ""));
+    });
+  }
+
   return partidos;
 }
 
