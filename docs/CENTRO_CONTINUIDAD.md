@@ -58,6 +58,15 @@ y `docs/seguridad-dominio-cpanel.md`. Respaldar la carpeta objetivo y
 conservar el `.htaccess` creado por cPanel; revertir desde la copia del
 administrador sin tocar la raiz 2026.
 
+La validación CI `tests/apdb-storage-backup-integration.cjs` crea dos buckets
+locales descartables y 1005 objetos sintéticos distribuidos en subcarpetas.
+Comprueba paginación, recorrido recursivo, exportación, restauración en un
+bucket distinto y descarga posterior con comparación SHA-256. El workflow
+aislado la ejecuta junto con la matriz existente; un resultado válido debe
+contener `APDB_SUPABASE_STORAGE_BACKUP_INTEGRATION_OK` con las tres cantidades
+iguales. Hasta ejecutar ese workflow, esta cobertura queda preparada pero no
+certificada en este entorno.
+
 ## Reglas y pendientes
 
 - No guardar contraseñas, service-role keys, tokens, datos medicos ni dumps

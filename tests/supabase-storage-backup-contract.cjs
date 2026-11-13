@@ -1,0 +1,13 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const source = fs.readFileSync(path.resolve(__dirname, '..', 'tools', 'supabase-storage-backup.cjs'), 'utf8');
+assert.match(source, /offset/);
+assert.match(source, /limit: 1000/);
+assert.match(source, /await list\(objectPath\)/);
+assert.match(source, /unsafe object path/);
+assert.match(source, /unsafe object path/);
+assert.match(source, /restored Storage objects differ/);
+assert.match(source, /APDB_SUPABASE_STORAGE_EXPORT_RESTORE_OK/);
+assert.doesNotMatch(source, /supabase\.co|supabase\.com|service_role/i);
+console.log('APDB_SUPABASE_STORAGE_BACKUP_CONTRACT_OK');

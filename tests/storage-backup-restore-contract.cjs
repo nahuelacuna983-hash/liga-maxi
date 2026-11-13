@@ -6,5 +6,6 @@ const source = fs.readFileSync(file, 'utf8');
 assert.match(source, /sha256/);
 assert.match(source, /APDB_STORAGE_BACKUP_RESTORE_OK/);
 assert.match(source, /restored storage inventory differs/);
+assert.match(source, /cannot be nested/);
 assert.doesNotMatch(source, /supabase\.co|service_role|password/i);
 console.log('APDB_STORAGE_BACKUP_RESTORE_CONTRACT_OK');
