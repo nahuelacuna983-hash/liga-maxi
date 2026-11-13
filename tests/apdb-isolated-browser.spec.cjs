@@ -90,11 +90,16 @@ async function completeVisualPlayoff(page, format, categoryName, credentials) {
     }
     await savePendingPlayoffRows(page, phase);
   }
+  const championStatus = page.locator(".playoff-operation-status");
+  await expect(championStatus).toContainText("Campeon:", { timeout: 20000 });
+  const champion = (await championStatus.innerText()).match(/Campe[oó]n:\s*(.+)/i)?.[1]?.trim();
+  expect(champion).toBeTruthy();
   await expect(page.locator("#asociacion-status")).toContainText("Resultado de playoff guardado", { timeout: 20000 });
   await page.reload({ waitUntil: "domcontentloaded", timeout: 20000 });
   await loginAssociation(page, credentials);
   await page.locator("#asociacion-categoria").selectOption({ label: categoryName });
   await expect(page.locator(".assoc-playoff-row")).not.toHaveCount(0, { timeout: 20000 });
+  await expect(page.locator(".playoff-operation-status")).toContainText(`Campeon: ${champion}`, { timeout: 20000 });
   console.log(`APDB_BROWSER_PLAYOFF_TOP${format}_RECOVERED true`);
 }
 
