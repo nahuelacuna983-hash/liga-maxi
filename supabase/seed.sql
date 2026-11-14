@@ -4,23 +4,27 @@
 insert into public.organizaciones (id, nombre, slug)
 values
   ('10000000-0000-0000-0000-000000000001', 'APdB Test A', 'apdb-test-a'),
-  ('10000000-0000-0000-0000-000000000002', 'APdB Test B', 'apdb-test-b');
+  ('10000000-0000-0000-0000-000000000002', 'APdB Test B', 'apdb-test-b')
+on conflict (id) do nothing;
 
 insert into public.torneos (id, organizacion_id, nombre, temporada, estado)
 values
   ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Torneo sintético A', '2027-test', 'en_juego'),
-  ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000002', 'Torneo sintético B', '2027-test', 'borrador');
+  ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000002', 'Torneo sintético B', '2027-test', 'borrador')
+on conflict (id) do nothing;
 
 insert into public.categorias (id, torneo_id, nombre, estado)
 values
   ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'Categoría sintética A', 'borrador'),
-  ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'Categoría sintética B', 'borrador');
+  ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'Categoría sintética B', 'borrador')
+on conflict (id) do nothing;
 
 insert into public.equipos (id, categoria_id, nombre, orden_inicial)
 values
   ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'Equipo sintético A', 1),
   ('40000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000001', 'Equipo sintético A visitante', 2),
-  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002', 'Equipo sintético B', 1);
+  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002', 'Equipo sintético B', 1)
+on conflict (id) do nothing;
 
 insert into public.partidos
   (id, categoria_id, local, visitante, jornada, fecha, estado_resultado)
@@ -28,4 +32,5 @@ values
   ('50000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001',
    'Equipo sintético A', 'Equipo sintético A visitante', 1, '2027-07-01', 'pendiente'),
   ('50000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001',
-   'Equipo sintético A visitante', 'Equipo sintético A', 2, '2027-07-08', 'pendiente');
+   'Equipo sintético A visitante', 'Equipo sintético A', 2, '2027-07-08', 'pendiente')
+on conflict (id) do nothing;

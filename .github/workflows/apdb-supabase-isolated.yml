@@ -51,6 +51,7 @@ jobs:
       - name: Run local contracts
         run: |
           node tests/apdb-supabase-isolated-contract.cjs
+          node tests/apdb-persistent-pilot-contract.cjs
           node tests/apdb-isolated-migration-contract.cjs
           node tests/apdb-2027-authorization-contract.cjs
           node tests/apdb-supabase-isolated-integration.cjs
