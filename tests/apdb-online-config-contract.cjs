@@ -4,6 +4,8 @@ const fs = require("node:fs");
 const source = fs.readFileSync("app_online.js", "utf8");
 assert.match(source, /window\.APDB_SUPABASE_URL/);
 assert.match(source, /window\.APDB_SUPABASE_ANON_KEY/);
+assert.match(source, /window\.APDB_STAGING === true/);
+assert.match(source, /APDB_PRODUCTION_SUPABASE_URL/);
 assert.match(source, /secureResults/);
 const server = fs.readFileSync("tools/apdb-isolated-server.cjs", "utf8");
 assert.match(server, /PUBLIC_FILES/);
