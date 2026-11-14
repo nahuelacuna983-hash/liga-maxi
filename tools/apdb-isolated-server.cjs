@@ -8,9 +8,11 @@ const root = path.resolve(__dirname, "..");
 const port = Number(process.env.APDB_PILOT_PORT || 8790);
 const supabaseUrl = process.env.SUPABASE_URL;
 const anonKey = process.env.SUPABASE_ANON_KEY;
+const stagingProjectId = "wffvmthdmmjwspnozyrv";
+const stagingAllowed = process.env.APDB_STAGING_MODE === "1" && new URL(supabaseUrl || "http://invalid").hostname === `${stagingProjectId}.supabase.co`;
 
-if (!supabaseUrl || !anonKey || !/^https?:\/\/127\.0\.0\.1(?::\d+)?$/.test(supabaseUrl)) {
-  throw new Error("APDB isolated server requires SUPABASE_URL on 127.0.0.1 and SUPABASE_ANON_KEY");
+if (!supabaseUrl || !anonKey || (!/^https?:\/\/127\.0\.0\.1(?::\d+)?$/.test(supabaseUrl) && !stagingAllowed)) {
+  throw new Error("APDB server requires a local Supabase URL or the explicitly allowed APdB staging project and a publishable key");
 }
 
 const mime = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".json": "application/json" };
