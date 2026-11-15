@@ -165,6 +165,29 @@ async function cargarTorneoActivo() {
     }
   }
 
+  // A persistent staging tournament may still be a draft while it already
+  // has a published fixture. Discover it by persisted content, never by a
+  // browser-supplied or newly hardcoded identifier.
+  if (!torneo) {
+    const { data: torneosConContenido, error: errorContenido } = await supabaseClient
+      .from("torneos")
+      .select("id, nombre, temporada, tipo, estado")
+      .in("estado", ["borrador", "activo", "publicado", "en_juego"])
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (errorContenido) {
+      console.warn("No se pudieron descubrir torneos persistidos:", errorContenido.message);
+    } else {
+      for (const candidato of torneosConContenido || []) {
+        if (await contarPartidosTorneo(candidato.id)) {
+          torneo = candidato;
+          break;
+        }
+      }
+    }
+  }
+
   if (!torneo) {
     const { data: fallback, error: errorFallback } = await supabaseClient
       .from("torneos")
