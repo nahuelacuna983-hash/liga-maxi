@@ -27,6 +27,7 @@ as $$
           select 1
           from public.app_user_permissions aup
           where aup.user_id = au.id
+            and au.role = 'delegado'
             and aup.organizacion_id = p_organizacion_id
             and aup.categoria_id = p_categoria_id
             and aup.equipo_id = p_equipo_id
@@ -34,11 +35,28 @@ as $$
             and aup.can_load_documents
         )
       )
+      and exists (
+        select 1
+        from public.categorias c
+        join public.torneos t on t.id = c.torneo_id
+        where c.id = p_categoria_id
+          and t.organizacion_id = p_organizacion_id
+      )
+      and exists (
+        select 1
+        from public.equipos e
+        where e.id = p_equipo_id
+          and e.categoria_id = p_categoria_id
+      )
   );
 $$;
 
+alter function public.apdb_document_access_allowed(uuid, uuid, uuid)
+  owner to postgres;
 revoke all on function public.apdb_document_access_allowed(uuid, uuid, uuid)
   from public, anon, authenticated;
+grant execute on function public.apdb_document_access_allowed(uuid, uuid, uuid)
+  to postgres;
 
 create or replace view public.v_team_documents_admin
 with (security_barrier = true)

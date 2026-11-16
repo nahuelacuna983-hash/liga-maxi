@@ -11,9 +11,13 @@ for (const fragment of [
   "security definer",
   "set search_path = public, auth",
   "au.role in ('asociacion', 'admin_general')",
+  "and au.role = 'delegado'",
   "aup.equipo_id = p_equipo_id",
   "aup.can_load_documents",
+  "where c.id = p_categoria_id",
+  "where e.id = p_equipo_id",
   "with (security_barrier = true)",
+  "owner to postgres",
   "revoke all on public.v_team_documents_admin from public, anon, authenticated",
   "grant select on public.v_team_documents_admin to authenticated"
 ]) {
