@@ -168,10 +168,15 @@ async function main() {
   assert.equal(canonical(afterSchedules.body), canonical(beforeSchedules.body), "Una operación denegada modificó programación");
   assert.equal(canonical(afterPlayoffs.body), canonical(beforePlayoffs.body), "Una operación denegada modificó la llave Top 4");
 
-  console.log("APDB_STAGING_AUTH_PERMISSIONS_NEGATIVE_OK");
+  if (pendientes.length) {
+    console.log("APDB_STAGING_AUTH_PERMISSIONS_PARTIAL_OK");
+  } else {
+    console.log("APDB_STAGING_AUTH_PERMISSIONS_OK");
+  }
   if (pendientes.length) {
     console.log("PENDIENTES:");
     pendientes.forEach((item) => console.log(`- ${item}`));
+    process.exitCode = 2;
   }
   } finally {
     associationToken = null;
