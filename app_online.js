@@ -4236,6 +4236,13 @@ function renderResumenResultadosPlayoff(partidos) {
   `;
 }
 
+function obtenerCampeonPlayoff(partidos) {
+  const final = (partidos || [])
+    .filter((partido) => partido.fase === "final" && partidoPlayoffTieneResultado(partido))
+    .sort((a, b) => Number(b.partido_numero || 1) - Number(a.partido_numero || 1))[0];
+  return final ? ganadorPartidoPlayoff(final) : "";
+}
+
 function obtenerCategoriaPorNombre(nombreCategoria) {
   return estado.categorias.find((cat) => cat.nombre === nombreCategoria) || null;
 }
@@ -4543,6 +4550,10 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
   const bracketVacio = renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos);
   const promocionDescenso = renderPromocionDescenso(nombreCategoria, tabla);
   const resumenResultadosPlayoff = renderResumenResultadosPlayoff(partidosPlayoff);
+  const campeonPlayoff = obtenerCampeonPlayoff(partidosPlayoff);
+  const resumenCampeon = campeonPlayoff
+    ? `<div class="playoff-status-box"><h4>Campeón</h4><div class="playoff-status-row"><div class="playoff-status-team"><strong>${escapeHtml(campeonPlayoff)}</strong></div><span class="playoff-status-label">Campeón de playoffs</span></div></div>`
+    : "";
   const descripcionPlayoffs = faseRegularCerrada
     ? `Llave oficial segun tabla final de ${escapeHtml(nombreCategoria)}.`
     : `Llave base y proyeccion segun la tabla actual de ${escapeHtml(nombreCategoria)}.`;
@@ -4551,6 +4562,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
       <div class="playoff-empty-title">Llave de playoffs</div>
       ${bracket}
       ${resumenResultadosPlayoff}
+      ${resumenCampeon}
       ${promocionDescenso}
     `
     : `
@@ -4560,6 +4572,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
         <summary>Completar con tabla de hoy</summary>
         ${bracket}
         ${resumenResultadosPlayoff}
+        ${resumenCampeon}
         ${promocionDescenso}
       </details>
     `;
@@ -4579,9 +4592,9 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
 
 async function renderPublicoCategoria(nombreCategoria) {
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
-  if (categoriaUsaPlayoffsPublicos(nombreCategoria)) {
-    await cargarResultadosPlayoffCategoria(nombreCategoria, true);
-  }
+  // Persisted playoff rows are the source of truth. Load them even when an
+  // older or draft category does not expose its playoff configuration fields.
+  await cargarResultadosPlayoffCategoria(nombreCategoria, true);
   renderTablaSimple(nombreCategoria, partidos);
   renderFixturePublico(nombreCategoria);
   renderFechaDestacada(nombreCategoria);
@@ -4623,9 +4636,7 @@ async function refrescarPublicoCategoria(nombreCategoria) {
 
   try {
     const cargas = [cargarPartidosCategoria(nombreCategoria)];
-    if (categoriaUsaPlayoffsPublicos(nombreCategoria)) {
-      cargas.push(cargarResultadosPlayoffCategoria(nombreCategoria, true));
-    }
+    cargas.push(cargarResultadosPlayoffCategoria(nombreCategoria, true));
     await Promise.all(cargas);
 
     const categoriaActual = $("publico-categoria")?.value || "";
