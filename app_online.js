@@ -4535,6 +4535,26 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
     `;
   }
 
+  if (clasificados === 4 && cantidadEquipos >= 4) {
+    const semi1 = buscarPlayoff("semifinales", "semi_1");
+    const semi2 = buscarPlayoff("semifinales", "semi_2");
+    const final1 = buscarPlayoff("final", "final", 1);
+
+    bracket = `
+      <div class="playoff-bracket playoff-bracket-three">
+        <div class="playoff-round">
+          ${renderPlayoffRoundTitulo("Semifinales", nombreCategoria, "semifinales")}
+          ${renderPlayoffMatchGuardado("Semi 1", semi1, renderPlayoffSlot(1, equipo(1)), renderPlayoffSlot(4, equipo(4)))}
+          ${renderPlayoffMatchGuardado("Semi 2", semi2, renderPlayoffSlot(2, equipo(2)), renderPlayoffSlot(3, equipo(3)))}
+        </div>
+        <div class="playoff-round">
+          ${renderPlayoffRoundTitulo("Final", nombreCategoria, "final")}
+          ${renderPlayoffMatchGuardado("Final", final1, renderPlayoffSlotDinamico(final1.local || "Ganador Semi 1"), renderPlayoffSlotDinamico(final1.visitante || "Ganador Semi 2"))}
+        </div>
+      </div>
+    `;
+  }
+
   if (!bracket) {
     return;
   }
@@ -4599,6 +4619,12 @@ async function renderPublicoCategoria(nombreCategoria) {
   renderFixturePublico(nombreCategoria);
   renderFechaDestacada(nombreCategoria);
   renderPlayoffsSimple(nombreCategoria, partidos);
+  const playoffsPrincipal = $("publico-playoffs-principal");
+  const playoffsSecundario = $("publico-playoffs");
+  [playoffsPrincipal, playoffsSecundario].filter(Boolean).forEach((elemento) => {
+    elemento.dataset.renderState = "ready";
+    elemento.dataset.categoryName = nombreCategoria;
+  });
 }
 
 function mostrarCargaPublico(nombreCategoria) {
@@ -4644,7 +4670,7 @@ async function refrescarPublicoCategoria(nombreCategoria) {
       return;
     }
 
-    renderPublicoCategoria(nombreCategoria);
+    await renderPublicoCategoria(nombreCategoria);
     registrarUso("categoria_publico", {
       area: "publico",
       categoria: nombreCategoria
@@ -4758,7 +4784,7 @@ async function refrescarCategoria(nombreCategoria, opciones = {}) {
   if (incluirPartidos) await cargarPartidosCategoria(nombreCategoria);
   if (incluirPlayoffs) await cargarResultadosPlayoffCategoria(nombreCategoria, true);
   if (categoria?.id && incluirProgramacion) await cargarProgramacionCategoria(categoria.id);
-  if (actualizarPublico) renderPublicoCategoria(nombreCategoria);
+  if (actualizarPublico) await renderPublicoCategoria(nombreCategoria);
 }
 
 function usaRpcResultadosSeguros() {
