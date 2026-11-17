@@ -11,7 +11,7 @@ const configPath = path.join(root, "config.json");
 const outputPath = path.join(root, "site");
 const config = {
   environment: "staging",
-  supabaseUrl: "https://synthetic-staging.supabase.co",
+  supabaseUrl: "https://wffvmthdmmjwspnozyrv.supabase.co",
   supabaseAnonKey: "sb_publishable_test_only_0123456789",
   publicBasePath: "/apdb-2027-staging/",
   resetDatabaseOnStart: false
@@ -24,7 +24,7 @@ try {
 
   const html = fs.readFileSync(path.join(outputPath, "index_online.html"), "utf8");
   assert.ok(html.indexOf("window.APDB_STAGING=true") < html.indexOf("@supabase/supabase-js@2"));
-  assert.ok(html.includes("https://synthetic-staging.supabase.co"));
+  assert.ok(html.includes("https://wffvmthdmmjwspnozyrv.supabase.co"));
   assert.ok(!html.includes("eshbydpsmypflfxpmhyk.supabase.co"));
   assert.ok(!html.includes("YOUR_STAGING_PUBLISHABLE_OR_ANON_KEY"));
 

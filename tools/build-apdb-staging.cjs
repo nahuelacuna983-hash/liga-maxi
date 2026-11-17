@@ -11,7 +11,7 @@ const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 assert.equal(config.environment, "staging", "staging configuration required");
 assert.equal(config.resetDatabaseOnStart, false, "persistent staging must not reset on start");
 assert.match(config.supabaseUrl, /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i, "expected hosted Supabase URL");
-assert.doesNotMatch(config.supabaseUrl, /eshbydpsmypflfxpmhyk|localhost|127\.0\.0\.1|YOUR-STAGING/i, "production, local, or placeholder URL cannot be packaged");
+assert.match(config.supabaseUrl, /^https:\/\/wffvmthdmmjwspnozyrv\.supabase\.co\/?$/i, "only APdB staging can be packaged");
 assert.match(config.supabaseAnonKey, /^sb_publishable_[A-Za-z0-9_-]+$/i, "a real publishable key is required");
 assert.doesNotMatch(config.supabaseAnonKey, /service_role|secret|eyJ/i, "privileged credential is forbidden");
 assert.match(config.publicBasePath, /^\/[A-Za-z0-9._/-]+\/$/, "staging must have an isolated base path");
