@@ -7,6 +7,8 @@ const PROJECT = "wffvmthdmmjwspnozyrv";
 const CATEGORY_ID = "a7000000-0000-4000-8000-000000000003";
 const ASSOCIATION_EMAIL = "sociacion@apdb-test.invalid";
 const DELEGATE_EMAIL = "delegado@apdb-test.invalid";
+const NORTH_TEAM_ID = "a7000000-0000-4000-8000-000000000011";
+const SOUTH_TEAM_ID = "a7000000-0000-4000-8000-000000000012";
 
 function readLocalBootstrap() {
   return new Promise((resolve, reject) => {
@@ -79,6 +81,39 @@ function canonical(value) {
   });
 }
 
+function withoutKeys(value, keys) {
+  const ignored = new Set(keys);
+  return Object.fromEntries(Object.entries(value).filter(([key]) => !ignored.has(key)));
+}
+
+function assertAuthorizedScheduleChange(before, after, targetId, authorizedStartedAt) {
+  assert.equal(after.length, before.length, "La escritura autorizada alteró la cantidad de programaciones");
+  const beforeById = new Map(before.map((item) => [item.id, item]));
+  for (const current of after) {
+    const previous = beforeById.get(current.id);
+    assert.ok(previous, `La escritura autorizada creó una programación inesperada: ${current.id}`);
+    const ignored = current.id === targetId ? ["updated_at", "informado_por", "informado_en"] : [];
+    assert.equal(
+      canonical(withoutKeys(current, ignored)),
+      canonical(withoutKeys(previous, ignored)),
+      `La escritura autorizada modificó datos no permitidos de programación ${current.id}`
+    );
+  }
+
+  const previous = beforeById.get(targetId);
+  const persisted = after.find((item) => item.id === targetId);
+  assert.ok(previous && persisted, "No se pudo verificar la programación autorizada objetivo");
+  const previousUpdatedAt = Date.parse(previous.updated_at);
+  const persistedUpdatedAt = Date.parse(persisted.updated_at);
+  assert.ok(Number.isFinite(persistedUpdatedAt), `updated_at inválido tras escritura autorizada: ${persisted.updated_at}`);
+  if (Number.isFinite(previousUpdatedAt)) {
+    assert.ok(persistedUpdatedAt >= previousUpdatedAt, `updated_at retrocedió: ${previous.updated_at} -> ${persisted.updated_at}`);
+  }
+  assert.ok(persistedUpdatedAt >= authorizedStartedAt - 5000, `updated_at no corresponde a la escritura autorizada: ${persisted.updated_at}`);
+  assert.ok(persistedUpdatedAt <= Date.now() + 5 * 60 * 1000, `updated_at quedó en el futuro: ${persisted.updated_at}`);
+  console.log(`PROGRAMACION_AUTORIZADA_PERSISTIDA id=${targetId} updated_at=${persisted.updated_at}`);
+}
+
 async function login(base, key, email, password) {
   const result = await request(base, "/auth/v1/token?grant_type=password", {
     method: "POST",
@@ -136,11 +171,23 @@ async function main() {
   assert.ok(matchId, "No se encontró partido sintético de staging");
 
   const existingSchedule = beforeSchedules.body[0];
+  let scheduleAfterAuthorized = beforeSchedules.body;
   if (existingSchedule) {
+    const authorizedStartedAt = Date.now();
     const allowedAssociation = await request(config.url, "/rest/v1/rpc/apdb_upsert_match_schedule", {
       method: "POST", headers: associationHeaders, body: JSON.stringify({ p_payload: existingSchedule })
     });
     assert.ok(succeeded(allowedAssociation), `Asociación no pudo conservar la programación: HTTP ${allowedAssociation.response.status}`);
+    assert.equal(allowedAssociation.body?.id, existingSchedule.id, "La RPC autorizada no devolvió la programación objetivo");
+    const persistedSchedules = await request(config.url, `/rest/v1/match_schedules?categoria_id=eq.${CATEGORY_ID}&select=*&order=created_at.asc`, { headers: publicHeaders });
+    assert.equal(persistedSchedules.response.status, 200, `No se pudo verificar la escritura autorizada: HTTP ${persistedSchedules.response.status}`);
+    assertAuthorizedScheduleChange(beforeSchedules.body, persistedSchedules.body, existingSchedule.id, authorizedStartedAt);
+    assert.equal(
+      persistedSchedules.body.find((item) => item.id === existingSchedule.id)?.updated_at,
+      allowedAssociation.body.updated_at,
+      "La respuesta de la RPC autorizada no coincide con la programación persistida"
+    );
+    scheduleAfterAuthorized = persistedSchedules.body;
   } else {
     pendientes.push("No se pudo probar una escritura positiva de Asociación: no existe una programación previa segura para reescribir idénticamente.");
   }
@@ -164,29 +211,55 @@ async function main() {
   assert.ok(!succeeded(directResult), `El Delegado pudo escribir resultados por REST directo: HTTP ${directResult.response.status}`);
 
   if (beforeDocuments.response.status !== 403) {
-    const authorizedDocuments = await request(config.url, "/rest/v1/team_documents?equipo_id=eq.a7000000-0000-4000-8000-000000000011&select=id,equipo_id", { headers: delegateHeaders });
-    const foreignDocuments = await request(config.url, "/rest/v1/team_documents?equipo_id=eq.a7000000-0000-4000-8000-000000000012&select=id,equipo_id", { headers: delegateHeaders });
-    if (!succeeded(authorizedDocuments) || authorizedDocuments.body.length !== 1) {
-      pendientes.push("El Delegado no pudo demostrar lectura de la documentación de su equipo autorizado.");
+    assert.ok(beforeDocuments.body.some((item) => item.equipo_id === NORTH_TEAM_ID), "Asociación no pudo leer documentos de Norte");
+    assert.ok(beforeDocuments.body.some((item) => item.equipo_id === SOUTH_TEAM_ID), "Asociación no pudo leer documentos de Sur");
+
+    const authorizedDocuments = await request(config.url, `/rest/v1/v_team_documents_admin?categoria_id=eq.${CATEGORY_ID}&equipo_id=eq.${NORTH_TEAM_ID}&select=id,equipo_id,status,observacion&order=id`, { headers: delegateHeaders });
+    const foreignDocuments = await request(config.url, `/rest/v1/v_team_documents_admin?categoria_id=eq.${CATEGORY_ID}&equipo_id=eq.${SOUTH_TEAM_ID}&select=id,equipo_id,status,observacion&order=id`, { headers: delegateHeaders });
+    assert.equal(authorizedDocuments.response.status, 200, `Delegado no pudo consultar Norte por la vista protegida: HTTP ${authorizedDocuments.response.status}`);
+    assert.ok(authorizedDocuments.body.length > 0, "Delegado no recibió documentación de Norte");
+    assert.equal(foreignDocuments.response.status, 200, `Consulta protegida de Sur falló de forma inesperada: HTTP ${foreignDocuments.response.status}`);
+    assert.equal(foreignDocuments.body.length, 0, "El Delegado leyó documentación de Sur");
+
+    for (const document of [authorizedDocuments.body[0], beforeDocuments.body.find((item) => item.equipo_id === SOUTH_TEAM_ID)]) {
+      assert.ok(document?.id, "Falta documento sintético para probar escritura documental prohibida");
+      const deniedDocumentWrite = await request(config.url, `/rest/v1/team_documents?id=eq.${document.id}`, {
+        method: "PATCH", headers: { ...delegateHeaders, Prefer: "return=representation" },
+        body: JSON.stringify({ observacion: document.observacion })
+      });
+      assert.ok(!succeeded(deniedDocumentWrite), `El Delegado pudo modificar documentación ${document.equipo_id}: HTTP ${deniedDocumentWrite.response.status}`);
     }
-    if (succeeded(foreignDocuments) && foreignDocuments.body.length > 0) {
-      assert.fail("El Delegado leyó documentación del equipo ajeno");
+
+    if (!process.env.APDB_NO_PERMISSION_EMAIL) {
+      pendientes.push("No se configuró APDB_NO_PERMISSION_EMAIL; falta certificar una identidad autenticada sin permisos.");
+    } else {
+      let noPermissionPassword = await askHidden(`Contraseña de ${process.env.APDB_NO_PERMISSION_EMAIL}: `);
+      try {
+        const noPermissionToken = await login(config.url, config.key, process.env.APDB_NO_PERMISSION_EMAIL, noPermissionPassword);
+        const noPermissionDocuments = await request(config.url, `/rest/v1/v_team_documents_admin?categoria_id=eq.${CATEGORY_ID}&select=id`, { headers: headers(config.key, noPermissionToken) });
+        assert.equal(noPermissionDocuments.response.status, 200, `La identidad sin permisos no pudo consultar la vista protegida: HTTP ${noPermissionDocuments.response.status}`);
+        assert.equal(noPermissionDocuments.body.length, 0, "La identidad sin permisos leyó documentación");
+      } finally {
+        noPermissionPassword = null;
+      }
     }
-    const deniedForeignDocumentWrite = await request(config.url, "/rest/v1/team_documents?id=eq.a7000000-0000-4000-8000-000000000402", {
-      method: "PATCH", headers: { ...delegateHeaders, Prefer: "return=representation" },
-      body: JSON.stringify({ observacion: "Escritura indebida" })
-    });
-    assert.ok(!succeeded(deniedForeignDocumentWrite), `El Delegado pudo modificar documentación ajena: HTTP ${deniedForeignDocumentWrite.response.status}`);
   }
+
+  const anonDocuments = await request(config.url, `/rest/v1/v_team_documents_admin?categoria_id=eq.${CATEGORY_ID}&select=id`, { headers: publicHeaders });
+  assert.ok(!succeeded(anonDocuments), `anon pudo leer la vista documental protegida: HTTP ${anonDocuments.response.status}`);
 
   const afterMatches = await request(config.url, `/rest/v1/partidos?categoria_id=eq.${CATEGORY_ID}&select=*&order=created_at.asc`, { headers: publicHeaders });
   const afterSchedules = await request(config.url, `/rest/v1/match_schedules?categoria_id=eq.${CATEGORY_ID}&select=*&order=created_at.asc`, { headers: publicHeaders });
   const afterPlayoffs = await request(config.url, `/rest/v1/playoff_matches?categoria_id=eq.${CATEGORY_ID}&select=*&order=orden,partido_numero`, { headers: publicHeaders });
+  for (const [name, result] of [["resultados regulares finales", afterMatches], ["programación final", afterSchedules], ["playoffs finales", afterPlayoffs]]) {
+    assert.equal(result.response.status, 200, `No se pudo leer ${name}: HTTP ${result.response.status}`);
+  }
   assert.equal(canonical(afterMatches.body), canonical(beforeMatches.body), "Una operación denegada modificó resultados regulares");
-  assert.equal(canonical(afterSchedules.body), canonical(beforeSchedules.body), "Una operación denegada modificó programación");
+  assert.equal(canonical(afterSchedules.body), canonical(scheduleAfterAuthorized), "Una operación denegada modificó programación");
   assert.equal(canonical(afterPlayoffs.body), canonical(beforePlayoffs.body), "Una operación denegada modificó la llave Top 4");
   if (beforeDocuments.response.status !== 403) {
     const afterDocuments = await request(config.url, `/rest/v1/v_team_documents_admin?categoria_id=eq.${CATEGORY_ID}&select=id,equipo_id,status,observacion&order=id`, { headers: associationHeaders });
+    assert.equal(afterDocuments.response.status, 200, `No se pudo releer documentación como Asociación: HTTP ${afterDocuments.response.status}`);
     assert.equal(canonical(afterDocuments.body), canonical(beforeDocuments.body), "Una operación denegada modificó documentación");
   }
 
