@@ -8,6 +8,7 @@ const adapter = fs.readFileSync('tools/document-audit-local/src/document-ai-adap
 
 for (const fragment of [
   'security definer', 'set search_path = public, auth', "role = 'auditor_ocr'",
+  'alter table public.app_users add constraint app_users_role_check',
   "raise exception 'autenticacion requerida'", "raise exception 'identidad no autorizada",
   'document_audit_criteria_versions', 'team_documents', 'player_documents',
   'human_decision_required', 'source_hash', 'return existing_id',

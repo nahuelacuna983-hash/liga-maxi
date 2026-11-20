@@ -1,5 +1,10 @@
 begin;
 
+-- The worker is a distinct technical identity, never a human Association or delegate.
+alter table public.app_users drop constraint if exists app_users_role_check;
+alter table public.app_users add constraint app_users_role_check
+  check (role = any (array['admin_general','asociacion','delegado','jugador','publico','auditor_ocr']));
+
 create or replace function public.apdb_record_automatic_document_audit(p_payload jsonb)
 returns uuid
 language plpgsql
