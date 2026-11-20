@@ -1,7 +1,9 @@
 # APdB 2027 - Bloque 0: inventario para auditor documental local
 
-Fecha del relevamiento: 20/11/2026  
-Rama: `codex/apdb-2027-operational-hardening`  
+Fecha del relevamiento: 20/11/2026
+
+Rama: `codex/apdb-2027-operational-hardening`
+
 Alcance: análisis e integración propuesta. No se implementó OCR ni se modificaron datos, RLS, Storage o producción.
 
 ## Conclusión ejecutiva
