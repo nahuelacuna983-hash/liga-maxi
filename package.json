@@ -1,10 +1,17 @@
 {
   "scripts": {
     "demo": "node tools/demo-server.cjs",
+    "fixtures:document-audit": "node tools/document-audit-local/generate-fixtures.cjs",
+    "test:document-audit": "npm run fixtures:document-audit && node tests/document-audit-local.cjs",
     "test:demo": "node tests/demo-2027-sports.cjs && node tests/demo-fixture.cjs && node tests/demo-platform.cjs && node tests/demo-end-to-end.cjs && node tests/demo-delegate-authorization.cjs && node tests/demo-playoffs.cjs && node tests/demo-playoff-formats.cjs && node tests/demo-scheduling.cjs && node tests/demo-isolation.cjs && npx playwright test tests/demo-circuit-browser.spec.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
-    "pg": "^8.23.1"
+    "@tesseract.js-data/spa": "^1.0.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^5.4.530",
+    "pg": "^8.23.1",
+    "sharp": "^0.35.5",
+    "tesseract.js": "^7.0.0"
   }
 }
