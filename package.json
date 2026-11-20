@@ -3,6 +3,7 @@
     "demo": "node tools/demo-server.cjs",
     "fixtures:document-audit": "node tools/document-audit-local/generate-fixtures.cjs",
     "test:document-audit": "npm run fixtures:document-audit && node tests/document-audit-local.cjs",
+    "test:document-ai-adapter": "node tests/document-ai-adapter.cjs",
     "test:demo": "node tests/demo-2027-sports.cjs && node tests/demo-fixture.cjs && node tests/demo-platform.cjs && node tests/demo-end-to-end.cjs && node tests/demo-delegate-authorization.cjs && node tests/demo-playoffs.cjs && node tests/demo-playoff-formats.cjs && node tests/demo-scheduling.cjs && node tests/demo-isolation.cjs && npx playwright test tests/demo-circuit-browser.spec.cjs"
   },
   "devDependencies": {
