@@ -11,6 +11,7 @@ const ids = {
   category: '00000000-0000-4000-8000-000000000103', team: '00000000-0000-4000-8000-000000000104',
   requirement: '00000000-0000-4000-8000-000000000105', document: '00000000-0000-4000-8000-000000000106',
   worker: '00000000-0000-4000-8000-000000000107', delegate: '00000000-0000-4000-8000-000000000108',
+  unknown: '00000000-0000-4000-8000-000000000109',
 };
 
 async function main() {
@@ -68,10 +69,13 @@ async function main() {
     };
     const call = () => db.query(`select public.apdb_record_automatic_document_audit($1::jsonb) as id`, [JSON.stringify(payload)]);
 
-    await assert.rejects(() => asRole('anon', null, call), /identidad no autorizada|autenticacion requerida/);
+    const authorizationDenied = /permission denied for function (public\.)?apdb_record_automatic_document_audit|identidad no autorizada|autenticacion requerida/;
+    await assert.rejects(() => asRole('anon', null, call), authorizationDenied);
     console.log('APDB_OCR_NEGATIVE_ANON_OK');
     await assert.rejects(() => asRole('authenticated', ids.delegate, call), /identidad no autorizada/);
     console.log('APDB_OCR_NEGATIVE_DELEGATE_OK');
+    await assert.rejects(() => asRole('authenticated', ids.unknown, call), /identidad no autorizada/);
+    console.log('APDB_OCR_NEGATIVE_UNAUTHORIZED_USER_OK');
 
     const first = await asRole('authenticated', ids.worker, call);
     assert.match(first.rows[0].id, /^[0-9a-f-]{36}$/);
