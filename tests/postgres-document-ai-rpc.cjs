@@ -54,13 +54,13 @@ async function main() {
       source_kind: 'local_file', source_file_id: 'ocr-test.pdf', source_hash: 'hash-one', page_evidence: [],
       file_name: 'ocr-test.pdf', file_type: 'application/pdf', confidence: 0.91,
     };
-    const asRole = async (role, userId, callback) => {
+    const asRole = async (role, userId, callback, persist = false) => {
       await db.query('begin');
       try {
         await db.query(`set local role ${role}`);
         await db.query(`select set_config('request.jwt.claim.sub',$1,true)`, [userId || '']);
         const value = await callback();
-        await db.query('rollback');
+        await db.query(persist ? 'commit' : 'rollback');
         return value;
       } catch (error) {
         await db.query('rollback');
@@ -77,14 +77,14 @@ async function main() {
     await assert.rejects(() => asRole('authenticated', ids.unknown, call), /identidad no autorizada/);
     console.log('APDB_OCR_NEGATIVE_UNAUTHORIZED_USER_OK');
 
-    const first = await asRole('authenticated', ids.worker, call);
+    const first = await asRole('authenticated', ids.worker, call, true);
     assert.match(first.rows[0].id, /^[0-9a-f-]{36}$/);
     console.log('APDB_OCR_POSITIVE_WORKER_OK');
-    const duplicate = await asRole('authenticated', ids.worker, call);
+    const duplicate = await asRole('authenticated', ids.worker, call, true);
     assert.equal(duplicate.rows[0].id, first.rows[0].id);
     console.log('APDB_OCR_IDEMPOTENCY_OK');
     const reanalysis = { ...payload, source_hash: 'hash-two', raw_response: { synthetic: true, revision: 2 } };
-    const second = await asRole('authenticated', ids.worker, () => db.query(`select public.apdb_record_automatic_document_audit($1::jsonb) as id`, [JSON.stringify(reanalysis)]));
+    const second = await asRole('authenticated', ids.worker, () => db.query(`select public.apdb_record_automatic_document_audit($1::jsonb) as id`, [JSON.stringify(reanalysis)]), true);
     assert.notEqual(second.rows[0].id, first.rows[0].id);
     console.log('APDB_OCR_REANALYSIS_APPEND_ONLY_OK');
 
