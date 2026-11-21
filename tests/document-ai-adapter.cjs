@@ -38,6 +38,8 @@ async function main() {
     categoriaId: '00000000-0000-4000-8000-000000000012', equipoId: '00000000-0000-4000-8000-000000000013',
   });
   assert.equal(second[0].source_hash, rows[0].source_hash, 'el reanalisis debe conservar la huella de entrada');
+  assert.notEqual(rows[0].source_hash, rows[1].source_hash, 'cada archivo debe tener una huella independiente');
+  assert.notEqual(rows[0].source_file_id, rows[1].source_file_id, 'cada archivo debe tener un identificador independiente');
   assert.throws(() => mapDocumentAuditResult({ ...result, human_decision_required: false }, {}), /decisión humana/);
   assert.throws(() => mapDocumentAuditResult(result, { ...{ scope: 'player' }, documentId: 'x' }), /contexto/);
   console.log('APDB_DOCUMENT_AI_ADAPTER_OK rows=2 append_only=true human_decision_required=true');

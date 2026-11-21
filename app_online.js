@@ -52,6 +52,8 @@ const estado = {
   documentosJugadoresPorCategoriaId: {},
   driveDocumentosPorCategoriaId: {},
   auditoriaDocumentalPorCategoriaId: {},
+  auditoriasIAPorCategoriaId: {},
+  auditoriasIAError: "",
   filasDocumentacionAsociacion: [],
   eventosUso: [],
   cambiosResultados: [],
@@ -1213,6 +1215,7 @@ async function cargarAuditoriaDocumentalCategoria(categoriaId, force = false) {
   if (!categoriaId) return [];
 
   if (!force && estado.auditoriaDocumentalPorCategoriaId[categoriaId]) {
+    await cargarAuditoriasIACategoria(categoriaId, false);
     return estado.auditoriaDocumentalPorCategoriaId[categoriaId];
   }
 
@@ -1228,12 +1231,33 @@ async function cargarAuditoriaDocumentalCategoria(categoriaId, force = false) {
     console.warn("No se pudo cargar auditoria documental:", error.message);
     estado.auditoriaDocumentalPorCategoriaId[categoriaId] = [];
     estado.auditoriaDocumentalError = error.message;
+    await cargarAuditoriasIACategoria(categoriaId, force);
     return estado.auditoriaDocumentalPorCategoriaId[categoriaId];
   }
 
   estado.auditoriaDocumentalError = "";
   estado.auditoriaDocumentalPorCategoriaId[categoriaId] = data || [];
+  await cargarAuditoriasIACategoria(categoriaId, force);
   return estado.auditoriaDocumentalPorCategoriaId[categoriaId];
+}
+
+async function cargarAuditoriasIACategoria(categoriaId, force = false) {
+  if (!categoriaId) return [];
+  if (!force && estado.auditoriasIAPorCategoriaId[categoriaId]) return estado.auditoriasIAPorCategoriaId[categoriaId];
+  const { data, error } = await supabaseClient
+    .from("v_document_ai_audits_latest")
+    .select("id, scope, team_document_id, player_document_id, equipo_nombre, player_name, file_name, audit_status, confidence, summary, findings, checks, criteria_version, unresolved_reason, page_evidence, source_kind, source_file_id, source_hash, audited_by, audited_at")
+    .eq("categoria_id", categoriaId)
+    .order("audited_at", { ascending: false });
+  if (error) {
+    console.warn("No se pudieron cargar hallazgos OCR:", error.message);
+    estado.auditoriasIAPorCategoriaId[categoriaId] = [];
+    estado.auditoriasIAError = error.message;
+    return [];
+  }
+  estado.auditoriasIAError = "";
+  estado.auditoriasIAPorCategoriaId[categoriaId] = data || [];
+  return estado.auditoriasIAPorCategoriaId[categoriaId];
 }
 
 function normalizarJugadoresDesdeDocumentos(rows) {
@@ -2171,6 +2195,7 @@ function renderDocumentacionAsociacion(nombreCategoria) {
     </table>
     ${renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugador)}
   `;
+
 }
 
 function renderImpactoHabilitacionDocumental(nombreCategoria, equipo) {
@@ -2371,6 +2396,17 @@ function poblarFiltroAuditoriaEquipos(rows) {
   if (equipos.includes(valorActual)) select.value = valorActual;
 }
 
+function renderAuditoriasIAPanel(categoria) {
+  const iaTabla = $("auditoria-ia-tabla");
+  if (!iaTabla) return;
+  const iaRows = categoria ? estado.auditoriasIAPorCategoriaId[categoria.id] || [] : [];
+  iaTabla.innerHTML = estado.auditoriasIAError
+    ? `<div class="empty">Los hallazgos OCR no están disponibles para esta sesión: ${escapeHtml(estado.auditoriasIAError)}</div>`
+    : !iaRows.length
+      ? `<div class="empty">No hay auditorías OCR para esta categoría.</div>`
+      : `<table class="doc-table audit-table"><thead><tr><th>Documento</th><th>Estado automático</th><th>Confianza</th><th>Resumen</th><th>Evidencia</th><th>Revisión humana</th></tr></thead><tbody>${iaRows.map((row) => `<tr><td>${escapeHtml(row.file_name || row.source_file_id || "")}</td><td>${escapeHtml(row.audit_status || "pendiente")}</td><td>${row.confidence == null ? "" : `${Math.round(Number(row.confidence) * 100)}%`}</td><td>${escapeHtml(row.summary || row.unresolved_reason || "")}</td><td>${escapeHtml(Array.isArray(row.page_evidence) ? `${row.page_evidence.length} evidencia(s)` : "")}</td><td>${row.findings?.human_decision_required === true ? "Pendiente de Asociación" : "Revisar"}</td></tr>`).join("")}</tbody></table>`;
+}
+
 function renderAuditoriaDocumentalAsociacion(nombreCategoria) {
   const resumen = $("auditoria-resumen");
   const tabla = $("auditoria-tabla");
@@ -2378,6 +2414,7 @@ function renderAuditoriaDocumentalAsociacion(nombreCategoria) {
 
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const rows = categoria ? estado.auditoriaDocumentalPorCategoriaId[categoria.id] || [] : [];
+  renderAuditoriasIAPanel(categoria);
 
   if (estado.auditoriaDocumentalError) {
     resumen.innerHTML = "";
@@ -6350,6 +6387,8 @@ function limpiarEstadoPrivadoAuth() {
   estado.documentosJugadoresPorCategoriaId = {};
   estado.driveDocumentosPorCategoriaId = {};
   estado.auditoriaDocumentalPorCategoriaId = {};
+  estado.auditoriasIAPorCategoriaId = {};
+  estado.auditoriasIAError = "";
   aplicarBloqueoDelegado();
   aplicarBloqueoAsociacion();
   if ($("delegado-categoria")) {

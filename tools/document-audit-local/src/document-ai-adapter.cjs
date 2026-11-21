@@ -1,7 +1,5 @@
 'use strict';
 
-const crypto = require('node:crypto');
-
 const ALLOWED_STATUSES = new Set(['pendiente', 'validado', 'listo_aprobar', 'revisar', 'observado', 'rechazado', 'vencido', 'error']);
 
 function averageConfidence(document) {
@@ -23,12 +21,6 @@ function pageEvidence(document) {
   }));
 }
 
-function sourceHash(result) {
-  return crypto.createHash('sha256')
-    .update(result.documents.map((document) => `${document.document}:${document.source_hash}`).join('|'))
-    .digest('hex');
-}
-
 function mapDocumentAuditResult(result, context = {}) {
   if (!result || result.schema_version !== 'apdb-local-document-audit/1.0') {
     throw new Error('Resultado OCR incompatible con apdb-local-document-audit/1.0');
@@ -46,7 +38,6 @@ function mapDocumentAuditResult(result, context = {}) {
     throw new Error('Falta contexto documental/deportivo obligatorio');
   }
   const status = ALLOWED_STATUSES.has(result.audit_status) ? result.audit_status : 'error';
-  const combinedHash = sourceHash(result);
   const base = {
     scope: context.scope,
     ...documentIds,
@@ -75,8 +66,6 @@ function mapDocumentAuditResult(result, context = {}) {
     raw_response: result,
     audited_by: 'auditoria-local-ocr',
     source_kind: 'local_file',
-    source_file_id: context.sourceFileId || result.documents.map((document) => document.document).join('|'),
-    source_hash: combinedHash,
     page_evidence: result.documents.flatMap(pageEvidence),
   };
   return result.documents.map((document) => ({
@@ -84,6 +73,8 @@ function mapDocumentAuditResult(result, context = {}) {
     file_name: document.document,
     file_type: 'application/pdf',
     storage_path: context.storagePath || null,
+    source_file_id: context.sourceFileId || document.document,
+    source_hash: document.source_hash,
     confidence: averageConfidence(document),
   }));
 }
