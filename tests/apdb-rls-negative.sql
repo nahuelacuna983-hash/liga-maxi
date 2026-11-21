@@ -49,13 +49,13 @@ grant insert on rls_insecure_probe to anon;
 create policy rls_insecure_probe_write on rls_insecure_probe for insert to anon with check (true);
 set role anon;
 insert into rls_insecure_probe values (1);
+reset role;
 do $$
 begin
   if (select count(*) from rls_insecure_probe) <> 1 then
     raise exception 'ASSERTION_FAILED: permissive probe did not persist the expected row';
   end if;
 end $$;
-reset role;
 rollback;
 
 select 'APDB_RLS_NEGATIVE_BEHAVIOR_OK' as result;
