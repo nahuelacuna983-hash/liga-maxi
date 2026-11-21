@@ -63,16 +63,18 @@ async function main() {
   const duplicateIds = duplicate.map(rpcId);
   if (firstIds.some((id) => !id) || duplicateIds.some((id) => !id)) throw new Error('La RPC no devolvió UUID de auditoría');
   if (new Set(firstIds).size !== rows.length) throw new Error('Los documentos compartieron el mismo UUID persistente');
-  const persisted = await readAudits();
-  if (!persisted.response.ok || !Array.isArray(persisted.body)) throw new Error(`No se pudieron verificar auditorías persistidas: HTTP ${persisted.response.status}`);
-  const persistedBySource = new Map(persisted.body.map((item) => [item.source_file_id, item]));
-  for (const row of rows) {
-    const stored = persistedBySource.get(row.source_file_id);
-    if (!stored || stored.id !== firstIds[rows.indexOf(row)]) throw new Error(`Auditoría no persistida de forma independiente: ${row.source_file_id}`);
-  }
+  if (JSON.stringify(firstIds) !== JSON.stringify(duplicateIds)) throw new Error('El reintento idéntico no conservó los UUID originales');
   const reanalysis = await call({ ...rows[0], source_hash: `${rows[0].source_hash}:reanalyze-v1` });
   const reanalysisId = rpcId(reanalysis.body);
   if (!reanalysis.response.ok || !reanalysisId || reanalysisId === firstIds[0]) throw new Error('El reanálisis legítimo no generó un registro trazable nuevo');
+  const persisted = await readAudits();
+  if (!persisted.response.ok || !Array.isArray(persisted.body)) throw new Error(`No se pudieron verificar auditorías persistidas: HTTP ${persisted.response.status}`);
+  const persistedBySource = new Map(persisted.body.map((item) => [item.source_file_id, item]));
+  const currentIds = [reanalysisId, firstIds[1]];
+  for (let index = 0; index < rows.length; index += 1) {
+    const stored = persistedBySource.get(rows[index].source_file_id);
+    if (!stored || stored.id !== currentIds[index]) throw new Error(`Auditoría vigente no coincide con el UUID esperado: ${rows[index].source_file_id}`);
+  }
   console.log(`APDB_STAGING_OCR_RPC_OK requests=${first.length + duplicate.length + 1} distinct_ids=${new Set([...firstIds, reanalysisId]).size} persisted_sources=${persistedBySource.size} idempotent=true human_decision_required=true`);
 }
 
