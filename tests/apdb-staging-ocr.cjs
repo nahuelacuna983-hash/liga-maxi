@@ -35,6 +35,12 @@ async function request(pathname, options = {}) {
   return { response, body };
 }
 
+function rpcId(body) {
+  if (typeof body === 'string') return body;
+  if (Array.isArray(body)) return body.length ? rpcId(body[0]) : null;
+  return body?.id || body?.result || null;
+}
+
 async function main() {
   if (!/^https:\/\/wffvmthdmmjwspnozyrv\.supabase\.co\/?$/i.test(STAGING_URL)) throw new Error('Destino no autorizado: sólo APdB staging');
   if (!/^sb_publishable_[A-Za-z0-9_-]+$|^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(STAGING_KEY || '')) throw new Error('Falta APDB_STAGING_ANON_KEY publicable');
@@ -53,8 +59,9 @@ async function main() {
   const duplicate = [];
   for (const row of rows) { const response = await call(row); if (!response.response.ok) throw new Error(`Reintento OCR falló: HTTP ${response.response.status}`); duplicate.push(response.body); }
   if (JSON.stringify(first) !== JSON.stringify(duplicate)) throw new Error('La repetición idéntica no devolvió los mismos identificadores');
-  const firstIds = first.map((item) => item.id || item);
-  const duplicateIds = duplicate.map((item) => item.id || item);
+  const firstIds = first.map(rpcId);
+  const duplicateIds = duplicate.map(rpcId);
+  if (firstIds.some((id) => !id) || duplicateIds.some((id) => !id)) throw new Error('La RPC no devolvió UUID de auditoría');
   if (new Set(firstIds).size !== rows.length) throw new Error('Los documentos compartieron el mismo UUID persistente');
   const persisted = await readAudits();
   if (!persisted.response.ok || !Array.isArray(persisted.body)) throw new Error(`No se pudieron verificar auditorías persistidas: HTTP ${persisted.response.status}`);
@@ -64,8 +71,9 @@ async function main() {
     if (!stored || stored.id !== firstIds[rows.indexOf(row)]) throw new Error(`Auditoría no persistida de forma independiente: ${row.source_file_id}`);
   }
   const reanalysis = await call({ ...rows[0], source_hash: `${rows[0].source_hash}:reanalyze-v1` });
-  if (!reanalysis.response.ok || !reanalysis.body?.id || reanalysis.body.id === firstIds[0]) throw new Error('El reanálisis legítimo no generó un registro trazable nuevo');
-  console.log(`APDB_STAGING_OCR_RPC_OK requests=${first.length + duplicate.length + 1} distinct_ids=${new Set([...firstIds, reanalysis.body.id]).size} persisted_sources=${persistedBySource.size} idempotent=true human_decision_required=true`);
+  const reanalysisId = rpcId(reanalysis.body);
+  if (!reanalysis.response.ok || !reanalysisId || reanalysisId === firstIds[0]) throw new Error('El reanálisis legítimo no generó un registro trazable nuevo');
+  console.log(`APDB_STAGING_OCR_RPC_OK requests=${first.length + duplicate.length + 1} distinct_ids=${new Set([...firstIds, reanalysisId]).size} persisted_sources=${persistedBySource.size} idempotent=true human_decision_required=true`);
 }
 
 main().catch((error) => { console.error(`APDB_STAGING_OCR_FAILED ${error.message}`); process.exitCode = 1; });
