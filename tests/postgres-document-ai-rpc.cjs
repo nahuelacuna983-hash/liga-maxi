@@ -18,6 +18,8 @@ async function main() {
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();
   try {
+    const identity = await db.query('select current_database() as database');
+    assert.equal(identity.rows[0].database, process.env.APDB_OCR_DATABASE || 'liga_maxi_ocr', 'OCR debe ejecutarse en su base aislada');
     await db.query(`create schema if not exists auth;
       create or replace function auth.uid() returns uuid language sql stable as $$
         select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid

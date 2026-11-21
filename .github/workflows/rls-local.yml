@@ -76,7 +76,15 @@ jobs:
           APDB_ALLOWED_DATABASE: liga_maxi_gate
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_gate
         run: node tests/apdb-2027-rls-gate.cjs
+      - name: Create isolated OCR RPC database
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: createdb liga_maxi_ocr
       - name: Run OCR audit RPC integration
         env:
-          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_gate
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_ocr
+          APDB_OCR_DATABASE: liga_maxi_ocr
         run: node tests/postgres-document-ai-rpc.cjs
