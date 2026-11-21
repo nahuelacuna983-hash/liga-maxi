@@ -1245,10 +1245,7 @@ async function cargarAuditoriasIACategoria(categoriaId, force = false) {
   if (!categoriaId) return [];
   if (!force && estado.auditoriasIAPorCategoriaId[categoriaId]) return estado.auditoriasIAPorCategoriaId[categoriaId];
   const { data, error } = await supabaseClient
-    .from("v_document_ai_audits_latest")
-    .select("id, scope, team_document_id, player_document_id, equipo_nombre, player_name, file_name, audit_status, confidence, summary, findings, checks, criteria_version, unresolved_reason, page_evidence, source_kind, source_file_id, source_hash, audited_by, audited_at")
-    .eq("categoria_id", categoriaId)
-    .order("audited_at", { ascending: false });
+    .rpc("apdb_list_document_ai_audits", { p_categoria_id: categoriaId });
   if (error) {
     console.warn("No se pudieron cargar hallazgos OCR:", error.message);
     estado.auditoriasIAPorCategoriaId[categoriaId] = [];
@@ -1256,7 +1253,7 @@ async function cargarAuditoriasIACategoria(categoriaId, force = false) {
     return [];
   }
   estado.auditoriasIAError = "";
-  estado.auditoriasIAPorCategoriaId[categoriaId] = data || [];
+  estado.auditoriasIAPorCategoriaId[categoriaId] = (data || []).sort((a, b) => String(b.audited_at || "").localeCompare(String(a.audited_at || "")));
   return estado.auditoriasIAPorCategoriaId[categoriaId];
 }
 
