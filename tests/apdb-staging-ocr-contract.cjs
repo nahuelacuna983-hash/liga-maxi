@@ -1,0 +1,10 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const source = fs.readFileSync('tests/apdb-staging-ocr.cjs', 'utf8');
+assert.match(source, /Contraseña de/);
+assert.match(source, /password = null/);
+assert.match(source, /wffvmthdmmjwspnozyrv/);
+assert.match(source, /apdb_record_automatic_document_audit/);
+assert.doesNotMatch(source, /service_role|sb_secret|console\.log\(.*token/i);
+console.log('APDB_STAGING_OCR_CONTRACT_OK hidden_password=true staging_only=true');
