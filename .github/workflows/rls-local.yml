@@ -1,6 +1,9 @@
 name: RLS local integration
 
 on:
+  push:
+    branches:
+      - codex/apdb-2027-operational-hardening
   workflow_dispatch:
     inputs:
       ref:
@@ -28,10 +31,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref_name }}
       - name: Validate authorized ref
         env:
-          SELECTED_REF: ${{ inputs.ref }}
+          SELECTED_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref_name }}
         run: |
           test "$SELECTED_REF" = "codex/apdb-2027-operational-hardening"
       - name: Run isolated RLS/RPC matrix
