@@ -64,7 +64,7 @@ La prueba Chromium valida la aplicación sintética existente y las regresiones 
 
 El workflow PostgreSQL 16 existente ya contiene la etapa administrativa `Run administrative onboarding RPC integration` en el commit previo `e3eb827`. No se modificó Supabase staging ni se ejecutaron migraciones remotas durante esta misión.
 
-La certificación aislada de PostgreSQL/RPC disponible en CI sigue siendo la evidencia previa del commit `99a7f814042ea37933e3cdc8ecad06455cfdf811`; los cambios de UI y esta integración administrativa requieren una nueva ejecución CI para certificar su combinación.
+La ejecución `RLS local integration #19` terminó exitosamente contra el commit `d492aa752b5e12375dec3e2be1ffdd779713b181`: [GitHub Actions #19](https://github.com/nahuelacuna983-hash/liga-maxi/actions/runs/45078332250). El job `postgres-rls` terminó `succeeded` y la etapa administrativa quedó incluida después de las matrices RLS/OCR. GitHub muestra una advertencia no funcional por la transición de Node.js 20 a 24 en actions existentes.
 
 No se pudo generar un paquete web funcional conectado a staging porque la clave pública staging no está disponible en variables locales. El constructor `tools/build-apdb-staging.cjs` la exige y rechaza valores ficticios. Esto evita publicar accidentalmente una configuración incompleta o productiva.
 
@@ -80,10 +80,9 @@ La configuración debe permanecer fuera de Git y contener únicamente la URL `ht
 
 ## Bloqueos concretos
 
-1. Ejecutar la nueva etapa CI contra PostgreSQL 16 para este HEAD.
-2. Ejecutar una prueba Auth/HTTP real con usuarios sintéticos.
-3. Obtener localmente la clave pública staging para construir el paquete privado.
-4. Validar el circuito completo desde navegador conectado a staging: alta, fixture, resultados, tablas, playoffs, logout, recarga y nuevo ingreso.
+1. Ejecutar una prueba Auth/HTTP real con usuarios sintéticos.
+2. Obtener localmente la clave pública staging para construir el paquete privado.
+3. Validar el circuito completo desde navegador conectado a staging: alta, fixture, resultados, tablas, playoffs, logout, recarga y nuevo ingreso.
 
 ## Decisiones humanas mínimas
 
