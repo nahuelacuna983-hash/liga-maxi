@@ -8479,6 +8479,8 @@ async function inicializarAsociacion() {
   }
   estado.asociacionInicializada = true;
 
+  $("admin-alta-torneo")?.addEventListener("click", prepararAltaAdministrativa);
+
   poblarSelectCategorias("asociacion-categoria", estado.categorias);
 
   $("asociacion-categoria").addEventListener("change", async (e) => {
@@ -8620,6 +8622,53 @@ async function inicializarAsociacion() {
   if (!playoffs || !partidosCuartos || !partidosSemis || !final || !definicionB || !descensoA || !promocion) return;
 
   configurarFechasPlayoffPlanner(categoria);
+}
+
+async function prepararAltaAdministrativa() {
+  const status = $("admin-alta-status");
+  const resumen = $("admin-alta-resumen");
+  if (!estado.asociacionDesbloqueada) {
+    setStatus(status, "Iniciá sesión como Asociación para administrar torneos.", "error");
+    return;
+  }
+  const nombre = $("admin-torneo-nombre")?.value.trim();
+  const temporada = Number($("admin-torneo-temporada")?.value);
+  const categoria = $("admin-categoria-nombre")?.value.trim();
+  const equipos = ($("admin-equipos")?.value || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  if (!nombre || !categoria || !Number.isInteger(temporada) || equipos.length < 2) {
+    setStatus(status, "Completá torneo, temporada, categoría y al menos dos equipos.", "error");
+    return;
+  }
+  const permisos = await cargarPermisosUsuarioActual();
+  if (!permisos.some((item) => item.can_manage_tournaments)) {
+    setStatus(status, "Tu usuario no tiene permiso efectivo para administrar torneos.", "error");
+    return;
+  }
+  const boton = $("admin-alta-torneo");
+  if (boton) boton.disabled = true;
+  setStatus(status, "Guardando mediante RPC segura...", "info");
+  try {
+    if (!window.ApdbAdministrativeAdapter) throw new Error("Adaptador administrativo no disponible.");
+    const row = await window.ApdbAdministrativeAdapter.ensureTournamentCategoryTeams(supabaseClient, {
+      tournamentName: nombre,
+      season: temporada,
+      categoryName: categoria,
+      teamNames: equipos
+    });
+    await cargarTorneoActivo();
+    await cargarCategorias();
+    poblarSelectCategorias("asociacion-categoria", estado.categorias);
+    poblarSelectCategorias("planner-categoria", estado.categorias);
+    const tournamentId = row?.tournament_id || row?.torneo_id;
+    const categoryId = row?.category_id || row?.categoria_id;
+    const teamIds = row?.team_ids || row?.equipo_ids || [];
+    if (resumen) resumen.innerHTML = `<p><strong>Persistido:</strong> torneo ${escapeHtml(tournamentId || "-")}, categoria ${escapeHtml(categoryId || "-")}, ${teamIds.length || equipos.length} equipos.</p><p class="note">El siguiente paso es revisar el fixture y publicarlo con la RPC existente.</p>`;
+    setStatus(status, "Alta administrativa guardada. Repetirla recupera los mismos registros.", "ok");
+  } catch (error) {
+    setStatus(status, `No se pudo guardar el alta administrativa: ${error.message}`, "error");
+  } finally {
+    if (boton) boton.disabled = false;
+  }
 }
 
 function textoOpcionPlanner(id, fallback = "-") {

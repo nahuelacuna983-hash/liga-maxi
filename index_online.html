@@ -2380,6 +2380,20 @@
     <h3>Generador de torneos</h3>
     <p class="note">Simulacion y configuracion deportiva antes de publicar un fixture. No modifica resultados existentes.</p>
 
+    <div class="planner-readiness-box">
+      <h4>Alta administrativa 2027</h4>
+      <p class="note">Crea o recupera un torneo, una categoria y equipos mediante RPC autorizadas. Repetir el alta no duplica registros.</p>
+      <div class="planner-grid">
+        <div><label for="admin-torneo-nombre">Torneo</label><input id="admin-torneo-nombre" type="text" placeholder="APdB 2027 - Prueba"></div>
+        <div><label for="admin-torneo-temporada">Temporada</label><input id="admin-torneo-temporada" type="number" value="2027" min="2027" max="2100"></div>
+        <div><label for="admin-categoria-nombre">Categoria</label><input id="admin-categoria-nombre" type="text" placeholder="Femenino Sintetico"></div>
+        <div><label for="admin-equipos">Equipos</label><textarea id="admin-equipos" rows="4" placeholder="Norte Sintetico&#10;Sur Sintetico&#10;Este Sintetico&#10;Oeste Sintetico"></textarea></div>
+      </div>
+      <button id="admin-alta-torneo" class="secondary" type="button">Crear o recuperar torneo</button>
+      <div id="admin-alta-status" class="status"></div>
+      <div id="admin-alta-resumen" class="doc-summary"></div>
+    </div>
+
     <div class="planner-grid">
 
       <div>
@@ -2926,6 +2940,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="apdb-administrative-adapter.js?v=20261122"></script>
 <script src="app_online.js?v=20261028-delegados-ultima-version-v2"></script>
 
 <script>

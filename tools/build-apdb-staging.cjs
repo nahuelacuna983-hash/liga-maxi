@@ -17,7 +17,7 @@ assert.doesNotMatch(config.supabaseAnonKey, /service_role|secret|eyJ/i, "privile
 assert.match(config.publicBasePath, /^\/[A-Za-z0-9._/-]+\/$/, "staging must have an isolated base path");
 assert.ok(!fs.existsSync(outputPath), `output already exists; refusing to overwrite: ${outputPath}`);
 
-const files = ["index_online.html", "app_online.js", "sw.js", "manifest.json", "icon-192.png", "icon-512.png"];
+const files = ["index_online.html", "app_online.js", "apdb-administrative-adapter.js", "sw.js", "manifest.json", "icon-192.png", "icon-512.png"];
 const bootstrap = `<script>window.APDB_STAGING=true;window.APDB_SECURE_RESULT_RPC=true;window.APDB_SUPABASE_URL=${JSON.stringify(config.supabaseUrl)};window.APDB_SUPABASE_ANON_KEY=${JSON.stringify(config.supabaseAnonKey)};</script>`;
 const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
 manifest.start_url = config.publicBasePath;

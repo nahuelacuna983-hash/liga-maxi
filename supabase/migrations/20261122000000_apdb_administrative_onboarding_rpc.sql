@@ -24,6 +24,7 @@ declare
   v_team_id uuid;
   v_team_ids uuid[] := '{}';
 begin
+  perform pg_advisory_xact_lock(hashtextextended(coalesce(p_tournament_name, '') || E'|' || coalesce(p_season, '') || E'|' || coalesce(p_category_name, ''), 2027));
   select u.* into v_user
   from public.app_users u
   where u.auth_user_id = auth.uid()
@@ -119,14 +120,18 @@ begin
     and exists (select 1 from public.app_user_permissions p where p.user_id = u.id and p.organizacion_id = u.organizacion_id and p.can_manage_users);
   if v_actor.id is null then raise exception using errcode = '42501', message = 'identidad sin permiso para administrar usuarios'; end if;
   select u.* into v_target from public.app_users u where u.auth_user_id = p_target_auth_user_id and u.active;
-  if v_target.id is null or v_target.organizacion_id <> v_actor.organizacion_id then raise exception using errcode = '42501', message = 'usuario fuera de la organizacion'; end if;
+  if v_target.id is null or v_target.role <> 'delegado' or v_target.organizacion_id <> v_actor.organizacion_id then raise exception using errcode = '42501', message = 'usuario delegado fuera de la organizacion'; end if;
   if not exists (select 1 from public.torneos t join public.categorias c on c.torneo_id = t.id join public.equipos e on e.categoria_id = c.id where t.id = p_tournament_id and c.id = p_category_id and e.id = p_team_id and t.organizacion_id = v_actor.organizacion_id) then raise exception using errcode = '42501', message = 'alcance fuera de la organizacion'; end if;
-  insert into public.app_user_permissions (user_id, organizacion_id, torneo_id, categoria_id, equipo_id, equipo_nombre, can_view, can_load_results, can_load_documents)
-  select v_target.id, v_actor.organizacion_id, p_tournament_id, p_category_id, e.id, e.nombre, true, p_can_load_results, p_can_load_documents
-  from public.equipos e where e.id = p_team_id
-  on conflict do nothing returning id into v_permission_id;
+  perform pg_advisory_xact_lock(hashtextextended(v_target.id::text || E'|' || p_tournament_id::text || E'|' || p_category_id::text || E'|' || p_team_id::text, 2027));
+  select p.id into v_permission_id
+  from public.app_user_permissions p
+  where p.user_id = v_target.id and p.torneo_id = p_tournament_id and p.categoria_id = p_category_id and p.equipo_id = p_team_id
+  for update;
   if v_permission_id is null then
-    select p.id into v_permission_id from public.app_user_permissions p where p.user_id = v_target.id and p.torneo_id = p_tournament_id and p.categoria_id = p_category_id and p.equipo_id = p_team_id;
+    insert into public.app_user_permissions (user_id, organizacion_id, torneo_id, categoria_id, equipo_id, equipo_nombre, can_view, can_load_results, can_load_documents)
+    select v_target.id, v_actor.organizacion_id, p_tournament_id, p_category_id, e.id, e.nombre, true, p_can_load_results, p_can_load_documents
+    from public.equipos e where e.id = p_team_id returning id into v_permission_id;
+  else
     update public.app_user_permissions set can_view = true, can_load_results = p_can_load_results, can_load_documents = p_can_load_documents where id = v_permission_id;
   end if;
   return v_permission_id;
