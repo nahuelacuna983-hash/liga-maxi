@@ -88,3 +88,15 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_ocr
           APDB_OCR_DATABASE: liga_maxi_ocr
         run: node tests/postgres-document-ai-rpc.cjs
+      - name: Create isolated administrative RPC database
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: createdb liga_maxi_admin
+      - name: Run administrative onboarding RPC integration
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/liga_maxi_admin
+          APDB_ADMIN_DATABASE: liga_maxi_admin
+        run: node tests/postgres-administrative-rpc.cjs
