@@ -66,7 +66,16 @@ async function main() {
     console.log('APDB_ADMIN_IDEMPOTENCY_OK');
 
     await assert.rejects(() => asRole('authenticated', ids.delegate, create), denied);
-    await assert.rejects(() => asRole('authenticated', ids.otherUser, create), denied);
+    // Una Asociacion de otra organizacion puede usar el mismo nombre de torneo,
+    // pero solo debe crear o recuperar datos dentro de su propia organizacion.
+    const otherResult = await asRole('authenticated', ids.otherUser, create, true);
+    assert.notEqual(otherResult.rows[0].tournament_id, first.rows[0].tournament_id);
+    const otherOrg = await db.query('select organizacion_id from torneos where id = $1', [otherResult.rows[0].tournament_id]);
+    assert.equal(otherOrg.rows[0].organizacion_id, ids.orgOther);
+    await assert.rejects(() => asRole('authenticated', ids.otherUser, () => db.query(
+      'select public.apdb_set_delegate_scope($1,$2,$3,$4)',
+      [ids.delegate, ids.tournament, ids.category, ids.team]
+    )), denied);
     console.log('APDB_ADMIN_NEGATIVE_SCOPE_OK');
 
     const scope = await asRole('authenticated', ids.actor, () => db.query(`select public.apdb_set_delegate_scope($1,$2,$3,$4) as permission_id`, [ids.delegate, ids.tournament, ids.category, ids.team]), true);
