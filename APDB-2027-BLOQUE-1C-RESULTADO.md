@@ -59,6 +59,8 @@ Aprobadas:
 
 La certificación PostgreSQL real no se ejecutó en esta computadora: `docker` y `psql` no están disponibles. Por lo tanto, no se declara aprobada la integración RPC ni la equivalencia de Auth.
 
+La rama fue publicada en `codex/apdb-2027-operational-hardening` con el SHA de este commit. Se intentó acceder al workflow `RLS local integration`; GitHub mostró la página de la acción manual con `Sign in`, sin una sesión autenticada disponible para iniciar `workflow_dispatch`. No se modificó `main`, no se agregó un disparador temporal y no se repitió la acción por otra vía.
+
 La simulación de `auth.uid()` mediante `current_setting` valida el comportamiento de la función y sus privilegios dentro de PostgreSQL, pero no prueba emisión, expiración, firma o transporte de JWT de Supabase Auth. Esa parte queda pendiente del runner CI y, posteriormente, de una prueba Auth/HTTP aislada si se requiere.
 
 ## Cambios que eventualmente requerirían autorización para staging
@@ -71,4 +73,4 @@ No se modificó staging, producción, RLS existente ni el despliegue web.
 
 ## Conclusión
 
-La certificación quedó integrada al CI existente y lista para ejecutarse en PostgreSQL 16 descartable. El bloque no puede considerarse certificado hasta obtener un resultado real de esa etapa; la limitación es de herramientas locales, no una falla observada en las RPC.
+La certificación quedó integrada al CI existente y lista para ejecutarse en PostgreSQL 16 descartable. El bloque permanece **NO CERTIFICADO**: no existe URL de ejecución nueva ni evidencia PostgreSQL real de esta versión. La limitación concreta es la falta de una sesión GitHub autorizada para `workflow_dispatch`, además de la ausencia local de Docker/`psql`; no se observó una falla de implementación porque la etapa no llegó a ejecutarse.
