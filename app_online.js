@@ -2397,11 +2397,33 @@ function renderAuditoriasIAPanel(categoria) {
   const iaTabla = $("auditoria-ia-tabla");
   if (!iaTabla) return;
   const iaRows = categoria ? estado.auditoriasIAPorCategoriaId[categoria.id] || [] : [];
+  const latestBySource = new Map();
+  iaRows.forEach((row) => {
+    const key = row.file_name || row.source_file_id || row.id;
+    const current = latestBySource.get(key);
+    if (!current || String(row.audited_at || "") > String(current.audited_at || "")) latestBySource.set(key, row);
+  });
+  const formatConfidence = (value) => {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "";
+    const percentage = number <= 1 ? number * 100 : number > 100 ? number / 100 : number;
+    const bounded = Math.max(0, Math.min(100, percentage));
+    return `${Number.isInteger(bounded) ? bounded : bounded.toFixed(2).replace(/0+$/, "")} %`;
+  };
+  const statusLabel = {
+    pendiente: "Pendiente de revisión humana",
+    listo_aprobar: "Listo para revisión humana (no aprobado)",
+    validado: "Validado automáticamente; falta decisión humana",
+    revisar: "Requiere revisión humana",
+    observado: "Observado; requiere revisión humana",
+    rechazado: "Rechazado por auditoría automática; requiere revisión humana",
+    error: "Error de auditoría; requiere revisión humana",
+  };
   iaTabla.innerHTML = estado.auditoriasIAError
     ? `<div class="empty">Los hallazgos OCR no están disponibles para esta sesión: ${escapeHtml(estado.auditoriasIAError)}</div>`
     : !iaRows.length
       ? `<div class="empty">No hay auditorías OCR para esta categoría.</div>`
-      : `<table class="doc-table audit-table"><thead><tr><th>Documento</th><th>Estado automático</th><th>Confianza</th><th>Resumen</th><th>Evidencia</th><th>Revisión humana</th></tr></thead><tbody>${iaRows.map((row) => `<tr><td>${escapeHtml(row.file_name || row.source_file_id || "")}</td><td>${escapeHtml(row.audit_status || "pendiente")}</td><td>${row.confidence == null ? "" : `${Math.round(Number(row.confidence) * 100)}%`}</td><td>${escapeHtml(row.summary || row.unresolved_reason || "")}</td><td>${escapeHtml(Array.isArray(row.page_evidence) ? `${row.page_evidence.length} evidencia(s)` : "")}</td><td>${row.findings?.human_decision_required === true ? "Pendiente de Asociación" : "Revisar"}</td></tr>`).join("")}</tbody></table>`;
+      : `<table class="doc-table audit-table"><thead><tr><th>Documento</th><th>Registro</th><th>Estado automático</th><th>Confianza</th><th>Resumen</th><th>Evidencia</th><th>Revisión humana</th></tr></thead><tbody>${iaRows.map((row) => { const key = row.file_name || row.source_file_id || row.id; const current = latestBySource.get(key)?.id === row.id; return `<tr><td>${escapeHtml(row.file_name || row.source_file_id || "")}</td><td>${current ? "Vigente" : "Historial / reanálisis"}</td><td>${escapeHtml(statusLabel[row.audit_status] || "Pendiente de revisión humana")}</td><td>${escapeHtml(formatConfidence(row.confidence))}</td><td>${escapeHtml(row.summary || row.unresolved_reason || "")}</td><td>${escapeHtml(Array.isArray(row.page_evidence) ? `${row.page_evidence.length} evidencia(s)` : "")}</td><td>${row.findings?.human_decision_required === true ? "Pendiente de Asociación" : "Revisar"}</td></tr>`; }).join("")}</tbody></table>`;
 }
 
 function renderAuditoriaDocumentalAsociacion(nombreCategoria) {

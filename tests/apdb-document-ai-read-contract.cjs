@@ -15,6 +15,10 @@ assert.match(migration, /can_load_documents/);
 assert.match(migration, /revoke all on function public\.apdb_list_document_ai_audits/);
 assert.match(migration, /grant execute on function public\.apdb_list_document_ai_audits\(uuid\) to authenticated/);
 assert.match(app, /rpc\("apdb_list_document_ai_audits"/);
+assert.match(app, /Historial \/ reanálisis/);
+assert.match(app, /Listo para revisión humana \(no aprobado\)/);
+assert.match(app, /number > 100 \? number \/ 100/);
+assert.match(app, /audited_at/);
 assert.doesNotMatch(app, /from\("v_document_ai_audits_latest"\)/);
 
 console.log('APDB_DOCUMENT_AI_READ_CONTRACT_OK scoped_rpc=true anon_blocked=true');
