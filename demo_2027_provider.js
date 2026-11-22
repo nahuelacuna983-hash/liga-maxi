@@ -28,6 +28,15 @@
     getTournament() { return clone(this.tournament); }
     getTournaments() { return clone(Object.values(this.tournaments)); }
     createTournament(actorId, input) { const permission = this.requireRole(actorId, ["administrador", "asociacion"]); const id = `torneo-${Object.keys(this.tournaments).length + 1}`; this.tournaments[id] = { id, nombre: input.nombre, temporada: input.temporada, estado: "borrador", categorias: [], organizador: permission.organizador || "org-demo" }; return clone(this.tournaments[id]); }
+    ensureTournament(actorId, input) {
+      const permission = this.requireRole(actorId, ["administrador", "asociacion"]);
+      const nombre = String(input?.nombre || "").trim();
+      const temporada = Number(input?.temporada);
+      if (!nombre || !Number.isInteger(temporada)) throw new Error("Torneo sintético incompleto.");
+      const organizador = permission.organizador || "org-demo";
+      const existing = Object.values(this.tournaments).find((item) => item.nombre === nombre && item.temporada === temporada && item.organizador === organizador);
+      return existing ? clone(existing) : this.createTournament(actorId, { nombre, temporada });
+    }
     setActiveTournament(actorId, tournamentId) { const permission = this.requireRole(actorId, ["administrador", "asociacion"]); const tournament = this.tournaments[tournamentId]; if (!tournament) throw new Error("Torneo sintético inexistente."); if (permission.role !== "administrador" && tournament.organizador !== permission.organizador) throw new Error("El actor no pertenece al organizador del torneo."); this.activeTournamentId = tournamentId; return clone(tournament); }
     updateTournament(actorId, tournamentId, patch) { const permission = this.requireRole(actorId, ["administrador", "asociacion"]); const tournament = this.tournaments[tournamentId]; if (!tournament) throw new Error("Torneo sintético inexistente."); if (permission.role !== "administrador" && tournament.organizador !== permission.organizador) throw new Error("El actor no puede modificar este torneo."); if (patch.estado && patch.estado !== tournament.estado && Object.values(this.matches).some((items) => items.some((match) => match.estado_resultado === "jugado"))) throw new Error("No se puede modificar el estado con partidos disputados."); Object.assign(tournament, patch); return clone(tournament); }
     requireRole(actorId, roles) { const permission = this.permissions[actorId]; if (!permission || !roles.includes(permission.role)) throw new Error("Operación no autorizada para el rol sintético."); return permission; }
@@ -49,7 +58,25 @@
     getCategories(tournamentId = this.activeTournamentId) { return clone(Object.values(this.categories).filter((category) => !tournamentId || category.torneo_id === tournamentId)); }
     getCategory(id) { return this.categories[id] ? clone(this.categories[id]) : null; }
     addCategory(actorId, tournamentId, category) { const actor = this.requireRole(actorId, ["administrador", "asociacion"]); const tournament = this.tournaments[tournamentId]; if (!tournament) throw new Error("Torneo sintético inexistente."); if (actor.role !== "administrador" && tournament.organizador !== actor.organizador) throw new Error("El actor no puede modificar este organizador."); if (!category.id || this.categories[category.id]) throw new Error("Identificador de categoría ocupado."); this.categories[category.id] = { id: category.id, nombre: category.nombre, torneo_id: tournamentId, organizador: tournament.organizador, equipos: [], blocked: [] }; tournament.categorias.push(category.id); return clone(this.categories[category.id]); }
+    ensureCategory(actorId, tournamentId, category) {
+      const actor = this.requireRole(actorId, ["administrador", "asociacion"]);
+      const tournament = this.tournaments[tournamentId];
+      if (!tournament) throw new Error("Torneo sintético inexistente.");
+      if (actor.role !== "administrador" && tournament.organizador !== actor.organizador) throw new Error("El actor no puede modificar este organizador.");
+      const nombre = String(category?.nombre || "").trim();
+      const existing = Object.values(this.categories).find((item) => item.torneo_id === tournamentId && item.nombre === nombre);
+      return existing ? clone(existing) : this.addCategory(actorId, tournamentId, { ...category, nombre });
+    }
     addTeam(actorId, categoryId, teamName) { const actor = this.requireRole(actorId, ["administrador", "asociacion"]); const category = this.categories[categoryId]; if (!category) throw new Error("Categoría sintética inexistente."); if (actor.role !== "administrador" && category.organizador !== actor.organizador) throw new Error("El actor no puede modificar esta categoría."); const name = String(teamName || "").trim(); if (!name || category.equipos.includes(name)) throw new Error("Equipo sintético inválido o repetido."); if ((this.matches[categoryId] || []).some((match) => match.estado_resultado === "jugado" || match.estado_resultado === "administrativo_sin_puntos")) throw new Error("No se pueden cambiar los equipos con resultados disputados."); category.equipos.push(name); return clone(category);
+    }
+    ensureTeam(actorId, categoryId, teamName) {
+      const actor = this.requireRole(actorId, ["administrador", "asociacion"]);
+      const category = this.categories[categoryId];
+      if (!category) throw new Error("Categoría sintética inexistente.");
+      if (actor.role !== "administrador" && category.organizador !== actor.organizador) throw new Error("El actor no puede modificar esta categoría.");
+      const name = String(teamName || "").trim();
+      if (!name) throw new Error("Equipo sintético incompleto.");
+      return category.equipos.includes(name) ? clone(category) : this.addTeam(actorId, categoryId, name);
     }
     getTeams(categoryId) { return clone(this.categories[categoryId]?.equipos || []); }
     setCategoryTeams(actorId, categoryId, teams) {
