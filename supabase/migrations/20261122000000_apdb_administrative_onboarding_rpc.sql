@@ -147,9 +147,19 @@ as $$
 declare v_actor public.app_users%rowtype; v_org uuid; begin
   select u.* into v_actor from public.app_users u where u.auth_user_id = auth.uid() and u.active and u.role in ('admin_general','asociacion') and exists (select 1 from public.app_user_permissions p where p.user_id = u.id and p.organizacion_id = u.organizacion_id and p.can_manage_users);
   if v_actor.id is null then raise exception using errcode = '42501', message = 'identidad sin permiso para revocar usuarios'; end if;
-  select organizacion_id into v_org from public.app_user_permissions where id = p_permission_id;
-  if v_org is distinct from v_actor.organizacion_id then raise exception using errcode = '42501', message = 'permiso fuera de la organizacion'; end if;
-  delete from public.app_user_permissions where id = p_permission_id;
+  select p.organizacion_id into v_org
+  from public.app_user_permissions p
+  join public.app_users target on target.id = p.user_id
+  where p.id = p_permission_id
+    and target.role = 'delegado'
+    and p.torneo_id is not null
+    and p.categoria_id is not null
+    and p.equipo_id is not null;
+  if v_org is distinct from v_actor.organizacion_id then
+    raise exception using errcode = '42501', message = 'solo se pueden revocar alcances de delegado de la organizacion';
+  end if;
+  delete from public.app_user_permissions
+  where id = p_permission_id and organizacion_id = v_actor.organizacion_id;
   return found;
 end;
 $$;

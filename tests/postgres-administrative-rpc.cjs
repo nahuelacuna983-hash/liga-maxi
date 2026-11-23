@@ -82,6 +82,16 @@ async function main() {
     assert.match(scope.rows[0].permission_id, /^[0-9a-f-]{36}$/);
     const revoked = await asRole('authenticated', ids.actor, () => db.query(`select public.apdb_revoke_delegate_scope($1) as revoked`, [scope.rows[0].permission_id]), true);
     assert.equal(revoked.rows[0].revoked, true);
+    // La RPC de revocacion no puede borrar un permiso administrativo existente.
+    const adminPermission = await db.query('select id from public.app_user_permissions where user_id=$1 and can_manage_users limit 1', [ids.actor]);
+    assert.equal(adminPermission.rows.length, 1);
+    await assert.rejects(() => asRole('authenticated', ids.actor, () => db.query(
+      'select public.apdb_revoke_delegate_scope($1)',
+      [adminPermission.rows[0].id]
+    )), denied);
+    const adminPermissionStillExists = await db.query('select count(*)::int as total from public.app_user_permissions where id=$1', [adminPermission.rows[0].id]);
+    assert.equal(adminPermissionStillExists.rows[0].total, 1);
+    console.log('APDB_ADMIN_NEGATIVE_ADMIN_PERMISSION_PROTECTED_OK');
     await assert.rejects(() => asRole('authenticated', ids.delegate, () => db.query(`select public.apdb_set_delegate_scope($1,$2,$3,$4)`, [ids.delegate, ids.otherTournament, ids.otherCategory, ids.teamOther])), denied);
     console.log('APDB_ADMIN_ASSIGN_REVOKE_ISOLATION_OK');
 
