@@ -87,6 +87,14 @@ async function login(email) {
     assert.equal((await rpc(ids.association.token,"habilitado","Falta documento")).code,400,"Missing approved document must refuse");
     const idDocument = crypto.randomUUID();
     await db.query("insert into public.player_documents(id,player_id,requirement_id,organizacion_id,torneo_id,categoria_id,equipo_id,equipo_nombre,status) values($1,$2,$3,$4,$5,$6,$7,'Equipo CI','aprobado')",[idDocument,player,req,orgA,tA,cA,eA]);
+    const globalRequirement=crypto.randomUUID(), globalDocument=crypto.randomUUID();
+    await db.query("insert into public.document_requirements(id,organizacion_id,torneo_id,categoria_id,nombre,scope,obligatorio,activo) values($1,$2,$3,null,'Requisito global 2027','player',true,true)",[globalRequirement,orgA,tA]);
+    assert.equal((await rpc(ids.association.token,"habilitado","Requisito global ausente")).code,400,
+      "Tournament-wide requirement must block eligibility");
+    referee=await refereeList(ids.association.token);
+    assert.equal(referee.data[0].documentacion_completa,false,
+      "Referee eligibility must include global requirements");
+    await db.query("insert into public.player_documents(id,player_id,requirement_id,organizacion_id,torneo_id,categoria_id,equipo_id,equipo_nombre,status) values($1,$2,$3,$4,$5,$6,$7,'Equipo CI','aprobado')",[globalDocument,player,globalRequirement,orgA,tA,cA,eA]);
     assert.equal((await rpc(ids.association.token,"habilitado"," ")).code,400,"Blank reason must refuse");
     const approve = await rpc(ids.association.token,"habilitado","Revision institucional explicita");
     assert.equal(approve.code,200,JSON.stringify(approve.data));
