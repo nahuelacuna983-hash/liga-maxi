@@ -32,7 +32,12 @@ for (const file of files) {
   if (file === "index_online.html") {
     const html = fs.readFileSync(file, "utf8");
     assert.ok(html.includes('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'), "Supabase client script not found");
-    const stagedHtml = html.replace('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>', `${bootstrap}\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`);
+    const stagedHtml = html.replace('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>', `${bootstrap}\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`)
+      .replace("Ingreso nuevo por email y contraseña. Las claves actuales siguen funcionando como respaldo durante la migracion.", "Ingreso institucional mediante email y contraseña. Las claves antiguas no están habilitadas.")
+      .replace("</head>", `<style>
+      #delegado-clave, label[for="delegado-clave"], #delegado-desbloquear,
+      #asociacion-clave, label[for="asociacion-clave"], #asociacion-desbloquear { display:none !important; }
+      </style></head>`);
     fs.writeFileSync(destination, stagedHtml);
     // The institutional URL must open directly at the approved subdirectory root.
     fs.writeFileSync(path.join(outputPath, "index.html"), stagedHtml);
@@ -44,6 +49,26 @@ for (const file of files) {
     app = app.replaceAll(productionUrl, "");
     app = app.replaceAll(productionTournament, "");
     app = app.replaceAll(productionPublishableKey, "");
+    // The legacy client-side delegate/admin key list is not a credential system.
+    // It must NEVER ship in an institutionally hosted build.
+    const legacyStart = app.indexOf("const DELEGADOS = {");
+    const legacyEnd = app.indexOf("function validarDelegado(clave)", legacyStart);
+    assert.ok(legacyStart >= 0 && legacyEnd > legacyStart, "legacy key block changed: refusing unsafe package");
+    app = app.slice(0, legacyStart) +
+      "const DELEGADOS = Object.freeze({});\\nconst CLAVES_ASOCIACION = Object.freeze([]);\\n\\n".replaceAll("\\\\n", "\\n") +
+      app.slice(legacyEnd);
+    for (const legacyEntrypoint of ["desbloquearDelegado", "desbloquearAsociacion"]) {
+      const signature = `async function ${legacyEntrypoint}() {`;
+      assert.ok(app.includes(signature), `missing ${legacyEntrypoint}: cannot disable legacy login`);
+      const messageId = legacyEntrypoint === "desbloquearDelegado" ? "delegado-status" : "asociacion-acceso-status";
+      app = app.replace(signature, `${signature}
+  if (window.APDB_STAGING === true) {
+    setStatus($("${messageId}"), "Ingresá desde Acceso con email y contraseña.", "warn");
+    return;
+  }`);
+    }
+    assert.ok(!app.includes('const CLAVES_ASOCIACION = ["admin123"]'), "hardcoded admin key leaked to staged build");
+    assert.ok(!app.includes('"universal123"'), "hardcoded delegate keys leaked to staged build");
     // An isolated staging package must never query a missing/invalid UUID fallback.
     assert.ok(app.includes("if (!torneo && TORNEO_ID_FALLBACK)"), "missing guarded tournament fallback");
     // The staging bootstrap must supply its own project configuration.
