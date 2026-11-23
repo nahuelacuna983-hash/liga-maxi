@@ -1,0 +1,34 @@
+name: APdB 2027 packs C-D release gates
+on:
+  push:
+    branches:
+      - codex/apdb-2027-pack-cd-release-gates
+  pull_request:
+    paths:
+      - 'tools/build-apdb-staging.cjs'
+      - 'tools/verify-apdb-release.cjs'
+      - 'tests/apdb-staging-build.cjs'
+      - 'docs/apdb-2027/PACK_C_D_ACEPTACION.md'
+      - '.github/workflows/apdb-pack-cd-gates.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: |
+          node --check tools/build-apdb-staging.cjs
+          node --check tools/verify-apdb-release.cjs
+          node --check tests/apdb-staging-build.cjs
+          node --check app_online.js
+      - name: Build, tamper test, and validate source separation
+        run: |
+          node tests/apdb-staging-build.cjs
+          node tests/apdb-online-config-contract.cjs
+          node tests/institutional-package-contract.cjs
