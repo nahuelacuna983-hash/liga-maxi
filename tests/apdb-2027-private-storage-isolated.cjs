@@ -145,6 +145,38 @@ async function create(role,organization,team,review){
     }
     const edit=await call(object(filename),{token:delegates[0].token,method:"DELETE"});
     assert.notEqual(edit.status,200,"No deletion of previously uploaded records");
+    // Team requirements can consist of multiple PDFs, each individually scoped.
+    const teamRequirement=crypto.randomUUID(),teamDocument=crypto.randomUUID();
+    await db.query("insert into public.document_requirements(id,organizacion_id,torneo_id,categoria_id,nombre,scope,activo,obligatorio,allows_multiple_files) values($1,$2,$3,$4,'Lista sintética','team',true,true,true)",[teamRequirement,org,tournament,category]);
+    await db.query("insert into public.team_documents(id,requirement_id,organizacion_id,torneo_id,categoria_id,equipo_id,equipo_nombre) values($1,$2,$3,$4,$5,$6,'Equipo sintético 0')",[teamDocument,teamRequirement,org,tournament,category,teams[0]]);
+    const teamFile=(n)=>`apdb/2027/maxi-35-a/${teams[0]}/${teamRequirement}/lista-${run}-${n}.pdf`;
+    for(const number of [1,2]){
+      const name=teamFile(number);
+      const uploaded=await call(object(name),{token:delegates[0].token,body:pdf,json:false});
+      assert.ok([200,201].includes(uploaded.status),"Team multi-file upload");
+      const linked=await call("/rest/v1/rpc/add_team_document_file",{token:delegates[0].token,body:{
+        p_document_id:teamDocument,p_uploaded_by:"Spoofed",p_storage_path:name,
+        p_file_name:"lista.pdf",p_file_type:"application/pdf",p_file_size:pdf.length
+      }});
+      assert.equal(linked.status,200,"Team file must be registered "+JSON.stringify(linked.data));
+      const signed=await call(sign(name),{token:association.token,body:{expiresIn:90}});
+      assert.equal(signed.status,200,"Association can view each of multiple PDFs "+JSON.stringify(signed.data));
+      const wrongTeam=await call(sign(name),{token:delegates[1].token,body:{expiresIn:90}});
+      assert.notEqual(wrongTeam.status,200,"Other club cannot see team document");
+    }
+    const multiRows=await db.query("select count(*)::int n from public.document_files where team_document_id=$1",[teamDocument]);
+    assert.equal(multiRows.rows[0].n,2);
+    const pendingReview=await call("/rest/v1/rpc/review_team_document",{token:association.token,body:{
+      p_document_id:teamDocument,p_status:"aprobado",p_actor:"Spoof",p_observacion:null
+    }});
+    assert.equal(pendingReview.status,200,"Association can approve team multiupload");
+    const teamViewPath="/rest/v1/v_team_documents_admin?categoria_id=eq."+category+"&select=id,equipo_id";
+    const visibleTeam=await call(teamViewPath,{token:delegates[0].token,method:"GET"});
+    assert.equal(visibleTeam.status,200,"Team view allowed "+JSON.stringify(visibleTeam.data));
+    assert.equal(visibleTeam.data.length,1);
+    const invisibleTeam=await call(teamViewPath,{token:delegates[1].token,method:"GET"});
+    assert.equal(invisibleTeam.status,200);
+    assert.equal(invisibleTeam.data.length,0,"Delegate cannot see another team institutional records");
     console.log("APDB_2027_PRIVATE_STORAGE_AUTH_HTTP_OK");
   }finally{await db.end();}
 })().catch(e=>{console.error("APDB_2027_PRIVATE_STORAGE_AUTH_HTTP_FAILED",e.message);process.exitCode=1;});
