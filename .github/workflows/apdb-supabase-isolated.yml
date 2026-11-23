@@ -68,6 +68,8 @@ jobs:
         run: npx playwright install chromium
       - name: Prepare isolated browser identity
         run: node tests/apdb-isolated-browser-setup.cjs
+      - name: Verify per-team Storage with real synthetic Auth JWT
+        run: node tests/apdb-isolated-storage-team-scope.cjs
       - name: Run isolated Chromium validation
         env:
           APDB_ISOLATED_BROWSER_URL: ${{ env.SUPABASE_URL }}
