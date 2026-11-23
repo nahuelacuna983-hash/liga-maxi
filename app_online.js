@@ -8475,7 +8475,7 @@ function descargarPlanPruebaDocumental() {
 async function inicializarAsociacion() {
   if (estado.asociacionInicializada) {
     poblarSelectCategorias("asociacion-categoria", estado.categorias);
-    poblarSelectCategorias("admin-delegado-categoria", estado.categorias);
+    poblarCategoriasAdminDelegado(estado.categorias);
     await poblarEquiposAltaAdministrativa();
     return;
   }
@@ -8487,7 +8487,7 @@ async function inicializarAsociacion() {
   $("admin-delegado-categoria")?.addEventListener("change", poblarEquiposAltaAdministrativa);
 
   poblarSelectCategorias("asociacion-categoria", estado.categorias);
-  poblarSelectCategorias("admin-delegado-categoria", estado.categorias);
+  poblarCategoriasAdminDelegado(estado.categorias);
   await poblarEquiposAltaAdministrativa();
 
   $("asociacion-categoria").addEventListener("change", async (e) => {
@@ -8666,11 +8666,12 @@ async function prepararAltaAdministrativa() {
     await cargarCategorias();
     poblarSelectCategorias("asociacion-categoria", estado.categorias);
     poblarSelectCategorias("planner-categoria", estado.categorias);
-    poblarSelectCategorias("admin-delegado-categoria", estado.categorias);
-    await poblarEquiposAltaAdministrativa();
     const tournamentId = row?.tournament_id || row?.torneo_id;
     const categoryId = row?.category_id || row?.categoria_id;
     const teamIds = row?.team_ids || row?.equipo_ids || [];
+    estado.adminAlta = { tournamentId, categoryId, teamIds, teamNames: equipos, categoryName: categoria };
+    poblarCategoriasAdminDelegado(estado.categorias, estado.adminAlta);
+    await poblarEquiposAltaAdministrativa();
     if (resumen) resumen.innerHTML = `<p><strong>Persistido:</strong> torneo ${escapeHtml(tournamentId || "-")}, categoria ${escapeHtml(categoryId || "-")}, ${teamIds.length || equipos.length} equipos.</p><p class="note">El siguiente paso es revisar el fixture y publicarlo con la RPC existente.</p>`;
     setStatus(status, "Alta administrativa guardada. Repetirla recupera los mismos registros.", "ok");
   } catch (error) {
@@ -8681,13 +8682,25 @@ async function prepararAltaAdministrativa() {
 }
 
 async function poblarEquiposAltaAdministrativa() {
-  const categoriaNombre = $("admin-delegado-categoria")?.value;
+  const categoriaId = $("admin-delegado-categoria")?.value;
   const select = $("admin-delegado-equipo");
   if (!select) return;
-  const categoria = estado.categorias?.find((item) => item.nombre === categoriaNombre);
-  const categoriaId = categoria?.id || categoria?.categoria_id;
-  const equipos = categoriaId ? await cargarEquiposCategoria(categoriaId) : (categoria?.equipos || []);
+  const equiposAlta = estado.adminAlta?.categoryId === categoriaId ? (estado.adminAlta.teamIds || []).map((id, index) => ({ id, nombre: estado.adminAlta.teamNames?.[index] || `Equipo ${index + 1}` })) : [];
+  const equipos = equiposAlta.length ? equiposAlta : await cargarEquiposCategoria(categoriaId);
   select.innerHTML = equipos.map((equipo) => `<option value="${escapeHtml(equipo.id || equipo.equipo_id || "")}">${escapeHtml(equipo.nombre || equipo.name || "Equipo")}</option>`).join("");
+}
+
+function poblarCategoriasAdminDelegado(categorias, alta = estado.adminAlta) {
+  const select = $("admin-delegado-categoria");
+  if (!select) return;
+  select.innerHTML = deduplicarCategoriasPorNombre(categorias || []).map((categoria) => {
+    const id = categoria.id || categoria.categoria_id || "";
+    return `<option value="${escapeHtml(id)}">${escapeHtml(categoria.nombre)}</option>`;
+  }).join("");
+  if (alta?.categoryId && !Array.from(select.options).some((option) => option.value === alta.categoryId)) {
+    select.insertAdjacentHTML("afterbegin", `<option value="${escapeHtml(alta.categoryId)}">${escapeHtml(alta.categoryName || "Categoría del alta actual")}</option>`);
+  }
+  if (alta?.categoryId) select.value = alta.categoryId;
 }
 
 async function asignarAlcanceDelegado() {
@@ -8696,7 +8709,7 @@ async function asignarAlcanceDelegado() {
   const authUserId = $("admin-delegado-auth-id")?.value.trim();
   const categoryId = $("admin-delegado-categoria")?.value;
   const teamId = $("admin-delegado-equipo")?.value;
-  const tournamentId = estado.torneoActivo?.id || estado.torneoActivo?.torneo_id;
+  const tournamentId = estado.adminAlta?.tournamentId || estado.torneoActivo?.id || estado.torneoActivo?.torneo_id;
   if (!authUserId || !categoryId || !teamId || !tournamentId) return setStatus(status, "Completá el UUID del delegado y seleccioná categoria y equipo.", "error");
   setStatus(status, "Asignando alcance mediante RPC segura...", "info");
   try {
