@@ -1650,7 +1650,9 @@ function calcularEstadoHabilitacionJugador(nombreCategoria, jugador) {
   return {
     ...estados,
     documentacionCompleta,
-    estadoHabilitacionDeportiva: requiereDecisionInstitucional ? "PENDIENTE_DECISION" : "LEGACY_DOCUMENTAL",
+    estadoHabilitacionDeportiva: requiereDecisionInstitucional
+      ? (documentacionCompleta ? "PENDIENTE_DECISION" : "DOCUMENTACION_INCOMPLETA")
+      : "LEGACY_DOCUMENTAL",
     habilitado: requiereDecisionInstitucional ? "NO" : (documentacionCompleta ? "SI" : "NO"),
     faltantes: [
       ...faltantes,
