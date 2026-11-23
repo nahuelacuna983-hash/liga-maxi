@@ -28,6 +28,7 @@ jobs:
           node tests/apdb-document-review-reason-contract.cjs
           node tests/apdb-delegate-player-deactivation-guardrails.cjs
           node tests/apdb-2027-eligibility-separation.cjs
+          node tests/apdb-2027-referee-output-refresh.cjs
           node tests/app-online-administrative-onboarding-contract.cjs
 
   eligibility-auth-http:
