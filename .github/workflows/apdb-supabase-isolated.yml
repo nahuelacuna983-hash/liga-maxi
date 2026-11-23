@@ -38,9 +38,12 @@ jobs:
       - name: Assign dedicated CI ports for the disposable Supabase instance
         shell: bash
         run: |
-          # Avoid collisions with services on the runner's default Supabase ports.
-          sed -i -e 's/^port = 54321$/port = 55421/' -e 's/^port = 54322$/port = 55422/' supabase/config.toml
-          grep -q '^port = 55421
+          # Avoid collisions with other Docker services on the default ports.
+          sed -i 's/54321/55421/g; s/54322/55422/g' supabase/config.toml
+          grep -F 'port = 55421' supabase/config.toml
+          grep -F 'port = 55422' supabase/config.toml
+      - name: Start disposable Supabase
+        run: supabase start
       - name: Export isolated service endpoints
         shell: bash
         run: |
