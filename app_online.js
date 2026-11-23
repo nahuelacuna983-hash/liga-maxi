@@ -1639,10 +1639,23 @@ function calcularEstadoHabilitacionJugador(nombreCategoria, jugador) {
     estados.deslinde === "SI" ? "" : "Deslinde/declaracion jurada"
   ].filter(Boolean);
 
+  const documentacionCompleta = faltantes.length === 0;
+  // En APdB 2027 la revisión documental NO equivale a una decisión
+  // de habilitación deportiva. Hasta disponer de autorización institucional
+  // persistida y auditada, no emitir una habilitación automática.
+  // Las temporadas históricas conservan su comportamiento anterior.
+  const requiereDecisionInstitucional = Number(temporadaDocumentalActiva()) >= 2027;
+  const decisionDeportivaPendiente = requiereDecisionInstitucional && documentacionCompleta;
+
   return {
     ...estados,
-    habilitado: faltantes.length ? "NO" : "SI",
-    faltantes: faltantes.join("; "),
+    documentacionCompleta,
+    estadoHabilitacionDeportiva: requiereDecisionInstitucional ? "PENDIENTE_DECISION" : "LEGACY_DOCUMENTAL",
+    habilitado: requiereDecisionInstitucional ? "NO" : (documentacionCompleta ? "SI" : "NO"),
+    faltantes: [
+      ...faltantes,
+      ...(decisionDeportivaPendiente ? ["Pendiente de decisión institucional de habilitación deportiva"] : [])
+    ].join("; "),
     preauditoria,
     preauditoriaDetalle: preauditoria.detalle
   };
