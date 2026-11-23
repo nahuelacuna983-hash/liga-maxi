@@ -57,12 +57,30 @@ test("Delegado carga y corrige PDF privado; Asociación observa y aprueba", asyn
         responses.push({route:r.url().includes("/storage/v1/")?"storage":"document-rpc",status:r.status()});
     };
     page.on("response",observe);
+    let changed = false;
+    await page.evaluate(() => {
+      window.__apdb_test_input_events = [];
+      document.addEventListener("change", event => {
+        if (event.target?.classList?.contains("player-doc-upload-input"))
+          window.__apdb_test_input_events.push("document-change");
+      }, true);
+    });
     try {
+      const inContainer = await docInput().evaluate(el => document.querySelector("#delegado-documentacion")?.contains(el));
       await docInput().setInputFiles(syntheticPDF(label));
-      await expect(page.locator("#delegado-status")).toContainText(
-        /cargado correctamente|No se pudo subir|El archivo subió|vencimiento obligatorio|No se encontró el documento/,
-        {timeout:25000}
-      );
+      try {
+        await expect(page.locator("#delegado-status")).toContainText(
+          /cargado correctamente|No se pudo subir|El archivo subió|vencimiento obligatorio|No se encontró el documento/,
+          {timeout:25000}
+        );
+      } catch (error) {
+        const diagnostic = await page.evaluate(() => ({
+          status: document.querySelector("#delegado-status")?.textContent,
+          events: window.__apdb_test_input_events || [],
+          inputCount: document.querySelectorAll(".player-doc-upload-input").length
+        }));
+        throw new Error("Document UI never reached upload state: "+JSON.stringify({inContainer,responses,diagnostic}));
+      }
       const message=await page.locator("#delegado-status").innerText();
       if(!message.includes("cargado correctamente"))
         throw new Error("Document upload stopped: "+message+" responses="+JSON.stringify(responses));
