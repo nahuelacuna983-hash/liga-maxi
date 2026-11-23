@@ -181,9 +181,13 @@ async function login(email) {
       headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
     });
     const uploaded = await storageRequest(delegateToken, storagePath);
-    assert(uploaded.response.ok, `Authorized storage upload rejected: ${uploaded.response.status} ${JSON.stringify(uploaded.body)}`);
+    // A bare organization-only object path has no category, club or
+    // document linkage and must be rejected under the 2027 private policy.
+    // The positive scoped upload + signed read live in the dedicated
+    // apdb-2027-private-storage-isolated.cjs Auth/HTTP suite.
+    assert(!uploaded.response.ok, "Unscoped legacy storage upload was permitted");
     const readable = await storageRead(delegateToken, storagePath);
-    assert(readable.response.ok, `Authorized storage read rejected: ${readable.response.status} ${JSON.stringify(readable.body)}`);
+    assert(!readable.response.ok, "Unscoped storage object was readable");
     const otherToken = await login(users.delegateB.email);
     const crossRead = await storageRead(otherToken, storagePath);
     assert(!crossRead.response.ok, "Cross-organization storage read unexpectedly succeeded");
