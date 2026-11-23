@@ -27,6 +27,13 @@ Alcance: consultas **solo lectura** sobre el proyecto independiente `wffvmthdmmj
 - `anon` **no** tiene `SELECT` sobre `v_team_documents_admin`; `authenticated` **sí**. La alerta de la vista no demuestra por sí sola una exposición pública anónima; resta validar accesos cruzados entre usuarios autenticados.
 - Tanto `anon` como `authenticated` heredan `EXECUTE` para `rls_auto_enable()`. La función es de tipo `event_trigger`; su capacidad de invocación práctica vía RPC debe verificarse antes de calificar el impacto. El permiso heredado debe revisarse y restringirse si no es requerido.
 
+## Configuración de frontend disponible
+
+- Se confirmó a través del acceso conectado a Supabase que el staging tiene una clave **publishable** activa, además de una clave anónima legacy activa.
+- No se copiaron valores de claves al repositorio ni a informes.
+- Para generar el paquete institucional se usará solo la publishable de staging inyectada desde configuración segura local o de CI; nunca la clave secreta ni un fallback productivo.
+- Disponibilidad de la clave **no** equivale a aprobación de publicación; primero faltan las pruebas de permisos reales y el despliegue protegido.
+
 ## Puertas de aceptación
 
 - Vista y RPC documentales deben rechazar lectura ajena, anon y revocado; ensayar con identidades sintéticas.
