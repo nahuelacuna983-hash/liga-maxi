@@ -4313,7 +4313,7 @@ function renderEquipoEstadoCompetencia(posicion, equipo, estadoTexto, detalle = 
   `;
 }
 
-function renderPromocionDescenso(nombreCategoria, tabla) {
+function renderPromocionDescenso(nombreCategoria, tabla, partidosPlayoff = []) {
   if (nombreCategoria === "Maxi +35 A") {
     return `
       <div class="playoff-status-box">
@@ -4325,11 +4325,19 @@ function renderPromocionDescenso(nombreCategoria, tabla) {
   }
 
   if (nombreCategoria === "Maxi +35 B") {
+    const campeon = obtenerCampeonPlayoff(partidosPlayoff, nombreCategoria);
+    const finalistas = partidosPlayoff
+      .filter((partido) => partido.fase === "final" && partido.llave === "final")
+      .flatMap((partido) => [partido.local, partido.visitante])
+      .filter((equipo) => equipo && !esPlaceholderPlayoff(equipo));
+    const subcampeon = campeon
+      ? finalistas.find((equipo) => !nombresEquipoCoinciden(equipo, campeon)) || ""
+      : "";
     return `
       <div class="playoff-status-box">
         <h4>Ascenso y promocion</h4>
-        ${renderEquipoEstadoCompetencia("Campeon", null, "Ascenso directo", "El campeon de playoffs asciende a Maxi +35 A.")}
-        ${renderEquipoEstadoCompetencia("Subcampeon", null, "Promocion", "El subcampeon de playoffs juega contra el 9no de Maxi +35 A.")}
+        ${renderEquipoEstadoCompetencia("Campeon", campeon ? { equipo: campeon } : null, "Ascenso directo", "El campeon de playoffs asciende a Maxi +35 A.")}
+        ${renderEquipoEstadoCompetencia("Subcampeon", subcampeon ? { equipo: subcampeon } : null, "Promocion", "El subcampeon de playoffs juega contra el 9no de Maxi +35 A.")}
       </div>
     `;
   }
@@ -4499,7 +4507,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
     : "playoff-card playoff-card-secondary";
 
   const bracketVacio = renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos);
-  const promocionDescenso = renderPromocionDescenso(nombreCategoria, tabla);
+  const promocionDescenso = renderPromocionDescenso(nombreCategoria, tabla, partidosPlayoff);
   const resumenResultadosPlayoff = renderResumenResultadosPlayoff(partidosPlayoff);
   const campeonPlayoff = obtenerCampeonPlayoff(partidosPlayoff, nombreCategoria);
   const resumenCampeon = campeonPlayoff
