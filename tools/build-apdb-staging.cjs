@@ -41,6 +41,8 @@ for (const file of files) {
     app = app.replaceAll(productionUrl, "");
     app = app.replaceAll(productionTournament, "");
     app = app.replaceAll(productionPublishableKey, "");
+    // An isolated staging package must never query a missing/invalid UUID fallback.
+    assert.ok(app.includes("if (!torneo && TORNEO_ID_FALLBACK)"), "missing guarded tournament fallback");
     // The staging bootstrap must supply its own project configuration.
     assert.ok(app.includes("window.APDB_STAGING === true"), "missing staging fail-closed guard");
     for (const forbidden of [productionUrl, productionTournament, productionPublishableKey]) {
