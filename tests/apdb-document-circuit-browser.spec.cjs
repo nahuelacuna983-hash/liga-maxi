@@ -51,11 +51,23 @@ test("Delegado carga y corrige PDF privado; Asociación observa y aprueba", asyn
       delegateEnabled: typeof estado!=="undefined"?estado.delegadoDesbloqueado:false
     }))));
     await expect(docInput()).toHaveCount(1,{timeout:25000});
-    const stored=page.waitForResponse(r=>r.url().includes("/rest/v1/rpc/mark_player_document_uploaded")
-      &&r.request().method()==="POST");
-    await docInput().setInputFiles(syntheticPDF(label));
-    expect((await stored).status()).toBe(200);
-    await expect(page.locator("#delegado-status")).toContainText("cargado correctamente",{timeout:25000});
+    const responses=[];
+    const observe=(r)=>{
+      if(r.url().includes("/storage/v1/object/")||r.url().includes("/rest/v1/rpc/mark_player_document_uploaded"))
+        responses.push({route:r.url().includes("/storage/v1/")?"storage":"document-rpc",status:r.status()});
+    };
+    page.on("response",observe);
+    try {
+      await docInput().setInputFiles(syntheticPDF(label));
+      await expect(page.locator("#delegado-status")).toContainText(
+        /cargado correctamente|No se pudo subir|El archivo subió|vencimiento obligatorio|No se encontró el documento/,
+        {timeout:25000}
+      );
+      const message=await page.locator("#delegado-status").innerText();
+      if(!message.includes("cargado correctamente"))
+        throw new Error("Document upload stopped: "+message+" responses="+JSON.stringify(responses));
+      expect(responses.some(r=>r.route==="document-rpc"&&r.status===200)).toBeTruthy();
+    } finally { page.off("response",observe); }
   };
   const doReview=async(status,reason)=>{
     await expect(review(status)).toBeVisible({timeout:25000});
