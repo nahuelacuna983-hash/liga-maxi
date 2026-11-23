@@ -8679,10 +8679,11 @@ async function prepararAltaAdministrativa() {
 }
 
 async function poblarEquiposAltaAdministrativa() {
-  const categoriaId = $("admin-delegado-categoria")?.value;
+  const categoriaNombre = $("admin-delegado-categoria")?.value;
   const select = $("admin-delegado-equipo");
   if (!select) return;
-  const categoria = estado.categorias?.find((item) => String(item.id || item.categoria_id) === String(categoriaId));
+  const categoria = estado.categorias?.find((item) => item.nombre === categoriaNombre);
+  const categoriaId = categoria?.id || categoria?.categoria_id;
   const equipos = categoriaId ? await cargarEquiposCategoria(categoriaId) : (categoria?.equipos || []);
   select.innerHTML = equipos.map((equipo) => `<option value="${escapeHtml(equipo.id || equipo.equipo_id || "")}">${escapeHtml(equipo.nombre || equipo.name || "Equipo")}</option>`).join("");
 }
