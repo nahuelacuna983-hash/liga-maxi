@@ -55,6 +55,15 @@ async function create(role,organization,team,review){
       await db.query("insert into public.app_user_permissions(user_id,organizacion_id,torneo_id,categoria_id,equipo_id,can_view,can_load_documents,can_review_documents) values($1,$2,$3,$4,$5,true,$6,$7)",
         [u.id,org,tournament,category,u.team,u.role==="delegado",u.review]);
     }
+    const requirementsPath="/rest/v1/document_requirements?torneo_id=eq."+tournament+"&select=id,nombre,scope";
+    const userRequirements=await call(requirementsPath,{token:delegates[0].token,method:"GET"});
+    assert.equal(userRequirements.status,200,JSON.stringify(userRequirements.data));
+    assert.equal(userRequirements.data.length,1,"Authenticated delegate must receive active documentary requirements");
+    const anonymousRequirements=await call(requirementsPath,{token:anon,method:"GET"});
+    assert.notEqual(anonymousRequirements.status,200,"Anonymous documentary catalog forbidden");
+    const unrelatedRequirements=await call(requirementsPath,{token:foreign.token,method:"GET"});
+    assert.equal(unrelatedRequirements.status,200);
+    assert.equal(unrelatedRequirements.data.length,0,"Foreign organization cannot discover private requirement catalog");
     // The official app consumes this view directly; test its effective scope.
     const viewPath="/rest/v1/v_player_documents_admin?categoria_id=eq."+category+"&select=id,equipo_id";
     const view = (token) => call(viewPath,{token,method:"GET"});
