@@ -129,6 +129,21 @@ async function login(email) {
     assert.equal(trail.data[0].status,"suspendido");
     assert(trail.data.every(row=>row.actor_name==="association" && row.reason.length>=5));
     assert.equal(new Set(trail.data.map(row=>row.event_id)).size,4);
+    // A decision tied to one team cannot authorize the same player after transfer.
+    const transferredTeam = crypto.randomUUID();
+    await db.query("insert into public.equipos(id,categoria_id,nombre) values($1,$2,'Equipo traslado CI')",[transferredTeam,cA]);
+    await db.query("update public.team_players set equipo_id=$1,equipo_nombre='Equipo traslado CI' where id=$2",[transferredTeam,player]);
+    const transferred = await refereeList(ids.association.token);
+    assert.equal(transferred.code,200,JSON.stringify(transferred.data));
+    assert.equal(transferred.data[0].habilitado,false,"Previous team eligibility cannot authorize transfer");
+    assert.equal(transferred.data[0].decision_status,"pendiente");
+    const scopedLatest = await http("/rest/v1/rpc/apdb_get_player_eligibility", {
+      token:ids.association.token, body:{p_category_id:cA}
+    });
+    assert.equal(scopedLatest.code,200,JSON.stringify(scopedLatest.data));
+    assert.equal(scopedLatest.data.length,0,"Old team decision not current for transferred player");
+    await db.query("update public.team_players set equipo_id=$1,equipo_nombre='Equipo CI' where id=$2",[eA,player]);
+
     const rows = await db.query("select status,reason,actor_auth_user_id from public.apdb_player_eligibility_events where player_id=$1 order by created_at,id",[player]);
     assert.equal(rows.rowCount,4,"Append-only evidence required");
     assert(rows.rows.every(x=>x.actor_auth_user_id===ids.association.id));
