@@ -65,11 +65,16 @@ jobs:
 
       - name: Prove synthetic PostgreSQL backup and restore
         run: |
-          pg_dump --format=custom --file=/tmp/apdb-2027-synthetic.dump
+          # Use the same pg_dump/pg_restore major version as the PostgreSQL 16 server.
+          # A newer Ubuntu client can emit unsupported transaction_timeout settings.
+          PG_CONTAINER="$(docker ps --filter ancestor=postgres:16 --format '{{.ID}}' | head -n 1)"
+          test -n "$PG_CONTAINER"
+          docker exec -e PGPASSWORD="$PGPASSWORD" "$PG_CONTAINER" pg_dump -U postgres -d apdb_synthetic_test --format=custom --file=/tmp/apdb-2027-synthetic.dump
+          docker cp "$PG_CONTAINER":/tmp/apdb-2027-synthetic.dump /tmp/apdb-2027-synthetic.dump
           test -s /tmp/apdb-2027-synthetic.dump
           sha256sum /tmp/apdb-2027-synthetic.dump
-          createdb apdb_2027_restored
-          pg_restore --exit-on-error --dbname=apdb_2027_restored /tmp/apdb-2027-synthetic.dump
+          docker exec -e PGPASSWORD="$PGPASSWORD" "$PG_CONTAINER" createdb -U postgres apdb_2027_restored
+          docker exec -e PGPASSWORD="$PGPASSWORD" "$PG_CONTAINER" pg_restore -U postgres --exit-on-error --dbname=apdb_2027_restored /tmp/apdb-2027-synthetic.dump
           PGDATABASE=apdb_2027_restored psql -X -v ON_ERROR_STOP=1 -f tests/security/apdb_document_rpc_isolation.sql
           echo 'APDB_SYNTHETIC_BACKUP_RESTORE_OK'
 
