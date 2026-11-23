@@ -31,9 +31,9 @@ test("Delegado carga y corrige PDF privado; Asociación observa y aprueba", asyn
       .selectOption({label:cfg.categoryName});
     if(role==="association"){
       await page.locator('.assoc-nav-btn[data-asociacion-panel="documentacion"]').click();
-      // El panel documental no contiene el filtro de clubes del panel de árbitros.
-      // Seleccionar el jugador por la evidencia documental de esta categoría.
-      await page.locator("#documentacion-buscar").fill(cfg.teamName);
+      // El panel documental ofrece su propio filtro, visible y separado de árbitros.
+      await expect(page.locator("#documentacion-filtro-equipo")).toContainText(cfg.teamName,{timeout:20000});
+      await page.locator("#documentacion-filtro-equipo").selectOption({label:cfg.teamName});
     }
   };
   const docInput=()=>page.locator(`.player-doc-upload-input[data-document-id="${cfg.documentId}"]`);
