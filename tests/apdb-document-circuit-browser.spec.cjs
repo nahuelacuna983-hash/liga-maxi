@@ -15,6 +15,11 @@ test("Delegado carga y corrige PDF privado; Asociación observa y aprueba", asyn
   },{url:local,key:anonKey});
 
   const visit = async(credentials, role) => {
+    if(await page.locator("#auth-logout").count() && await page.locator("#auth-logout").isEnabled()) {
+      await page.locator("#tab-acceso").click();
+      await page.locator("#auth-logout").click();
+      await expect(page.locator("#auth-status")).toContainText("Sesion cerrada.",{timeout:20000});
+    }
     await page.goto("/index_online.html?secureResults=1",{waitUntil:"domcontentloaded"});
     await page.locator("#tab-acceso").evaluate(e=>{e.hidden=false;e.removeAttribute("aria-hidden");e.click()});
     await page.locator("#auth-email").fill(credentials.email);
