@@ -318,4 +318,56 @@ end;
 $$;
 revoke all on function public.apdb_get_referee_eligibility(uuid) from public, anon, authenticated;
 grant execute on function public.apdb_get_referee_eligibility(uuid) to authenticated;
+
+-- Full chronological evidence for a player. Readable only by Association
+-- with effective permission for the exact player and team.
+create function public.apdb_get_player_eligibility_history(p_player_id uuid)
+returns table (
+  status text,
+  reason text,
+  actor_name text,
+  decided_at timestamptz,
+  event_id uuid
+)
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+declare
+  v_actor public.app_users%rowtype;
+  v_player public.team_players%rowtype;
+begin
+  select * into v_actor from public.app_users
+  where auth_user_id = auth.uid()
+    and active and role in ('admin_general','asociacion');
+  if not found then
+    raise exception using errcode = '42501', message = 'identidad institucional requerida';
+  end if;
+  select * into v_player from public.team_players
+  where id = p_player_id and organizacion_id = v_actor.organizacion_id;
+  if not found or not exists (
+    select 1 from public.app_user_permissions p
+    where p.user_id = v_actor.id
+      and p.organizacion_id = v_player.organizacion_id
+      and p.torneo_id = v_player.torneo_id
+      and p.categoria_id = v_player.categoria_id
+      and p.can_review_documents
+      and (p.equipo_id is null or p.equipo_id = v_player.equipo_id)
+  ) then
+    raise exception using errcode = '42501', message = 'sin permiso sobre historial del jugador';
+  end if;
+  return query
+    select ev.status, ev.reason, u.display_name, ev.created_at, ev.id
+    from public.apdb_player_eligibility_events ev
+    join public.app_users u on u.id = ev.actor_app_user_id
+    where ev.player_id = v_player.id
+      and ev.organizacion_id = v_actor.organizacion_id
+      and ev.torneo_id = v_player.torneo_id
+      and ev.categoria_id = v_player.categoria_id
+      and ev.equipo_id = v_player.equipo_id
+    order by ev.created_at desc, ev.id desc;
+end;
+$$;
+revoke all on function public.apdb_get_player_eligibility_history(uuid) from public, anon, authenticated;
+grant execute on function public.apdb_get_player_eligibility_history(uuid) to authenticated;
 commit;
