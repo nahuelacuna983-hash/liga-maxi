@@ -3477,6 +3477,16 @@ function renderAccionDocumentoJugadorDelegado(documento) {
     return `<span class="doc-action-muted">Sin registro</span>`;
   }
 
+  const requisito = obtenerRequisitoDocumental(documento.requirement_nombre);
+  const vencimientoInput = requisito?.requiere_vencimiento
+    ? `<label class="doc-expiry-field">
+         <span>Vencimiento obligatorio</span>
+         <input class="player-doc-expiry-input" type="date"
+           data-document-id="${escapeHtml(documento.id)}"
+           value="${escapeHtml(documento.vencimiento || "")}">
+         <small>Requerido antes de subir un documento médico con vencimiento.</small>
+       </label>`
+    : "";
   const botonVer = renderBotonVerDocumentoDelegado(documento, "player");
   const nombreArchivo = documento.file_name
     ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>`
@@ -3492,6 +3502,7 @@ function renderAccionDocumentoJugadorDelegado(documento) {
 
   return `
     ${botonVer}
+    ${vencimientoInput}
     <label class="doc-upload-button">
       <span>${documento.file_name ? "Reemplazar" : "Subir"}</span>
       <input
@@ -5674,6 +5685,19 @@ async function subirDocumentoJugadorDelegado(event) {
     return;
   }
 
+  const requisito = obtenerRequisitoDocumental(documento.requirement_nombre);
+  const vencimiento = document.querySelector(`.player-doc-expiry-input[data-document-id="${documentId}"]`)?.value || null;
+  if (requisito?.requiere_vencimiento && !vencimiento) {
+    setStatus(status, "Indicá el vencimiento obligatorio del documento del jugador.", "warn");
+    input.value = "";
+    return;
+  }
+  if (vencimiento && vencimiento < new Date().toISOString().slice(0, 10)) {
+    setStatus(status, "El documento ya está vencido. Solicitá un archivo vigente.", "warn");
+    input.value = "";
+    return;
+  }
+
   input.disabled = true;
   setStatus(status, "Subiendo documento del jugador...", "");
 
@@ -5718,7 +5742,7 @@ async function subirDocumentoJugadorDelegado(event) {
     p_file_name: file.name,
     p_file_type: file.type,
     p_file_size: file.size,
-    p_vencimiento: null
+    p_vencimiento: vencimiento
   });
 
   if (rpcError) {
