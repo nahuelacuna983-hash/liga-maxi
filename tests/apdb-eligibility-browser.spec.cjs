@@ -86,6 +86,7 @@ test("Asociación habilita, suspende y recupera decisión; delegado no modifica"
 
   await page.locator("#tab-acceso").evaluate(e=>{e.hidden=false;e.removeAttribute("aria-hidden");e.click()});
   await page.locator("#auth-logout").click();
+  await expect(page.locator("#auth-status")).toContainText("Sesion cerrada.",{timeout:20000});
   await signIn(page,data.delegate);
   await page.locator("#tab-delegados").click();
   await expect(page.locator("#apdb-eligibility-section")).toBeHidden();
