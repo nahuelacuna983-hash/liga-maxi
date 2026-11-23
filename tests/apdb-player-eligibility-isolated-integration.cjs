@@ -143,6 +143,10 @@ async function login(email) {
     assert.equal(scopedLatest.code,200,JSON.stringify(scopedLatest.data));
     assert.equal(scopedLatest.data.length,0,"Old team decision not current for transferred player");
     await db.query("update public.team_players set equipo_id=$1,equipo_nombre='Equipo CI' where id=$2",[eA,player]);
+    const returned = await refereeList(ids.association.token);
+    assert.equal(returned.code,200,JSON.stringify(returned.data));
+    assert.equal(returned.data[0].habilitado,false,"Returning to the original team must not restore an obsolete approval");
+    assert.equal(returned.data[0].decision_status,"pendiente");
 
     const rows = await db.query("select status,reason,actor_auth_user_id from public.apdb_player_eligibility_events where player_id=$1 order by created_at,id",[player]);
     assert.equal(rows.rowCount,4,"Append-only evidence required");
