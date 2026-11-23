@@ -1863,7 +1863,15 @@ function actualizarFiltroEquiposHabilitados(nombreCategoria) {
   const select = $("habilitados-filtro-equipo");
   if (!select) return;
   const valorActual = select.value;
-  const equipos = obtenerEquiposCategoria(nombreCategoria);
+  const categoria = estado.categorias.find((item) => item.nombre === nombreCategoria);
+  const oficial2027 = String(temporadaDocumentalActiva()) === "2027";
+  const filasOficiales = oficial2027 ? estado.listadoArbitrosPorCategoriaId[categoria?.id] : null;
+  // El filtro de clubes del listado 2027 debe corresponder exactamente
+  // al conjunto autorizado por la RPC, no a equipos visibles por otros módulos.
+  const equipos = oficial2027
+    ? [...new Set((filasOficiales || []).map((fila) => fila.equipo_nombre).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b))
+    : obtenerEquiposCategoria(nombreCategoria);
   select.innerHTML = `<option value="">Elegir club</option>${equipos.map((equipo) =>
     `<option value="${escapeHtml(equipo)}">${escapeHtml(equipo)}</option>`
   ).join("")}`;
