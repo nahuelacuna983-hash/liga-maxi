@@ -4,6 +4,12 @@ on:
     branches:
       - codex/apdb-2027-document-review-guardrails
       - codex/apdb-2027-full-release-verification
+  pull_request:
+    paths:
+      - 'app_online.js'
+      - 'supabase/migrations/**'
+      - 'tests/**'
+      - '.github/workflows/apdb-document-guardrails.yml'
   workflow_dispatch:
 
 concurrency:
