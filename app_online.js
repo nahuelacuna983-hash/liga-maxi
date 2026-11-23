@@ -6609,6 +6609,18 @@ function limpiarEstadoPrivadoAuth() {
   estado.documentosPorCategoriaId = {};
   estado.jugadoresPorCategoriaId = {};
   estado.documentosJugadoresPorCategoriaId = {};
+  // Estos datos identifican decisiones y jugadores institucionales; nunca
+  // deben quedar en memoria ni en el DOM al cerrar sesión o cambiar usuario.
+  estado.decisionesDeportivasPorCategoriaId = {};
+  estado.candidatosHabilitacionPorCategoriaId = {};
+  estado.listadoArbitrosPorCategoriaId = {};
+  estado.listadoArbitrosErrorPorCategoriaId = {};
+  if ($("apdb-eligibility-history")) $("apdb-eligibility-history").textContent = "";
+  if ($("apdb-eligibility-summary")) $("apdb-eligibility-summary").textContent = "";
+  if ($("apdb-eligibility-player")) $("apdb-eligibility-player").innerHTML = '<option value="">Seleccionar jugador</option>';
+  if ($("apdb-eligibility-reason")) $("apdb-eligibility-reason").value = "";
+  if ($("apdb-eligibility-section")) $("apdb-eligibility-section").hidden = true;
+  if ($("habilitados-tabla")) $("habilitados-tabla").textContent = "";
   estado.driveDocumentosPorCategoriaId = {};
   estado.auditoriaDocumentalPorCategoriaId = {};
   estado.auditoriasIAPorCategoriaId = {};
