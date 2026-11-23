@@ -40,6 +40,15 @@ test("Delegado carga y corrige PDF privado; Asociación observa y aprueba", asyn
   const syntheticPDF=(label)=>({name:`synthetic-${label}.pdf`,mimeType:"application/pdf",
     buffer:Buffer.from("%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\n%%EOF\n")});
   const upload=async(label)=>{
+    console.log("APDB_DOCUMENT_BROWSER_DIAGNOSTIC", JSON.stringify(await page.evaluate(() => ({
+      category: document.querySelector("#delegado-categoria")?.value,
+      delegatedPanel: document.querySelector("#delegado-documentacion")?.innerText?.slice(0,1800),
+      documentInputs: Array.from(document.querySelectorAll(".player-doc-upload-input")).map(el=>el.dataset.documentId),
+      requirements: typeof estado!=="undefined"?estado.requisitosDocumentales?.map(x=>({name:x.nombre,scope:x.scope})):[],
+      scopedPlayers: typeof estado!=="undefined"?Object.entries(estado.jugadoresPorCategoriaId||{}).map(([key,rows])=>({key,count:rows.length})):[],
+      scopedDocuments: typeof estado!=="undefined"?Object.entries(estado.documentosJugadoresPorCategoriaId||{}).map(([key,rows])=>({key,count:rows.length})):[],
+      delegateEnabled: typeof estado!=="undefined"?estado.delegadoDesbloqueado:false
+    }))));
     await expect(docInput()).toHaveCount(1,{timeout:25000});
     const stored=page.waitForResponse(r=>r.url().includes("/rest/v1/rpc/mark_player_document_uploaded")
       &&r.request().method()==="POST");
