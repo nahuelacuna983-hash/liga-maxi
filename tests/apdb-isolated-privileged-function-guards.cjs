@@ -21,7 +21,7 @@ assert.ok(["localhost", "127.0.0.1"].includes(url.hostname), "Hosted database re
         from pg_proc p
         join pg_namespace n on n.oid = p.pronamespace
        where n.nspname = 'public'
-         and p.proname like 'apdb\\_%' escape '\\'
+         and left(p.proname, 5) = 'apdb_'
        order by p.proname
     `);
     assert.ok(result.rowCount >= 12, "Unexpectedly few APdB privileged functions; review migration contracts");
