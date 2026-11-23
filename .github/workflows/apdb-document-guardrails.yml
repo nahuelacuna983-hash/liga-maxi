@@ -4,6 +4,7 @@ on:
     branches:
       - codex/apdb-2027-document-review-guardrails
       - codex/apdb-2027-full-release-verification
+      - codex/apdb-2027-final-integrated-candidate
   pull_request:
     paths:
       - 'app_online.js'
