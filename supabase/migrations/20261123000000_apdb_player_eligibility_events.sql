@@ -165,6 +165,14 @@ begin
     where e.categoria_id = p_category_id
       and e.organizacion_id = v_actor.organizacion_id
       and exists (
+        select 1 from public.team_players tp
+        where tp.id = e.player_id and tp.activo
+          and tp.organizacion_id = e.organizacion_id
+          and tp.torneo_id = e.torneo_id
+          and tp.categoria_id = e.categoria_id
+          and tp.equipo_id = e.equipo_id
+      )
+      and exists (
         select 1 from public.app_user_permissions p
         where p.user_id = v_actor.id and p.organizacion_id = e.organizacion_id
           and p.torneo_id = e.torneo_id
@@ -269,6 +277,10 @@ begin
       select ev.status, ev.reason, ev.created_at
       from public.apdb_player_eligibility_events ev
       where ev.player_id = tp.id
+        and ev.organizacion_id = tp.organizacion_id
+        and ev.torneo_id = tp.torneo_id
+        and ev.categoria_id = tp.categoria_id
+        and ev.equipo_id = tp.equipo_id
       order by ev.created_at desc, ev.id desc
       limit 1
     ) latest on true
