@@ -72,10 +72,12 @@ jobs:
         run: node tests/apdb-isolated-browser-setup.cjs
       - name: Verify per-team Storage with real synthetic Auth JWT
         run: node tests/apdb-isolated-storage-team-scope.cjs
+      - name: Build institutional frontend against disposable Supabase
+        run: node tests/apdb-build-isolated-institutional.cjs
       - name: Run isolated Chromium validation
         env:
           APDB_ISOLATED_BROWSER_URL: ${{ env.SUPABASE_URL }}
-        run: npx playwright test tests/apdb-isolated-browser.spec.cjs tests/apdb-isolated-session-switch-browser.spec.cjs tests/apdb-isolated-mobile-browser.spec.cjs --workers=1 --retries=1
+        run: npx playwright test tests/apdb-isolated-browser.spec.cjs tests/apdb-isolated-session-switch-browser.spec.cjs tests/apdb-isolated-mobile-browser.spec.cjs tests/apdb-institutional-built-browser.spec.cjs --workers=1 --retries=1
       - name: Restart isolated Supabase without resetting data
         run: |
           supabase stop
