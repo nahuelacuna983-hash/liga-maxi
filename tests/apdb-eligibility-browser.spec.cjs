@@ -64,6 +64,25 @@ test("Asociación habilita, suspende y recupera decisión; delegado no modifica"
   await expect(page.locator("#apdb-eligibility-summary")).toContainText("suspendido");
   console.log("APDB_ELIGIBILITY_BROWSER_RECOVERY_OK");
 
+  // Desde la pantalla real de árbitros: el club debe provenir de la lista
+  // autorizada y el CSV debe refrescar la decisión justo antes de emitirse.
+  await page.locator('.assoc-nav-btn[data-asociacion-panel="habilitados"]').click();
+  await expect(page.locator("#habilitados-tabla")).toContainText("Jugador de prueba", {timeout:20000});
+  await expect(page.locator("#habilitados-filtro-equipo")).toContainText(data.teamName);
+  await page.locator("#habilitados-filtro-equipo").selectOption({label:data.teamName});
+  await expect(page.locator("#habilitados-tabla")).toContainText("Habilitación suspendida");
+  const refresh=page.waitForResponse(r=>r.url().includes("/rest/v1/rpc/apdb_get_referee_eligibility")
+      &&r.request().method()==="POST");
+  const exported=page.waitForEvent("download");
+  await page.locator("#habilitados-exportar-csv").click();
+  expect((await refresh).status()).toBe(200);
+  const csv=await exported;
+  expect(csv.suggestedFilename()).toMatch(/habilitados-arbitros.*\.csv$/);
+  const bytes=fs.readFileSync(await csv.path(),"utf8");
+  expect(bytes).toContain("Jugador de prueba");
+  expect(bytes).toContain("Habilitación suspendida");
+  console.log("APDB_ELIGIBILITY_BROWSER_REFEREE_CSV_VERIFIED");
+
   await page.locator("#tab-acceso").evaluate(e=>{e.hidden=false;e.removeAttribute("aria-hidden");e.click()});
   await page.locator("#auth-logout").click();
   await signIn(page,data.delegate);
