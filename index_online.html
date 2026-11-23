@@ -2082,6 +2082,16 @@
       font-size: 11px;
       font-weight: 900;
     }
+    .campeones-portada { background: linear-gradient(130deg, #1b365b, #13233f); border: 1px solid #59708f; padding: 16px; border-radius: 16px; margin-bottom: 16px; }
+    .campeones-portada h2 { margin: 0 0 12px; font-size: clamp(19px, 4.8vw, 25px); line-height: 1.2; }
+    .campeones-portada p { margin: 0; color: #cbd5e1; }
+    .campeones-portada-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .campeon-portada-card { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 5px; padding: 14px; min-height: 122px; color: #f8fafc; background: #10223c; border: 1px solid #476185; border-radius: 14px; cursor: pointer; width: 100%; }
+    .campeon-portada-card strong { font-size: clamp(17px, 4.4vw, 22px); line-height: 1.15; }
+    .campeon-portada-card > span:last-child { color: #b9d5ff; font-size: 12px; }
+    .campeon-portada-categoria { text-transform: uppercase; color: #eac977; font-size: 12px; font-weight: 800; }
+    .campeon-portada-card:focus-visible { outline: 3px solid #8fc1ff; outline-offset: 2px; }
+    @media (max-width: 600px) { .campeones-portada-grid { grid-template-columns: 1fr; } .campeon-portada-card { min-height: 95px; } }
   </style>
 </head>
 <body>
@@ -2158,6 +2168,7 @@
     </div>
 
     <div id="vista-publico" class="view activa">
+      <div id="publico-campeones"></div>
       <div class="row">
         <div class="field">
           <label for="publico-categoria">Categoría</label>
@@ -2839,7 +2850,7 @@
 </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_online.js?v=20261123-ascenso-finalistas"></script>
+<script src="app_online.js?v=20261123-portada-campeones-v1"></script>
 
 <script>
   if ("serviceWorker" in navigator) {

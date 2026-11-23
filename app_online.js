@@ -4549,6 +4549,38 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
   `;
 }
 
+
+async function renderPortadaCampeones() {
+  const destino = $("publico-campeones");
+  if (!destino) return;
+  const categorias = ["Maxi +35 A", "Maxi +35 B"].filter((nombre) =>
+    estado.categorias.some((categoria) => categoria.nombre === nombre)
+  );
+  if (!categorias.length) {
+    destino.innerHTML = "";
+    return;
+  }
+  destino.innerHTML = '<div class="campeones-portada"><h2>Campeones del Clausura 2026</h2><p>Consultando finales oficiales...</p></div>';
+  const resultados = await Promise.all(categorias.map(async (nombre) => {
+    const partidos = await cargarResultadosPlayoffCategoria(nombre, true);
+    return { nombre, campeon: obtenerCampeonPlayoff(partidos, nombre), partidos };
+  }));
+  destino.innerHTML = `<section class="campeones-portada" aria-label="Campeones del Clausura 2026">
+    <h2>🏆 Campeones del Clausura 2026</h2>
+    <div class="campeones-portada-grid">
+      ${resultados.map(({ nombre, campeon, partidos }) => {
+        const finalesJugadas = partidos.filter((p) => p.fase === "final" && p.llave === "final" && partidoPlayoffTieneResultado(p));
+        const victorias = finalesJugadas.filter((p) => nombresEquipoCoinciden(ganadorPartidoPlayoff(p), campeon)).length;
+        return `<button class="campeon-portada-card" type="button" data-categoria-campeon="${escapeHtml(nombre)}">
+          <span class="campeon-portada-categoria">${escapeHtml(nombre)}</span>
+          <strong>${campeon ? escapeHtml(campeon) : "Final en curso"}</strong>
+          <span>${campeon ? `Campeón · ${victorias} victorias · Ver final` : "Ver resultados y llaves"}</span>
+        </button>`;
+      }).join("")}
+    </div>
+  </section>`;
+}
+
 async function renderPublicoCategoria(nombreCategoria) {
   const partidos = estado.partidosPorCategoria[nombreCategoria] || [];
   if (categoriaUsaPlayoffsPublicos(nombreCategoria)) {
@@ -6016,11 +6048,13 @@ function renderSesionAuth() {
   const permiso = estado.permisosAuth?.[0];
   if (!estado.authUser) {
     bar.className = "auth-session-bar is-off";
-    bar.innerHTML = `<span>Sin usuario iniciado. El acceso por claves sigue disponible durante la migracion.</span>`;
+    bar.innerHTML = "";
+    bar.hidden = true;
     if ($("auth-logout")) $("auth-logout").disabled = true;
     return;
   }
 
+  bar.hidden = false;
   bar.className = "auth-session-bar";
   bar.innerHTML = `
     <span>Usuario: ${escapeHtml(permiso?.display_name || estado.authUser.email || "Usuario")} · Rol: ${escapeHtml(permiso?.role || "sin permisos")}</span>
@@ -10840,6 +10874,18 @@ async function inicializar() {
       renderAccesoApp();
     });
 
+    $("publico-campeones")?.addEventListener("click", (event) => {
+      const card = event.target.closest("[data-categoria-campeon]");
+      if (!card) return;
+      const categoria = card.dataset.categoriaCampeon;
+      if (!estado.categorias.some((item) => item.nombre === categoria)) return;
+      $("publico-categoria").value = categoria;
+      if ($("fecha-categoria")) $("fecha-categoria").value = categoria;
+      mostrarVista("publico");
+      actualizarUrlCategoria(categoria, "publico");
+      refrescarPublicoCategoria(categoria);
+      $("publico-playoffs-principal")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
     $("tab-publico").addEventListener("click", () => {
       mostrarVista("publico");
       const categoria = $("publico-categoria")?.value || "";
@@ -10925,6 +10971,11 @@ async function inicializar() {
     const cargaPublicaInicial = refrescarPublicoCategoria(categoriaInicial);
     inicializarDatosInternosEnSegundoPlano(categoriaInicial);
     await cargaPublicaInicial;
+    renderPortadaCampeones().catch((error) => {
+      console.warn("No se pudo actualizar la portada de campeones:", error);
+      const destino = $("publico-campeones");
+      if (destino) destino.innerHTML = '<div class="campeones-portada"><h2>Campeones del Clausura 2026</h2><p>Resultados temporalmente no disponibles.</p></div>';
+    });
 
     $("delegado-categoria").addEventListener("change", async (e) => {
       const categoria = e.target.value;
