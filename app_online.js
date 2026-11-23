@@ -5154,9 +5154,22 @@ async function solicitarBajaJugadorDelegado(event) {
     return;
   }
 
-  const motivo = prompt(`Motivo de solicitud para ${playerName}:`, "Cargado por error / corregir jugador");
-  if (motivo === null) {
-    setStatus(status, "Operacion cancelada.", "warn");
+  const jugador = (estado.jugadoresPorCategoriaId[categoria.id] || [])
+    .find((item) => String(item.id) === String(playerId));
+  const equiposAutorizados = obtenerEquiposDelegadoCategoria(categoriaNombre);
+  if (!jugador || !equiposAutorizados.some((equipo) => nombresEquipoCoinciden(equipo, jugador.equipo_nombre))) {
+    setStatus(status, "No tenés permiso sobre ese jugador o ya no figura en la categoría.", "error");
+    return;
+  }
+
+  const respuesta = prompt(`Motivo de solicitud para ${playerName}:`, "");
+  if (respuesta === null) {
+    setStatus(status, "Operación cancelada.", "warn");
+    return;
+  }
+  const motivo = respuesta.trim();
+  if (!motivo) {
+    setStatus(status, "Indicá el motivo de la solicitud antes de enviarla.", "warn");
     return;
   }
 
@@ -5166,12 +5179,12 @@ async function solicitarBajaJugadorDelegado(event) {
   const { error } = await supabaseClient.rpc("request_team_player_deactivation", {
     p_player_id: playerId,
     p_actor: estado.delegado.nombre,
-    p_reason: motivo || "Solicitud de baja/correccion"
+    p_reason: motivo
   });
 
   if (error) {
     button.disabled = false;
-    setStatus(status, `No se pudo enviar la solicitud: ${error.message}. Si la funcion no existe, corre docs/ejecutar-en-supabase-baja-jugadores.sql.`, "error");
+    setStatus(status, `No se pudo enviar la solicitud: ${error.message}`, "error");
     return;
   }
 
