@@ -4292,11 +4292,11 @@ function renderResumenResultadosPlayoff(partidos) {
   `;
 }
 
-function obtenerCampeonPlayoff(partidos) {
-  const final = (partidos || [])
-    .filter((partido) => partido.fase === "final" && partidoPlayoffTieneResultado(partido))
-    .sort((a, b) => Number(b.partido_numero || 1) - Number(a.partido_numero || 1))[0];
-  return final ? ganadorPartidoPlayoff(final) : "";
+function obtenerCampeonPlayoff(partidos, nombreCategoria = "") {
+  const finales = (partidos || []).filter((partido) => partido.fase === "final");
+  if (!finales.length) return "";
+  const modo = nombreCategoria ? modoDefinicionRonda(nombreCategoria, "final") : (finales.length > 1 ? "mejor_de" : "global");
+  return ganadorRondaPlayoff(finales, "final", modo);
 }
 
 function obtenerCategoriaPorNombre(nombreCategoria) {
@@ -4537,7 +4537,8 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
     const qfD = buscarPlayoff("cuartos", "llave_d");
     const semi1 = buscarPlayoff("semifinales", "semi_1");
     const semi2 = buscarPlayoff("semifinales", "semi_2");
-    const final1 = buscarPlayoff("final", "final", 1);
+    const finales = partidosPlayoff.filter((partido) => partido.fase === "final" && partido.llave === "final");
+    const modoFinal = modoDefinicionRonda(nombreCategoria, "final");
 
     bracket = `
       <div class="playoff-bracket playoff-bracket-three">
@@ -4555,7 +4556,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
         </div>
         <div class="playoff-round">
           ${renderPlayoffRoundTitulo("Final", nombreCategoria, "final")}
-          ${renderPlayoffMatchGuardado("Final", final1, renderPlayoffSlotDinamico(final1.local || "Ganador Semi 1"), renderPlayoffSlotDinamico(final1.visitante || "Ganador Semi 2"))}
+          ${renderPlayoffSerieGuardada("Final", finales, renderPlayoffSlotDinamico(finales[0]?.local || "Ganador Semi 1"), renderPlayoffSlotDinamico(finales[0]?.visitante || "Ganador Semi 2"), modoFinal)}
         </div>
       </div>
     `;
@@ -4594,7 +4595,8 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
   if (clasificados === 4 && cantidadEquipos >= 4) {
     const semi1 = buscarPlayoff("semifinales", "semi_1");
     const semi2 = buscarPlayoff("semifinales", "semi_2");
-    const final1 = buscarPlayoff("final", "final", 1);
+    const finales = partidosPlayoff.filter((partido) => partido.fase === "final" && partido.llave === "final");
+    const modoFinal = modoDefinicionRonda(nombreCategoria, "final");
 
     bracket = `
       <div class="playoff-bracket playoff-bracket-three">
@@ -4605,7 +4607,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
         </div>
         <div class="playoff-round">
           ${renderPlayoffRoundTitulo("Final", nombreCategoria, "final")}
-          ${renderPlayoffMatchGuardado("Final", final1, renderPlayoffSlotDinamico(final1.local || "Ganador Semi 1"), renderPlayoffSlotDinamico(final1.visitante || "Ganador Semi 2"))}
+          ${renderPlayoffSerieGuardada("Final", finales, renderPlayoffSlotDinamico(finales[0]?.local || "Ganador Semi 1"), renderPlayoffSlotDinamico(finales[0]?.visitante || "Ganador Semi 2"), modoFinal)}
         </div>
       </div>
     `;
@@ -4626,7 +4628,7 @@ function renderPlayoffsSimple(nombreCategoria, partidos) {
   const bracketVacio = renderPlayoffBracketVacio(nombreCategoria, cantidadEquipos);
   const promocionDescenso = renderPromocionDescenso(nombreCategoria, tabla);
   const resumenResultadosPlayoff = renderResumenResultadosPlayoff(partidosPlayoff);
-  const campeonPlayoff = obtenerCampeonPlayoff(partidosPlayoff);
+  const campeonPlayoff = obtenerCampeonPlayoff(partidosPlayoff, nombreCategoria);
   const resumenCampeon = campeonPlayoff
     ? `<div class="playoff-status-box"><h4>Campeón</h4><div class="playoff-status-row"><div class="playoff-status-team"><strong>${escapeHtml(campeonPlayoff)}</strong></div><span class="playoff-status-label">Campeón de playoffs</span></div></div>`
     : "";
