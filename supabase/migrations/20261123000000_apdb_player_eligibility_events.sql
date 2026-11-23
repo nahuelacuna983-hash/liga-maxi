@@ -136,6 +136,10 @@ begin
           (r.scope = 'player' and not exists (
             select 1 from public.player_documents d
              where d.player_id = v_player.id and d.requirement_id = r.id
+               and d.organizacion_id = v_player.organizacion_id
+               and d.torneo_id = v_player.torneo_id
+               and d.categoria_id = v_player.categoria_id
+               and d.equipo_id = v_player.equipo_id
                and d.status = 'aprobado'
                and (not r.requiere_vencimiento or d.vencimiento >= current_date)
           ))
@@ -143,6 +147,9 @@ begin
           (r.scope = 'team' and not exists (
             select 1 from public.team_documents d
              where d.equipo_id = v_player.equipo_id and d.requirement_id = r.id
+               and d.organizacion_id = v_player.organizacion_id
+               and d.torneo_id = v_player.torneo_id
+               and d.categoria_id = v_player.categoria_id
                and d.status = 'aprobado'
                and (not r.requiere_vencimiento or d.vencimiento >= current_date)
           ))
@@ -335,12 +342,19 @@ begin
               (r.scope = 'player' and not exists (
                 select 1 from public.player_documents d
                 where d.player_id = tp.id and d.requirement_id = r.id
+                  and d.organizacion_id = tp.organizacion_id
+                  and d.torneo_id = tp.torneo_id
+                  and d.categoria_id = tp.categoria_id
+                  and d.equipo_id = tp.equipo_id
                   and d.status = 'aprobado'
                   and (not r.requiere_vencimiento or d.vencimiento >= current_date)
               ))
               or (r.scope = 'team' and not exists (
                 select 1 from public.team_documents d
                 where d.equipo_id = tp.equipo_id and d.requirement_id = r.id
+                  and d.organizacion_id = tp.organizacion_id
+                  and d.torneo_id = tp.torneo_id
+                  and d.categoria_id = tp.categoria_id
                   and d.status = 'aprobado'
                   and (not r.requiere_vencimiento or d.vencimiento >= current_date)
               ))
