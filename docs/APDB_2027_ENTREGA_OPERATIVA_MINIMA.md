@@ -9,6 +9,14 @@ La aplicación existente `index_online.html` + `app_online.js`, con el adaptador
 
 El constructor correspondiente es `tools/build-apdb-staging.cjs`. El ZIP `build-cpanel-private-package.ps1` es deliberadamente sintético/offline y no cumple la entrega operativa solicitada.
 
+## Avances verificados el 23/11/2026
+
+- El constructor genera ahora tanto `index_online.html` como `index.html` **idénticos** para que la subcarpeta institucional abra la aplicación desde su raíz. El contrato se ejecutó exitosamente: https://github.com/nahuelacuna983-hash/liga-maxi/actions/runs/45208216645
+- El frontend de staging ya no consulta un ID fallback vacío cuando aún no hay torneo visible; conserva la búsqueda de un torneo persistido con partidos (el staging existente tiene uno sintético con 7 partidos y otro borrador sin partidos).
+- Matriz read-only del predicado documental contra staging: Asociación puede ambos equipos, Delegado solo el asignado, identidad sin permisos ninguno. **No** es prueba HTTP/JWT real; ver `docs/APDB_2027_REVISION_STAGING_20261123.md`.
+- El bucket `documentos` se encuentra privado y contiene **cero objetos** en staging; hay dos filas sintéticas de `team_documents`, insuficientes para certificar recuperación desde Storage. Requiere carga/descarga segura con archivos de prueba reales y usuarios autenticados.
+- Las suites aisladas RLS y Supabase han sido aprobadas en commits previos. **No** validan por sí solas el staging persistente ni habilitan el despliegue institucional.
+
 ## Puertas obligatorias antes de publicar
 
 1. **Fuente:** fijar commit aprobado y conservar paquete, manifiesto/hash y un respaldo del código publicado previamente.
