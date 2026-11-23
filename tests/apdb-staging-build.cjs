@@ -29,6 +29,7 @@ try {
   assert.ok(!html.includes("YOUR_STAGING_PUBLISHABLE_OR_ANON_KEY"));
   const app = fs.readFileSync(path.join(outputPath, "app_online.js"), "utf8");
   assert.ok(app.includes("window.APDB_STAGING === true"), "staging guard must remain enabled");
+  assert.ok(app.includes("if (!torneo && TORNEO_ID_FALLBACK)"), "missing guarded tournament fallback");
   for (const forbidden of [
     "https://eshbydpsmypflfxpmhyk.supabase.co",
     "7d0971e3-66ee-4791-bcbf-bace1d2fefb9",
