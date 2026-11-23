@@ -179,4 +179,49 @@ revoke all on function public.apdb_set_player_eligibility(uuid,text,text) from p
 revoke all on function public.apdb_get_player_eligibility(uuid) from public, anon, authenticated;
 grant execute on function public.apdb_set_player_eligibility(uuid,text,text) to authenticated;
 grant execute on function public.apdb_get_player_eligibility(uuid) to authenticated;
+-- Association-only candidate list. Never expose the legacy document view
+-- or all team_players to authenticated users to populate this selector.
+create function public.apdb_list_player_eligibility_candidates(p_category_id uuid)
+returns table (player_id uuid, equipo_nombre text, nombre text)
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+declare
+  v_actor public.app_users%rowtype;
+begin
+  select * into v_actor from public.app_users
+  where auth_user_id = auth.uid() and active and role in ('admin_general','asociacion');
+  if not found then
+    raise exception using errcode = '42501', message = 'identidad institucional requerida';
+  end if;
+  if not exists (
+    select 1 from public.app_user_permissions p
+    where p.user_id = v_actor.id and p.organizacion_id = v_actor.organizacion_id
+      and p.categoria_id = p_category_id and p.can_review_documents
+  ) then
+    raise exception using errcode = '42501', message = 'sin permiso de lectura institucional';
+  end if;
+  return query
+    select tp.id, tp.equipo_nombre, tp.nombre
+    from public.team_players tp
+    join public.torneos t on t.id = tp.torneo_id and t.organizacion_id = v_actor.organizacion_id
+    join public.categorias c on c.id = tp.categoria_id and c.torneo_id = t.id
+    join public.equipos e on e.id = tp.equipo_id and e.categoria_id = c.id
+    where tp.categoria_id = p_category_id
+      and tp.organizacion_id = v_actor.organizacion_id
+      and t.temporada = '2027'
+      and tp.activo
+      and exists (
+        select 1 from public.app_user_permissions p
+        where p.user_id = v_actor.id and p.organizacion_id = tp.organizacion_id
+          and p.torneo_id = tp.torneo_id and p.categoria_id = tp.categoria_id
+          and p.can_review_documents
+          and (p.equipo_id is null or p.equipo_id = tp.equipo_id)
+      )
+    order by tp.equipo_nombre, tp.nombre, tp.id;
+end;
+$$;
+revoke all on function public.apdb_list_player_eligibility_candidates(uuid) from public, anon, authenticated;
+grant execute on function public.apdb_list_player_eligibility_candidates(uuid) to authenticated;
 commit;
