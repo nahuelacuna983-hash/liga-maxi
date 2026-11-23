@@ -1731,6 +1731,37 @@ function renderDecisionesDeportivasCategoria(nombreCategoria) {
     : "Sin decisión institucional registrada para el jugador seleccionado.";
 }
 
+async function cargarHistorialDeportivoJugador() {
+  const categoriaNombre = $("asociacion-categoria")?.value || "";
+  const categoriaId = estado.categorias.find((cat) => cat.nombre === categoriaNombre)?.id;
+  const playerId = $("apdb-eligibility-player")?.value || "";
+  const history = $("apdb-eligibility-history");
+  if (!history) return;
+  if (!estado.asociacionDesbloqueada || String(temporadaDocumentalActiva()) !== "2027" || !categoriaId || !playerId) {
+    history.textContent = "Seleccioná un jugador para consultar sus decisiones anteriores.";
+    return;
+  }
+  history.textContent = "Consultando historial institucional...";
+  const { data, error } = await supabaseClient.rpc("apdb_get_player_eligibility_history", {
+    p_player_id: playerId
+  });
+  // Un cambio de jugador o categoría durante el pedido invalida su respuesta.
+  if ($("apdb-eligibility-player")?.value !== playerId ||
+      $("asociacion-categoria")?.value !== categoriaNombre ||
+      !estado.asociacionDesbloqueada) return;
+  if (error) {
+    history.textContent = "Historial no disponible: " + error.message;
+    return;
+  }
+  if (!(data || []).length) {
+    history.textContent = "Este jugador todavía no tiene decisiones institucionales registradas.";
+    return;
+  }
+  history.innerHTML = `<ol>${data.map((item) =>
+    `<li><strong>${escapeHtml(item.status)}</strong> — ${escapeHtml(item.actor_name)} — ${escapeHtml(new Date(item.decided_at).toLocaleString("es-AR"))}. ${escapeHtml(item.reason)}</li>`
+  ).join("")}</ol>`;
+}
+
 async function guardarDecisionDeportivaAsociacion(status) {
   const nombreCategoria = $("asociacion-categoria")?.value || "";
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
@@ -1763,6 +1794,7 @@ async function guardarDecisionDeportivaAsociacion(status) {
       return;
     }
     await cargarDecisionesDeportivasCategoria(nombreCategoria);
+    await cargarHistorialDeportivoJugador();
     renderListaHabilitadosArbitros(nombreCategoria);
     setStatus(statusNode, "Decisión institucional registrada.", "ok");
     if ($("apdb-eligibility-reason")) $("apdb-eligibility-reason").value = "";
@@ -8700,8 +8732,10 @@ async function inicializarAsociacion() {
   $("admin-delegado-revocar")?.addEventListener("click", revocarAlcanceDelegado);
   $("apdb-eligibility-approve")?.addEventListener("click", () => guardarDecisionDeportivaAsociacion("habilitado"));
   $("apdb-eligibility-suspend")?.addEventListener("click", () => guardarDecisionDeportivaAsociacion("suspendido"));
-  $("apdb-eligibility-player")?.addEventListener("change", () =>
-    renderDecisionesDeportivasCategoria($("asociacion-categoria")?.value || ""));
+  $("apdb-eligibility-player")?.addEventListener("change", () => {
+    renderDecisionesDeportivasCategoria($("asociacion-categoria")?.value || "");
+    cargarHistorialDeportivoJugador();
+  });
   $("admin-delegado-categoria")?.addEventListener("change", poblarEquiposAltaAdministrativa);
 
   poblarSelectCategorias("asociacion-categoria", estado.categorias);
