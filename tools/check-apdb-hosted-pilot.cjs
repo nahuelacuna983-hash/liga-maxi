@@ -43,8 +43,13 @@ const check = async () => {
     });
     // 30x to a login page may be valid SSO, but requires manual security review;
     // do not silently follow redirect to another domain or claim protected status.
-    assert.ok(denied(response.status),
-      label+" must not be public or redirect without review (status "+response.status+")");
+    if (expectedProtected) {
+      assert.ok([401,403].includes(response.status),
+        label+" must require authorization (401/403); 404 means package unverified (status "+response.status+")");
+    } else {
+      assert.ok(denied(response.status),
+        label+" contains a public sensitive file or unsafe redirect (status "+response.status+")");
+    }
     const cacheControl=(response.headers.get("cache-control") || "").toLowerCase();
     if(response.status === 401 || response.status === 403) {
       assert.ok(cacheControl.includes("no-store") || cacheControl.includes("private"),
