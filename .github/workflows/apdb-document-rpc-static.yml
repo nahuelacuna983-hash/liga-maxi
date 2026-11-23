@@ -4,6 +4,7 @@ on:
     branches:
       - codex/apdb-2027-document-view-security-preflight
       - codex/apdb-2027-institutional-security-candidate
+      - codex/apdb-2027-full-release-verification
   pull_request:
     paths:
       - app_online.js
