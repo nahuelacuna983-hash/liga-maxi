@@ -55,7 +55,9 @@ for (const file of files) {
     const legacyEnd = app.indexOf("function validarDelegado(clave)", legacyStart);
     assert.ok(legacyStart >= 0 && legacyEnd > legacyStart, "legacy key block changed: refusing unsafe package");
     app = app.slice(0, legacyStart) +
-      "const DELEGADOS = Object.freeze({});\\nconst CLAVES_ASOCIACION = Object.freeze([]);\\n\\n".replaceAll("\\\\n", "\\n") +
+      `const DELEGADOS = Object.freeze({});
+const CLAVES_ASOCIACION = Object.freeze([]);
+` +
       app.slice(legacyEnd);
     for (const legacyEntrypoint of ["desbloquearDelegado", "desbloquearAsociacion"]) {
       const signature = `async function ${legacyEntrypoint}() {`;
