@@ -27,7 +27,8 @@ test("cambio de Asociación a Delegado y recuperación sin heredar datos privado
   async function logout() {
     await page.locator("#tab-acceso").click();
     await page.locator("#auth-logout").click();
-    await expect(page.locator("#auth-session-bar")).toContainText("Sin usuario iniciado", { timeout: 10000 });
+    await expect(page.locator("#auth-session-bar")).toBeHidden({ timeout: 10000 });
+    await expect(page.locator("body")).not.toContainText("El acceso por claves sigue disponible durante la migracion");
     await expect(page.locator("#delegado-info")).toHaveText("");
   }
 
