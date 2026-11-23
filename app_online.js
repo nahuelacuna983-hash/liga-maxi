@@ -6303,11 +6303,15 @@ function renderSesionAuth() {
   const permiso = estado.permisosAuth?.[0];
   if (!estado.authUser) {
     bar.className = "auth-session-bar is-off";
-    bar.innerHTML = `<span>Sin usuario iniciado. El acceso por claves sigue disponible durante la migracion.</span>`;
+    bar.innerHTML = "";
+    bar.hidden = true;
+    bar.style.display = "none";
     if ($("auth-logout")) $("auth-logout").disabled = true;
     return;
   }
 
+  bar.hidden = false;
+  bar.style.display = "";
   bar.className = "auth-session-bar";
   bar.innerHTML = `
     <span>Usuario: ${escapeHtml(permiso?.display_name || estado.authUser.email || "Usuario")} · Rol: ${escapeHtml(permiso?.role || "sin permisos")}</span>
