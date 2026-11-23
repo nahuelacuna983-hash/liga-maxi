@@ -3,7 +3,7 @@ const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const src=fs.readFileSync("app_online.js","utf8");
 const fn=(name)=>{
- const needle="async function "+name+"() {";
+ const needle="async function "+name+"(";
  const a=src.indexOf(needle);
  assert(a>=0,"Missing async export "+name);
  const b=src.indexOf("\nfunction ",a+needle.length);
