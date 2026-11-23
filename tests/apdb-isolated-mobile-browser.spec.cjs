@@ -48,6 +48,8 @@ test("APdB 2027: celular abre portada pública y permite ingreso de Asociación"
 
   // The real secure-result mode must expose login without test-only DOM edits.
   await expect(page.locator("#tab-acceso")).toBeVisible({ timeout: 30000 });
+  await expect(page.locator("#auth-session-bar")).toBeHidden();
+  await expect(page.locator("body")).not.toContainText("El acceso por claves sigue disponible durante la migracion");
   await page.locator("#tab-acceso").click();
   await expect(page.locator("#auth-email")).toBeVisible();
   await page.locator("#auth-email").fill(credentials.email);
@@ -57,6 +59,7 @@ test("APdB 2027: celular abre portada pública y permite ingreso de Asociación"
   await expect(page.locator("#auth-status")).toContainText("Ingreso correcto", {
     timeout: 30000
   });
+  await expect(page.locator("#auth-session-bar")).toBeVisible();
   await page.locator("#tab-publico").click();
   await expect(page.locator("#vista-publico")).toBeVisible();
 
