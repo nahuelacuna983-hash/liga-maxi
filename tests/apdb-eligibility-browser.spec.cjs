@@ -39,6 +39,9 @@ test("Asociación habilita, suspende y recupera decisión; delegado no modifica"
   await expect(page.locator("#apdb-eligibility-status")).toContainText("Decisión institucional registrada.");
   await page.locator("#apdb-eligibility-player").selectOption(data.playerId);
   await expect(page.locator("#apdb-eligibility-summary")).toContainText("habilitado");
+  const approvedForReferee = await page.evaluate((category) => window.calcularHabilitadosCategoria(category), data.categoryName);
+  expect(approvedForReferee).toHaveLength(1);
+  expect(approvedForReferee[0].habilitado).toBe("SI");
   await page.locator("#apdb-eligibility-reason").fill("Suspensión cautelar de prueba");
   page.once("dialog",d=>d.accept());
   const suspend=page.waitForResponse(r=>r.url().includes("/rest/v1/rpc/apdb_set_player_eligibility")&&r.request().method()==="POST");
@@ -46,6 +49,10 @@ test("Asociación habilita, suspende y recupera decisión; delegado no modifica"
   expect((await suspend).status()).toBe(200);
   await page.locator("#apdb-eligibility-player").selectOption(data.playerId);
   await expect(page.locator("#apdb-eligibility-summary")).toContainText("suspendido");
+  const suspendedForReferee = await page.evaluate((category) => window.calcularHabilitadosCategoria(category), data.categoryName);
+  expect(suspendedForReferee).toHaveLength(1);
+  expect(suspendedForReferee[0].habilitado).toBe("NO");
+  expect(suspendedForReferee[0].faltantes).toContain("Habilitación suspendida");
 
   await page.reload({waitUntil:"domcontentloaded"});
   await signIn(page,data.association);
