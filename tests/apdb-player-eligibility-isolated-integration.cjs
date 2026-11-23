@@ -58,7 +58,18 @@ async function login(email) {
     assert.equal((await rpc(ids.delegate.token,"habilitado","Intento delegado")).code,403);
     assert.equal((await rpc(ids.foreign.token,"habilitado","Otra organizacion")).code,403);
     assert.equal((await rpc(ids.association.token,"habilitado","Sin permiso")).code,403);
+    const list = (token) => http("/rest/v1/rpc/apdb_list_player_eligibility_candidates", {
+      token, body: { p_category_id: cA }
+    });
+    assert.equal((await list(null)).code, 401, "Anonymous candidate listing forbidden");
+    assert.equal((await list(ids.delegate.token)).code, 403, "Delegate candidate listing forbidden");
+    assert.equal((await list(ids.foreign.token)).code, 403, "Other organization candidate listing forbidden");
+    assert.equal((await list(ids.association.token)).code, 403, "Unscoped association candidate listing forbidden");
     await db.query("insert into public.app_user_permissions(user_id,organizacion_id,torneo_id,categoria_id,can_review_documents) values($1,$2,$3,$4,true)",[ids.association.id,orgA,tA,cA]);
+    const candidates = await list(ids.association.token);
+    assert.equal(candidates.code, 200, JSON.stringify(candidates.data));
+    assert.deepEqual(candidates.data.map((row) => row.player_id), [player]);
+    assert.equal(candidates.data[0].nombre, "Jugador CI");
     assert.equal((await rpc(ids.association.token,"habilitado","Catalogo pendiente")).code,400,"No catalog must refuse");
     await db.query("insert into public.document_requirements(id,organizacion_id,torneo_id,categoria_id,nombre,scope,obligatorio,activo) values($1,$2,$3,$4,'Aptitud sintetica','player',true,true)",[req,orgA,tA,cA]);
     assert.equal((await rpc(ids.association.token,"habilitado","Falta documento")).code,400,"Missing approved document must refuse");
