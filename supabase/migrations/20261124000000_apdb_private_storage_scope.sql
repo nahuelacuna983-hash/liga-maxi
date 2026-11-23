@@ -108,7 +108,13 @@ begin
         and r.scope = 'team'
         and r.categoria_id = v_category
         and r.torneo_id = v_tournament and r.organizacion_id = v_org
-        and (p_action = 'upload' or d.storage_path = p_name)
+        and (
+          p_action = 'upload' or d.storage_path = p_name
+          or exists (
+            select 1 from public.document_files df
+            where df.team_document_id = d.id and df.storage_path = p_name
+          )
+        )
     ) into v_authorized;
   end if;
   return coalesce(v_authorized, false);
