@@ -1,0 +1,40 @@
+name: APdB institutional package contract
+
+on:
+  push:
+    branches:
+      - codex/apdb-2027-institutional-package-guard
+  pull_request:
+    paths:
+      - 'tools/build-apdb-staging.cjs'
+      - 'tests/apdb-staging-build.cjs'
+      - '.github/workflows/apdb-institutional-package-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  packaging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate official app and adapter syntax
+        run: |
+          node --check app_online.js
+          node --check apdb-administrative-adapter.js
+          node --check tools/build-apdb-staging.cjs
+          node --check tests/apdb-staging-build.cjs
+      - name: Build an ephemeral staging package and verify isolation
+        run: |
+          node tests/apdb-staging-build.cjs
+          node tests/apdb-online-config-contract.cjs
+          node tests/institutional-package-contract.cjs
+      - name: Check repository patch whitespace
+        run: git diff --check HEAD~1 HEAD

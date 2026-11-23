@@ -18,6 +18,9 @@ assert.match(config.publicBasePath, /^\/[A-Za-z0-9._/-]+\/$/, "staging must have
 assert.ok(!fs.existsSync(outputPath), `output already exists; refusing to overwrite: ${outputPath}`);
 
 const files = ["index_online.html", "app_online.js", "apdb-administrative-adapter.js", "sw.js", "manifest.json", "icon-192.png", "icon-512.png"];
+const productionUrl = "https://eshbydpsmypflfxpmhyk.supabase.co";
+const productionTournament = "7d0971e3-66ee-4791-bcbf-bace1d2fefb9";
+const productionPublishableKey = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
 const bootstrap = `<script>window.APDB_STAGING=true;window.APDB_SECURE_RESULT_RPC=true;window.APDB_SUPABASE_URL=${JSON.stringify(config.supabaseUrl)};window.APDB_SUPABASE_ANON_KEY=${JSON.stringify(config.supabaseAnonKey)};</script>`;
 const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
 manifest.start_url = config.publicBasePath;
@@ -30,6 +33,20 @@ for (const file of files) {
     const html = fs.readFileSync(file, "utf8");
     assert.ok(html.includes('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'), "Supabase client script not found");
     fs.writeFileSync(destination, html.replace('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>', `${bootstrap}\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`));
+  } else if (file === "app_online.js") {
+    let app = fs.readFileSync(file, "utf8");
+    assert.ok(app.includes(productionUrl), "source expected to contain a known production fallback");
+    assert.ok(app.includes(productionTournament), "source expected to contain a known tournament fallback");
+    assert.ok(app.includes(productionPublishableKey), "source expected to contain a known key fallback");
+    app = app.replaceAll(productionUrl, "");
+    app = app.replaceAll(productionTournament, "");
+    app = app.replaceAll(productionPublishableKey, "");
+    // The staging bootstrap must supply its own project configuration.
+    assert.ok(app.includes("window.APDB_STAGING === true"), "missing staging fail-closed guard");
+    for (const forbidden of [productionUrl, productionTournament, productionPublishableKey]) {
+      assert.ok(!app.includes(forbidden), "production reference remained in staged JavaScript");
+    }
+    fs.writeFileSync(destination, app);
   } else if (file === "manifest.json") {
     fs.writeFileSync(destination, `${JSON.stringify(manifest, null, 2)}\n`);
   } else {
