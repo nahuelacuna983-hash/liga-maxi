@@ -10,6 +10,8 @@ on:
       - 'tests/apdb-staging-build.cjs'
       - 'tests/apdb-package-http-smoke.cjs'
       - 'tests/apdb-package-rollback-rehearsal.cjs'
+      - 'tools/check-apdb-hosted-pilot.cjs'
+      - 'tests/apdb-hosted-pilot-gate.cjs'
       - 'docs/apdb-2027/PACK_C_D_ACEPTACION.md'
       - '.github/workflows/apdb-pack-cd-gates.yml'
 permissions:
@@ -30,6 +32,8 @@ jobs:
           node --check tests/apdb-staging-build.cjs
           node --check tests/apdb-package-http-smoke.cjs
           node --check tests/apdb-package-rollback-rehearsal.cjs
+          node --check tools/check-apdb-hosted-pilot.cjs
+          node --check tests/apdb-hosted-pilot-gate.cjs
           node --check app_online.js
       - name: Build, tamper test, and validate source separation
         run: |
@@ -40,3 +44,5 @@ jobs:
         run: node tests/apdb-package-http-smoke.cjs
       - name: Offline release and rollback rehearsal
         run: node tests/apdb-package-rollback-rehearsal.cjs
+      - name: Protected hosted pilot preflight (localhost synthetic scenarios only)
+        run: node tests/apdb-hosted-pilot-gate.cjs
