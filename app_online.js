@@ -190,7 +190,7 @@ async function cargarTorneoActivo() {
     }
   }
 
-  if (!torneo) {
+  if (!torneo && TORNEO_ID_FALLBACK) {
     const { data: fallback, error: errorFallback } = await supabaseClient
       .from("torneos")
       .select("id, nombre, temporada, tipo, estado")
