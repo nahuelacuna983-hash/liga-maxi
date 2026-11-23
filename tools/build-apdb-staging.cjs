@@ -59,6 +59,8 @@ for (const file of files) {
 const CLAVES_ASOCIACION = Object.freeze([]);
 ` +
       app.slice(legacyEnd);
+    assert.ok(app.includes("DELEGADOS.admin123"), "unexpected legacy admin fallback");
+    app = app.replaceAll("DELEGADOS.admin123", "{}");
     for (const legacyEntrypoint of ["desbloquearDelegado", "desbloquearAsociacion"]) {
       const signature = `async function ${legacyEntrypoint}() {`;
       assert.ok(app.includes(signature), `missing ${legacyEntrypoint}: cannot disable legacy login`);
