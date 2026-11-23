@@ -1,0 +1,28 @@
+name: APdB 2027 document RPC contract (isolated)
+on:
+  push:
+    branches:
+      - codex/apdb-2027-document-view-security-preflight
+  pull_request:
+    paths:
+      - app_online.js
+      - tests/apdb-document-rpc-contract.cjs
+      - supabase/patches/apdb_2027_team_documents_secure_rpc_draft.sql
+      - .github/workflows/apdb-document-rpc-static.yml
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: node --check app_online.js
+      - name: Verify scoped RPC contract
+        run: node tests/apdb-document-rpc-contract.cjs
