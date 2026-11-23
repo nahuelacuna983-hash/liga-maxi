@@ -46,7 +46,7 @@ async function login(email) {
     for (const [key, org, role] of users) {
       const email = "eligibility-" + key + "-" + run + "@example.invalid";
       ids[key] = { id: await createUser(email), email, org, role };
-      await db.query("insert into public.app_users(id,auth_user_id,organizacion_id,display_name,role) values($1,$1,$2,$3,$4)", [ids[key].id,ids[key].id,org,key,role]);
+      await db.query("insert into public.app_users(id,auth_user_id,organizacion_id,display_name,role) values($1,$1,$2,$3,$4)", [ids[key].id,org,key,role]);
       ids[key].token = await login(email);
     }
     await db.query("insert into public.torneos(id,organizacion_id,nombre,temporada) values($1,$2,'Elegibilidad CI','2027')", [tA,orgA]);
