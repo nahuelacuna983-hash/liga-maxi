@@ -121,7 +121,7 @@ begin
       where r.activo and r.obligatorio
         and r.organizacion_id = v_player.organizacion_id
         and r.torneo_id = v_player.torneo_id
-        and r.categoria_id = v_player.categoria_id
+        and (r.categoria_id = v_player.categoria_id or r.categoria_id is null)
     ) then
       raise exception using errcode = '23514', message = 'requisitos institucionales aun no configurados';
     end if;
@@ -131,7 +131,7 @@ begin
       where r.activo and r.obligatorio
         and r.organizacion_id = v_player.organizacion_id
         and r.torneo_id = v_player.torneo_id
-        and r.categoria_id = v_player.categoria_id
+        and (r.categoria_id = v_player.categoria_id or r.categoria_id is null)
         and (
           (r.scope = 'player' and not exists (
             select 1 from public.player_documents d
@@ -323,14 +323,14 @@ begin
           where r.activo and r.obligatorio
             and r.organizacion_id = tp.organizacion_id
             and r.torneo_id = tp.torneo_id
-            and r.categoria_id = tp.categoria_id
+            and (r.categoria_id = tp.categoria_id or r.categoria_id is null)
         )
         and not exists (
           select 1 from public.document_requirements r
           where r.activo and r.obligatorio
             and r.organizacion_id = tp.organizacion_id
             and r.torneo_id = tp.torneo_id
-            and r.categoria_id = tp.categoria_id
+            and (r.categoria_id = tp.categoria_id or r.categoria_id is null)
             and (
               (r.scope = 'player' and not exists (
                 select 1 from public.player_documents d
