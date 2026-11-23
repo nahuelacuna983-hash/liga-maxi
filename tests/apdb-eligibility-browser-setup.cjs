@@ -16,6 +16,7 @@ const password = "Browser-"+crypto.randomBytes(16).toString("hex")+"!aA";
 const org = "10000000-0000-0000-0000-000000000001";
 const tournamentId = crypto.randomUUID(), categoryId = crypto.randomUUID(), teamId = crypto.randomUUID(), playerId = crypto.randomUUID();
 const categoryName = "Elegibilidad Chromium "+run, teamName = "Equipo elegibilidad "+run;
+const optionalRequirement=crypto.randomUUID(), optionalDocument=crypto.randomUUID();
 async function auth(pathname, body, token) {
   const key=process.env.SUPABASE_SERVICE_ROLE_KEY;
   const res=await fetch(base+pathname,{method:"POST",headers:{
@@ -50,6 +51,11 @@ async function auth(pathname, body, token) {
         await db.query("insert into public.player_documents(id,player_id,requirement_id,organizacion_id,torneo_id,categoria_id,equipo_id,equipo_nombre,status) values($1,$2,$3,$4,$5,$6,$7,$8,'aprobado')",[documentId,playerId,requirementId,org,tournamentId,categoryId,teamId,teamName]);
       }
     }
+    // Optional synthetic document exercises the delegate upload -> Association
+    // observation -> delegate correction -> approval UI without altering the
+    // existing mandatory eligibility scenario.
+    await db.query("insert into public.document_requirements(id,organizacion_id,torneo_id,categoria_id,nombre,scope,obligatorio,activo) values($1,$2,$3,$4,'Anexo sintético CI','player',false,true)",[optionalRequirement,org,tournamentId,categoryId]);
+    await db.query("insert into public.player_documents(id,player_id,requirement_id,organizacion_id,torneo_id,categoria_id,equipo_id,equipo_nombre,status) values($1,$2,$3,$4,$5,$6,$7,$8,'pendiente')",[optionalDocument,playerId,optionalRequirement,org,tournamentId,categoryId,teamId,teamName]);
     // A visible fixture ensures the official application discovers this 2027 season.
     await db.query("insert into public.partidos(id,categoria_id,local,visitante,jornada,fecha) values($1,$2,$3,'Rival sintetico',1,'2027-07-01')",[crypto.randomUUID(),categoryId,teamName]);
   }finally{await db.end();}
@@ -57,7 +63,7 @@ async function auth(pathname, body, token) {
   fs.writeFileSync(file,JSON.stringify({
     association:{email:associationEmail,password},
     delegate:{email:delegateEmail,password},
-    categoryName,playerId,teamName
+    categoryName,playerId,teamName,documentId:optionalDocument
   }),{mode:0o600});
   fs.appendFileSync(process.env.GITHUB_ENV,"APDB_ELIGIBILITY_BROWSER_FILE="+file+"\n");
   console.log("APDB_ELIGIBILITY_BROWSER_FIXTURE_READY");
