@@ -64,9 +64,12 @@ async function create(role,organization,team,review){
     const unrelatedRequirements=await call(requirementsPath,{token:foreign.token,method:"GET"});
     assert.equal(unrelatedRequirements.status,200);
     assert.equal(unrelatedRequirements.data.length,0,"Foreign organization cannot discover private requirement catalog");
-    // The official app consumes this view directly; test its effective scope.
-    const viewPath="/rest/v1/v_player_documents_admin?categoria_id=eq."+category+"&select=id,equipo_id";
-    const view = (token) => call(viewPath,{token,method:"GET"});
+    // The official app uses a category-scoped SECURITY DEFINER RPC; direct view access is denied.
+    const directPlayerView=await call("/rest/v1/v_player_documents_admin?select=id",{token:delegates[0].token,method:"GET"});
+    assert.notEqual(directPlayerView.status,200,"Legacy player view must reject authenticated direct SELECT");
+    const view=(token)=>call("/rest/v1/rpc/apdb_list_player_documents",{
+      token,body:{p_categoria_id:category}
+    });
     const own = await view(delegates[0].token);
     assert.equal(own.status,200,JSON.stringify(own.data));
     assert.equal(own.data.length,1,"Delegado can see only own team's player documents");
@@ -179,11 +182,13 @@ async function create(role,organization,team,review){
       p_document_id:teamDocument,p_status:"aprobado",p_actor:"Spoof",p_observacion:null
     }});
     assert.equal(pendingReview.status,200,"Association can approve team multiupload");
-    const teamViewPath="/rest/v1/v_team_documents_admin?categoria_id=eq."+category+"&select=id,equipo_id";
-    const visibleTeam=await call(teamViewPath,{token:delegates[0].token,method:"GET"});
+    const directTeamView=await call("/rest/v1/v_team_documents_admin?select=id",{token:delegates[0].token,method:"GET"});
+    assert.notEqual(directTeamView.status,200,"Legacy team view must reject authenticated direct SELECT");
+    const teamView=(token)=>call("/rest/v1/rpc/apdb_list_team_documents",{token,body:{p_categoria_id:category}});
+    const visibleTeam=await teamView(delegates[0].token);
     assert.equal(visibleTeam.status,200,"Team view allowed "+JSON.stringify(visibleTeam.data));
     assert.equal(visibleTeam.data.length,1);
-    const invisibleTeam=await call(teamViewPath,{token:delegates[1].token,method:"GET"});
+    const invisibleTeam=await teamView(delegates[1].token);
     assert.equal(invisibleTeam.status,200);
     assert.equal(invisibleTeam.data.length,0,"Delegate cannot see another team institutional records");
     console.log("APDB_2027_PRIVATE_STORAGE_AUTH_HTTP_OK");

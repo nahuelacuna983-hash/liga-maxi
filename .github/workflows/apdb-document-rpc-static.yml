@@ -1,0 +1,94 @@
+name: APdB 2027 document RPC contract (isolated)
+on:
+  push:
+    branches:
+      - codex/apdb-2027-document-view-security-preflight
+      - codex/apdb-2027-institutional-security-candidate
+      - codex/apdb-2027-full-release-verification
+  pull_request:
+    paths:
+      - app_online.js
+      - tests/apdb-document-rpc-contract.cjs
+      - supabase/patches/apdb_2027_team_documents_secure_rpc_draft.sql
+      - .github/workflows/apdb-document-rpc-static.yml
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: node --check app_online.js
+      - name: Verify scoped RPC contract
+        run: node tests/apdb-document-rpc-contract.cjs
+
+  disposable-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: apdb_synthetic_only
+          POSTGRES_DB: apdb_synthetic_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGPASSWORD: apdb_synthetic_only
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGDATABASE: apdb_synthetic_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client if unavailable
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+          fi
+      - name: Compile patch and exercise role isolation on synthetic schema
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f tests/security/apdb_document_rpc_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/patches/apdb_2027_team_documents_secure_rpc_draft.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/security/apdb_document_rpc_isolation.sql
+
+      - name: Prove synthetic PostgreSQL backup and restore
+        run: |
+          # Use the same pg_dump/pg_restore major version as the PostgreSQL 16 server.
+          # A newer Ubuntu client can emit unsupported transaction_timeout settings.
+          PG_CONTAINER="$(docker ps --filter ancestor=postgres:16 --format '{{.ID}}' | head -n 1)"
+          test -n "$PG_CONTAINER"
+          docker exec -e PGPASSWORD="$PGPASSWORD" "$PG_CONTAINER" pg_dump -U postgres -d apdb_synthetic_test --format=custom --file=/tmp/apdb-2027-synthetic.dump
+          docker cp "$PG_CONTAINER":/tmp/apdb-2027-synthetic.dump /tmp/apdb-2027-synthetic.dump
+          test -s /tmp/apdb-2027-synthetic.dump
+          sha256sum /tmp/apdb-2027-synthetic.dump
+          docker exec -e PGPASSWORD="$PGPASSWORD" "$PG_CONTAINER" createdb -U postgres apdb_2027_restored
+          docker exec -e PGPASSWORD="$PGPASSWORD" "$PG_CONTAINER" pg_restore -U postgres --exit-on-error --dbname=apdb_2027_restored /tmp/apdb-2027-synthetic.dump
+          PGDATABASE=apdb_2027_restored psql -X -v ON_ERROR_STOP=1 -f tests/security/apdb_document_rpc_isolation.sql
+          echo 'APDB_SYNTHETIC_BACKUP_RESTORE_OK'
+
+  institutional-package-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Official staging package contract
+        run: |
+          node tests/apdb-staging-build.cjs
+          node tests/apdb-online-config-contract.cjs
+          node tests/institutional-package-contract.cjs
