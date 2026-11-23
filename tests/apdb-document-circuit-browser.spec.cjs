@@ -29,7 +29,11 @@ test("Delegado carga y corrige PDF privado; Asociación observa y aprueba", asyn
     await page.locator(role==="delegate"?"#tab-delegados":"#tab-asociacion").click();
     await page.locator(role==="delegate"?"#delegado-categoria":"#asociacion-categoria")
       .selectOption({label:cfg.categoryName});
-    if(role==="association")await page.locator('.assoc-nav-btn[data-asociacion-panel="documentacion"]').click();
+    if(role==="association"){
+      await page.locator('.assoc-nav-btn[data-asociacion-panel="documentacion"]').click();
+      await expect(page.locator("#habilitados-filtro-equipo")).toContainText(cfg.teamName,{timeout:20000});
+      await page.locator("#habilitados-filtro-equipo").selectOption({label:cfg.teamName});
+    }
   };
   const docInput=()=>page.locator(`.player-doc-upload-input[data-document-id="${cfg.documentId}"]`);
   const review=(status)=>page.locator(`.doc-review-btn[data-document-id="${cfg.documentId}"][data-document-scope="player"][data-status="${status}"]`);
