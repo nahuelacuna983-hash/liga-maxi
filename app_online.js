@@ -1084,9 +1084,7 @@ async function cargarDocumentosCategoria(categoriaId, force = false) {
   }
 
   const { data, error } = await supabaseClient
-    .from("v_team_documents_admin")
-    .select("id, requirement_id, requirement_nombre, categoria_id, equipo_id, equipo_nombre, status, vencimiento, observacion, storage_path, file_name, file_type, file_size, reviewed_at, updated_at, created_at")
-    .eq("categoria_id", categoriaId);
+    .rpc("apdb_list_team_documents", { p_categoria_id: categoriaId });
 
   if (error) {
     console.warn("No se pudieron cargar documentos por equipo:", error.message);
@@ -1106,9 +1104,7 @@ async function cargarJugadoresCategoria(categoriaId, force = false) {
   }
 
   const { data, error } = await supabaseClient
-    .from("v_player_documents_admin")
-    .select("*")
-    .eq("categoria_id", categoriaId)
+    .rpc("apdb_list_player_documents", { p_categoria_id: categoriaId })
     .order("equipo_nombre", { ascending: true })
     .order("jugador_nombre", { ascending: true });
 
@@ -1165,9 +1161,7 @@ async function cargarDocumentosJugadoresCategoria(categoriaId, force = false) {
   }
 
   const { data, error } = await supabaseClient
-    .from("v_player_documents_admin")
-    .select("*")
-    .eq("categoria_id", categoriaId);
+    .rpc("apdb_list_player_documents", { p_categoria_id: categoriaId });
 
   if (error) {
     console.warn("No se pudieron cargar documentos por jugador:", error.message);
