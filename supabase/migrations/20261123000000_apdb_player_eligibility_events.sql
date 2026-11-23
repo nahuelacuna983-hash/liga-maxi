@@ -224,4 +224,98 @@ end;
 $$;
 revoke all on function public.apdb_list_player_eligibility_candidates(uuid) from public, anon, authenticated;
 grant execute on function public.apdb_list_player_eligibility_candidates(uuid) to authenticated;
+-- Referee-ready view: verified on each read against the latest institutional
+-- decision AND today's mandatory document status. Never trust browser caches.
+create function public.apdb_get_referee_eligibility(p_category_id uuid)
+returns table (
+  player_id uuid,
+  equipo_nombre text,
+  nombre text,
+  dni text,
+  dorsal text,
+  documentacion_completa boolean,
+  habilitado boolean,
+  decision_status text,
+  motivo text,
+  decided_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+declare
+  v_actor public.app_users%rowtype;
+begin
+  select * into v_actor from public.app_users
+   where auth_user_id = auth.uid() and active and role in ('admin_general','asociacion');
+  if not found or not exists (
+    select 1 from public.app_user_permissions p
+    where p.user_id = v_actor.id and p.organizacion_id = v_actor.organizacion_id
+      and p.categoria_id = p_category_id and p.can_review_documents
+  ) then
+    raise exception using errcode = '42501', message = 'sin permiso para lista de arbitros';
+  end if;
+  return query
+    select tp.id, tp.equipo_nombre, tp.nombre, tp.dni, tp.dorsal,
+      docs.completa,
+      (docs.completa and latest.status = 'habilitado') as habilitado,
+      coalesce(latest.status, 'pendiente') as decision_status,
+      latest.reason, latest.created_at
+    from public.team_players tp
+    join public.torneos t on t.id = tp.torneo_id and t.organizacion_id = v_actor.organizacion_id
+    join public.categorias c on c.id = tp.categoria_id and c.torneo_id = t.id
+    join public.equipos e on e.id = tp.equipo_id and e.categoria_id = c.id
+    left join lateral (
+      select ev.status, ev.reason, ev.created_at
+      from public.apdb_player_eligibility_events ev
+      where ev.player_id = tp.id
+      order by ev.created_at desc, ev.id desc
+      limit 1
+    ) latest on true
+    cross join lateral (
+      select
+        exists (
+          select 1 from public.document_requirements r
+          where r.activo and r.obligatorio
+            and r.organizacion_id = tp.organizacion_id
+            and r.torneo_id = tp.torneo_id
+            and r.categoria_id = tp.categoria_id
+        )
+        and not exists (
+          select 1 from public.document_requirements r
+          where r.activo and r.obligatorio
+            and r.organizacion_id = tp.organizacion_id
+            and r.torneo_id = tp.torneo_id
+            and r.categoria_id = tp.categoria_id
+            and (
+              (r.scope = 'player' and not exists (
+                select 1 from public.player_documents d
+                where d.player_id = tp.id and d.requirement_id = r.id
+                  and d.status = 'aprobado'
+                  and (not r.requiere_vencimiento or d.vencimiento >= current_date)
+              ))
+              or (r.scope = 'team' and not exists (
+                select 1 from public.team_documents d
+                where d.equipo_id = tp.equipo_id and d.requirement_id = r.id
+                  and d.status = 'aprobado'
+                  and (not r.requiere_vencimiento or d.vencimiento >= current_date)
+              ))
+            )
+        ) as completa
+    ) docs
+    where tp.categoria_id = p_category_id
+      and tp.organizacion_id = v_actor.organizacion_id
+      and tp.activo and t.temporada = '2027'
+      and exists (
+        select 1 from public.app_user_permissions p
+        where p.user_id = v_actor.id and p.organizacion_id = tp.organizacion_id
+          and p.torneo_id = tp.torneo_id and p.categoria_id = tp.categoria_id
+          and p.can_review_documents
+          and (p.equipo_id is null or p.equipo_id = tp.equipo_id)
+      )
+    order by tp.equipo_nombre, tp.nombre, tp.id;
+end;
+$$;
+revoke all on function public.apdb_get_referee_eligibility(uuid) from public, anon, authenticated;
+grant execute on function public.apdb_get_referee_eligibility(uuid) to authenticated;
 commit;
