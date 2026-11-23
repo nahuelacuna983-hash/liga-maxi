@@ -21,16 +21,24 @@ const subjects = {
 };
 const pg = new Client({ connectionString: process.env.DATABASE_URL });
 async function visible(subject, role) {
-  await pg.query("RESET ROLE");
-  await pg.query("select set_config('request.jwt.claim.sub', $1, true)", [subject]);
-  await pg.query(`SET LOCAL ROLE ${role}`);
+  assert.ok(["authenticated", "anon"].includes(role), "Unexpected SQL role");
+  await pg.query("SAVEPOINT view_role_probe");
   try {
+    await pg.query("select set_config('request.jwt.claim.sub', $1, true)", [subject]);
+    await pg.query(`SET LOCAL ROLE ${role}`);
     const rows = await pg.query(
       "select equipo_id::text as team from public.v_team_documents_admin where categoria_id = $1 and file_name = 'simulado-no-existe.pdf' order by equipo_id",
       [CATEGORY]
     );
+    await pg.query("ROLLBACK TO SAVEPOINT view_role_probe");
+    await pg.query("RELEASE SAVEPOINT view_role_probe");
     return rows.rows.map(r => r.team);
-  } finally { await pg.query("RESET ROLE").catch(() => {}); }
+  } catch (error) {
+    await pg.query("ROLLBACK TO SAVEPOINT view_role_probe").catch(() => {});
+    await pg.query("RELEASE SAVEPOINT view_role_probe").catch(() => {});
+    if (role === "anon" && error.code === "42501") return [];
+    throw new Error(`role=${role} code=${error.code || "unknown"}: ${error.message}`);
+  }
 }
 async function main() {
   await pg.connect();
