@@ -33,6 +33,7 @@ jobs:
           node tests/apdb-2027-session-rpc-race-contract.cjs
           node tests/apdb-2027-player-document-expiry-contract.cjs
           node tests/app-online-administrative-onboarding-contract.cjs
+          node tests/apdb-document-rpc-contract.cjs
 
   eligibility-auth-http:
     runs-on: ubuntu-latest
