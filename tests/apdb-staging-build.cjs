@@ -35,6 +35,7 @@ try {
   assert.ok(app.includes("window.APDB_STAGING === true"), "staging guard must remain enabled");
   assert.ok(app.includes("const DELEGADOS = Object.freeze({});"), "legacy delegate lookup must be emptied");
   assert.ok(app.includes("const CLAVES_ASOCIACION = Object.freeze([]);"), "legacy admin lookup must be emptied");
+  assert.ok(!app.includes("admin123"), "old admin key reference must not remain anywhere in the package");
   for (const oldCredential of ['"admin123"', '"universal123"', '"meridiano123"', '"platense123"']) {
     assert.ok(!app.includes(oldCredential), `hardcoded legacy password leaked to package: ${oldCredential}`);
   }
