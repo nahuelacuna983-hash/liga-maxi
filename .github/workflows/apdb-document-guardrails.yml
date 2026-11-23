@@ -1,0 +1,26 @@
+name: APdB document guardrails
+on:
+  push:
+    branches:
+      - codex/apdb-2027-document-review-guardrails
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  document-guardrails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify JavaScript syntax
+        run: node --check app_online.js
+      - name: Verify administrative and documentary guardrails
+        run: |
+          node tests/apdb-document-review-reason-contract.cjs
+          node tests/apdb-delegate-player-deactivation-guardrails.cjs
+          node tests/app-online-administrative-onboarding-contract.cjs
