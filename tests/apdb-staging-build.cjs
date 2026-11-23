@@ -46,7 +46,25 @@ try {
 
   const overwrite = spawnSync(process.execPath, ["tools/build-apdb-staging.cjs", configPath, outputPath], { encoding: "utf8" });
   assert.notEqual(overwrite.status, 0, "builder must refuse to overwrite an existing output");
-  console.log("APDB_STAGING_BUILD_CONTRACT_OK synthetic_config=true production_fallback=false tournament_fallback=false overwrite_refused=true");
+
+  // A package built with production, a secret or a missing key must never be produced.
+  for (const [name, changes] of [
+    ["production-project", { supabaseUrl: "https://eshbydpsmypflfxpmhyk.supabase.co" }],
+    ["missing-publishable-key", { supabaseAnonKey: "" }],
+    ["privileged-key", { supabaseAnonKey: "sb_secret_do_not_package" }],
+    ["wrong-environment", { environment: "production" }],
+    ["reset-enabled", { resetDatabaseOnStart: true }]
+  ]) {
+    const invalidConfigPath = path.join(root, `invalid-${name}.json`);
+    const invalidOutputPath = path.join(root, `invalid-${name}-site`);
+    fs.writeFileSync(invalidConfigPath, JSON.stringify({ ...config, ...changes }));
+    const rejected = spawnSync(process.execPath, [
+      "tools/build-apdb-staging.cjs", invalidConfigPath, invalidOutputPath
+    ], { encoding: "utf8" });
+    assert.notEqual(rejected.status, 0, `must reject ${name}`);
+    assert.ok(!fs.existsSync(invalidOutputPath), `must not create package for ${name}`);
+  }
+  console.log("APDB_STAGING_BUILD_CONTRACT_OK synthetic_config=true production_fallback=false tournament_fallback=false unsafe_configs_rejected=5 overwrite_refused=true");
 } finally {
   fs.rmSync(root, { recursive: true, force: true });
 }
