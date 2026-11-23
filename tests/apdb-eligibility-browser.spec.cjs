@@ -62,13 +62,18 @@ test("Asociación habilita, suspende y recupera decisión; delegado no modifica"
   await signIn(page,data.delegate);
   await page.locator("#tab-delegados").click();
   await expect(page.locator("#apdb-eligibility-section")).toBeHidden();
-  const denied=await page.evaluate(async({url,key,playerId})=>{
-    const {data:{session}}=await window.supabaseClient.auth.getSession();
+  const denied=await page.evaluate(async({url,key,playerId,delegateEmail,delegatePassword})=>{
+    const auth=await fetch(url+"/auth/v1/token?grant_type=password",{
+      method:"POST",headers:{apikey:key,"content-type":"application/json"},
+      body:JSON.stringify({email:delegateEmail,password:delegatePassword})
+    });
+    if(auth.status!==200)throw Error("Delegate authentication failed");
+    const session=await auth.json();
     const r=await fetch(url+"/rest/v1/rpc/apdb_set_player_eligibility",{
       method:"POST",headers:{apikey:key,authorization:"Bearer "+session.access_token,"content-type":"application/json"},
       body:JSON.stringify({p_player_id:playerId,p_status:"habilitado",p_reason:"Intento delegado sin autorización"})
     });return r.status;
-  },{url:isolatedUrl.replace(/\/$/,""),key:anonKey,playerId:data.playerId});
+  },{url:isolatedUrl.replace(/\/$/,""),key:anonKey,playerId:data.playerId,delegateEmail:data.delegate.email,delegatePassword:data.delegate.password});
   expect(denied).toBe(403);
   console.log("APDB_ELIGIBILITY_BROWSER_DELEGATE_DENIED_OK");
 });
