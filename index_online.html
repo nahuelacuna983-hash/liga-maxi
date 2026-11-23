@@ -2394,6 +2394,22 @@
       <div id="admin-alta-resumen" class="doc-summary"></div>
     </div>
 
+    <div class="planner-readiness-box">
+      <h4>Alcance de delegados</h4>
+      <p class="note">Asigná o revocá un equipo mediante las RPC autorizadas. El UUID identifica la identidad Auth del delegado.</p>
+      <div class="planner-grid">
+        <div><label for="admin-delegado-auth-id">UUID Auth del delegado</label><input id="admin-delegado-auth-id" type="text" inputmode="text" autocomplete="off" placeholder="UUID del usuario delegado"></div>
+        <div><label for="admin-delegado-permission-id">UUID del permiso a revocar</label><input id="admin-delegado-permission-id" type="text" inputmode="text" autocomplete="off" placeholder="Se informa al asignar"></div>
+        <div><label for="admin-delegado-categoria">Categoria</label><select id="admin-delegado-categoria"></select></div>
+        <div><label for="admin-delegado-equipo">Equipo</label><select id="admin-delegado-equipo"></select></div>
+      </div>
+      <div class="button-row">
+        <button id="admin-delegado-asignar" class="secondary" type="button">Asignar alcance</button>
+        <button id="admin-delegado-revocar" class="secondary" type="button">Revocar alcance</button>
+      </div>
+      <div id="admin-delegado-status" class="status"></div>
+    </div>
+
     <div class="planner-grid">
 
       <div>

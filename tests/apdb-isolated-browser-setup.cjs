@@ -31,7 +31,7 @@ const browserCategories = [];
   await client.connect();
   try {
     await client.query("insert into app_users (id, auth_user_id, organizacion_id, display_name, role) values ($1,$1,'10000000-0000-0000-0000-000000000001',$2,'asociacion')", [user.id, `Browser Asociación ${run}`]);
-    await client.query("insert into app_user_permissions (user_id, organizacion_id, torneo_id, categoria_id, can_view, can_load_results, can_correct_results, can_manage_tournaments) values ($1,'10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',true,true,true,true)", [user.id]);
+    await client.query("insert into app_user_permissions (user_id, organizacion_id, torneo_id, categoria_id, can_view, can_load_results, can_correct_results, can_manage_tournaments, can_manage_users) values ($1,'10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',true,true,true,true,true)", [user.id]);
     await client.query("insert into app_users (id, auth_user_id, organizacion_id, display_name, role) values ($1,$1,'10000000-0000-0000-0000-000000000001',$2,'delegado')", [delegate.id, `Browser Delegado ${run}`]);
     await client.query("insert into app_user_permissions (user_id, organizacion_id, torneo_id, categoria_id, equipo_id, equipo_nombre, can_view, can_load_results) values ($1,'10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','Equipo sintético A',true,true)", [delegate.id]);
     const formats = [4, 6, 8];
@@ -63,7 +63,7 @@ const browserCategories = [];
     }
   } finally { await client.end(); }
   const credentialsFile = require("node:path").join(process.env.RUNNER_TEMP || require("node:os").tmpdir(), `apdb-browser-${run}.json`);
-  require("node:fs").writeFileSync(credentialsFile, JSON.stringify({ association: { email, password }, delegate: { email: delegateEmail, password } }), { encoding: "utf8", mode: 0o600 });
+  require("node:fs").writeFileSync(credentialsFile, JSON.stringify({ association: { email, password, authUserId: user.id }, delegate: { email: delegateEmail, password, authUserId: delegate.id } }), { encoding: "utf8", mode: 0o600 });
   require("node:fs").appendFileSync(process.env.GITHUB_ENV, `APDB_BROWSER_CREDENTIALS_FILE=${credentialsFile}\nAPDB_BROWSER_PLAYOFF_CATEGORIES=${Buffer.from(JSON.stringify(browserCategories)).toString("base64")}\n`);
   console.log("APDB_ISOLATED_BROWSER_USER_READY");
 })().catch((error) => { console.error(`APDB_ISOLATED_BROWSER_SETUP_FAILED ${error.message}`); process.exitCode = 1; });

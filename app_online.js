@@ -8480,8 +8480,13 @@ async function inicializarAsociacion() {
   estado.asociacionInicializada = true;
 
   $("admin-alta-torneo")?.addEventListener("click", prepararAltaAdministrativa);
+  $("admin-delegado-asignar")?.addEventListener("click", asignarAlcanceDelegado);
+  $("admin-delegado-revocar")?.addEventListener("click", revocarAlcanceDelegado);
+  $("admin-delegado-categoria")?.addEventListener("change", poblarEquiposAltaAdministrativa);
 
   poblarSelectCategorias("asociacion-categoria", estado.categorias);
+  poblarSelectCategorias("admin-delegado-categoria", estado.categorias);
+  poblarEquiposAltaAdministrativa();
 
   $("asociacion-categoria").addEventListener("change", async (e) => {
     const categoria = e.target.value;
@@ -8659,6 +8664,8 @@ async function prepararAltaAdministrativa() {
     await cargarCategorias();
     poblarSelectCategorias("asociacion-categoria", estado.categorias);
     poblarSelectCategorias("planner-categoria", estado.categorias);
+    poblarSelectCategorias("admin-delegado-categoria", estado.categorias);
+    poblarEquiposAltaAdministrativa();
     const tournamentId = row?.tournament_id || row?.torneo_id;
     const categoryId = row?.category_id || row?.categoria_id;
     const teamIds = row?.team_ids || row?.equipo_ids || [];
@@ -8668,6 +8675,47 @@ async function prepararAltaAdministrativa() {
     setStatus(status, `No se pudo guardar el alta administrativa: ${error.message}`, "error");
   } finally {
     if (boton) boton.disabled = false;
+  }
+}
+
+function poblarEquiposAltaAdministrativa() {
+  const categoriaId = $("admin-delegado-categoria")?.value;
+  const select = $("admin-delegado-equipo");
+  if (!select) return;
+  const categoria = estado.categorias?.find((item) => String(item.id || item.categoria_id) === String(categoriaId));
+  const equipos = categoria?.equipos || estado.equipos?.filter((item) => String(item.categoria_id) === String(categoriaId)) || [];
+  select.innerHTML = equipos.map((equipo) => `<option value="${escapeHtml(equipo.id || equipo.equipo_id || "")}">${escapeHtml(equipo.nombre || equipo.name || "Equipo")}</option>`).join("");
+}
+
+async function asignarAlcanceDelegado() {
+  const status = $("admin-delegado-status");
+  if (!estado.asociacionDesbloqueada) return setStatus(status, "Iniciá sesión como Asociación para administrar delegados.", "error");
+  const authUserId = $("admin-delegado-auth-id")?.value.trim();
+  const categoryId = $("admin-delegado-categoria")?.value;
+  const teamId = $("admin-delegado-equipo")?.value;
+  const tournamentId = estado.torneoActivo?.id || estado.torneoActivo?.torneo_id;
+  if (!authUserId || !categoryId || !teamId || !tournamentId) return setStatus(status, "Completá el UUID del delegado y seleccioná categoria y equipo.", "error");
+  setStatus(status, "Asignando alcance mediante RPC segura...", "info");
+  try {
+    const permissionId = await window.ApdbAdministrativeAdapter.setDelegateScope(supabaseClient, { targetAuthUserId: authUserId, tournamentId, categoryId, teamId });
+    $("admin-delegado-permission-id").value = permissionId || "";
+    setStatus(status, `Alcance asignado. Permiso: ${permissionId}`, "ok");
+  } catch (error) {
+    setStatus(status, `No se pudo asignar el alcance: ${error.message}`, "error");
+  }
+}
+
+async function revocarAlcanceDelegado() {
+  const status = $("admin-delegado-status");
+  if (!estado.asociacionDesbloqueada) return setStatus(status, "Iniciá sesión como Asociación para administrar delegados.", "error");
+  const permissionId = $("admin-delegado-permission-id")?.value.trim();
+  if (!permissionId) return setStatus(status, "Ingresá el UUID del permiso a revocar.", "error");
+  setStatus(status, "Revocando alcance mediante RPC segura...", "info");
+  try {
+    const revoked = await window.ApdbAdministrativeAdapter.revokeDelegateScope(supabaseClient, permissionId);
+    setStatus(status, revoked ? "Alcance revocado correctamente." : "No se encontró el alcance indicado.", revoked ? "ok" : "info");
+  } catch (error) {
+    setStatus(status, `No se pudo revocar el alcance: ${error.message}`, "error");
   }
 }
 
