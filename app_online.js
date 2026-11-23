@@ -8222,9 +8222,35 @@ function contextoHabilitadosSeleccionado(categoria) {
   };
 }
 
-function exportarHabilitadosCsv() {
+async function validarListadoArbitrosParaEmision(categoriaNombre) {
+  if (String(temporadaDocumentalActiva()) !== "2027") return true;
+  const categoria = estado.categorias.find((item) => item.nombre === categoriaNombre);
+  const status = $("asociacion-status");
+  if (!estado.asociacionDesbloqueada || !categoria?.id) {
+    setStatus(status, "La lista oficial requiere Asociación autenticada y una categoría vigente.", "error");
+    return false;
+  }
+  // Consultar justo antes de exportar; las suspensiones y revocaciones de documentos
+  // pueden suceder después de la última carga de la pantalla.
+  delete estado.listadoArbitrosPorCategoriaId[categoria.id];
+  const { data, error } = await supabaseClient.rpc("apdb_get_referee_eligibility", {
+    p_category_id: categoria.id
+  });
+  if (error) {
+    estado.listadoArbitrosErrorPorCategoriaId[categoria.id] = error.message;
+    setStatus(status, "No se pudo verificar la lista oficial; emisión bloqueada: " + error.message, "error");
+    return false;
+  }
+  estado.listadoArbitrosPorCategoriaId[categoria.id] = data || [];
+  delete estado.listadoArbitrosErrorPorCategoriaId[categoria.id];
+  renderListaHabilitadosArbitros(categoriaNombre);
+  return true;
+}
+
+async function exportarHabilitadosCsv() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
+  if (!await validarListadoArbitrosParaEmision(categoria)) return;
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
   const contexto = contextoHabilitadosSeleccionado(categoria);
@@ -8274,16 +8300,10 @@ function exportarHabilitadosCsv() {
   setStatus(status, "Lista de habilitados exportada en CSV.", "ok");
 }
 
-function descargarListaHabilitadosHtml() {
+async function descargarListaHabilitadosHtml() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
-  if (String(temporadaDocumentalActiva()) === "2027") {
-    const categoriaId = estado.categorias.find((cat) => cat.nombre === categoria)?.id;
-    if (!Object.hasOwn(estado.listadoArbitrosPorCategoriaId, categoriaId)) {
-      setStatus(status, "No se puede emitir una lista 2027 sin validar el estado oficial vigente.", "error");
-      return;
-    }
-  }
+  if (!await validarListadoArbitrosParaEmision(categoria)) return;
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
   const contexto = contextoHabilitadosSeleccionado(categoria);
@@ -8371,9 +8391,10 @@ function descargarListaHabilitadosHtml() {
   mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
 }
 
-function descargarControlHabilitadosCanchaHtml() {
+async function descargarControlHabilitadosCanchaHtml() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
+  if (!await validarListadoArbitrosParaEmision(categoria)) return;
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
   const contexto = contextoHabilitadosSeleccionado(categoria);
@@ -8499,6 +8520,7 @@ function generarResumenHabilitadosArbitros(categoria, contexto, filas) {
 async function copiarResumenHabilitadosArbitros() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
+  if (!await validarListadoArbitrosParaEmision(categoria)) return;
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
   const contexto = contextoHabilitadosSeleccionado(categoria);
