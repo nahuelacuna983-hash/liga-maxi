@@ -26,7 +26,7 @@ async function visible(subject, role) {
   await pg.query(`SET LOCAL ROLE ${role}`);
   try {
     const rows = await pg.query(
-      "select equipo_id::text as team from public.v_team_documents_admin where categoria_id = $1 order by equipo_id",
+      "select equipo_id::text as team from public.v_team_documents_admin where categoria_id = $1 and file_name = 'simulado-no-existe.pdf' order by equipo_id",
       [CATEGORY]
     );
     return rows.rows.map(r => r.team);
