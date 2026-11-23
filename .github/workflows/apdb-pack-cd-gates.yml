@@ -8,6 +8,7 @@ on:
       - 'tools/build-apdb-staging.cjs'
       - 'tools/verify-apdb-release.cjs'
       - 'tests/apdb-staging-build.cjs'
+      - 'tests/apdb-package-http-smoke.cjs'
       - 'docs/apdb-2027/PACK_C_D_ACEPTACION.md'
       - '.github/workflows/apdb-pack-cd-gates.yml'
 permissions:
@@ -26,9 +27,12 @@ jobs:
           node --check tools/build-apdb-staging.cjs
           node --check tools/verify-apdb-release.cjs
           node --check tests/apdb-staging-build.cjs
+          node --check tests/apdb-package-http-smoke.cjs
           node --check app_online.js
       - name: Build, tamper test, and validate source separation
         run: |
           node tests/apdb-staging-build.cjs
           node tests/apdb-online-config-contract.cjs
           node tests/institutional-package-contract.cjs
+      - name: Local HTTP smoke test of packaged institutional site
+        run: node tests/apdb-package-http-smoke.cjs
