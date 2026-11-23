@@ -13,13 +13,43 @@ create table public.apdb_player_eligibility_events (
   reason text not null check (length(btrim(reason)) between 5 and 2000),
   actor_auth_user_id uuid not null,
   actor_app_user_id uuid not null references public.app_users(id),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default clock_timestamp()
 );
 create index apdb_player_eligibility_events_latest
   on public.apdb_player_eligibility_events(player_id, created_at desc, id desc);
 
 alter table public.apdb_player_eligibility_events enable row level security;
 revoke all on table public.apdb_player_eligibility_events from public, anon, authenticated;
+
+-- Invalidate any prior 2027 decision after a roster scope change, including
+-- when a player later returns to a previously authorized team.
+create function public.apdb_stamp_player_roster_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+begin
+  if (
+    old.organizacion_id is distinct from new.organizacion_id
+    or old.torneo_id is distinct from new.torneo_id
+    or old.categoria_id is distinct from new.categoria_id
+    or old.equipo_id is distinct from new.equipo_id
+    or old.activo is distinct from new.activo
+  ) and exists (
+    select 1 from public.torneos t where t.id = new.torneo_id and t.temporada = '2027'
+  ) then
+    new.updated_at := clock_timestamp();
+  end if;
+  return new;
+end;
+$;
+create trigger apdb_2027_player_roster_change
+before update of organizacion_id, torneo_id, categoria_id, equipo_id, activo
+on public.team_players
+for each row execute function public.apdb_stamp_player_roster_change();
+revoke all on function public.apdb_stamp_player_roster_change() from public, anon, authenticated;
+
 
 create function public.apdb_set_player_eligibility(
   p_player_id uuid,
@@ -171,6 +201,7 @@ begin
           and tp.torneo_id = e.torneo_id
           and tp.categoria_id = e.categoria_id
           and tp.equipo_id = e.equipo_id
+          and e.created_at >= tp.updated_at
       )
       and exists (
         select 1 from public.app_user_permissions p
@@ -281,6 +312,7 @@ begin
         and ev.torneo_id = tp.torneo_id
         and ev.categoria_id = tp.categoria_id
         and ev.equipo_id = tp.equipo_id
+        and ev.created_at >= tp.updated_at
       order by ev.created_at desc, ev.id desc
       limit 1
     ) latest on true
