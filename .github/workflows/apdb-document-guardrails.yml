@@ -30,6 +30,7 @@ jobs:
           node tests/apdb-2027-eligibility-separation.cjs
           node tests/apdb-2027-referee-output-refresh.cjs
           node tests/apdb-2027-session-rpc-race-contract.cjs
+          node tests/apdb-2027-player-document-expiry-contract.cjs
           node tests/app-online-administrative-onboarding-contract.cjs
 
   eligibility-auth-http:
