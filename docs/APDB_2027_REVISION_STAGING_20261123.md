@@ -1,6 +1,19 @@
 # APdB 2027 — revisión de staging (23/11/2026)
 
-Alcance: consultas **solo lectura** sobre el proyecto independiente `wffvmthdmmjwspnozyrv` ("APdB 2027 Staging"). No se modificaron permisos, RLS, datos, Storage ni cuentas. Ninguna observación debe extrapolarse al proyecto productivo 2026.
+Alcance: revisión inicial **solo lectura** del proyecto independiente `wffvmthdmmjwspnozyrv` ("APdB 2027 Staging"). **Actualización posterior:** se modificaron exclusivamente las políticas de Storage en este staging sintético, tras certificarlas primero en Supabase descartable. No se modificó el proyecto productivo 2026, ni resultados, cuentas o archivos.
+
+## Actualización operativa — política de Storage aplicada
+
+- **Migración aplicada a staging:** versión Supabase `20261123155458`, nombre `apdb_storage_team_scope_staging_20261123`.
+- **Fuente versionada:** `supabase/migrations/20261123155458_apdb_storage_team_scope_staging_20261123.sql`. La misma versión se encuentra registrada en el historial de migraciones de staging.
+- **Permisos de archivos:** las cuatro políticas sobre `storage.objects` (`INSERT`, `SELECT`, `UPDATE`, `DELETE`) usan `apdb_storage_team_path_allowed`, validando organización, temporada, categoría y equipo. La validación de ruta rechaza UUID de equipo mal formado. El delegado solo puede leer/cargar en el equipo autorizado, sin borrar ni sobrescribir.
+- **Matriz verificada en staging con claims sintéticos (consultas SQL, sin emitir JWT):** Asociación permitida en dos equipos; Delegado permitido solo en el suyo, sin borrado; identidad sin permisos denegada en ambos; ruta inválida denegada.
+- **Prueba HTTP/JWT en Supabase descartable:** SUCCESS, junto con los contratos previos, Chromium y recuperación tras reinicio. [GitHub Actions #45211625508](https://github.com/nahuelacuna983-hash/liga-maxi/actions/runs/45211625508).
+- **Frontend:** `app_online.js` consulta el `slug` real de la organización en staging para generar rutas documentales válidas. Se comprobó que el staging utiliza `apdb-staging-sintetica`, y no el valor fijo histórico `apdb`.
+- **Estado de objetos:** bucket privado `documentos` con **0 objetos** al aplicar la política. No se afirma recuperabilidad de documentos a partir de las dos filas sintéticas de `team_documents`.
+- **Reversión segura:** `docs/APDB_2027_STORAGE_FAIL_CLOSED_ROLLBACK.sql` deja el acceso documental de usuarios normales bloqueado, sin restaurar la política anterior de alcance excesivo.
+
+**Pendiente crítico:** ejecutar una subida, descarga y generación de URL firmada con identidades Auth reales y documentos ficticios sobre el **staging persistente**, además de prueba de cuenta revocada. La matriz simulada no reemplaza esos ensayos; el sitio institucional tampoco fue desplegado.
 
 ## Evidencia de inventario
 
