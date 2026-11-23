@@ -39,6 +39,7 @@ test("Asociación habilita, suspende y recupera decisión; delegado no modifica"
   await expect(page.locator("#apdb-eligibility-status")).toContainText("Decisión institucional registrada.");
   await page.locator("#apdb-eligibility-player").selectOption(data.playerId);
   await expect(page.locator("#apdb-eligibility-summary")).toContainText("habilitado");
+  await expect(page.locator("#apdb-eligibility-history li")).toHaveCount(1,{timeout:20000});
   const approvedForReferee = await page.evaluate((category) => window.calcularHabilitadosCategoria(category), data.categoryName);
   expect(approvedForReferee).toHaveLength(1);
   expect(approvedForReferee[0].habilitado).toBe("SI");
