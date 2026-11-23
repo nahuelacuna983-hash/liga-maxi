@@ -8475,6 +8475,8 @@ function descargarPlanPruebaDocumental() {
 async function inicializarAsociacion() {
   if (estado.asociacionInicializada) {
     poblarSelectCategorias("asociacion-categoria", estado.categorias);
+    poblarSelectCategorias("admin-delegado-categoria", estado.categorias);
+    await poblarEquiposAltaAdministrativa();
     return;
   }
   estado.asociacionInicializada = true;
