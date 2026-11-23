@@ -55,6 +55,23 @@ async function create(role,organization,team,review){
       await db.query("insert into public.app_user_permissions(user_id,organizacion_id,torneo_id,categoria_id,equipo_id,can_view,can_load_documents,can_review_documents) values($1,$2,$3,$4,$5,true,$6,$7)",
         [u.id,org,tournament,category,u.team,u.role==="delegado",u.review]);
     }
+    // The official app consumes this view directly; test its effective scope.
+    const viewPath="/rest/v1/v_player_documents_admin?categoria_id=eq."+category+"&select=id,equipo_id";
+    const view = (token) => call(viewPath,{token,method:"GET"});
+    const own = await view(delegates[0].token);
+    assert.equal(own.status,200,JSON.stringify(own.data));
+    assert.equal(own.data.length,1,"Delegado can see only own team's player documents");
+    const another = await view(delegates[1].token);
+    assert.equal(another.status,200,JSON.stringify(another.data));
+    assert.equal(another.data.length,0,"Delegate cannot inspect another club's metadata");
+    const associationDocs = await view(association.token);
+    assert.equal(associationDocs.status,200,JSON.stringify(associationDocs.data));
+    assert.equal(associationDocs.data.length,1);
+    const foreignDocs = await view(foreign.token);
+    assert.equal(foreignDocs.status,200,JSON.stringify(foreignDocs.data));
+    assert.equal(foreignDocs.data.length,0);
+    const anonDocs = await view(anon);
+    assert.notEqual(anonDocs.status,200,"Anonymous access to medical metadata forbidden");
     const object=(name)=>"/storage/v1/object/documentos/"+name;
     const sign=(name)=>"/storage/v1/object/sign/documentos/"+name;
     const noAuth=await call(object(filename),{token:anon,body:pdf,json:false});
