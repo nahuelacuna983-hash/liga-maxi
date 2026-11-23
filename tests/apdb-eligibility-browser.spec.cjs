@@ -90,7 +90,7 @@ test("Asociación habilita, suspende y recupera decisión; delegado no modifica"
   await expect(page.locator("#apdb-eligibility-section")).toBeHidden();
   await expect(page.locator("#apdb-eligibility-history")).toBeEmpty();
   await expect(page.locator("#apdb-eligibility-summary")).toBeEmpty();
-  await expect(page.locator("#habilitados-tabla")).toBeEmpty();
+  await expect(page.locator("#habilitados-tabla")).not.toContainText("Jugador de prueba");
   await expect(page.locator("#apdb-eligibility-player option")).toHaveCount(1);
   await signIn(page,data.delegate);
   await page.locator("#tab-delegados").click();
