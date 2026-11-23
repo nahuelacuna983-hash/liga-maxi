@@ -8512,8 +8512,14 @@ async function inicializarAsociacion() {
 
   $("asociacion-categoria").addEventListener("change", async (e) => {
     const categoria = e.target.value;
+    // Never expose the previous category's schedule as if it belonged to the newly selected category.
+    if ($("programacion-tabla")) {
+      $("programacion-tabla").innerHTML = '<div class="empty">Cargando programación de la categoría...</div>';
+    }
+    if ($("programacion-resumen")) $("programacion-resumen").innerHTML = "";
     actualizarEstadoRenderPlayoffs(categoria, "loading", "category-change");
     await refrescarCategoria(categoria, { actualizarPublico: false });
+    if ($("asociacion-categoria")?.value !== categoria) return;
     poblarSelectPartidosAsociacion(categoria);
     renderPlayoffsAsociacion(categoria);
     marcarPlayoffsAsociacionListos(categoria);
@@ -8522,6 +8528,7 @@ async function inicializarAsociacion() {
     renderDocumentacionAsociacion(categoria);
     const categoriaData = estado.categorias.find((cat) => cat.nombre === categoria);
     if (categoriaData) await cargarDocumentosDriveCategoria(categoriaData.id);
+    if ($("asociacion-categoria")?.value !== categoria) return;
     renderDocumentacionDriveAsociacion(categoria);
     renderAuditoriaDocumentalAsociacion(categoria);
     renderProgramacionAsociacion(categoria);
