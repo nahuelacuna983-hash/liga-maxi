@@ -266,7 +266,7 @@ begin
   return query
     select tp.id, tp.equipo_nombre, tp.nombre, tp.dni, tp.dorsal,
       docs.completa,
-      (docs.completa and latest.status = 'habilitado') as habilitado,
+      coalesce(docs.completa and latest.status = 'habilitado', false) as habilitado,
       coalesce(latest.status, 'pendiente') as decision_status,
       latest.reason, latest.created_at
     from public.team_players tp
