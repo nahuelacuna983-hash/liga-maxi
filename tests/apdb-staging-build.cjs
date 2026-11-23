@@ -23,6 +23,8 @@ try {
   assert.equal(result.status, 0, result.stderr || result.stdout);
 
   const html = fs.readFileSync(path.join(outputPath, "index_online.html"), "utf8");
+  const entrypoint = fs.readFileSync(path.join(outputPath, "index.html"), "utf8");
+  assert.equal(entrypoint, html, "institutional root must serve the exact same official application");
   assert.ok(html.indexOf("window.APDB_STAGING=true") < html.indexOf("@supabase/supabase-js@2"));
   assert.ok(html.includes("https://wffvmthdmmjwspnozyrv.supabase.co"));
   assert.ok(!html.includes("eshbydpsmypflfxpmhyk.supabase.co"));
@@ -65,7 +67,7 @@ try {
     assert.notEqual(rejected.status, 0, `must reject ${name}`);
     assert.ok(!fs.existsSync(invalidOutputPath), `must not create package for ${name}`);
   }
-  console.log("APDB_STAGING_BUILD_CONTRACT_OK synthetic_config=true production_fallback=false tournament_fallback=false unsafe_configs_rejected=5 overwrite_refused=true");
+  console.log("APDB_STAGING_BUILD_CONTRACT_OK synthetic_config=true production_fallback=false tournament_fallback=false root_entrypoint=true unsafe_configs_rejected=5 overwrite_refused=true");
 } finally {
   fs.rmSync(root, { recursive: true, force: true });
 }
