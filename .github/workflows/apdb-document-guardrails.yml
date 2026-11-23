@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - codex/apdb-2027-document-review-guardrails
+      - codex/apdb-2027-full-release-verification
   workflow_dispatch:
 
 concurrency:
