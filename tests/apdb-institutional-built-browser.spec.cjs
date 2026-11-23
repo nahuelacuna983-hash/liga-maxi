@@ -33,7 +33,25 @@ test("APdB institutional package uses Auth only with Association and Delegate sc
   await page.locator("#tab-asociacion").click();
   await expect(page.locator("#asociacion-categoria")).toBeEnabled();
   await expect.poll(() => page.locator("#asociacion-categoria option").count(), { timeout: 20000 }).toBeGreaterThan(0);
+  // Test both new session-only drafts and stale V1/V2 entries from localStorage.
+  await page.evaluate(() => {
+    const prefix = `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}`;
+    const emailKey = `${prefix}_programacion_email_destino`;
+    const plannerKey = `${prefix}_planner_simulaciones`;
+    sessionStorage.setItem(emailKey, "delegados@example.invalid");
+    sessionStorage.setItem(plannerKey, JSON.stringify({ privado: "borrador" }));
+    localStorage.setItem(emailKey, "correo-antiguo@example.invalid");
+    localStorage.setItem(plannerKey, JSON.stringify({ privado: "cache-antigua" }));
+    document.querySelector("#programacion-email-destino").value = "delegados@example.invalid";
+  });
   await logout();
+  const remaining = await page.evaluate(() => {
+    const prefix = `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}`;
+    const keys = [`${prefix}_programacion_email_destino`, `${prefix}_planner_simulaciones`];
+    return keys.flatMap(key => [sessionStorage.getItem(key), localStorage.getItem(key)]);
+  });
+  expect(remaining).toEqual([null, null, null, null]);
+  await expect(page.locator("#programacion-email-destino")).toHaveValue("");
   await login(delegate);
   await page.locator("#tab-delegados").click();
   await expect(page.locator("#delegado-info")).toContainText("Delegado:", { timeout: 25000 });
@@ -54,6 +72,14 @@ test("APdB institutional package uses Auth only with Association and Delegate sc
   await secondTab.goto("/apdb-2027-prueba/index.html", { waitUntil: "domcontentloaded" });
   await expect(secondTab.locator("#auth-session-bar")).toBeHidden({ timeout: 15000 });
   await expect(secondTab.locator("#asociacion-categoria")).toBeDisabled();
+  const crossTabDrafts = await secondTab.evaluate(() => {
+    const prefix = `${APP_CONFIG.producto.storageRoot}_${APP_CONFIG.organizacionActiva.id}`;
+    return [
+      localStorage.getItem(`${prefix}_programacion_email_destino`),
+      localStorage.getItem(`${prefix}_planner_simulaciones`)
+    ];
+  });
+  expect(crossTabDrafts).toEqual([null, null]);
   await secondTab.close();
   console.log("APDB_INSTITUTIONAL_BUILT_AUTH_BROWSER_OK official_bundle=true mobile=true association=true delegate=true legacy_keys=false logout_reload=true shared_profile=true");
 });
