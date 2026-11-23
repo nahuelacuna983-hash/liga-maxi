@@ -248,4 +248,77 @@ $$;
 revoke all on function public.review_team_document(uuid,text,text,text) from public,anon,authenticated;
 grant execute on function public.review_team_document(uuid,text,text,text) to authenticated;
 
+
+-- Read-only views used by the official application must not reveal another
+-- organization or another delegated team. A role title alone is insufficient.
+create or replace function public.apdb_document_view_allowed(
+  p_org uuid,p_tournament uuid,p_category uuid,p_team uuid
+) returns boolean
+language sql stable security definer
+set search_path=public,auth,pg_temp
+as $$
+  select exists (
+    select 1 from public.app_users au
+    join public.app_user_permissions p on p.user_id=au.id
+    join public.equipos e on e.id=p_team and e.categoria_id=p_category
+    join public.categorias c on c.id=e.categoria_id and c.torneo_id=p_tournament
+    join public.torneos t on t.id=c.torneo_id and t.organizacion_id=p_org
+    where au.auth_user_id=auth.uid() and au.active
+      and au.organizacion_id=p_org and p.organizacion_id=p_org
+      and p.torneo_id=p_tournament and p.categoria_id=p_category
+      and (p.equipo_id is null or p.equipo_id=p_team)
+      and (
+        (au.role in ('asociacion','admin_general') and p.can_review_documents)
+        or (au.role='delegado' and p.equipo_id=p_team
+            and p.can_view and p.can_load_documents)
+      )
+  );
+$$;
+revoke all on function public.apdb_document_view_allowed(uuid,uuid,uuid,uuid) from public,anon,authenticated;
+grant execute on function public.apdb_document_view_allowed(uuid,uuid,uuid,uuid) to authenticated;
+
+-- Team view already invokes apdb_document_access_allowed; tighten that helper
+-- without altering its result-column contract.
+create or replace function public.apdb_document_access_allowed(
+  p_organizacion_id uuid,p_categoria_id uuid,p_equipo_id uuid
+) returns boolean
+language sql stable security definer
+set search_path=public,auth,pg_temp
+as $$
+  select exists (
+    select 1 from public.categorias c
+    join public.torneos t on t.id=c.torneo_id and t.organizacion_id=p_organizacion_id
+    where c.id=p_categoria_id
+      and public.apdb_document_view_allowed(p_organizacion_id,t.id,c.id,p_equipo_id)
+  );
+$$;
+revoke all on function public.apdb_document_access_allowed(uuid,uuid,uuid) from public,anon,authenticated;
+grant execute on function public.apdb_document_access_allowed(uuid,uuid,uuid) to authenticated;
+
+create or replace view public.v_player_documents_admin
+with (security_barrier=true)
+as
+select pd.id,pd.player_id,
+  tp.nombre as jugador_nombre,tp.dni as jugador_dni,tp.dorsal as jugador_dorsal,
+  tp.baja_solicitada,tp.baja_motivo,tp.baja_solicitada_por,tp.baja_solicitada_en,
+  pd.requirement_id,dr.nombre as requirement_nombre,
+  pd.organizacion_id,o.nombre as organizacion_nombre,
+  pd.torneo_id,t.nombre as torneo_nombre,
+  pd.categoria_id,c.nombre as categoria_nombre,
+  pd.equipo_id,pd.equipo_nombre,pd.uploaded_by,pd.storage_path,
+  pd.file_name,pd.file_type,pd.file_size,pd.status,pd.vencimiento,
+  pd.observacion,pd.reviewed_by,pd.reviewed_at,pd.created_at,pd.updated_at
+from public.player_documents pd
+join public.team_players tp on tp.id=pd.player_id
+left join public.document_requirements dr on dr.id=pd.requirement_id
+left join public.organizaciones o on o.id=pd.organizacion_id
+left join public.torneos t on t.id=pd.torneo_id
+left join public.categorias c on c.id=pd.categoria_id
+where tp.activo
+  and public.apdb_document_view_allowed(
+    pd.organizacion_id,pd.torneo_id,pd.categoria_id,pd.equipo_id
+  );
+revoke all on public.v_player_documents_admin from public,anon,authenticated;
+grant select on public.v_player_documents_admin to authenticated;
+
 commit;
