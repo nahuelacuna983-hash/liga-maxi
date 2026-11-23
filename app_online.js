@@ -1924,6 +1924,20 @@ function equipoOperativoSeleccionado() {
   return $("habilitados-filtro-equipo")?.value || "";
 }
 
+function actualizarFiltroEquiposDocumentacion(nombreCategoria) {
+  const select = $("documentacion-filtro-equipo");
+  if (!select) return;
+  const anterior = select.value;
+  const equipos = obtenerEquiposCategoria(nombreCategoria);
+  select.innerHTML = '<option value="">Elegir club</option>' +
+    equipos.map((equipo) => `<option value="${escapeHtml(equipo)}">${escapeHtml(equipo)}</option>`).join("");
+  if (equipos.some((equipo) => nombresEquipoCoinciden(equipo, anterior))) select.value = anterior;
+}
+
+function equipoDocumentalSeleccionado() {
+  return $("documentacion-filtro-equipo")?.value || "";
+}
+
 function resumenHabilitadosPorEquipo(filas) {
   const mapa = new Map();
   filas.forEach((fila) => {
@@ -2251,7 +2265,8 @@ function renderDocumentacionAsociacion(nombreCategoria) {
 
   if (!resumen || !tabla) return;
 
-  const equipoOperativo = equipoOperativoSeleccionado();
+  actualizarFiltroEquiposDocumentacion(nombreCategoria);
+  const equipoOperativo = equipoDocumentalSeleccionado();
   const equiposCategoria = obtenerEquiposCategoria(nombreCategoria);
   const equipos = equipoOperativo
     ? equiposCategoria.filter((equipo) => nombresEquipoCoinciden(equipo, equipoOperativo))
@@ -2473,7 +2488,7 @@ function renderDocumentacionDriveAsociacion(nombreCategoria) {
 
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const rows = categoria ? estado.driveDocumentosPorCategoriaId[categoria.id] || [] : [];
-  const equipoOperativo = equipoOperativoSeleccionado();
+  const equipoOperativo = equipoDocumentalSeleccionado();
   const filtroEstado = $("drive-doc-estado")?.value || "";
   const filtroMatch = $("drive-doc-match")?.value || "";
   const filtroTexto = normalizarTexto($("drive-doc-buscar")?.value || "");
@@ -2852,7 +2867,7 @@ function renderAccionRevisionAsociacion(documento, scope = "team") {
 function renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugador) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const documentos = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
-  const equipoOperativo = equipoOperativoSeleccionado();
+  const equipoOperativo = equipoDocumentalSeleccionado();
   const filtroEstado = $("documentacion-filtro-estado")?.value || "";
   const filtroTexto = normalizarTexto($("documentacion-buscar")?.value || "");
 
@@ -8867,6 +8882,11 @@ async function inicializarAsociacion() {
   });
   $("documentacion-buscar").addEventListener("input", () => {
     renderDocumentacionAsociacion($("asociacion-categoria").value);
+  });
+  $("documentacion-filtro-equipo")?.addEventListener("change", () => {
+    const categoria = $("asociacion-categoria")?.value || "";
+    renderDocumentacionAsociacion(categoria);
+    renderDocumentacionDriveAsociacion(categoria);
   });
   $("drive-doc-estado")?.addEventListener("change", () => {
     renderDocumentacionDriveAsociacion($("asociacion-categoria").value);
