@@ -4019,6 +4019,9 @@ function ganadorSeriePlayoff(partidos, llave) {
 }
 
 function modoDefinicionRonda(nombreCategoria, ronda) {
+  // Las finales 2026 de Maxi +35 A y B se disputan al mejor de tres,
+  // aun cuando la configuracion antigua indique "global".
+  if (ronda === "final" && ["Maxi +35 A", "Maxi +35 B"].includes(nombreCategoria)) return "mejor_de";
   const datos = obtenerDatosRondaPlayoff(nombreCategoria, ronda);
   if (datos.modo_definicion === "global" || datos.modo_definicion === "mejor_de") return datos.modo_definicion;
   return "global";
@@ -4130,7 +4133,8 @@ function renderPlayoffMatchGuardado(titulo, partido, slotA, slotB) {
 
 function renderPlayoffSerieGuardada(titulo, partidos, slotA, slotB, modo, mostrarLocaliaPorPartido = false) {
   const serie = (partidos || []).slice().sort((a, b) => Number(a.partido_numero || 1) - Number(b.partido_numero || 1));
-  const contenido = serie.map((partido) => {
+  const ganadorAnticipado = modo === "mejor_de" ? ganadorRondaPlayoff(serie.filter((partido) => Number(partido.partido_numero || 1) <= 2), serie[0]?.llave, modo) : "";
+  const contenido = serie.filter((partido) => !(ganadorAnticipado && Number(partido.partido_numero || 1) === 3 && !partidoPlayoffTieneResultado(partido))).map((partido) => {
     const numero = Number(partido.partido_numero || 1);
     const etiqueta = modo === "mejor_de" && numero === 3 ? "P3 - si es necesario" : `P${numero}`;
     const local = mostrarLocaliaPorPartido ? renderPlayoffSlotDinamico(partido.local || "Por definir") : slotA;
@@ -4159,7 +4163,10 @@ function renderPlayoffSerieGuardada(titulo, partidos, slotA, slotB, modo, mostra
       : modo === "mejor_de" && serie.some(partidoPlayoffTieneResultado)
         ? "Serie en curso"
         : "");
-  return `${contenido}${estado ? `<small class="playoff-series-status">${escapeHtml(estado)}</small>` : ""}`;
+  const partidoDecisivo = ganadorAnticipado && serie.some((partido) => Number(partido.partido_numero || 1) === 3 && !partidoPlayoffTieneResultado(partido))
+    ? '<small class="playoff-series-status">Final 3 no necesaria: serie definida en dos partidos.</small>'
+    : "";
+  return `${contenido}${estado ? `<small class="playoff-series-status">${escapeHtml(estado)}</small>` : ""}${partidoDecisivo}`;
 }
 
 function renderResumenResultadosPlayoff(partidos) {
@@ -4237,7 +4244,7 @@ function obtenerDatosRondaPlayoffFallback(nombreCategoria, clave) {
     const datos35 = {
       cuartos: { partidos: 1, fecha: "2026-11-01" },
       semifinales: { partidos: 1, fecha: "2026-11-08" },
-      final: { partidos: 3, fechas: ["2026-11-15", "2026-11-22", "2026-11-29"] }
+      final: { partidos: 3, fechas: ["2026-11-15", "2026-11-22", "2026-11-29"], modo_definicion: "mejor_de" }
     };
     return datos35[clave] || {};
   }
@@ -4273,8 +4280,9 @@ function renderMetaRondaPlayoff(nombreCategoria, ronda) {
     partes.push("Partidos a confirmar");
   }
 
-  if (datos.modo_definicion === "global" && Number(partidos) > 1) partes.push("definición por resultado global");
-  if (datos.modo_definicion === "mejor_de") partes.push("al mejor de 3");
+  const modoEfectivo = modoDefinicionRonda(nombreCategoria, ronda);
+  if (modoEfectivo === "global" && Number(partidos) > 1) partes.push("definición por resultado global");
+  if (modoEfectivo === "mejor_de") partes.push("al mejor de 3");
 
   if (fechas.length > 1) {
     partes.push(fechas.map((item) => fechaPartidoLabel(item) || item).join(", "));
