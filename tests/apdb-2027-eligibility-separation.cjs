@@ -15,6 +15,7 @@ const context = {
   combinarPreauditoriaDocumental: () => ({ estado: "aprobado", detalle: "" }),
   siNoDocumento: () => "SI",
   temporadaDocumentalActiva: () => "2027",
+  estado: { categorias: [{ id: "test-category", nombre: "Sintética" }], decisionesDeportivasPorCategoriaId: {} },
 };
 vm.createContext(context);
 vm.runInContext(declarations, context);
@@ -25,6 +26,17 @@ assert.equal(valid2027.documentacionCompleta, true);
 assert.equal(valid2027.habilitado, "NO", "Documentación completa no implica habilitación 2027");
 assert.equal(valid2027.estadoHabilitacionDeportiva, "PENDIENTE_DECISION");
 assert.match(valid2027.faltantes, /decisión institucional/);
+
+context.estado.decisionesDeportivasPorCategoriaId["test-category"] = {
+  [player.id]: { status: "habilitado" }
+};
+const approved2027 = context.calcularEstadoHabilitacionJugador("Sintética", player);
+assert.equal(approved2027.habilitado, "SI");
+assert.equal(approved2027.estadoHabilitacionDeportiva, "HABILITADO_INSTITUCIONAL");
+context.estado.decisionesDeportivasPorCategoriaId["test-category"][player.id] = { status: "suspendido" };
+const suspended2027 = context.calcularEstadoHabilitacionJugador("Sintética", player);
+assert.equal(suspended2027.habilitado, "NO");
+assert.equal(suspended2027.estadoHabilitacionDeportiva, "SUSPENDIDO");
 
 context.temporadaDocumentalActiva = () => "2026";
 const legacy2026 = context.calcularEstadoHabilitacionJugador("Sintética", player);
