@@ -32,7 +32,10 @@ for (const file of files) {
   if (file === "index_online.html") {
     const html = fs.readFileSync(file, "utf8");
     assert.ok(html.includes('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'), "Supabase client script not found");
-    fs.writeFileSync(destination, html.replace('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>', `${bootstrap}\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`));
+    const stagedHtml = html.replace('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>', `${bootstrap}\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`);
+    fs.writeFileSync(destination, stagedHtml);
+    // The institutional URL must open directly at the approved subdirectory root.
+    fs.writeFileSync(path.join(outputPath, "index.html"), stagedHtml);
   } else if (file === "app_online.js") {
     let app = fs.readFileSync(file, "utf8");
     assert.ok(app.includes(productionUrl), "source expected to contain a known production fallback");
