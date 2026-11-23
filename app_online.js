@@ -1681,6 +1681,8 @@ async function cargarDecisionesDeportivasCategoria(nombreCategoria) {
   const vigente2027 = String(temporadaDocumentalActiva()) === "2027";
   if (section) section.hidden = !vigente2027 || !estado.asociacionDesbloqueada;
   if (!categoria || !vigente2027 || !estado.asociacionDesbloqueada) return;
+  const versionSesion = estado.sesionPrivadaVersion || 0;
+  const usuarioSesion = estado.authUser?.id;
   // Invalidar los datos de cancha antes de refrescar: nunca exportar una copia antigua.
   delete estado.listadoArbitrosPorCategoriaId[categoria.id];
   const [decisionesResponse, candidatosResponse, arbitrosResponse] = await Promise.all([
@@ -1688,6 +1690,12 @@ async function cargarDecisionesDeportivasCategoria(nombreCategoria) {
     supabaseClient.rpc("apdb_list_player_eligibility_candidates", { p_category_id: categoria.id }),
     supabaseClient.rpc("apdb_get_referee_eligibility", { p_category_id: categoria.id })
   ]);
+  // La sesión puede cerrarse o cambiar mientras las RPC siguen en vuelo.
+  // Descartar respuestas tardías para evitar restaurar datos privados.
+  if (!estado.asociacionDesbloqueada ||
+      (estado.sesionPrivadaVersion || 0) !== versionSesion ||
+      estado.authUser?.id !== usuarioSesion ||
+      $("asociacion-categoria")?.value !== nombreCategoria) return;
   const { data, error } = decisionesResponse;
   if (error) {
     // Sin una lectura institucional verificada, nunca mostrar aprobaciones anteriores como vigentes.
@@ -6597,6 +6605,7 @@ async function cerrarSesionAuth() {
 }
 
 function limpiarEstadoPrivadoAuth() {
+  estado.sesionPrivadaVersion = (estado.sesionPrivadaVersion || 0) + 1;
   estado.permisosAuth = [];
   estado.delegadoDesbloqueado = false;
   estado.delegado = null;
@@ -8284,10 +8293,16 @@ async function validarListadoArbitrosParaEmision(categoriaNombre) {
   }
   // Consultar justo antes de exportar; las suspensiones y revocaciones de documentos
   // pueden suceder después de la última carga de la pantalla.
+  const versionSesion = estado.sesionPrivadaVersion || 0;
+  const usuarioSesion = estado.authUser?.id;
   delete estado.listadoArbitrosPorCategoriaId[categoria.id];
   const { data, error } = await supabaseClient.rpc("apdb_get_referee_eligibility", {
     p_category_id: categoria.id
   });
+  if (!estado.asociacionDesbloqueada ||
+      (estado.sesionPrivadaVersion || 0) !== versionSesion ||
+      estado.authUser?.id !== usuarioSesion ||
+      $("asociacion-categoria")?.value !== categoriaNombre) return false;
   if (error) {
     estado.listadoArbitrosErrorPorCategoriaId[categoria.id] = error.message;
     setStatus(status, "No se pudo verificar la lista oficial; emisión bloqueada: " + error.message, "error");
