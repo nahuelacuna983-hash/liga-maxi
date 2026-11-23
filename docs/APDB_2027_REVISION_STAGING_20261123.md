@@ -34,6 +34,20 @@ Alcance: consultas **solo lectura** sobre el proyecto independiente `wffvmthdmmj
 - Para generar el paquete institucional se usará solo la publishable de staging inyectada desde configuración segura local o de CI; nunca la clave secreta ni un fallback productivo.
 - Disponibilidad de la clave **no** equivale a aprobación de publicación; primero faltan las pruebas de permisos reales y el despliegue protegido.
 
+## Matriz de alcance documental — comprobación de predicados
+
+Comprobación el 23/11/2026 en staging mediante `execute_sql` de **solo lectura** y simulación de `request.jwt.claim.sub`. La prueba invoca `public.apdb_document_access_allowed` con identidades sintéticas existentes y dos equipos que tienen un documento de prueba cada uno. Se confirmó que `auth.uid()` recibió el identificador simulado en cada consulta.
+
+| Identidad simulada | Documento de equipo asignado | Documento de otro equipo | Esperado |
+|---|---|---|---|
+| Asociación activa | permitida | permitida | ✅ |
+| Delegado activo, con alcance a un equipo | permitida | denegada | ✅ |
+| Auditor OCR, sin permisos administrativos | denegada | denegada | ✅ |
+
+El proyecto tiene tres `app_users` sintéticos: Asociación con permiso de gestión y revisión, Delegado asignado a un equipo y Auditor OCR sin `app_user_permissions`. Se verificó además que los dos torneos staging son **borradores 2027**: uno conserva siete partidos y uno aún no tiene partidos. La aplicación debe seleccionar el primero por contenido y no asumir que hay un torneo activo.
+
+**Límite de esta prueba:** la conexión SQL de administración no emite JWT ni adopta efectivamente el rol HTTP `authenticated`. Este resultado prueba la lógica del predicado **con una identidad simulada**, pero **no** certifica acceso real por API, revocación de sesiones ni URLs firmadas. La ejecución autenticada `tests/apdb-staging-permissions.cjs` sigue pendiente de credenciales sintéticas temporales introducidas de forma oculta.
+
 ## Puertas de aceptación
 
 - Vista y RPC documentales deben rechazar lectura ajena, anon y revocado; ensayar con identidades sintéticas.
