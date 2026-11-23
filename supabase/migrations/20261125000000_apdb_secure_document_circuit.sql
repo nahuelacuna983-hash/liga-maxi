@@ -377,4 +377,40 @@ revoke all on function public.add_team_document_file(uuid,text,text,text,text,bi
   from public,anon,authenticated;
 grant execute on function public.add_team_document_file(uuid,text,text,text,text,bigint)
   to authenticated;
+
+-- Official delegate UI reads active requirement names and its own roster.
+-- The isolated baseline intentionally had RLS but no authenticated SELECT,
+-- so otherwise its document panel silently falls back to hardcoded names.
+revoke all on public.document_requirements from anon;
+grant select on public.document_requirements to authenticated;
+drop policy if exists apdb_document_requirements_scoped_select on public.document_requirements;
+create policy apdb_document_requirements_scoped_select on public.document_requirements
+for select to authenticated using (
+  activo and exists (
+    select 1 from public.app_users au
+    join public.app_user_permissions p on p.user_id=au.id
+    join public.categorias c on c.torneo_id=document_requirements.torneo_id
+    join public.torneos t on t.id=c.torneo_id
+    where au.auth_user_id=auth.uid() and au.active
+      and au.organizacion_id=t.organizacion_id
+      and document_requirements.organizacion_id=t.organizacion_id
+      and p.organizacion_id=t.organizacion_id
+      and p.torneo_id=t.id and p.categoria_id=c.id
+      and (document_requirements.categoria_id is null
+        or document_requirements.categoria_id=c.id)
+      and (
+        (au.role='delegado' and p.can_view and p.can_load_documents)
+        or (au.role in ('asociacion','admin_general') and p.can_review_documents)
+      )
+  )
+);
+revoke all on public.team_players from anon;
+grant select on public.team_players to authenticated;
+drop policy if exists apdb_team_players_scoped_select on public.team_players;
+create policy apdb_team_players_scoped_select on public.team_players
+for select to authenticated using (
+  public.apdb_document_view_allowed(
+    organizacion_id,torneo_id,categoria_id,equipo_id
+  )
+);
 commit;
