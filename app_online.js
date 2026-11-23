@@ -50,6 +50,7 @@ const estado = {
   documentosPorCategoriaId: {},
   jugadoresPorCategoriaId: {},
   documentosJugadoresPorCategoriaId: {},
+  decisionesDeportivasPorCategoriaId: {},
   driveDocumentosPorCategoriaId: {},
   auditoriaDocumentalPorCategoriaId: {},
   auditoriasIAPorCategoriaId: {},
@@ -1645,15 +1646,21 @@ function calcularEstadoHabilitacionJugador(nombreCategoria, jugador) {
   // persistida y auditada, no emitir una habilitación automática.
   // Las temporadas históricas conservan su comportamiento anterior.
   const requiereDecisionInstitucional = Number(temporadaDocumentalActiva()) >= 2027;
-  const decisionDeportivaPendiente = requiereDecisionInstitucional && documentacionCompleta;
+  const decisionRegistrada = requiereDecisionInstitucional
+    ? estado.decisionesDeportivasPorCategoriaId[estado.categorias.find((cat) => cat.nombre === nombreCategoria)?.id]?.[jugador.id]
+    : null;
+  const decisionAprobada = decisionRegistrada?.status === "habilitado";
+  const decisionDeportivaPendiente = requiereDecisionInstitucional && documentacionCompleta && !decisionRegistrada;
 
   return {
     ...estados,
     documentacionCompleta,
     estadoHabilitacionDeportiva: requiereDecisionInstitucional
-      ? (documentacionCompleta ? "PENDIENTE_DECISION" : "DOCUMENTACION_INCOMPLETA")
+      ? (!documentacionCompleta ? "DOCUMENTACION_INCOMPLETA"
+        : (decisionRegistrada?.status === "suspendido" ? "SUSPENDIDO"
+          : (decisionAprobada ? "HABILITADO_INSTITUCIONAL" : "PENDIENTE_DECISION")))
       : "LEGACY_DOCUMENTAL",
-    habilitado: requiereDecisionInstitucional ? "NO" : (documentacionCompleta ? "SI" : "NO"),
+    habilitado: requiereDecisionInstitucional ? (documentacionCompleta && decisionAprobada ? "SI" : "NO") : (documentacionCompleta ? "SI" : "NO"),
     faltantes: [
       ...faltantes,
       ...(decisionDeportivaPendiente ? ["Pendiente de decisión institucional de habilitación deportiva"] : [])
@@ -1661,6 +1668,87 @@ function calcularEstadoHabilitacionJugador(nombreCategoria, jugador) {
     preauditoria,
     preauditoriaDetalle: preauditoria.detalle
   };
+}
+
+async function cargarDecisionesDeportivasCategoria(nombreCategoria) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const section = $("apdb-eligibility-section");
+  const vigente2027 = String(temporadaDocumentalActiva()) === "2027";
+  if (section) section.hidden = !vigente2027 || !estado.asociacionDesbloqueada;
+  if (!categoria || !vigente2027 || !estado.asociacionDesbloqueada) return;
+  const { data, error } = await supabaseClient.rpc("apdb_get_player_eligibility", {
+    p_category_id: categoria.id
+  });
+  if (error) {
+    // Sin una lectura institucional verificada, nunca mostrar aprobaciones anteriores como vigentes.
+    delete estado.decisionesDeportivasPorCategoriaId[categoria.id];
+    setStatus($("apdb-eligibility-status"), "Decisiones no disponibles: " + error.message, "warn");
+  } else {
+    estado.decisionesDeportivasPorCategoriaId[categoria.id] =
+      Object.fromEntries((data || []).map((item) => [String(item.player_id), item]));
+    setStatus($("apdb-eligibility-status"), "", "");
+  }
+  renderDecisionesDeportivasCategoria(nombreCategoria);
+}
+
+function renderDecisionesDeportivasCategoria(nombreCategoria) {
+  const select = $("apdb-eligibility-player");
+  const summary = $("apdb-eligibility-summary");
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  if (!select || !summary || !categoria) return;
+  const chosen = select.value;
+  const jugadores = estado.jugadoresPorCategoriaId[categoria.id] || [];
+  select.innerHTML = '<option value="">Seleccionar jugador</option>' +
+    jugadores.map((jugador) => `<option value="${escapeHtml(jugador.id)}">${escapeHtml(jugador.equipo_nombre)} — ${escapeHtml(jugador.nombre)}</option>`).join("");
+  if (jugadores.some((jugador) => String(jugador.id) === chosen)) select.value = chosen;
+  const decisions = estado.decisionesDeportivasPorCategoriaId[categoria.id] || {};
+  const latest = decisions[select.value];
+  summary.textContent = latest
+    ? `Última decisión: ${latest.status} — ${latest.actor_name} — ${new Date(latest.decided_at).toLocaleString("es-AR")}. Motivo: ${latest.reason}`
+    : "Sin decisión institucional registrada para el jugador seleccionado.";
+}
+
+async function guardarDecisionDeportivaAsociacion(status) {
+  const nombreCategoria = $("asociacion-categoria")?.value || "";
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const playerId = $("apdb-eligibility-player")?.value || "";
+  const reason = $("apdb-eligibility-reason")?.value.trim() || "";
+  const statusNode = $("apdb-eligibility-status");
+  const jugador = (estado.jugadoresPorCategoriaId[categoria?.id] || [])
+    .find((item) => String(item.id) === playerId);
+  if (!estado.asociacionDesbloqueada || String(temporadaDocumentalActiva()) !== "2027" || !jugador) {
+    setStatus(statusNode, "Seleccioná un jugador de la temporada 2027 desde Asociación.", "warn");
+    return;
+  }
+  if (reason.length < 5) {
+    setStatus(statusNode, "Ingresá un motivo institucional de al menos cinco caracteres.", "warn");
+    return;
+  }
+  if (status === "habilitado" && !calcularEstadoHabilitacionJugador(nombreCategoria, jugador).documentacionCompleta) {
+    setStatus(statusNode, "No se puede habilitar: faltan requisitos documentales aprobados.", "warn");
+    return;
+  }
+  if (!confirm(`¿Confirmás ${status} a ${jugador.nombre}? La decisión quedará registrada.`)) return;
+  const approve = $("apdb-eligibility-approve");
+  const suspend = $("apdb-eligibility-suspend");
+  if (approve) approve.disabled = true;
+  if (suspend) suspend.disabled = true;
+  try {
+    const { error } = await supabaseClient.rpc("apdb_set_player_eligibility", {
+      p_player_id: playerId, p_status: status, p_reason: reason
+    });
+    if (error) {
+      setStatus(statusNode, "No se pudo registrar la decisión: " + error.message, "error");
+      return;
+    }
+    await cargarDecisionesDeportivasCategoria(nombreCategoria);
+    renderListaHabilitadosArbitros(nombreCategoria);
+    setStatus(statusNode, "Decisión institucional registrada.", "ok");
+    if ($("apdb-eligibility-reason")) $("apdb-eligibility-reason").value = "";
+  } finally {
+    if (approve) approve.disabled = false;
+    if (suspend) suspend.disabled = false;
+  }
 }
 
 function calcularHabilitadosCategoria(nombreCategoria) {
@@ -7621,6 +7709,7 @@ async function cargarDatosAsociacionActual() {
   setStatus(status, "Cargando datos de asociacion...", "");
 
   await refrescarCategoria(categoria, { actualizarPublico: false });
+  await cargarDecisionesDeportivasCategoria(categoria);
   poblarSelectPartidosAsociacion(categoria);
   renderPlayoffsAsociacion(categoria);
   marcarPlayoffsAsociacionListos(categoria);
@@ -8523,6 +8612,10 @@ async function inicializarAsociacion() {
   $("admin-alta-torneo")?.addEventListener("click", prepararAltaAdministrativa);
   $("admin-delegado-asignar")?.addEventListener("click", asignarAlcanceDelegado);
   $("admin-delegado-revocar")?.addEventListener("click", revocarAlcanceDelegado);
+  $("apdb-eligibility-approve")?.addEventListener("click", () => guardarDecisionDeportivaAsociacion("habilitado"));
+  $("apdb-eligibility-suspend")?.addEventListener("click", () => guardarDecisionDeportivaAsociacion("suspendido"));
+  $("apdb-eligibility-player")?.addEventListener("change", () =>
+    renderDecisionesDeportivasCategoria($("asociacion-categoria")?.value || ""));
   $("admin-delegado-categoria")?.addEventListener("change", poblarEquiposAltaAdministrativa);
 
   poblarSelectCategorias("asociacion-categoria", estado.categorias);
@@ -8533,6 +8626,7 @@ async function inicializarAsociacion() {
     const categoria = e.target.value;
     actualizarEstadoRenderPlayoffs(categoria, "loading", "category-change");
     await refrescarCategoria(categoria, { actualizarPublico: false });
+    await cargarDecisionesDeportivasCategoria(categoria);
     poblarSelectPartidosAsociacion(categoria);
     renderPlayoffsAsociacion(categoria);
     marcarPlayoffsAsociacionListos(categoria);
