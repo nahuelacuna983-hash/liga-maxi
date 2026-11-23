@@ -52,6 +52,8 @@ const estado = {
   documentosJugadoresPorCategoriaId: {},
   decisionesDeportivasPorCategoriaId: {},
   candidatosHabilitacionPorCategoriaId: {},
+  listadoArbitrosPorCategoriaId: {},
+  listadoArbitrosErrorPorCategoriaId: {},
   driveDocumentosPorCategoriaId: {},
   auditoriaDocumentalPorCategoriaId: {},
   auditoriasIAPorCategoriaId: {},
@@ -1679,9 +1681,12 @@ async function cargarDecisionesDeportivasCategoria(nombreCategoria) {
   const vigente2027 = String(temporadaDocumentalActiva()) === "2027";
   if (section) section.hidden = !vigente2027 || !estado.asociacionDesbloqueada;
   if (!categoria || !vigente2027 || !estado.asociacionDesbloqueada) return;
-  const [decisionesResponse, candidatosResponse] = await Promise.all([
+  // Invalidar los datos de cancha antes de refrescar: nunca exportar una copia antigua.
+  delete estado.listadoArbitrosPorCategoriaId[categoria.id];
+  const [decisionesResponse, candidatosResponse, arbitrosResponse] = await Promise.all([
     supabaseClient.rpc("apdb_get_player_eligibility", { p_category_id: categoria.id }),
-    supabaseClient.rpc("apdb_list_player_eligibility_candidates", { p_category_id: categoria.id })
+    supabaseClient.rpc("apdb_list_player_eligibility_candidates", { p_category_id: categoria.id }),
+    supabaseClient.rpc("apdb_get_referee_eligibility", { p_category_id: categoria.id })
   ]);
   const { data, error } = decisionesResponse;
   if (error) {
@@ -1698,6 +1703,13 @@ async function cargarDecisionesDeportivasCategoria(nombreCategoria) {
     setStatus($("apdb-eligibility-status"), "No se pudieron cargar jugadores autorizados: " + candidatosResponse.error.message, "warn");
   } else {
     estado.candidatosHabilitacionPorCategoriaId[categoria.id] = candidatosResponse.data || [];
+  }
+  if (arbitrosResponse.error) {
+    delete estado.listadoArbitrosPorCategoriaId[categoria.id];
+    estado.listadoArbitrosErrorPorCategoriaId[categoria.id] = arbitrosResponse.error.message;
+  } else {
+    estado.listadoArbitrosPorCategoriaId[categoria.id] = arbitrosResponse.data || [];
+    delete estado.listadoArbitrosErrorPorCategoriaId[categoria.id];
   }
   renderDecisionesDeportivasCategoria(nombreCategoria);
 }
@@ -1762,7 +1774,11 @@ async function guardarDecisionDeportivaAsociacion(status) {
 
 function calcularHabilitadosCategoria(nombreCategoria) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
-  const jugadores = categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : [];
+  const periodo2027 = String(temporadaDocumentalActiva()) === "2027";
+  // Para 2027, la lista oficial se calcula en PostgreSQL cada vez que se consulta.
+  // No se confían documentos ni habilitaciones almacenados en el navegador.
+  const listadoOficial = periodo2027 ? estado.listadoArbitrosPorCategoriaId[categoria?.id] : null;
+  const jugadores = periodo2027 ? (listadoOficial || []) : (categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : []);
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const estadoFiltro = $("habilitados-filtro-estado")?.value || "";
   const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
@@ -1779,8 +1795,27 @@ function calcularHabilitadosCategoria(nombreCategoria) {
       return !equipoFiltro || nombresEquipoCoinciden(jugador.equipo_nombre, equipoFiltro);
     })
     .map((jugador) => {
+      if (periodo2027) {
+        const habilitado = jugador.habilitado === true;
+        const causa = !jugador.documentacion_completa
+          ? "Documentación obligatoria incompleta o vencida"
+          : jugador.decision_status === "suspendido"
+            ? "Habilitación suspendida por Asociación"
+            : !habilitado ? "Pendiente de decisión institucional" : "";
+        return {
+          categoria: nombreCategoria,
+          equipo: jugador.equipo_nombre || "",
+          apellidoNombre: jugador.nombre || "",
+          dni: jugador.dni || "",
+          dorsal: jugador.dorsal || "",
+          buenaFe: "—", seguro: "—", certificado: "—", deslinde: "—", pase: "—",
+          habilitado: habilitado ? "SI" : "NO",
+          documentacionCompleta: !!jugador.documentacion_completa,
+          estadoHabilitacionDeportiva: jugador.decision_status || "pendiente",
+          faltantes: causa
+        };
+      }
       const estadoHabilitacion = calcularEstadoHabilitacionJugador(nombreCategoria, jugador);
-
       return {
         categoria: nombreCategoria,
         equipo: jugador.equipo_nombre || "",
@@ -1959,6 +1994,11 @@ function renderListaHabilitadosArbitros(nombreCategoria) {
 
   actualizarFiltroPartidosHabilitados(nombreCategoria);
   actualizarFiltroEquiposHabilitados(nombreCategoria);
+  if (String(temporadaDocumentalActiva()) === "2027" &&
+      !Object.hasOwn(estado.listadoArbitrosPorCategoriaId, estado.categorias.find((cat) => cat.nombre === nombreCategoria)?.id)) {
+    container.innerHTML = `<div class="card"><h3>Lista para árbitros — 2027</h3><p class="note">Lista oficial no disponible. No emitir habilitaciones sin validar: ${escapeHtml(estado.listadoArbitrosErrorPorCategoriaId[estado.categorias.find((cat) => cat.nombre === nombreCategoria)?.id] || "datos pendientes de recuperación")}</p></div>`;
+    return;
+  }
   const filas = calcularHabilitadosCategoria(nombreCategoria);
   const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
   const equipoFiltro = equipoOperativoSeleccionado();
@@ -8237,6 +8277,13 @@ function exportarHabilitadosCsv() {
 function descargarListaHabilitadosHtml() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
+  if (String(temporadaDocumentalActiva()) === "2027") {
+    const categoriaId = estado.categorias.find((cat) => cat.nombre === categoria)?.id;
+    if (!Object.hasOwn(estado.listadoArbitrosPorCategoriaId, categoriaId)) {
+      setStatus(status, "No se puede emitir una lista 2027 sin validar el estado oficial vigente.", "error");
+      return;
+    }
+  }
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
   const contexto = contextoHabilitadosSeleccionado(categoria);
