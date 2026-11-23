@@ -27,13 +27,13 @@ jobs:
         run: |
           test "$AUTHORIZED_REF" = "codex/apdb-2027-operational-hardening"
           grep -q 'project_id = "apdb-2027-isolated"' supabase/config.toml
-      - uses: supabase/setup-cli@v1
-        with:
-          version: latest
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - uses: supabase/setup-cli@v3
+        with:
+          version: v2.stable
       - run: npm ci
       - name: Assign dedicated CI ports for the disposable Supabase instance
         shell: bash
