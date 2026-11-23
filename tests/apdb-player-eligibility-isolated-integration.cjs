@@ -64,12 +64,24 @@ async function login(email) {
     assert.equal((await list(null)).code, 401, "Anonymous candidate listing forbidden");
     assert.equal((await list(ids.delegate.token)).code, 403, "Delegate candidate listing forbidden");
     assert.equal((await list(ids.foreign.token)).code, 403, "Other organization candidate listing forbidden");
+    const refereeList = (token) => http("/rest/v1/rpc/apdb_get_referee_eligibility", {
+      token, body: { p_category_id: cA }
+    });
+    assert.equal((await refereeList(null)).code,401,"Anonymous referee list forbidden");
+    assert.equal((await refereeList(ids.delegate.token)).code,403,"Delegate referee list forbidden");
+    assert.equal((await refereeList(ids.foreign.token)).code,403,"Foreign referee list forbidden");
+    assert.equal((await refereeList(ids.association.token)).code,403,"Unscoped referee list forbidden");
     assert.equal((await list(ids.association.token)).code, 403, "Unscoped association candidate listing forbidden");
     await db.query("insert into public.app_user_permissions(user_id,organizacion_id,torneo_id,categoria_id,can_review_documents) values($1,$2,$3,$4,true)",[ids.association.id,orgA,tA,cA]);
     const candidates = await list(ids.association.token);
     assert.equal(candidates.code, 200, JSON.stringify(candidates.data));
     assert.deepEqual(candidates.data.map((row) => row.player_id), [player]);
     assert.equal(candidates.data[0].nombre, "Jugador CI");
+    let referee = await refereeList(ids.association.token);
+    assert.equal(referee.code,200,JSON.stringify(referee.data));
+    assert.equal(referee.data.length,1);
+    assert.equal(referee.data[0].documentacion_completa,false);
+    assert.equal(referee.data[0].habilitado,false);
     assert.equal((await rpc(ids.association.token,"habilitado","Catalogo pendiente")).code,400,"No catalog must refuse");
     await db.query("insert into public.document_requirements(id,organizacion_id,torneo_id,categoria_id,nombre,scope,obligatorio,activo) values($1,$2,$3,$4,'Aptitud sintetica','player',true,true)",[req,orgA,tA,cA]);
     assert.equal((await rpc(ids.association.token,"habilitado","Falta documento")).code,400,"Missing approved document must refuse");
@@ -78,8 +90,27 @@ async function login(email) {
     assert.equal((await rpc(ids.association.token,"habilitado"," ")).code,400,"Blank reason must refuse");
     const approve = await rpc(ids.association.token,"habilitado","Revision institucional explicita");
     assert.equal(approve.code,200,JSON.stringify(approve.data));
+    referee = await refereeList(ids.association.token);
+    assert.equal(referee.code,200,JSON.stringify(referee.data));
+    assert.equal(referee.data[0].documentacion_completa,true);
+    assert.equal(referee.data[0].habilitado,true);
+    assert.equal(referee.data[0].decision_status,"habilitado");
     const suspend = await rpc(ids.association.token,"suspendido","Suspension institucional explicita");
     assert.equal(suspend.code,200,JSON.stringify(suspend.data));
+    referee = await refereeList(ids.association.token);
+    assert.equal(referee.code,200,JSON.stringify(referee.data));
+    assert.equal(referee.data[0].habilitado,false,"Suspension must immediately block referee list");
+    assert.equal(referee.data[0].decision_status,"suspendido");
+    const resume=await rpc(ids.association.token,"habilitado","Rehabilitacion para verificar revocacion documental");
+    assert.equal(resume.code,200,JSON.stringify(resume.data));
+    await db.query("update public.player_documents set status='observado' where id=$1",[idDocument]);
+    referee = await refereeList(ids.association.token);
+    assert.equal(referee.code,200,JSON.stringify(referee.data));
+    assert.equal(referee.data[0].habilitado,false,"Revoked document must invalidate previously approved decision");
+    assert.equal(referee.data[0].documentacion_completa,false);
+    await db.query("update public.player_documents set status='aprobado' where id=$1",[idDocument]);
+    const suspendAgain=await rpc(ids.association.token,"suspendido","Suspension definitiva para verificar historial");
+    assert.equal(suspendAgain.code,200,JSON.stringify(suspendAgain.data));
     assert.equal((await http("/rest/v1/rpc/apdb_get_player_eligibility",{token:ids.delegate.token,body:{p_category_id:cA}})).code,403,"Delegate cannot view institutional decision RPC");
     const read = await http("/rest/v1/rpc/apdb_get_player_eligibility",{token:ids.association.token,body:{p_category_id:cA}});
     assert.equal(read.code,200,JSON.stringify(read.data));
@@ -87,7 +118,7 @@ async function login(email) {
     assert.equal(read.data[0].status,"suspendido");
     assert.equal(read.data[0].actor_name,"association");
     const rows = await db.query("select status,reason,actor_auth_user_id from public.apdb_player_eligibility_events where player_id=$1 order by created_at,id",[player]);
-    assert.equal(rows.rowCount,2,"Append-only evidence required");
+    assert.equal(rows.rowCount,4,"Append-only evidence required");
     assert(rows.rows.every(x=>x.actor_auth_user_id===ids.association.id));
     console.log("APDB_PLAYER_ELIGIBILITY_AUTH_HTTP_OK");
   } finally { await db.end(); }
