@@ -321,4 +321,60 @@ where tp.activo
 revoke all on public.v_player_documents_admin from public,anon,authenticated;
 grant select on public.v_player_documents_admin to authenticated;
 
+
+-- Allow several immutable, individually auditable files for requirements
+-- configured with allows_multiple_files=true (for example LDBF or insurance).
+create function public.add_team_document_file(
+  p_document_id uuid,p_uploaded_by text,p_storage_path text,
+  p_file_name text,p_file_type text,p_file_size bigint
+) returns uuid
+language plpgsql security definer set search_path=public,auth,pg_temp
+as $$
+declare v_doc public.team_documents%rowtype;
+declare v_actor public.app_users%rowtype;
+declare v_file_id uuid;
+begin
+  select * into v_doc from public.team_documents where id=p_document_id for update;
+  if not found or not public.apdb_document_scope_allowed(
+    v_doc.organizacion_id,v_doc.torneo_id,v_doc.categoria_id,v_doc.equipo_id,false)
+    or not exists(select 1 from public.document_requirements r
+      where r.id=v_doc.requirement_id and r.allows_multiple_files)
+    or p_file_type not in ('application/pdf','image/png','image/jpeg')
+    or p_file_size is null or p_file_size<=0 or p_file_size>10485760
+    or nullif(trim(p_file_name),'') is null
+    or not public.apdb_storage_path_allowed(p_storage_path,'upload')
+    or split_part(p_storage_path,'/',5)<>v_doc.requirement_id::text
+    or not exists(select 1 from storage.objects s
+      where s.bucket_id='documentos' and s.name=p_storage_path)
+  then
+    raise exception using errcode='42501',message='archivo multiple fuera de alcance';
+  end if;
+  if exists(select 1 from public.document_files df
+            where df.team_document_id=v_doc.id and df.storage_path=p_storage_path) then
+    raise exception using errcode='23505',message='archivo ya incorporado';
+  end if;
+  select * into v_actor from public.app_users where auth_user_id=auth.uid() and active;
+  insert into public.document_files(
+    team_document_id,uploaded_by,storage_path,file_name,file_type,file_size
+  ) values(
+    v_doc.id,v_actor.display_name,p_storage_path,trim(p_file_name),p_file_type,p_file_size
+  ) returning id into v_file_id;
+  update public.team_documents set
+    uploaded_by=v_actor.display_name,
+    storage_path=coalesce(storage_path,p_storage_path),
+    file_name=coalesce(file_name,trim(p_file_name)),
+    file_type=coalesce(file_type,p_file_type),
+    file_size=coalesce(file_size,p_file_size),
+    status='cargado',observacion=null,reviewed_by=null,reviewed_at=null,
+    updated_at=clock_timestamp()
+  where id=v_doc.id;
+  insert into public.document_events(team_document_id,event_type,actor,detail)
+  values(v_doc.id,'archivo_agregado',v_actor.display_name,'Archivo multiple registrado');
+  return v_file_id;
+end;
+$$;
+revoke all on function public.add_team_document_file(uuid,text,text,text,text,bigint)
+  from public,anon,authenticated;
+grant execute on function public.add_team_document_file(uuid,text,text,text,text,bigint)
+  to authenticated;
 commit;
