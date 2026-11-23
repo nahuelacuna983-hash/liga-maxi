@@ -25,3 +25,35 @@ jobs:
           node tests/apdb-delegate-player-deactivation-guardrails.cjs
           node tests/apdb-2027-eligibility-separation.cjs
           node tests/app-online-administrative-onboarding-contract.cjs
+
+  eligibility-auth-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard local-only Supabase configuration
+        run: grep -q 'project_id = "apdb-2027-isolated"' supabase/config.toml
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Start disposable Supabase
+        run: supabase start
+      - name: Set local-only environment
+        run: |
+          eval "$(supabase status -o env)"
+          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=$DB_URL" >> "$GITHUB_ENV"
+      - name: Apply migrations to disposable instance
+        run: supabase db reset --local
+      - name: Verify eligibility RPC with authenticated synthetic identities
+        run: node tests/apdb-player-eligibility-isolated-integration.cjs
+      - name: Stop disposable Supabase
+        if: always()
+        run: supabase stop --no-backup
