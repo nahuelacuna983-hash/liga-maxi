@@ -1,0 +1,54 @@
+name: APdB institutional source bundle
+
+on:
+  push:
+    branches:
+      - codex/apdb-2027-operational-hardening
+    paths:
+      - 'index_online.html'
+      - 'app_online.js'
+      - 'apdb-administrative-adapter.js'
+      - 'sw.js'
+      - 'manifest.json'
+      - 'icon-192.png'
+      - 'icon-512.png'
+      - 'tools/build-apdb-staging.cjs'
+      - 'tests/apdb-staging-build.cjs'
+      - '.github/workflows/apdb-institutional-source-bundle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify source and isolated package contract
+        run: |
+          node --check app_online.js
+          node --check apdb-administrative-adapter.js
+          node tests/apdb-staging-build.cjs
+      - name: Create auditable source archive without credentials
+        shell: bash
+        run: |
+          mkdir -p dist/apdb-institutional-source
+          cp index_online.html app_online.js apdb-administrative-adapter.js sw.js manifest.json icon-192.png icon-512.png dist/apdb-institutional-source/
+          mkdir -p dist/apdb-institutional-source/tools
+          cp tools/build-apdb-staging.cjs dist/apdb-institutional-source/tools/
+          printf '%s\n' "${GITHUB_SHA}" > dist/apdb-institutional-source/COMMIT.txt
+          find dist/apdb-institutional-source -type f -print0 | sort -z | xargs -0 sha256sum > dist/SHA256SUMS.txt
+          cd dist
+          zip -qr apdb-institutional-source.zip apdb-institutional-source SHA256SUMS.txt
+      - name: Publish internal build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apdb-institutional-source
+          path: dist/apdb-institutional-source.zip
+          retention-days: 7
+          if-no-files-found: error
