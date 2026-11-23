@@ -28,7 +28,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $apdb_roster$
 begin
   if (
     old.organizacion_id is distinct from new.organizacion_id
@@ -43,7 +43,7 @@ begin
   end if;
   return new;
 end;
-$;
+$apdb_roster$;
 create trigger apdb_2027_player_roster_change
 before update of organizacion_id, torneo_id, categoria_id, equipo_id, activo
 on public.team_players
