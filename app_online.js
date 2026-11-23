@@ -8486,7 +8486,7 @@ async function inicializarAsociacion() {
 
   poblarSelectCategorias("asociacion-categoria", estado.categorias);
   poblarSelectCategorias("admin-delegado-categoria", estado.categorias);
-  poblarEquiposAltaAdministrativa();
+  await poblarEquiposAltaAdministrativa();
 
   $("asociacion-categoria").addEventListener("change", async (e) => {
     const categoria = e.target.value;
@@ -8665,7 +8665,7 @@ async function prepararAltaAdministrativa() {
     poblarSelectCategorias("asociacion-categoria", estado.categorias);
     poblarSelectCategorias("planner-categoria", estado.categorias);
     poblarSelectCategorias("admin-delegado-categoria", estado.categorias);
-    poblarEquiposAltaAdministrativa();
+    await poblarEquiposAltaAdministrativa();
     const tournamentId = row?.tournament_id || row?.torneo_id;
     const categoryId = row?.category_id || row?.categoria_id;
     const teamIds = row?.team_ids || row?.equipo_ids || [];
@@ -8678,12 +8678,12 @@ async function prepararAltaAdministrativa() {
   }
 }
 
-function poblarEquiposAltaAdministrativa() {
+async function poblarEquiposAltaAdministrativa() {
   const categoriaId = $("admin-delegado-categoria")?.value;
   const select = $("admin-delegado-equipo");
   if (!select) return;
   const categoria = estado.categorias?.find((item) => String(item.id || item.categoria_id) === String(categoriaId));
-  const equipos = categoria?.equipos || estado.equipos?.filter((item) => String(item.categoria_id) === String(categoriaId)) || [];
+  const equipos = categoriaId ? await cargarEquiposCategoria(categoriaId) : (categoria?.equipos || []);
   select.innerHTML = equipos.map((equipo) => `<option value="${escapeHtml(equipo.id || equipo.equipo_id || "")}">${escapeHtml(equipo.nombre || equipo.name || "Equipo")}</option>`).join("");
 }
 
