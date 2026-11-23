@@ -3,6 +3,7 @@ name: APdB institutional package contract
 on:
   push:
     branches:
+      - codex/apdb-2027-operational-hardening
       - codex/apdb-2027-institutional-package-guard
   pull_request:
     paths:
