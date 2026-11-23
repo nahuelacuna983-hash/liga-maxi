@@ -1651,6 +1651,7 @@ function calcularEstadoHabilitacionJugador(nombreCategoria, jugador) {
     ? estado.decisionesDeportivasPorCategoriaId[estado.categorias.find((cat) => cat.nombre === nombreCategoria)?.id]?.[jugador.id]
     : null;
   const decisionAprobada = decisionRegistrada?.status === "habilitado";
+  const decisionSuspendida = decisionRegistrada?.status === "suspendido";
   const decisionDeportivaPendiente = requiereDecisionInstitucional && documentacionCompleta && !decisionRegistrada;
 
   return {
@@ -1664,6 +1665,7 @@ function calcularEstadoHabilitacionJugador(nombreCategoria, jugador) {
     habilitado: requiereDecisionInstitucional ? (documentacionCompleta && decisionAprobada ? "SI" : "NO") : (documentacionCompleta ? "SI" : "NO"),
     faltantes: [
       ...faltantes,
+      ...(decisionSuspendida ? ["Habilitación suspendida por Asociación"] : []),
       ...(decisionDeportivaPendiente ? ["Pendiente de decisión institucional de habilitación deportiva"] : [])
     ].join("; "),
     preauditoria,
