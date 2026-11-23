@@ -15,6 +15,28 @@ Alcance: revisión inicial **solo lectura** del proyecto independiente `wffvmthd
 
 **Pendiente crítico:** ejecutar una subida, descarga y generación de URL firmada con identidades Auth reales y documentos ficticios sobre el **staging persistente**, además de prueba de cuenta revocada. La matriz simulada no reemplaza esos ensayos; el sitio institucional tampoco fue desplegado.
 
+## Pruebas adicionales con roles PostgreSQL reales — 23/11/2026
+
+La consulta de validación cambió localmente `role` a `authenticated` / `anon` y configuró `request.jwt.claim.sub` con UUID de usuarios **sintéticos** existentes. No emitió JWT ni hizo login HTTP, pero ejercitó los `GRANT` y la vista `v_team_documents_admin` bajo el rol que PostgREST utilizaría.
+
+| Rol simulado | Documentos visibles | Equipo autorizado | Otro equipo |
+|---|---:|---:|---:|
+| Asociación autenticada | 2 | 1 | 1 |
+| Delegado autenticado | 1 | 1 | 0 |
+| Auditor sin alcances | 0 | 0 | 0 |
+| `anon` | 0 | 0 | 0 |
+
+**Resultado:** no se observó filtración documental cruzada al ejecutar la vista con roles efectivos. **Pendiente:** prueba real de Auth HTTP con JWT de cuentas sintéticas y de Storage real en el staging persistente.
+
+## Ajuste del disparador interno de RLS — 23/11/2026
+
+- Se restringió el permiso `EXECUTE` de `public.rls_auto_enable()` para `PUBLIC`, `anon` y `authenticated` en staging.
+- Migración confirmada en el historial de Supabase: `20261123163609` — `apdb_restrict_rls_event_trigger_execute_20261123`.
+- Comprobación posterior: `anon_exec=false`, `auth_exec=false`, `owner_exec=true`; el disparador `ensure_rls` sigue habilitado.
+- El asesor de seguridad **ya no** informa `anon_security_definer_function_executable` para esa función. Continúan pendientes los avisos sobre la vista privilegiada y RPC de usuarios autenticados, que se revisan con pruebas de alcance y no deben revocarse indiscriminadamente.
+- Los avisos informativos sobre tablas sin política no equivalen a acceso libre: en staging 19 tablas tienen RLS activo y ninguna regla de acceso directo.
+- El asesor también señaló `auth_leaked_password_protection`, una configuración de seguridad de contraseñas que debe revisarse antes de incorporar cuentas reales.
+
 ## Evidencia de inventario
 
 - Proyecto: **ACTIVE_HEALTHY**.
