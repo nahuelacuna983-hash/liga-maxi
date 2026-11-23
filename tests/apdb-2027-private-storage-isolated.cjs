@@ -71,13 +71,58 @@ async function create(role,organization,team,review){
     assert.ok([200,201].includes(created.status),"Authorized upload "+JSON.stringify(created));
     const privateDirect=await call(object(filename),{token:anon,method:"GET"});
     assert.notEqual(privateDirect.status,200,"Direct anonymous download forbidden");
-    await db.query("update public.player_documents set storage_path=$1,status='cargado',file_name='aptitud.pdf',file_type='application/pdf',file_size=$2 where id=$3",[filename,pdf.length,doc]);
+    const uploadDocument = (token,id,name) => call("/rest/v1/rpc/mark_player_document_uploaded",{
+      token,body:{p_document_id:id,p_uploaded_by:"Usuario falso",p_storage_path:name,
+        p_file_name:"aptitud.pdf",p_file_type:"application/pdf",p_file_size:pdf.length,p_vencimiento:null}
+    });
+    const reviewDocument = (token,status,reason) => call("/rest/v1/rpc/review_player_document",{
+      token,body:{p_document_id:doc,p_status:status,p_actor:"Administrador falso",p_observacion:reason}
+    });
+    const badMark=await uploadDocument(delegates[1].token,doc,filename);
+    assert.notEqual(badMark.status,200,"Wrong team cannot attach another club file");
+    const registered=await uploadDocument(delegates[0].token,doc,filename);
+    assert.equal(registered.status,200,"Correct delegate can register document "+JSON.stringify(registered.data));
+    const noReview=await reviewDocument(delegates[0].token,"aprobado",null);
+    assert.notEqual(noReview.status,200,"Delegate cannot approve documentary evidence");
+    const noReason=await reviewDocument(association.token,"observado"," ");
+    assert.notEqual(noReason.status,200,"Association must explain observations");
+    const observed=await reviewDocument(association.token,"observado","Falta constancia complementaria");
+    assert.equal(observed.status,200,"Association can observe document "+JSON.stringify(observed.data));
+    const correctedName=filename.replace("aptitud-","correccion-");
+    const correctedUpload=await call(object(correctedName),{token:delegates[0].token,body:pdf,json:false});
+    assert.ok([200,201].includes(correctedUpload.status),"Delegate can correct observation");
+    const corrected=await uploadDocument(delegates[0].token,doc,correctedName);
+    assert.equal(corrected.status,200,"Correction registration must succeed");
+    const approved=await reviewDocument(association.token,"aprobado",null);
+    assert.equal(approved.status,200,"Association can approve corrected file");
+    const saved=await db.query("select status,storage_path,uploaded_by,reviewed_by from public.player_documents where id=$1",[doc]);
+    assert.equal(saved.rows[0].status,"aprobado");
+    assert.equal(saved.rows[0].storage_path,correctedName);
+    assert.notEqual(saved.rows[0].uploaded_by,"Usuario falso");
+    assert.notEqual(saved.rows[0].reviewed_by,"Administrador falso");
+    const trace=await db.query("select event_type from public.player_document_events where player_document_id=$1 order by created_at,id",[doc]);
+    assert.equal(trace.rowCount,4);
+    const newPlayer=await call("/rest/v1/rpc/add_team_player",{token:delegates[0].token,body:{
+      p_organizacion_id:null,p_torneo_id:tournament,p_categoria_id:category,p_equipo_id:teams[0],
+      p_equipo_nombre:"Equipo sintético 0",p_nombre:"Jugador nuevo 2027",p_dni:"synthetic-987",
+      p_dorsal:"23",p_created_by:"Nombre suplantado"
+    }});
+    assert.equal(newPlayer.status,200,"Delegate should register scoped player "+JSON.stringify(newPlayer.data));
+    const newId=String(newPlayer.data);
+    const placeholders=await db.query("select count(*)::int n from public.player_documents where player_id=$1",[newId]);
+    assert.equal(placeholders.rows[0].n,1,"Player registration automatically creates requirement placeholder");
+    const unauthorizedPlayer=await call("/rest/v1/rpc/add_team_player",{token:delegates[1].token,body:{
+      p_organizacion_id:null,p_torneo_id:tournament,p_categoria_id:category,p_equipo_id:teams[0],
+      p_equipo_nombre:"Equipo sintético 0",p_nombre:"Jugador intruso",p_dni:null,
+      p_dorsal:null,p_created_by:"Intruso"
+    }});
+    assert.notEqual(unauthorizedPlayer.status,200,"Other team cannot register player");
     for(const token of [anon,delegates[1].token,foreign.token,nobody.token]){
-      const forbidden=await call(sign(filename),{token,body:{expiresIn:90}});
+      const forbidden=await call(sign(correctedName),{token,body:{expiresIn:90}});
       assert.notEqual(forbidden.status,200,"Unauthorized signed URL forbidden");
     }
     for(const u of [delegates[0],association]){
-      const signed=await call(sign(filename),{token:u.token,body:{expiresIn:90}});
+      const signed=await call(sign(correctedName),{token:u.token,body:{expiresIn:90}});
       assert.equal(signed.status,200,"Scoped signed URL expected "+JSON.stringify(signed.data));
       assert(signed.data.signedURL || signed.data.signedUrl,"Signed URL missing");
     }
