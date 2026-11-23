@@ -137,7 +137,7 @@ function guardarCachePublica(tipo, nombreCategoria, data) {
 async function cargarTorneoActivo() {
   const { data: torneosTrabajo, error: errorTrabajo } = await supabaseClient
     .from("torneos")
-    .select("id, nombre, temporada, tipo, estado")
+    .select("id, nombre, temporada, tipo, estado, organizacion_id")
     .eq("estado", "activo")
     .order("created_at", { ascending: false })
     .limit(1);
@@ -150,7 +150,7 @@ async function cargarTorneoActivo() {
 
   const { data: torneosVisibles, error: errorVisibles } = await supabaseClient
     .from("torneos")
-    .select("id, nombre, temporada, tipo, estado")
+    .select("id, nombre, temporada, tipo, estado, organizacion_id")
     .in("estado", ["publicado", "en_juego"])
     .order("created_at", { ascending: false })
     .limit(1);
@@ -173,7 +173,7 @@ async function cargarTorneoActivo() {
   if (!torneo) {
     const { data: torneosConContenido, error: errorContenido } = await supabaseClient
       .from("torneos")
-      .select("id, nombre, temporada, tipo, estado")
+      .select("id, nombre, temporada, tipo, estado, organizacion_id")
       .in("estado", ["borrador", "activo", "publicado", "en_juego"])
       .order("created_at", { ascending: false })
       .limit(20);
@@ -193,7 +193,7 @@ async function cargarTorneoActivo() {
   if (!torneo && TORNEO_ID_FALLBACK) {
     const { data: fallback, error: errorFallback } = await supabaseClient
       .from("torneos")
-      .select("id, nombre, temporada, tipo, estado")
+      .select("id, nombre, temporada, tipo, estado, organizacion_id")
       .eq("id", TORNEO_ID_FALLBACK)
       .maybeSingle();
 
@@ -207,6 +207,20 @@ async function cargarTorneoActivo() {
     const torneoAnterior = TORNEO_ID;
     TORNEO_ID = torneo.id;
     estado.torneoActivo = torneo;
+    if (window.APDB_STAGING === true) {
+      if (!torneo.organizacion_id) {
+        throw new Error("El torneo de staging no tiene organizacion vinculada.");
+      }
+      const { data: organizacion, error: errorOrganizacion } = await supabaseClient
+        .from("organizaciones")
+        .select("slug")
+        .eq("id", torneo.organizacion_id)
+        .maybeSingle();
+      if (errorOrganizacion || !organizacion?.slug) {
+        throw new Error("No se pudo comprobar la ruta documental de la organizacion en staging.");
+      }
+      APP_CONFIG.organizacionActiva.storageSlug = organizacion.slug;
+    }
     if (torneoAnterior !== TORNEO_ID) {
       estado.partidosPorCategoria = {};
       estado.playoffsPorCategoria = {};
