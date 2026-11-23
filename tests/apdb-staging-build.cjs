@@ -27,6 +27,15 @@ try {
   assert.ok(html.includes("https://wffvmthdmmjwspnozyrv.supabase.co"));
   assert.ok(!html.includes("eshbydpsmypflfxpmhyk.supabase.co"));
   assert.ok(!html.includes("YOUR_STAGING_PUBLISHABLE_OR_ANON_KEY"));
+  const app = fs.readFileSync(path.join(outputPath, "app_online.js"), "utf8");
+  assert.ok(app.includes("window.APDB_STAGING === true"), "staging guard must remain enabled");
+  for (const forbidden of [
+    "https://eshbydpsmypflfxpmhyk.supabase.co",
+    "7d0971e3-66ee-4791-bcbf-bace1d2fefb9",
+    "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL"
+  ]) {
+    assert.ok(!app.includes(forbidden), `production fallback leaked into staging package: ${forbidden}`);
+  }
 
   const manifest = JSON.parse(fs.readFileSync(path.join(outputPath, "manifest.json"), "utf8"));
   assert.equal(manifest.start_url, config.publicBasePath);
@@ -37,7 +46,7 @@ try {
 
   const overwrite = spawnSync(process.execPath, ["tools/build-apdb-staging.cjs", configPath, outputPath], { encoding: "utf8" });
   assert.notEqual(overwrite.status, 0, "builder must refuse to overwrite an existing output");
-  console.log("APDB_STAGING_BUILD_CONTRACT_OK synthetic_config=true production_fallback=false overwrite_refused=true");
+  console.log("APDB_STAGING_BUILD_CONTRACT_OK synthetic_config=true production_fallback=false tournament_fallback=false overwrite_refused=true");
 } finally {
   fs.rmSync(root, { recursive: true, force: true });
 }
