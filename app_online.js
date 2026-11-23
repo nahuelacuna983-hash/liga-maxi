@@ -51,6 +51,7 @@ const estado = {
   jugadoresPorCategoriaId: {},
   documentosJugadoresPorCategoriaId: {},
   decisionesDeportivasPorCategoriaId: {},
+  candidatosHabilitacionPorCategoriaId: {},
   driveDocumentosPorCategoriaId: {},
   auditoriaDocumentalPorCategoriaId: {},
   auditoriasIAPorCategoriaId: {},
@@ -1676,9 +1677,11 @@ async function cargarDecisionesDeportivasCategoria(nombreCategoria) {
   const vigente2027 = String(temporadaDocumentalActiva()) === "2027";
   if (section) section.hidden = !vigente2027 || !estado.asociacionDesbloqueada;
   if (!categoria || !vigente2027 || !estado.asociacionDesbloqueada) return;
-  const { data, error } = await supabaseClient.rpc("apdb_get_player_eligibility", {
-    p_category_id: categoria.id
-  });
+  const [decisionesResponse, candidatosResponse] = await Promise.all([
+    supabaseClient.rpc("apdb_get_player_eligibility", { p_category_id: categoria.id }),
+    supabaseClient.rpc("apdb_list_player_eligibility_candidates", { p_category_id: categoria.id })
+  ]);
+  const { data, error } = decisionesResponse;
   if (error) {
     // Sin una lectura institucional verificada, nunca mostrar aprobaciones anteriores como vigentes.
     delete estado.decisionesDeportivasPorCategoriaId[categoria.id];
@@ -1687,6 +1690,12 @@ async function cargarDecisionesDeportivasCategoria(nombreCategoria) {
     estado.decisionesDeportivasPorCategoriaId[categoria.id] =
       Object.fromEntries((data || []).map((item) => [String(item.player_id), item]));
     setStatus($("apdb-eligibility-status"), "", "");
+  }
+  if (candidatosResponse.error) {
+    delete estado.candidatosHabilitacionPorCategoriaId[categoria.id];
+    setStatus($("apdb-eligibility-status"), "No se pudieron cargar jugadores autorizados: " + candidatosResponse.error.message, "warn");
+  } else {
+    estado.candidatosHabilitacionPorCategoriaId[categoria.id] = candidatosResponse.data || [];
   }
   renderDecisionesDeportivasCategoria(nombreCategoria);
 }
@@ -1697,10 +1706,10 @@ function renderDecisionesDeportivasCategoria(nombreCategoria) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   if (!select || !summary || !categoria) return;
   const chosen = select.value;
-  const jugadores = estado.jugadoresPorCategoriaId[categoria.id] || [];
+  const jugadores = estado.candidatosHabilitacionPorCategoriaId[categoria.id] || [];
   select.innerHTML = '<option value="">Seleccionar jugador</option>' +
-    jugadores.map((jugador) => `<option value="${escapeHtml(jugador.id)}">${escapeHtml(jugador.equipo_nombre)} — ${escapeHtml(jugador.nombre)}</option>`).join("");
-  if (jugadores.some((jugador) => String(jugador.id) === chosen)) select.value = chosen;
+    jugadores.map((jugador) => `<option value="${escapeHtml(jugador.player_id)}">${escapeHtml(jugador.equipo_nombre)} — ${escapeHtml(jugador.nombre)}</option>`).join("");
+  if (jugadores.some((jugador) => String(jugador.player_id) === chosen)) select.value = chosen;
   const decisions = estado.decisionesDeportivasPorCategoriaId[categoria.id] || {};
   const latest = decisions[select.value];
   summary.textContent = latest
@@ -1714,8 +1723,8 @@ async function guardarDecisionDeportivaAsociacion(status) {
   const playerId = $("apdb-eligibility-player")?.value || "";
   const reason = $("apdb-eligibility-reason")?.value.trim() || "";
   const statusNode = $("apdb-eligibility-status");
-  const jugador = (estado.jugadoresPorCategoriaId[categoria?.id] || [])
-    .find((item) => String(item.id) === playerId);
+  const jugador = (estado.candidatosHabilitacionPorCategoriaId[categoria?.id] || [])
+    .find((item) => String(item.player_id) === playerId);
   if (!estado.asociacionDesbloqueada || String(temporadaDocumentalActiva()) !== "2027" || !jugador) {
     setStatus(statusNode, "Seleccioná un jugador de la temporada 2027 desde Asociación.", "warn");
     return;
@@ -1724,10 +1733,8 @@ async function guardarDecisionDeportivaAsociacion(status) {
     setStatus(statusNode, "Ingresá un motivo institucional de al menos cinco caracteres.", "warn");
     return;
   }
-  if (status === "habilitado" && !calcularEstadoHabilitacionJugador(nombreCategoria, jugador).documentacionCompleta) {
-    setStatus(statusNode, "No se puede habilitar: faltan requisitos documentales aprobados.", "warn");
-    return;
-  }
+  // La RPC es la autoridad sobre requisitos y vencimientos. No bloquear desde
+  // un cache documental que puede carecer de permisos de lectura o estar desactualizado.
   if (!confirm(`¿Confirmás ${status} a ${jugador.nombre}? La decisión quedará registrada.`)) return;
   const approve = $("apdb-eligibility-approve");
   const suspend = $("apdb-eligibility-suspend");
