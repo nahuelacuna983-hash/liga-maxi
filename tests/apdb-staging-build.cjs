@@ -29,8 +29,20 @@ try {
   assert.ok(html.includes("https://wffvmthdmmjwspnozyrv.supabase.co"));
   assert.ok(!html.includes("eshbydpsmypflfxpmhyk.supabase.co"));
   assert.ok(!html.includes("YOUR_STAGING_PUBLISHABLE_OR_ANON_KEY"));
+  assert.ok(!html.includes("Las claves actuales siguen funcionando"), "institutional UI must not advertise legacy logins");
+  assert.ok(html.includes("Las claves antiguas no están habilitadas"), "missing institutional authentication instructions");
   const app = fs.readFileSync(path.join(outputPath, "app_online.js"), "utf8");
   assert.ok(app.includes("window.APDB_STAGING === true"), "staging guard must remain enabled");
+  assert.ok(app.includes("const DELEGADOS = Object.freeze({});"), "legacy delegate lookup must be emptied");
+  assert.ok(app.includes("const CLAVES_ASOCIACION = Object.freeze([]);"), "legacy admin lookup must be emptied");
+  for (const oldCredential of ['"admin123"', '"universal123"', '"meridiano123"', '"platense123"']) {
+    assert.ok(!app.includes(oldCredential), `hardcoded legacy password leaked to package: ${oldCredential}`);
+  }
+  for (const method of ["desbloquearDelegado", "desbloquearAsociacion"]) {
+    assert.match(app, new RegExp(`async function ${method}\\(\\) \\{\\s*if \\(window\\.APDB_STAGING === true\\)`), `legacy entrypoint ${method} not fail-closed`);
+  }
+  const parser = spawnSync(process.execPath, ["--check", path.join(outputPath, "app_online.js")], { encoding: "utf8" });
+  assert.equal(parser.status, 0, `generated JS failed syntax check: ${parser.stderr}`);
   assert.ok(app.includes("if (!torneo && TORNEO_ID_FALLBACK)"), "missing guarded tournament fallback");
   assert.ok(app.includes("APP_CONFIG.organizacionActiva.storageSlug = organizacion.slug"), "staging document paths must follow actual organization slug");
   for (const forbidden of [
