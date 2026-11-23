@@ -44,6 +44,18 @@ try {
     assert.ok(fs.existsSync(path.join(outputPath, file)), `${file} missing from package`);
   }
 
+  const verify = spawnSync(process.execPath, ["tools/verify-apdb-release.cjs", outputPath], { encoding: "utf8" });
+  assert.equal(verify.status, 0, verify.stderr || verify.stdout);
+  assert.match(verify.stdout, /APDB_RELEASE_PACKAGE_VERIFIED/);
+
+  // Modified files must fail integrity verification before publication.
+  const appPath = path.join(outputPath, "app_online.js");
+  const original = fs.readFileSync(appPath);
+  fs.appendFileSync(appPath, "\\n// tampered");
+  const tampered = spawnSync(process.execPath, ["tools/verify-apdb-release.cjs", outputPath], { encoding: "utf8" });
+  assert.notEqual(tampered.status, 0, "Modified artifact must be rejected");
+  fs.writeFileSync(appPath, original);
+
   const overwrite = spawnSync(process.execPath, ["tools/build-apdb-staging.cjs", configPath, outputPath], { encoding: "utf8" });
   assert.notEqual(overwrite.status, 0, "builder must refuse to overwrite an existing output");
 
@@ -53,7 +65,9 @@ try {
     ["missing-publishable-key", { supabaseAnonKey: "" }],
     ["privileged-key", { supabaseAnonKey: "sb_secret_do_not_package" }],
     ["wrong-environment", { environment: "production" }],
-    ["reset-enabled", { resetDatabaseOnStart: true }]
+    ["reset-enabled", { resetDatabaseOnStart: true }],
+    ["traversal-path", { publicBasePath: "/apdb/../" }],
+    ["root-path", { publicBasePath: "/" }]
   ]) {
     const invalidConfigPath = path.join(root, `invalid-${name}.json`);
     const invalidOutputPath = path.join(root, `invalid-${name}-site`);
@@ -64,7 +78,7 @@ try {
     assert.notEqual(rejected.status, 0, `must reject ${name}`);
     assert.ok(!fs.existsSync(invalidOutputPath), `must not create package for ${name}`);
   }
-  console.log("APDB_STAGING_BUILD_CONTRACT_OK synthetic_config=true production_fallback=false tournament_fallback=false unsafe_configs_rejected=5 overwrite_refused=true");
+  console.log("APDB_STAGING_BUILD_CONTRACT_OK synthetic_config=true production_fallback=false tournament_fallback=false unsafe_configs_rejected=7 overwrite_refused=true");
 } finally {
   fs.rmSync(root, { recursive: true, force: true });
 }
