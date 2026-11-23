@@ -5055,7 +5055,11 @@ async function refrescarCategoria(nombreCategoria, opciones = {}) {
 }
 
 function usaRpcResultadosSeguros() {
-  return window.APDB_SECURE_RESULT_RPC === true || new URLSearchParams(window.location.search).get("secureResults") === "1";
+  // APdB 2027 never falls back to unrestricted direct table writes, even
+  // when the user opens the normal URL without ?secureResults=1.
+  return Number(temporadaDocumentalActiva()) >= 2027 ||
+    window.APDB_SECURE_RESULT_RPC === true ||
+    new URLSearchParams(window.location.search).get("secureResults") === "1";
 }
 
 async function guardarResultadoDelegado() {
