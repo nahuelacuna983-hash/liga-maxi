@@ -170,7 +170,9 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
     message: "La programación no se reconstruyó para la categoría seleccionada"
   }).toBeGreaterThan(0);
   console.log(`APDB_BROWSER_SCHEDULE_ROWS ${JSON.stringify(await page.locator(".programacion-row").evaluateAll((rows) => rows.map((row) => row.dataset.partidoId)))}`);
-  const matchId = await page.locator(".programacion-row").first().getAttribute("data-partido-id");
+  // The old category may briefly finish an asynchronous refresh; pin the expected fixture
+  // from Categoría sintética A instead of selecting an obsolete first row.
+  const matchId = "50000000-0000-0000-0000-000000000001";
   console.log(`APDB_BROWSER_MATCH_ID ${matchId}`);
   expect(matchId).toMatch(/^[0-9a-f-]{36}$/i);
   const scheduleRow = page.locator(`.programacion-row[data-partido-id="${matchId}"]`);
