@@ -63,6 +63,16 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/patches/apdb_2027_team_documents_secure_rpc_draft.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/security/apdb_document_rpc_isolation.sql
 
+      - name: Prove synthetic PostgreSQL backup and restore
+        run: |
+          pg_dump --format=custom --file=/tmp/apdb-2027-synthetic.dump
+          test -s /tmp/apdb-2027-synthetic.dump
+          sha256sum /tmp/apdb-2027-synthetic.dump
+          createdb apdb_2027_restored
+          pg_restore --exit-on-error --dbname=apdb_2027_restored /tmp/apdb-2027-synthetic.dump
+          PGDATABASE=apdb_2027_restored psql -X -v ON_ERROR_STOP=1 -f tests/security/apdb_document_rpc_isolation.sql
+          echo 'APDB_SYNTHETIC_BACKUP_RESTORE_OK'
+
   institutional-package-contract:
     runs-on: ubuntu-latest
     timeout-minutes: 8
