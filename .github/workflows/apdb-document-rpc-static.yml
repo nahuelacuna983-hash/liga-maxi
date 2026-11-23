@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - codex/apdb-2027-document-view-security-preflight
+      - codex/apdb-2027-institutional-security-candidate
   pull_request:
     paths:
       - app_online.js
@@ -61,3 +62,17 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f tests/security/apdb_document_rpc_fixture.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/patches/apdb_2027_team_documents_secure_rpc_draft.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/security/apdb_document_rpc_isolation.sql
+
+  institutional-package-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Official staging package contract
+        run: |
+          node tests/apdb-staging-build.cjs
+          node tests/apdb-online-config-contract.cjs
+          node tests/institutional-package-contract.cjs
