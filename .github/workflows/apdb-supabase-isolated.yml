@@ -73,7 +73,7 @@ jobs:
       - name: Run isolated Chromium validation
         env:
           APDB_ISOLATED_BROWSER_URL: ${{ env.SUPABASE_URL }}
-        run: npx playwright test tests/apdb-isolated-browser.spec.cjs tests/apdb-isolated-session-switch-browser.spec.cjs
+        run: npx playwright test tests/apdb-isolated-browser.spec.cjs tests/apdb-isolated-session-switch-browser.spec.cjs tests/apdb-isolated-mobile-browser.spec.cjs
       - name: Restart isolated Supabase without resetting data
         run: |
           supabase stop
