@@ -174,7 +174,11 @@ test("index_online usa Supabase aislado y conserva la sesión autorizada", async
   console.log(`APDB_BROWSER_MATCH_ID ${matchId}`);
   expect(matchId).toMatch(/^[0-9a-f-]{36}$/i);
   const scheduleRow = page.locator(`.programacion-row[data-partido-id="${matchId}"]`);
-  await expect(scheduleRow).toHaveCount(1, { timeout: 20000 });
+  await expect.poll(() => page.locator(".programacion-row").evaluateAll((rows) => rows.map((row) => row.dataset.partidoId).filter(Boolean)), {
+    timeout: 20000,
+    message: `La programación no conservó el partido seleccionado ${matchId}`
+  }).toContain(matchId);
+  await expect(scheduleRow).toHaveCount(1, { timeout: 5000 });
   await scheduleRow.locator(".programacion-fecha").fill("2027-08-21");
   await scheduleRow.locator(".programacion-hora").fill("21:30");
   await scheduleRow.locator(".programacion-cancha").fill("Gimnasio Sintético");
