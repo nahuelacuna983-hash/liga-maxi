@@ -387,20 +387,15 @@ drop policy if exists apdb_document_requirements_scoped_select on public.documen
 create policy apdb_document_requirements_scoped_select on public.document_requirements
 for select to authenticated using (
   activo and exists (
-    select 1 from public.app_users au
-    join public.app_user_permissions p on p.user_id=au.id
-    join public.categorias c on c.torneo_id=document_requirements.torneo_id
-    join public.torneos t on t.id=c.torneo_id
-    where au.auth_user_id=auth.uid() and au.active
-      and au.organizacion_id=t.organizacion_id
-      and document_requirements.organizacion_id=t.organizacion_id
-      and p.organizacion_id=t.organizacion_id
-      and p.torneo_id=t.id and p.categoria_id=c.id
+    select 1 from public.equipos e
+    join public.categorias c on c.id = e.categoria_id
+    join public.torneos t on t.id = c.torneo_id
+    where t.id = document_requirements.torneo_id
+      and t.organizacion_id = document_requirements.organizacion_id
       and (document_requirements.categoria_id is null
-        or document_requirements.categoria_id=c.id)
-      and (
-        (au.role='delegado' and p.can_view and p.can_load_documents)
-        or (au.role in ('asociacion','admin_general') and p.can_review_documents)
+        or document_requirements.categoria_id = c.id)
+      and public.apdb_document_view_allowed(
+        t.organizacion_id, t.id, c.id, e.id
       )
   )
 );
