@@ -33,6 +33,8 @@ jobs:
           node --check tools/build-apdb-staging.cjs
           node --check tests/apdb-staging-build.cjs
           node --check tests/apdb-institutional-subpath-smoke.cjs
+          node --check tests/apdb-staging-http-readonly.cjs
+          node --check tests/apdb-isolated-document-view-roles.cjs
       - name: Build an ephemeral staging package and verify isolation
         run: |
           node tests/apdb-staging-build.cjs
