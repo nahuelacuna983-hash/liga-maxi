@@ -50,6 +50,10 @@ const estado = {
   documentosPorCategoriaId: {},
   jugadoresPorCategoriaId: {},
   documentosJugadoresPorCategoriaId: {},
+  decisionesDeportivasPorCategoriaId: {},
+  candidatosHabilitacionPorCategoriaId: {},
+  listadoArbitrosPorCategoriaId: {},
+  listadoArbitrosErrorPorCategoriaId: {},
   driveDocumentosPorCategoriaId: {},
   auditoriaDocumentalPorCategoriaId: {},
   auditoriasIAPorCategoriaId: {},
@@ -1639,18 +1643,182 @@ function calcularEstadoHabilitacionJugador(nombreCategoria, jugador) {
     estados.deslinde === "SI" ? "" : "Deslinde/declaracion jurada"
   ].filter(Boolean);
 
+  const documentacionCompleta = faltantes.length === 0;
+  // En APdB 2027 la revisión documental NO equivale a una decisión
+  // de habilitación deportiva. Hasta disponer de autorización institucional
+  // persistida y auditada, no emitir una habilitación automática.
+  // Las temporadas históricas conservan su comportamiento anterior.
+  const requiereDecisionInstitucional = Number(temporadaDocumentalActiva()) >= 2027;
+  const decisionRegistrada = requiereDecisionInstitucional
+    ? estado.decisionesDeportivasPorCategoriaId[estado.categorias.find((cat) => cat.nombre === nombreCategoria)?.id]?.[jugador.id]
+    : null;
+  const decisionAprobada = decisionRegistrada?.status === "habilitado";
+  const decisionSuspendida = decisionRegistrada?.status === "suspendido";
+  const decisionDeportivaPendiente = requiereDecisionInstitucional && documentacionCompleta && !decisionRegistrada;
+
   return {
     ...estados,
-    habilitado: faltantes.length ? "NO" : "SI",
-    faltantes: faltantes.join("; "),
+    documentacionCompleta,
+    estadoHabilitacionDeportiva: requiereDecisionInstitucional
+      ? (!documentacionCompleta ? "DOCUMENTACION_INCOMPLETA"
+        : (decisionRegistrada?.status === "suspendido" ? "SUSPENDIDO"
+          : (decisionAprobada ? "HABILITADO_INSTITUCIONAL" : "PENDIENTE_DECISION")))
+      : "LEGACY_DOCUMENTAL",
+    habilitado: requiereDecisionInstitucional ? (documentacionCompleta && decisionAprobada ? "SI" : "NO") : (documentacionCompleta ? "SI" : "NO"),
+    faltantes: [
+      ...faltantes,
+      ...(decisionSuspendida ? ["Habilitación suspendida por Asociación"] : []),
+      ...(decisionDeportivaPendiente ? ["Pendiente de decisión institucional de habilitación deportiva"] : [])
+    ].join("; "),
     preauditoria,
     preauditoriaDetalle: preauditoria.detalle
   };
 }
 
+async function cargarDecisionesDeportivasCategoria(nombreCategoria) {
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const section = $("apdb-eligibility-section");
+  const vigente2027 = String(temporadaDocumentalActiva()) === "2027";
+  if (section) section.hidden = !vigente2027 || !estado.asociacionDesbloqueada;
+  if (!categoria || !vigente2027 || !estado.asociacionDesbloqueada) return;
+  const versionSesion = estado.sesionPrivadaVersion || 0;
+  const usuarioSesion = estado.authUser?.id;
+  // Invalidar los datos de cancha antes de refrescar: nunca exportar una copia antigua.
+  delete estado.listadoArbitrosPorCategoriaId[categoria.id];
+  const [decisionesResponse, candidatosResponse, arbitrosResponse] = await Promise.all([
+    supabaseClient.rpc("apdb_get_player_eligibility", { p_category_id: categoria.id }),
+    supabaseClient.rpc("apdb_list_player_eligibility_candidates", { p_category_id: categoria.id }),
+    supabaseClient.rpc("apdb_get_referee_eligibility", { p_category_id: categoria.id })
+  ]);
+  // La sesión puede cerrarse o cambiar mientras las RPC siguen en vuelo.
+  // Descartar respuestas tardías para evitar restaurar datos privados.
+  if (!estado.asociacionDesbloqueada ||
+      (estado.sesionPrivadaVersion || 0) !== versionSesion ||
+      estado.authUser?.id !== usuarioSesion ||
+      $("asociacion-categoria")?.value !== nombreCategoria) return;
+  const { data, error } = decisionesResponse;
+  if (error) {
+    // Sin una lectura institucional verificada, nunca mostrar aprobaciones anteriores como vigentes.
+    delete estado.decisionesDeportivasPorCategoriaId[categoria.id];
+    setStatus($("apdb-eligibility-status"), "Decisiones no disponibles: " + error.message, "warn");
+  } else {
+    estado.decisionesDeportivasPorCategoriaId[categoria.id] =
+      Object.fromEntries((data || []).map((item) => [String(item.player_id), item]));
+    setStatus($("apdb-eligibility-status"), "", "");
+  }
+  if (candidatosResponse.error) {
+    delete estado.candidatosHabilitacionPorCategoriaId[categoria.id];
+    setStatus($("apdb-eligibility-status"), "No se pudieron cargar jugadores autorizados: " + candidatosResponse.error.message, "warn");
+  } else {
+    estado.candidatosHabilitacionPorCategoriaId[categoria.id] = candidatosResponse.data || [];
+  }
+  if (arbitrosResponse.error) {
+    delete estado.listadoArbitrosPorCategoriaId[categoria.id];
+    estado.listadoArbitrosErrorPorCategoriaId[categoria.id] = arbitrosResponse.error.message;
+  } else {
+    estado.listadoArbitrosPorCategoriaId[categoria.id] = arbitrosResponse.data || [];
+    delete estado.listadoArbitrosErrorPorCategoriaId[categoria.id];
+  }
+  renderDecisionesDeportivasCategoria(nombreCategoria);
+}
+
+function renderDecisionesDeportivasCategoria(nombreCategoria) {
+  const select = $("apdb-eligibility-player");
+  const summary = $("apdb-eligibility-summary");
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  if (!select || !summary || !categoria) return;
+  const chosen = select.value;
+  const jugadores = estado.candidatosHabilitacionPorCategoriaId[categoria.id] || [];
+  select.innerHTML = '<option value="">Seleccionar jugador</option>' +
+    jugadores.map((jugador) => `<option value="${escapeHtml(jugador.player_id)}">${escapeHtml(jugador.equipo_nombre)} — ${escapeHtml(jugador.nombre)}</option>`).join("");
+  if (jugadores.some((jugador) => String(jugador.player_id) === chosen)) select.value = chosen;
+  const decisions = estado.decisionesDeportivasPorCategoriaId[categoria.id] || {};
+  const latest = decisions[select.value];
+  summary.textContent = latest
+    ? `Última decisión: ${latest.status} — ${latest.actor_name} — ${new Date(latest.decided_at).toLocaleString("es-AR")}. Motivo: ${latest.reason}`
+    : "Sin decisión institucional registrada para el jugador seleccionado.";
+}
+
+async function cargarHistorialDeportivoJugador() {
+  const categoriaNombre = $("asociacion-categoria")?.value || "";
+  const categoriaId = estado.categorias.find((cat) => cat.nombre === categoriaNombre)?.id;
+  const playerId = $("apdb-eligibility-player")?.value || "";
+  const history = $("apdb-eligibility-history");
+  if (!history) return;
+  if (!estado.asociacionDesbloqueada || String(temporadaDocumentalActiva()) !== "2027" || !categoriaId || !playerId) {
+    history.textContent = "Seleccioná un jugador para consultar sus decisiones anteriores.";
+    return;
+  }
+  history.textContent = "Consultando historial institucional...";
+  const { data, error } = await supabaseClient.rpc("apdb_get_player_eligibility_history", {
+    p_player_id: playerId
+  });
+  // Un cambio de jugador o categoría durante el pedido invalida su respuesta.
+  if ($("apdb-eligibility-player")?.value !== playerId ||
+      $("asociacion-categoria")?.value !== categoriaNombre ||
+      !estado.asociacionDesbloqueada) return;
+  if (error) {
+    history.textContent = "Historial no disponible: " + error.message;
+    return;
+  }
+  if (!(data || []).length) {
+    history.textContent = "Este jugador todavía no tiene decisiones institucionales registradas.";
+    return;
+  }
+  history.innerHTML = `<ol>${data.map((item) =>
+    `<li><strong>${escapeHtml(item.status)}</strong> — ${escapeHtml(item.actor_name)} — ${escapeHtml(new Date(item.decided_at).toLocaleString("es-AR"))}. ${escapeHtml(item.reason)}</li>`
+  ).join("")}</ol>`;
+}
+
+async function guardarDecisionDeportivaAsociacion(status) {
+  const nombreCategoria = $("asociacion-categoria")?.value || "";
+  const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
+  const playerId = $("apdb-eligibility-player")?.value || "";
+  const reason = $("apdb-eligibility-reason")?.value.trim() || "";
+  const statusNode = $("apdb-eligibility-status");
+  const jugador = (estado.candidatosHabilitacionPorCategoriaId[categoria?.id] || [])
+    .find((item) => String(item.player_id) === playerId);
+  if (!estado.asociacionDesbloqueada || String(temporadaDocumentalActiva()) !== "2027" || !jugador) {
+    setStatus(statusNode, "Seleccioná un jugador de la temporada 2027 desde Asociación.", "warn");
+    return;
+  }
+  if (reason.length < 5) {
+    setStatus(statusNode, "Ingresá un motivo institucional de al menos cinco caracteres.", "warn");
+    return;
+  }
+  // La RPC es la autoridad sobre requisitos y vencimientos. No bloquear desde
+  // un cache documental que puede carecer de permisos de lectura o estar desactualizado.
+  if (!confirm(`¿Confirmás ${status} a ${jugador.nombre}? La decisión quedará registrada.`)) return;
+  const approve = $("apdb-eligibility-approve");
+  const suspend = $("apdb-eligibility-suspend");
+  if (approve) approve.disabled = true;
+  if (suspend) suspend.disabled = true;
+  try {
+    const { error } = await supabaseClient.rpc("apdb_set_player_eligibility", {
+      p_player_id: playerId, p_status: status, p_reason: reason
+    });
+    if (error) {
+      setStatus(statusNode, "No se pudo registrar la decisión: " + error.message, "error");
+      return;
+    }
+    await cargarDecisionesDeportivasCategoria(nombreCategoria);
+    await cargarHistorialDeportivoJugador();
+    renderListaHabilitadosArbitros(nombreCategoria);
+    setStatus(statusNode, "Decisión institucional registrada.", "ok");
+    if ($("apdb-eligibility-reason")) $("apdb-eligibility-reason").value = "";
+  } finally {
+    if (approve) approve.disabled = false;
+    if (suspend) suspend.disabled = false;
+  }
+}
+
 function calcularHabilitadosCategoria(nombreCategoria) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
-  const jugadores = categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : [];
+  const periodo2027 = String(temporadaDocumentalActiva()) === "2027";
+  // Para 2027, la lista oficial se calcula en PostgreSQL cada vez que se consulta.
+  // No se confían documentos ni habilitaciones almacenados en el navegador.
+  const listadoOficial = periodo2027 ? estado.listadoArbitrosPorCategoriaId[categoria?.id] : null;
+  const jugadores = periodo2027 ? (listadoOficial || []) : (categoria ? estado.jugadoresPorCategoriaId[categoria.id] || [] : []);
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const estadoFiltro = $("habilitados-filtro-estado")?.value || "";
   const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
@@ -1667,8 +1835,27 @@ function calcularHabilitadosCategoria(nombreCategoria) {
       return !equipoFiltro || nombresEquipoCoinciden(jugador.equipo_nombre, equipoFiltro);
     })
     .map((jugador) => {
+      if (periodo2027) {
+        const habilitado = jugador.habilitado === true;
+        const causa = !jugador.documentacion_completa
+          ? "Documentación obligatoria incompleta o vencida"
+          : jugador.decision_status === "suspendido"
+            ? "Habilitación suspendida por Asociación"
+            : !habilitado ? "Pendiente de decisión institucional" : "";
+        return {
+          categoria: nombreCategoria,
+          equipo: jugador.equipo_nombre || "",
+          apellidoNombre: jugador.nombre || "",
+          dni: jugador.dni || "",
+          dorsal: jugador.dorsal || "",
+          buenaFe: "—", seguro: "—", certificado: "—", deslinde: "—", pase: "—",
+          habilitado: habilitado ? "SI" : "NO",
+          documentacionCompleta: !!jugador.documentacion_completa,
+          estadoHabilitacionDeportiva: jugador.decision_status || "pendiente",
+          faltantes: causa
+        };
+      }
       const estadoHabilitacion = calcularEstadoHabilitacionJugador(nombreCategoria, jugador);
-
       return {
         categoria: nombreCategoria,
         equipo: jugador.equipo_nombre || "",
@@ -1716,7 +1903,15 @@ function actualizarFiltroEquiposHabilitados(nombreCategoria) {
   const select = $("habilitados-filtro-equipo");
   if (!select) return;
   const valorActual = select.value;
-  const equipos = obtenerEquiposCategoria(nombreCategoria);
+  const categoria = estado.categorias.find((item) => item.nombre === nombreCategoria);
+  const oficial2027 = String(temporadaDocumentalActiva()) === "2027";
+  const filasOficiales = oficial2027 ? estado.listadoArbitrosPorCategoriaId[categoria?.id] : null;
+  // El filtro de clubes del listado 2027 debe corresponder exactamente
+  // al conjunto autorizado por la RPC, no a equipos visibles por otros módulos.
+  const equipos = oficial2027
+    ? [...new Set((filasOficiales || []).map((fila) => fila.equipo_nombre).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b))
+    : obtenerEquiposCategoria(nombreCategoria);
   select.innerHTML = `<option value="">Elegir club</option>${equipos.map((equipo) =>
     `<option value="${escapeHtml(equipo)}">${escapeHtml(equipo)}</option>`
   ).join("")}`;
@@ -1727,6 +1922,20 @@ function actualizarFiltroEquiposHabilitados(nombreCategoria) {
 
 function equipoOperativoSeleccionado() {
   return $("habilitados-filtro-equipo")?.value || "";
+}
+
+function actualizarFiltroEquiposDocumentacion(nombreCategoria) {
+  const select = $("documentacion-filtro-equipo");
+  if (!select) return;
+  const anterior = select.value;
+  const equipos = obtenerEquiposCategoria(nombreCategoria);
+  select.innerHTML = '<option value="">Elegir club</option>' +
+    equipos.map((equipo) => `<option value="${escapeHtml(equipo)}">${escapeHtml(equipo)}</option>`).join("");
+  if (equipos.some((equipo) => nombresEquipoCoinciden(equipo, anterior))) select.value = anterior;
+}
+
+function equipoDocumentalSeleccionado() {
+  return $("documentacion-filtro-equipo")?.value || "";
 }
 
 function resumenHabilitadosPorEquipo(filas) {
@@ -1847,6 +2056,11 @@ function renderListaHabilitadosArbitros(nombreCategoria) {
 
   actualizarFiltroPartidosHabilitados(nombreCategoria);
   actualizarFiltroEquiposHabilitados(nombreCategoria);
+  if (String(temporadaDocumentalActiva()) === "2027" &&
+      !Object.hasOwn(estado.listadoArbitrosPorCategoriaId, estado.categorias.find((cat) => cat.nombre === nombreCategoria)?.id)) {
+    container.innerHTML = `<div class="card"><h3>Lista para árbitros — 2027</h3><p class="note">Lista oficial no disponible. No emitir habilitaciones sin validar: ${escapeHtml(estado.listadoArbitrosErrorPorCategoriaId[estado.categorias.find((cat) => cat.nombre === nombreCategoria)?.id] || "datos pendientes de recuperación")}</p></div>`;
+    return;
+  }
   const filas = calcularHabilitadosCategoria(nombreCategoria);
   const habilitados = filas.filter((fila) => fila.habilitado === "SI").length;
   const equipoFiltro = equipoOperativoSeleccionado();
@@ -2051,7 +2265,8 @@ function renderDocumentacionAsociacion(nombreCategoria) {
 
   if (!resumen || !tabla) return;
 
-  const equipoOperativo = equipoOperativoSeleccionado();
+  actualizarFiltroEquiposDocumentacion(nombreCategoria);
+  const equipoOperativo = equipoDocumentalSeleccionado();
   const equiposCategoria = obtenerEquiposCategoria(nombreCategoria);
   const equipos = equipoOperativo
     ? equiposCategoria.filter((equipo) => nombresEquipoCoinciden(equipo, equipoOperativo))
@@ -2273,7 +2488,7 @@ function renderDocumentacionDriveAsociacion(nombreCategoria) {
 
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const rows = categoria ? estado.driveDocumentosPorCategoriaId[categoria.id] || [] : [];
-  const equipoOperativo = equipoOperativoSeleccionado();
+  const equipoOperativo = equipoDocumentalSeleccionado();
   const filtroEstado = $("drive-doc-estado")?.value || "";
   const filtroMatch = $("drive-doc-match")?.value || "";
   const filtroTexto = normalizarTexto($("drive-doc-buscar")?.value || "");
@@ -2652,7 +2867,7 @@ function renderAccionRevisionAsociacion(documento, scope = "team") {
 function renderDocumentacionJugadoresAsociacion(nombreCategoria, documentosJugador) {
   const categoria = estado.categorias.find((cat) => cat.nombre === nombreCategoria);
   const documentos = categoria ? estado.documentosJugadoresPorCategoriaId[categoria.id] || [] : [];
-  const equipoOperativo = equipoOperativoSeleccionado();
+  const equipoOperativo = equipoDocumentalSeleccionado();
   const filtroEstado = $("documentacion-filtro-estado")?.value || "";
   const filtroTexto = normalizarTexto($("documentacion-buscar")?.value || "");
 
@@ -3277,6 +3492,16 @@ function renderAccionDocumentoJugadorDelegado(documento) {
     return `<span class="doc-action-muted">Sin registro</span>`;
   }
 
+  const requisito = obtenerRequisitoDocumental(documento.requirement_nombre);
+  const vencimientoInput = requisito?.requiere_vencimiento
+    ? `<label class="doc-expiry-field">
+         <span>Vencimiento obligatorio</span>
+         <input class="player-doc-expiry-input" type="date"
+           data-document-id="${escapeHtml(documento.id)}"
+           value="${escapeHtml(documento.vencimiento || "")}">
+         <small>Requerido antes de subir un documento médico con vencimiento.</small>
+       </label>`
+    : "";
   const botonVer = renderBotonVerDocumentoDelegado(documento, "player");
   const nombreArchivo = documento.file_name
     ? `<span class="doc-file-name">${escapeHtml(documento.file_name)}</span>`
@@ -3292,6 +3517,7 @@ function renderAccionDocumentoJugadorDelegado(documento) {
 
   return `
     ${botonVer}
+    ${vencimientoInput}
     <label class="doc-upload-button">
       <span>${documento.file_name ? "Reemplazar" : "Subir"}</span>
       <input
@@ -4846,7 +5072,11 @@ async function refrescarCategoria(nombreCategoria, opciones = {}) {
 }
 
 function usaRpcResultadosSeguros() {
-  return window.APDB_SECURE_RESULT_RPC === true || new URLSearchParams(window.location.search).get("secureResults") === "1";
+  // APdB 2027 never falls back to unrestricted direct table writes, even
+  // when the user opens the normal URL without ?secureResults=1.
+  return Number(temporadaDocumentalActiva()) >= 2027 ||
+    window.APDB_SECURE_RESULT_RPC === true ||
+    new URLSearchParams(window.location.search).get("secureResults") === "1";
 }
 
 async function guardarResultadoDelegado() {
@@ -5156,9 +5386,22 @@ async function solicitarBajaJugadorDelegado(event) {
     return;
   }
 
-  const motivo = prompt(`Motivo de solicitud para ${playerName}:`, "Cargado por error / corregir jugador");
-  if (motivo === null) {
-    setStatus(status, "Operacion cancelada.", "warn");
+  const jugador = (estado.jugadoresPorCategoriaId[categoria.id] || [])
+    .find((item) => String(item.id) === String(playerId));
+  const equiposAutorizados = obtenerEquiposDelegadoCategoria(categoriaNombre);
+  if (!jugador || !equiposAutorizados.some((equipo) => nombresEquipoCoinciden(equipo, jugador.equipo_nombre))) {
+    setStatus(status, "No tenés permiso sobre ese jugador o ya no figura en la categoría.", "error");
+    return;
+  }
+
+  const respuesta = prompt(`Motivo de solicitud para ${playerName}:`, "");
+  if (respuesta === null) {
+    setStatus(status, "Operación cancelada.", "warn");
+    return;
+  }
+  const motivo = respuesta.trim();
+  if (!motivo) {
+    setStatus(status, "Indicá el motivo de la solicitud antes de enviarla.", "warn");
     return;
   }
 
@@ -5168,12 +5411,12 @@ async function solicitarBajaJugadorDelegado(event) {
   const { error } = await supabaseClient.rpc("request_team_player_deactivation", {
     p_player_id: playerId,
     p_actor: estado.delegado.nombre,
-    p_reason: motivo || "Solicitud de baja/correccion"
+    p_reason: motivo
   });
 
   if (error) {
     button.disabled = false;
-    setStatus(status, `No se pudo enviar la solicitud: ${error.message}. Si la funcion no existe, corre docs/ejecutar-en-supabase-baja-jugadores.sql.`, "error");
+    setStatus(status, `No se pudo enviar la solicitud: ${error.message}`, "error");
     return;
   }
 
@@ -5463,6 +5706,19 @@ async function subirDocumentoJugadorDelegado(event) {
     return;
   }
 
+  const requisito = obtenerRequisitoDocumental(documento.requirement_nombre);
+  const vencimiento = document.querySelector(`.player-doc-expiry-input[data-document-id="${documentId}"]`)?.value || null;
+  if (requisito?.requiere_vencimiento && !vencimiento) {
+    setStatus(status, "Indicá el vencimiento obligatorio del documento del jugador.", "warn");
+    input.value = "";
+    return;
+  }
+  if (vencimiento && vencimiento < new Date().toISOString().slice(0, 10)) {
+    setStatus(status, "El documento ya está vencido. Solicitá un archivo vigente.", "warn");
+    input.value = "";
+    return;
+  }
+
   input.disabled = true;
   setStatus(status, "Subiendo documento del jugador...", "");
 
@@ -5507,7 +5763,7 @@ async function subirDocumentoJugadorDelegado(event) {
     p_file_name: file.name,
     p_file_type: file.type,
     p_file_size: file.size,
-    p_vencimiento: null
+    p_vencimiento: vencimiento
   });
 
   if (rpcError) {
@@ -6317,6 +6573,10 @@ async function aplicarPermisosAutenticados(permisos) {
     return;
   }
 
+  // La primera carga anónima pudo guardar cachés vacíos antes del login.
+  // Consultar requisitos otra vez con el JWT actual antes de renderizar
+  // documentos de delegado o Asociación.
+  await cargarRequisitosDocumentales();
   const accesoAsociacion = puedeAccederAsociacion(permisos);
   if (accesoAsociacion) {
     estado.asociacionDesbloqueada = true;
@@ -6377,7 +6637,7 @@ async function iniciarSesionAuth() {
     return;
   }
 
-  if (estado.authUser && estado.authUser.id !== data.user?.id) limpiarEstadoPrivadoAuth();
+  if (estado.authUser?.id !== data.user?.id) limpiarEstadoPrivadoAuth();
   estado.authSession = data.session || null;
   estado.authUser = data.user || null;
   const permisos = await cargarPermisosUsuarioActual();
@@ -6394,6 +6654,7 @@ async function cerrarSesionAuth() {
 }
 
 function limpiarEstadoPrivadoAuth() {
+  estado.sesionPrivadaVersion = (estado.sesionPrivadaVersion || 0) + 1;
   estado.permisosAuth = [];
   estado.delegadoDesbloqueado = false;
   estado.delegado = null;
@@ -6406,6 +6667,18 @@ function limpiarEstadoPrivadoAuth() {
   estado.documentosPorCategoriaId = {};
   estado.jugadoresPorCategoriaId = {};
   estado.documentosJugadoresPorCategoriaId = {};
+  // Estos datos identifican decisiones y jugadores institucionales; nunca
+  // deben quedar en memoria ni en el DOM al cerrar sesión o cambiar usuario.
+  estado.decisionesDeportivasPorCategoriaId = {};
+  estado.candidatosHabilitacionPorCategoriaId = {};
+  estado.listadoArbitrosPorCategoriaId = {};
+  estado.listadoArbitrosErrorPorCategoriaId = {};
+  if ($("apdb-eligibility-history")) $("apdb-eligibility-history").textContent = "";
+  if ($("apdb-eligibility-summary")) $("apdb-eligibility-summary").textContent = "";
+  if ($("apdb-eligibility-player")) $("apdb-eligibility-player").innerHTML = '<option value="">Seleccionar jugador</option>';
+  if ($("apdb-eligibility-reason")) $("apdb-eligibility-reason").value = "";
+  if ($("apdb-eligibility-section")) $("apdb-eligibility-section").hidden = true;
+  if ($("habilitados-tabla")) $("habilitados-tabla").textContent = "";
   estado.driveDocumentosPorCategoriaId = {};
   estado.auditoriaDocumentalPorCategoriaId = {};
   estado.auditoriasIAPorCategoriaId = {};
@@ -6434,7 +6707,7 @@ async function inicializarSesionAuth() {
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
     const previousUserId = estado.authUser?.id || "";
     const nextUserId = session?.user?.id || "";
-    if (!nextUserId || (previousUserId && previousUserId !== nextUserId)) {
+    if (!nextUserId || previousUserId !== nextUserId) {
       limpiarEstadoPrivadoAuth();
     }
     estado.authSession = session || null;
@@ -7044,9 +7317,20 @@ async function revisarDocumentoAsociacion(event) {
     rechazado: "rechazar"
   };
 
+  // Nunca registrar una observación o rechazo sin un motivo explícito.
+  // Cancelar el diálogo conserva intacto el documento.
   let observacion = "";
   if (nextStatus === "observado" || nextStatus === "rechazado") {
-    observacion = prompt("Observación para el delegado:", documento.observacion || "") || "";
+    const respuesta = prompt("Motivo obligatorio para el delegado:", documento.observacion || "");
+    if (respuesta === null) {
+      setStatus(status, "Revisión cancelada.", "warn");
+      return;
+    }
+    observacion = respuesta.trim();
+    if (!observacion) {
+      setStatus(status, "Indicá un motivo antes de observar o rechazar el documento.", "warn");
+      return;
+    }
   }
 
   const sujeto = scope === "player"
@@ -7584,6 +7868,7 @@ async function cargarDatosAsociacionActual() {
   setStatus(status, "Cargando datos de asociacion...", "");
 
   await refrescarCategoria(categoria, { actualizarPublico: false });
+  await cargarDecisionesDeportivasCategoria(categoria);
   poblarSelectPartidosAsociacion(categoria);
   renderPlayoffsAsociacion(categoria);
   marcarPlayoffsAsociacionListos(categoria);
@@ -8047,9 +8332,41 @@ function contextoHabilitadosSeleccionado(categoria) {
   };
 }
 
-function exportarHabilitadosCsv() {
+async function validarListadoArbitrosParaEmision(categoriaNombre) {
+  if (String(temporadaDocumentalActiva()) !== "2027") return true;
+  const categoria = estado.categorias.find((item) => item.nombre === categoriaNombre);
+  const status = $("asociacion-status");
+  if (!estado.asociacionDesbloqueada || !categoria?.id) {
+    setStatus(status, "La lista oficial requiere Asociación autenticada y una categoría vigente.", "error");
+    return false;
+  }
+  // Consultar justo antes de exportar; las suspensiones y revocaciones de documentos
+  // pueden suceder después de la última carga de la pantalla.
+  const versionSesion = estado.sesionPrivadaVersion || 0;
+  const usuarioSesion = estado.authUser?.id;
+  delete estado.listadoArbitrosPorCategoriaId[categoria.id];
+  const { data, error } = await supabaseClient.rpc("apdb_get_referee_eligibility", {
+    p_category_id: categoria.id
+  });
+  if (!estado.asociacionDesbloqueada ||
+      (estado.sesionPrivadaVersion || 0) !== versionSesion ||
+      estado.authUser?.id !== usuarioSesion ||
+      $("asociacion-categoria")?.value !== categoriaNombre) return false;
+  if (error) {
+    estado.listadoArbitrosErrorPorCategoriaId[categoria.id] = error.message;
+    setStatus(status, "No se pudo verificar la lista oficial; emisión bloqueada: " + error.message, "error");
+    return false;
+  }
+  estado.listadoArbitrosPorCategoriaId[categoria.id] = data || [];
+  delete estado.listadoArbitrosErrorPorCategoriaId[categoria.id];
+  renderListaHabilitadosArbitros(categoriaNombre);
+  return true;
+}
+
+async function exportarHabilitadosCsv() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
+  if (!await validarListadoArbitrosParaEmision(categoria)) return;
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
   const contexto = contextoHabilitadosSeleccionado(categoria);
@@ -8099,9 +8416,10 @@ function exportarHabilitadosCsv() {
   setStatus(status, "Lista de habilitados exportada en CSV.", "ok");
 }
 
-function descargarListaHabilitadosHtml() {
+async function descargarListaHabilitadosHtml() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
+  if (!await validarListadoArbitrosParaEmision(categoria)) return;
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
   const contexto = contextoHabilitadosSeleccionado(categoria);
@@ -8189,9 +8507,10 @@ function descargarListaHabilitadosHtml() {
   mostrarCartelInforme(`Se descargo ${nombre} en la carpeta Descargas.`);
 }
 
-function descargarControlHabilitadosCanchaHtml() {
+async function descargarControlHabilitadosCanchaHtml() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
+  if (!await validarListadoArbitrosParaEmision(categoria)) return;
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
   const contexto = contextoHabilitadosSeleccionado(categoria);
@@ -8317,6 +8636,7 @@ function generarResumenHabilitadosArbitros(categoria, contexto, filas) {
 async function copiarResumenHabilitadosArbitros() {
   const status = $("asociacion-status");
   const categoria = $("asociacion-categoria")?.value || "categoria";
+  if (!await validarListadoArbitrosParaEmision(categoria)) return;
   const equipoFiltro = $("habilitados-filtro-equipo")?.value || "";
   const partidoFiltro = $("habilitados-filtro-partido")?.value || "";
   const contexto = contextoHabilitadosSeleccionado(categoria);
@@ -8486,6 +8806,12 @@ async function inicializarAsociacion() {
   $("admin-alta-torneo")?.addEventListener("click", prepararAltaAdministrativa);
   $("admin-delegado-asignar")?.addEventListener("click", asignarAlcanceDelegado);
   $("admin-delegado-revocar")?.addEventListener("click", revocarAlcanceDelegado);
+  $("apdb-eligibility-approve")?.addEventListener("click", () => guardarDecisionDeportivaAsociacion("habilitado"));
+  $("apdb-eligibility-suspend")?.addEventListener("click", () => guardarDecisionDeportivaAsociacion("suspendido"));
+  $("apdb-eligibility-player")?.addEventListener("change", () => {
+    renderDecisionesDeportivasCategoria($("asociacion-categoria")?.value || "");
+    cargarHistorialDeportivoJugador();
+  });
   $("admin-delegado-categoria")?.addEventListener("change", poblarEquiposAltaAdministrativa);
 
   poblarSelectCategorias("asociacion-categoria", estado.categorias);
@@ -8496,6 +8822,7 @@ async function inicializarAsociacion() {
     const categoria = e.target.value;
     actualizarEstadoRenderPlayoffs(categoria, "loading", "category-change");
     await refrescarCategoria(categoria, { actualizarPublico: false });
+    await cargarDecisionesDeportivasCategoria(categoria);
     poblarSelectPartidosAsociacion(categoria);
     renderPlayoffsAsociacion(categoria);
     marcarPlayoffsAsociacionListos(categoria);
@@ -8557,6 +8884,11 @@ async function inicializarAsociacion() {
   });
   $("documentacion-buscar").addEventListener("input", () => {
     renderDocumentacionAsociacion($("asociacion-categoria").value);
+  });
+  $("documentacion-filtro-equipo")?.addEventListener("change", () => {
+    const categoria = $("asociacion-categoria")?.value || "";
+    renderDocumentacionAsociacion(categoria);
+    renderDocumentacionDriveAsociacion(categoria);
   });
   $("drive-doc-estado")?.addEventListener("change", () => {
     renderDocumentacionDriveAsociacion($("asociacion-categoria").value);

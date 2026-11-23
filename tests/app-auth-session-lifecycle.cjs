@@ -7,5 +7,7 @@ for (const field of ["partidosPorCategoria", "playoffsPorCategoria", "programaci
 }
 assert.match(source, /authUser\) \{[\s\S]*?cargarPermisosUsuarioActual/);
 assert.match(source, /previousUserId = estado\.authUser\?\.id/);
-assert.match(source, /if \(!nextUserId \|\| \(previousUserId && previousUserId !== nextUserId\)\)/);
+assert.match(source, /if \(!nextUserId \|\| previousUserId !== nextUserId\)/);
+assert.match(source, /authUser\?\.id !== data\.user\?\.id\) limpiarEstadoPrivadoAuth\(\)/);
+assert.match(source, /await cargarRequisitosDocumentales\(\)/);
 console.log("APP_AUTH_SESSION_LIFECYCLE_OK");

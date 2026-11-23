@@ -1,0 +1,160 @@
+name: APdB document guardrails
+on:
+  push:
+    branches:
+      - codex/apdb-2027-document-review-guardrails
+  workflow_dispatch:
+
+concurrency:
+  group: apdb-document-guardrails-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  document-guardrails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify JavaScript syntax
+        run: node --check app_online.js
+      - name: Verify administrative and documentary guardrails
+        run: |
+          node tests/apdb-document-review-reason-contract.cjs
+          node tests/apdb-delegate-player-deactivation-guardrails.cjs
+          node tests/apdb-2027-eligibility-separation.cjs
+          node tests/apdb-2027-referee-output-refresh.cjs
+          node tests/apdb-2027-session-rpc-race-contract.cjs
+          node tests/apdb-2027-player-document-expiry-contract.cjs
+          node tests/app-online-administrative-onboarding-contract.cjs
+
+  eligibility-auth-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard local-only Supabase configuration
+        run: grep -q 'project_id = "apdb-2027-isolated"' supabase/config.toml
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.81.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Start disposable Supabase
+        run: supabase start
+      - name: Set local-only environment
+        run: |
+          eval "$(supabase status -o env)"
+          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=$DB_URL" >> "$GITHUB_ENV"
+      - name: Apply migrations to disposable instance
+        run: supabase db reset --local
+      - name: Verify eligibility RPC with authenticated synthetic identities
+        run: node tests/apdb-player-eligibility-isolated-integration.cjs
+      - name: Verify private Storage against real scoped JWT identities
+        run: node tests/apdb-2027-private-storage-isolated.cjs
+      - name: Prepare separate synthetic browser scenario
+        run: node tests/apdb-eligibility-browser-setup.cjs
+      - name: Install Chromium for official application test
+        run: npx playwright install chromium
+      - name: Validate eligibility from the official browser interface
+        run: npx playwright test tests/apdb-eligibility-browser.spec.cjs tests/apdb-document-circuit-browser.spec.cjs --workers=1
+      - name: Upload Chromium diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apdb-eligibility-browser-diagnostics
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+      - name: Stop disposable Supabase
+        if: always()
+        run: supabase stop --no-backup
+
+  full-platform-isolated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enforce disposable project only
+        run: grep -q 'project_id = "apdb-2027-isolated"' supabase/config.toml
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.81.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Cross-check sports, permissions, persistence and client contracts
+        run: |
+          node tests/apdb-supabase-isolated-contract.cjs
+          node tests/apdb-persistent-pilot-contract.cjs
+          node tests/apdb-isolated-migration-contract.cjs
+          node tests/apdb-2027-authorization-contract.cjs
+          node tests/app-online-secure-result-contract.cjs
+          node tests/app-online-public-playoffs-contract.cjs
+          node tests/app-online-tournament-discovery-contract.cjs
+          node tests/app-auth-session-lifecycle.cjs
+          node tests/apdb-staging-build.cjs
+      - name: Start disposable Supabase
+        run: supabase start
+      - name: Export local-only endpoints
+        run: |
+          eval "$(supabase status -o env)"
+          case "$API_URL" in
+            http://localhost:*|http://127.0.0.1:*) ;;
+            *) echo "Refusing remote Supabase URL"; exit 1;;
+          esac
+          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=$DB_URL" >> "$GITHUB_ENV"
+      - name: Apply synthetic migrations only
+        run: supabase db reset --local
+      - name: Run comprehensive isolated Auth, RLS, results, playoffs and recovery checks
+        run: |
+          node tests/apdb-supabase-isolated-integration.cjs
+          node tests/apdb-storage-backup-integration.cjs
+          node tests/apdb-championship-isolated-integration.cjs
+      - name: Prepare official app browser identities
+        run: node tests/apdb-isolated-browser-setup.cjs
+      - name: Install Chromium
+        run: npx playwright install chromium
+      - name: Run original sports and session Chromium suites
+        env:
+          APDB_ISOLATED_BROWSER_URL: ${{ env.SUPABASE_URL }}
+        run: npx playwright test tests/apdb-isolated-browser.spec.cjs tests/apdb-isolated-session-switch-browser.spec.cjs
+      - name: Restart without resetting synthetic data
+        run: |
+          supabase stop
+          supabase start
+          eval "$(supabase status -o env)"
+          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=$DB_URL" >> "$GITHUB_ENV"
+      - name: Validate persisted fixtures, standings and playoffs after restart
+        run: node tests/apdb-isolated-restart-recovery.cjs
+      - name: Preserve failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apdb-full-platform-chromium-diagnostics
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+      - name: Destroy disposable Supabase
+        if: always()
+        run: supabase stop --no-backup

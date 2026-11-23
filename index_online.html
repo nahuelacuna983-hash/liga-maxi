@@ -2722,7 +2722,27 @@
       <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="habilitados">Lista para arbitros</button>
       <button class="secondary assoc-shortcut-btn" type="button" data-asociacion-shortcut="auditoria-documental">Auditoria planilla</button>
     </div>
+    <section class="doc-scope-note" id="apdb-eligibility-section" hidden>
+      <h4>Habilitación deportiva institucional — 2027</h4>
+      <p class="note">La documentación aprobada no habilita automáticamente. La decisión queda registrada con responsable, fecha y motivo. Sólo Asociación con permiso documental puede actuar.</p>
+      <div class="doc-player-create">
+        <div class="field"><label for="apdb-eligibility-player">Jugador</label><select id="apdb-eligibility-player"><option value="">Seleccionar jugador</option></select></div>
+        <div class="field"><label for="apdb-eligibility-reason">Motivo institucional (obligatorio)</label><textarea id="apdb-eligibility-reason" rows="2" maxlength="2000" placeholder="Motivo de habilitación o suspensión"></textarea></div>
+      </div>
+      <div class="programacion-actions-head">
+        <button id="apdb-eligibility-approve" class="primary" type="button">Habilitar para competir</button>
+        <button id="apdb-eligibility-suspend" class="secondary" type="button">Suspender habilitación</button>
+      </div>
+      <div id="apdb-eligibility-status" class="status" role="status"></div>
+      <div id="apdb-eligibility-summary" class="note"></div>
+      <h5>Historial institucional del jugador</h5>
+      <div id="apdb-eligibility-history" class="note" role="status">Seleccioná un jugador para consultar sus decisiones anteriores.</div>
+    </section>
     <div class="doc-filters">
+      <div class="field">
+        <label for="documentacion-filtro-equipo">Club</label>
+        <select id="documentacion-filtro-equipo"><option value="">Elegir club</option></select>
+      </div>
       <div class="field">
         <label for="documentacion-filtro-estado">Estado</label>
         <select id="documentacion-filtro-estado">
