@@ -46,6 +46,9 @@ try {
   assert.equal(parser.status, 0, `generated JS failed syntax check: ${parser.stderr}`);
   assert.ok(app.includes("if (!torneo && TORNEO_ID_FALLBACK)"), "missing guarded tournament fallback");
   assert.ok(app.includes("APP_CONFIG.organizacionActiva.storageSlug = organizacion.slug"), "staging document paths must follow actual organization slug");
+  assert.ok(app.includes("window.APDB_STAGING === true ? sessionStorage : localStorage"), "private drafts must be session-scoped in staging");
+  assert.ok(app.includes("sessionStorage.removeItem(key)"), "logout must remove private draft keys");
+  assert.ok(app.includes("localStorage.removeItem(key)"), "old persistent draft keys must be purged");
   for (const forbidden of [
     "https://eshbydpsmypflfxpmhyk.supabase.co",
     "7d0971e3-66ee-4791-bcbf-bace1d2fefb9",
