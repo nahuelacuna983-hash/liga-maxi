@@ -32,6 +32,7 @@ try {
   const app = fs.readFileSync(path.join(outputPath, "app_online.js"), "utf8");
   assert.ok(app.includes("window.APDB_STAGING === true"), "staging guard must remain enabled");
   assert.ok(app.includes("if (!torneo && TORNEO_ID_FALLBACK)"), "missing guarded tournament fallback");
+  assert.ok(app.includes("APP_CONFIG.organizacionActiva.storageSlug = organizacion.slug"), "staging document paths must follow actual organization slug");
   for (const forbidden of [
     "https://eshbydpsmypflfxpmhyk.supabase.co",
     "7d0971e3-66ee-4791-bcbf-bace1d2fefb9",
