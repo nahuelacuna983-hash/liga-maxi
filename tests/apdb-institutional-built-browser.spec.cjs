@@ -42,5 +42,18 @@ test("APdB institutional package uses Auth only with Association and Delegate sc
   await expect(page.locator("#delegado-desbloquear")).toBeHidden();
   await expect(page.locator("#asociacion-desbloquear")).toBeHidden();
   await logout();
-  console.log("APDB_INSTITUTIONAL_BUILT_AUTH_BROWSER_OK official_bundle=true mobile=true association=true delegate=true legacy_keys=false");
+  // A shared device must not restore a previous Association/Delegate session after logout.
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("#auth-session-bar")).toBeHidden({ timeout: 15000 });
+  await expect(page.locator("#asociacion-categoria")).toBeDisabled();
+  await expect(page.locator("#delegado-info")).toHaveText("");
+  await expect(page.locator("#delegado-clave")).toBeHidden();
+  await expect(page.locator("#asociacion-clave")).toBeHidden();
+  // Opening another tab with the same browser profile must remain unauthenticated.
+  const secondTab = await page.context().newPage();
+  await secondTab.goto("/apdb-2027-prueba/index.html", { waitUntil: "domcontentloaded" });
+  await expect(secondTab.locator("#auth-session-bar")).toBeHidden({ timeout: 15000 });
+  await expect(secondTab.locator("#asociacion-categoria")).toBeDisabled();
+  await secondTab.close();
+  console.log("APDB_INSTITUTIONAL_BUILT_AUTH_BROWSER_OK official_bundle=true mobile=true association=true delegate=true legacy_keys=false logout_reload=true shared_profile=true");
 });
