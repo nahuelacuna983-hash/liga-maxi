@@ -92,7 +92,7 @@ begin
         and tp.categoria_id = v_category and tp.equipo_id = v_team
         and tp.activo
         and r.scope = 'player'
-        and r.categoria_id = v_category
+        and (r.categoria_id = v_category or r.categoria_id is null)
         and r.torneo_id = v_tournament and r.organizacion_id = v_org
         and (p_action = 'upload' or d.storage_path = p_name)
     ) into v_authorized;
@@ -106,7 +106,7 @@ begin
         and d.organizacion_id = v_org and d.torneo_id = v_tournament
         and d.categoria_id = v_category and d.equipo_id = v_team
         and r.scope = 'team'
-        and r.categoria_id = v_category
+        and (r.categoria_id = v_category or r.categoria_id is null)
         and r.torneo_id = v_tournament and r.organizacion_id = v_org
         and (
           p_action = 'upload' or d.storage_path = p_name
