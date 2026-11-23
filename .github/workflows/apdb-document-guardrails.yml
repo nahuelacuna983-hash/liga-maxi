@@ -60,6 +60,8 @@ jobs:
         run: supabase db reset --local
       - name: Verify eligibility RPC with authenticated synthetic identities
         run: node tests/apdb-player-eligibility-isolated-integration.cjs
+      - name: Verify private Storage against real scoped JWT identities
+        run: node tests/apdb-2027-private-storage-isolated.cjs
       - name: Prepare separate synthetic browser scenario
         run: node tests/apdb-eligibility-browser-setup.cjs
       - name: Install Chromium for official application test
