@@ -30,7 +30,7 @@ async function visible(subject, role) {
       [CATEGORY]
     );
     return rows.rows.map(r => r.team);
-  } finally { await pg.query("RESET ROLE"); }
+  } finally { await pg.query("RESET ROLE").catch(() => {}); }
 }
 async function main() {
   await pg.connect();
