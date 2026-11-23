@@ -66,7 +66,7 @@ test("Asociación habilita, suspende y recupera decisión; delegado no modifica"
 
   // Desde la pantalla real de árbitros: el club debe provenir de la lista
   // autorizada y el CSV debe refrescar la decisión justo antes de emitirse.
-  await page.locator('.assoc-nav-btn[data-asociacion-panel="habilitados"]').click();
+  await page.locator('.assoc-shortcut-btn[data-asociacion-shortcut="habilitados"]').click();
   await expect(page.locator("#habilitados-tabla")).toContainText("Jugador de prueba", {timeout:20000});
   await expect(page.locator("#habilitados-filtro-equipo")).toContainText(data.teamName);
   await page.locator("#habilitados-filtro-equipo").selectOption({label:data.teamName});
