@@ -7042,9 +7042,20 @@ async function revisarDocumentoAsociacion(event) {
     rechazado: "rechazar"
   };
 
+  // Nunca registrar una observación o rechazo sin un motivo explícito.
+  // Cancelar el diálogo conserva intacto el documento.
   let observacion = "";
   if (nextStatus === "observado" || nextStatus === "rechazado") {
-    observacion = prompt("Observación para el delegado:", documento.observacion || "") || "";
+    const respuesta = prompt("Motivo obligatorio para el delegado:", documento.observacion || "");
+    if (respuesta === null) {
+      setStatus(status, "Revisión cancelada.", "warn");
+      return;
+    }
+    observacion = respuesta.trim();
+    if (!observacion) {
+      setStatus(status, "Indicá un motivo antes de observar o rechazar el documento.", "warn");
+      return;
+    }
   }
 
   const sujeto = scope === "player"
