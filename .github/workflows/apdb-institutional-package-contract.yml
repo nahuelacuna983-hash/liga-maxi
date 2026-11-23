@@ -32,9 +32,11 @@ jobs:
           node --check apdb-administrative-adapter.js
           node --check tools/build-apdb-staging.cjs
           node --check tests/apdb-staging-build.cjs
+          node --check tests/apdb-institutional-subpath-smoke.cjs
       - name: Build an ephemeral staging package and verify isolation
         run: |
           node tests/apdb-staging-build.cjs
+          node tests/apdb-institutional-subpath-smoke.cjs
           node tests/apdb-online-config-contract.cjs
           node tests/institutional-package-contract.cjs
       - name: Check repository patch whitespace
