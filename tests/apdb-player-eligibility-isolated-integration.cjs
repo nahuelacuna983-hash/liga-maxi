@@ -117,6 +117,18 @@ async function login(email) {
     assert.equal(read.data.length,1);
     assert.equal(read.data[0].status,"suspendido");
     assert.equal(read.data[0].actor_name,"association");
+    const history = (token, playerId = player) => http("/rest/v1/rpc/apdb_get_player_eligibility_history", {
+      token, body: { p_player_id: playerId }
+    });
+    assert.equal((await history(null)).code,401,"Anonymous history forbidden");
+    assert.equal((await history(ids.delegate.token)).code,403,"Delegate history forbidden");
+    assert.equal((await history(ids.foreign.token)).code,403,"Cross-organization history forbidden");
+    const trail=await history(ids.association.token);
+    assert.equal(trail.code,200,JSON.stringify(trail.data));
+    assert.equal(trail.data.length,4,"All institutional decisions remain available");
+    assert.equal(trail.data[0].status,"suspendido");
+    assert(trail.data.every(row=>row.actor_name==="association" && row.reason.length>=5));
+    assert.equal(new Set(trail.data.map(row=>row.event_id)).size,4);
     const rows = await db.query("select status,reason,actor_auth_user_id from public.apdb_player_eligibility_events where player_id=$1 order by created_at,id",[player]);
     assert.equal(rows.rowCount,4,"Append-only evidence required");
     assert(rows.rows.every(x=>x.actor_auth_user_id===ids.association.id));
