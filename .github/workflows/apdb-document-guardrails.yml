@@ -5,6 +5,10 @@ on:
       - codex/apdb-2027-document-review-guardrails
   workflow_dispatch:
 
+concurrency:
+  group: apdb-document-guardrails-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -35,7 +39,7 @@ jobs:
         run: grep -q 'project_id = "apdb-2027-isolated"' supabase/config.toml
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.81.3
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
