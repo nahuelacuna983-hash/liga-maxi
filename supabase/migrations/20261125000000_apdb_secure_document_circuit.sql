@@ -94,7 +94,7 @@ begin
     p_equipo_id,v_team.nombre,'pendiente'
   from public.document_requirements r
   where r.activo and r.scope='player' and r.organizacion_id=v_org
-    and r.torneo_id=p_torneo_id and r.categoria_id=p_categoria_id;
+    and r.torneo_id=p_torneo_id and (r.categoria_id=p_categoria_id or r.categoria_id is null);
   return v_player_id;
 end;
 $$;
