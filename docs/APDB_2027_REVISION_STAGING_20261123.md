@@ -22,6 +22,11 @@ Alcance: consultas **solo lectura** sobre el proyecto independiente `wffvmthdmmj
 4. **19 tablas con RLS sin políticas**: determinar cuáles deben permanecer inaccesibles mediante Data API y cuáles requieren RPC seguras o políticas específicas para el circuito oficial. No añadir políticas permisivas generales.
    - Referencia: https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy
 
+## Permisos efectivos observados (solo lectura)
+
+- `anon` **no** tiene `SELECT` sobre `v_team_documents_admin`; `authenticated` **sí**. La alerta de la vista no demuestra por sí sola una exposición pública anónima; resta validar accesos cruzados entre usuarios autenticados.
+- Tanto `anon` como `authenticated` heredan `EXECUTE` para `rls_auto_enable()`. La función es de tipo `event_trigger`; su capacidad de invocación práctica vía RPC debe verificarse antes de calificar el impacto. El permiso heredado debe revisarse y restringirse si no es requerido.
+
 ## Puertas de aceptación
 
 - Vista y RPC documentales deben rechazar lectura ajena, anon y revocado; ensayar con identidades sintéticas.
