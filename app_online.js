@@ -6556,6 +6556,10 @@ async function aplicarPermisosAutenticados(permisos) {
     return;
   }
 
+  // La primera carga anónima pudo guardar cachés vacíos antes del login.
+  // Consultar requisitos otra vez con el JWT actual antes de renderizar
+  // documentos de delegado o Asociación.
+  await cargarRequisitosDocumentales();
   const accesoAsociacion = puedeAccederAsociacion(permisos);
   if (accesoAsociacion) {
     estado.asociacionDesbloqueada = true;
@@ -6616,7 +6620,7 @@ async function iniciarSesionAuth() {
     return;
   }
 
-  if (estado.authUser && estado.authUser.id !== data.user?.id) limpiarEstadoPrivadoAuth();
+  if (estado.authUser?.id !== data.user?.id) limpiarEstadoPrivadoAuth();
   estado.authSession = data.session || null;
   estado.authUser = data.user || null;
   const permisos = await cargarPermisosUsuarioActual();
@@ -6686,7 +6690,7 @@ async function inicializarSesionAuth() {
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
     const previousUserId = estado.authUser?.id || "";
     const nextUserId = session?.user?.id || "";
-    if (!nextUserId || (previousUserId && previousUserId !== nextUserId)) {
+    if (!nextUserId || previousUserId !== nextUserId) {
       limpiarEstadoPrivadoAuth();
     }
     estado.authSession = session || null;
