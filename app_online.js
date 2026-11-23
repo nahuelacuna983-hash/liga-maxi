@@ -6412,6 +6412,20 @@ async function cerrarSesionAuth() {
 }
 
 function limpiarEstadoPrivadoAuth() {
+  if (window.APDB_STAGING === true) {
+    // Never retain private planning drafts or contact emails after logout / role switch.
+    for (const key of [claveProgramacionEmailDestino(), claveSimulacionesPlanner()]) {
+      try {
+        sessionStorage.removeItem(key);
+        localStorage.removeItem(key); // Purges legacy V1/V2 browser entries.
+      } catch (_error) { /* Storage may be unavailable in restrictive browsers. */ }
+    }
+    if ($("programacion-email-destino")) $("programacion-email-destino").value = "";
+    if ($("programacion-mensaje")) $("programacion-mensaje").value = "";
+    if ($("planner-simulaciones-guardadas")) {
+      $("planner-simulaciones-guardadas").textContent = "";
+    }
+  }
   estado.permisosAuth = [];
   estado.delegadoDesbloqueado = false;
   estado.delegado = null;
@@ -6445,6 +6459,12 @@ function limpiarEstadoPrivadoAuth() {
 }
 
 async function inicializarSesionAuth() {
+  if (window.APDB_STAGING === true) {
+    // Remove persistent drafts from older institutional builds, even before login.
+    for (const key of [claveProgramacionEmailDestino(), claveSimulacionesPlanner()]) {
+      try { localStorage.removeItem(key); } catch (_error) { /* best effort */ }
+    }
+  }
   const { data } = await supabaseClient.auth.getSession();
   estado.authSession = data?.session || null;
   estado.authUser = data?.session?.user || null;
@@ -6913,13 +6933,15 @@ async function copiarTextoProgramacionSalida() {
 function cargarEmailProgramacionDestino() {
   const input = $("programacion-email-destino");
   if (!input) return;
-  input.value = localStorage.getItem(claveProgramacionEmailDestino()) || "";
+  const storage = window.APDB_STAGING === true ? sessionStorage : localStorage;
+  input.value = storage.getItem(claveProgramacionEmailDestino()) || "";
 }
 
 function guardarEmailProgramacionDestino() {
   const input = $("programacion-email-destino");
   if (!input) return;
-  localStorage.setItem(claveProgramacionEmailDestino(), input.value.trim());
+  const storage = window.APDB_STAGING === true ? sessionStorage : localStorage;
+  storage.setItem(claveProgramacionEmailDestino(), input.value.trim());
 }
 
 function abrirCorreoProgramacion() {
@@ -10174,7 +10196,8 @@ function claveItemSimulacionPlanner(simulacion) {
 
 function leerSimulacionesPlannerGuardadas() {
   try {
-    const raw = localStorage.getItem(claveSimulacionesPlanner());
+    const storage = window.APDB_STAGING === true ? sessionStorage : localStorage;
+    const raw = storage.getItem(claveSimulacionesPlanner());
     return raw ? JSON.parse(raw) : {};
   } catch (error) {
     console.warn("No se pudieron leer simulaciones guardadas:", error.message);
@@ -10183,7 +10206,8 @@ function leerSimulacionesPlannerGuardadas() {
 }
 
 function escribirSimulacionesPlannerGuardadas(simulaciones) {
-  localStorage.setItem(claveSimulacionesPlanner(), JSON.stringify(simulaciones || {}));
+  const storage = window.APDB_STAGING === true ? sessionStorage : localStorage;
+  storage.setItem(claveSimulacionesPlanner(), JSON.stringify(simulaciones || {}));
 }
 
 function guardarSimulacionPlanner(simulacion) {
