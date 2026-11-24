@@ -13,5 +13,6 @@ assert.match(tool, /restoreVerified=\$true/);
 assert.doesNotMatch(tool, /service_role|supabase\.co|wffvmthdmmjwspnozyrv/i);
 assert.match(workflow, /postgresql-client-17/);
 assert.match(fixture, /supabase_vault/);
+assert.match(workflow, /exclude-table-data=vault\.secrets/);
 assert.match(workflow, /APDB_SUPABASE_PG17_RESTORE_OK/);
 console.log("APDB_SUPABASE_RESTORE_LOCAL_CONTRACT_OK");
