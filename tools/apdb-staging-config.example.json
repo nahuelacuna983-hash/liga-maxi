@@ -2,6 +2,6 @@
   "environment": "staging",
   "supabaseUrl": "https://wffvmthdmmjwspnozyrv.supabase.co",
   "supabaseAnonKey": "YOUR_STAGING_PUBLISHABLE_OR_ANON_KEY",
-  "publicBasePath": "/apdb-2027-staging/",
+  "publicBasePath": "/apdb-2027-prueba/",
   "resetDatabaseOnStart": false
 }

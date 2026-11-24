@@ -4,6 +4,7 @@ on:
     branches:
       - codex/apdb-2027-pack-cd-release-gates
       - codex/apdb-2027-final-integrated-candidate
+      - codex/apdb-2027-hosting-release-finalization
   pull_request:
     paths:
       - 'tools/build-apdb-staging.cjs'
@@ -12,6 +13,8 @@ on:
       - 'tests/apdb-package-http-smoke.cjs'
       - 'tests/apdb-package-rollback-rehearsal.cjs'
       - 'tools/check-apdb-hosted-pilot.cjs'
+      - 'tools/check-apdb-hosted-release.cjs'
+      - 'tests/apdb-cpanel-auth-http-contract.cjs'
       - 'tests/apdb-hosted-pilot-gate.cjs'
       - 'docs/apdb-2027/PACK_C_D_ACEPTACION.md'
       - '.github/workflows/apdb-pack-cd-gates.yml'
@@ -34,6 +37,8 @@ jobs:
           node --check tests/apdb-package-http-smoke.cjs
           node --check tests/apdb-package-rollback-rehearsal.cjs
           node --check tools/check-apdb-hosted-pilot.cjs
+          node --check tools/check-apdb-hosted-release.cjs
+          node --check tests/apdb-cpanel-auth-http-contract.cjs
           node --check tests/apdb-hosted-pilot-gate.cjs
           node --check app_online.js
       - name: Build, tamper test, and validate source separation
@@ -43,6 +48,8 @@ jobs:
           node tests/institutional-package-contract.cjs
       - name: Local HTTP smoke test of packaged institutional site
         run: node tests/apdb-package-http-smoke.cjs
+      - name: Verify authenticated cPanel HTTP byte integrity locally
+        run: node tests/apdb-cpanel-auth-http-contract.cjs
       - name: Offline release and rollback rehearsal
         run: node tests/apdb-package-rollback-rehearsal.cjs
       - name: Protected hosted pilot preflight (localhost synthetic scenarios only)

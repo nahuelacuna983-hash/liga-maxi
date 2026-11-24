@@ -7,12 +7,13 @@ const os = require("node:os");
 const path = require("node:path");
 const http = require("node:http");
 const {spawnSync} = require("node:child_process");
-const base = "/apdb-2027-staging/";
+const base = "/apdb-2027-prueba/";
 const temp = fs.mkdtempSync(path.join(os.tmpdir(),"apdb-http-smoke-"));
 const config = path.join(temp,"config.json"), site = path.join(temp,"site");
 const allowed = new Map([
-  ["", "index_online.html"],
+  ["", "index.html"],
   ["index_online.html", "index_online.html"],
+  ["index.html", "index.html"],
   ["app_online.js", "app_online.js"],
   ["apdb-administrative-adapter.js", "apdb-administrative-adapter.js"],
   ["manifest.json", "manifest.json"],
@@ -62,7 +63,7 @@ let server;
     assert.match(html,/src="app_online\.js\?v=/);
     assert.match(html,/src="apdb-administrative-adapter\.js\?v=/);
     assert.match(html,/navigator\.serviceWorker\.register\("sw\.js"\)/);
-    for(const item of ["app_online.js","apdb-administrative-adapter.js","manifest.json","sw.js","icon-192.png","icon-512.png","release-integrity.json"]){
+    for(const item of ["index.html","app_online.js","apdb-administrative-adapter.js","manifest.json","sw.js","icon-192.png","icon-512.png","release-integrity.json"]){
       const r=await read(base+item,200);
       const content=Buffer.from(await r.arrayBuffer());
       assert.ok(content.length>0,item+" is empty");
@@ -75,7 +76,7 @@ let server;
     const manifest=await (await read(base+"manifest.json",200)).json();
     assert.equal(manifest.start_url,base);
     assert.equal(manifest.scope,base);
-    console.log("APDB_LOCAL_HTTP_PACKAGE_SMOKE_OK assets=8 forbidden_paths=6");
+    console.log("APDB_LOCAL_HTTP_PACKAGE_SMOKE_OK assets=9 forbidden_paths=6");
   } finally {
     if(server) await new Promise(resolve=>server.close(resolve));
     fs.rmSync(temp,{recursive:true,force:true});

@@ -13,7 +13,7 @@ const config = {
   environment: "staging",
   supabaseUrl: "https://wffvmthdmmjwspnozyrv.supabase.co",
   supabaseAnonKey: "sb_publishable_test_only_0123456789",
-  publicBasePath: "/apdb-2027-staging/",
+  publicBasePath: "/apdb-2027-prueba/",
   resetDatabaseOnStart: false
 };
 
@@ -27,6 +27,7 @@ try {
   assert.ok(html.includes("https://wffvmthdmmjwspnozyrv.supabase.co"));
   assert.ok(!html.includes("eshbydpsmypflfxpmhyk.supabase.co"));
   assert.ok(!html.includes("YOUR_STAGING_PUBLISHABLE_OR_ANON_KEY"));
+  assert.equal(fs.readFileSync(path.join(outputPath, "index.html"), "utf8"), html);
   const app = fs.readFileSync(path.join(outputPath, "app_online.js"), "utf8");
   assert.ok(app.includes("window.APDB_STAGING === true"), "staging guard must remain enabled");
   for (const forbidden of [
@@ -55,6 +56,26 @@ try {
   const tampered = spawnSync(process.execPath, ["tools/verify-apdb-release.cjs", outputPath], { encoding: "utf8" });
   assert.notEqual(tampered.status, 0, "Modified artifact must be rejected");
   fs.writeFileSync(appPath, original);
+
+  // An unexpected .env or backup is a release-blocking error even if hashes match.
+  const extraPath = path.join(outputPath, ".env");
+  fs.writeFileSync(extraPath, "APDB_FORBIDDEN_TEST_ONLY=true\n");
+  const addedSecret = spawnSync(process.execPath, ["tools/verify-apdb-release.cjs", outputPath], { encoding: "utf8" });
+  assert.notEqual(addedSecret.status, 0, "unexpected .env must fail");
+  fs.rmSync(extraPath);
+
+  // Symlinks are forbidden even if their bytes match the manifest.
+  const iconPath = path.join(outputPath, "icon-192.png");
+  const iconOriginal = fs.readFileSync(iconPath);
+  fs.rmSync(iconPath);
+  try {
+    fs.symlinkSync(path.join(process.cwd(), "icon-192.png"), iconPath);
+    const linked = spawnSync(process.execPath, ["tools/verify-apdb-release.cjs", outputPath], { encoding: "utf8" });
+    assert.notEqual(linked.status, 0, "symlinked asset must fail");
+  } finally {
+    fs.rmSync(iconPath, { force: true });
+    fs.writeFileSync(iconPath, iconOriginal);
+  }
 
   const overwrite = spawnSync(process.execPath, ["tools/build-apdb-staging.cjs", configPath, outputPath], { encoding: "utf8" });
   assert.notEqual(overwrite.status, 0, "builder must refuse to overwrite an existing output");
