@@ -60,8 +60,12 @@ jobs:
         run: npm ci --ignore-scripts --omit=optional
       - name: Install PostgreSQL client if unavailable
         run: |
-          if ! command -v psql >/dev/null; then
-            sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+          if ! command -v pg_dump >/dev/null || ! pg_dump --version | grep -q '16\.'; then
+            sudo install -d /usr/share/postgresql-common/pgdg
+            curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc >/dev/null
+            echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client-16
           fi
       - name: Compile patch and exercise role isolation on synthetic schema
         run: |
@@ -76,6 +80,7 @@ jobs:
           APDB_BACKUP_SOURCE_URL='postgresql://postgres:apdb_synthetic_only@127.0.0.1:5432/apdb_synthetic_test' \
           APDB_BACKUP_TARGET_URL='postgresql://postgres:apdb_synthetic_only@127.0.0.1:5432/apdb_2027_restored' \
           APDB_BACKUP_DIR=/tmp/apdb-backup \
+          PG_BIN=/usr/lib/postgresql/16/bin \
           node tools/postgres-backup-restore.cjs
           PGDATABASE=apdb_2027_restored psql -X -v ON_ERROR_STOP=1 -f tests/security/apdb_document_rpc_isolation.sql
 
