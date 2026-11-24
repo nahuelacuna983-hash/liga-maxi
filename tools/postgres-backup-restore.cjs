@@ -24,6 +24,7 @@ function requireUrl(name, value) {
 function identity(url) { return `${url.hostname}:${url.port || '5432'}/${url.pathname.slice(1)}`; }
 function command(name) {
   const root = process.env.PG_BIN || (process.platform === 'win32' ? 'C:\\Program Files\\PostgreSQL\\16\\bin' : '');
+  if (!root) return name;
   const file = path.join(root, process.platform === 'win32' ? `${name}.exe` : name);
   if (!fs.existsSync(file)) fail(`Missing PostgreSQL tool: ${file}`);
   return file;
