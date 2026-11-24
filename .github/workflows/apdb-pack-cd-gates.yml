@@ -16,6 +16,11 @@ on:
       - 'tools/check-apdb-hosted-release.cjs'
       - 'tests/apdb-cpanel-auth-http-contract.cjs'
       - 'tests/apdb-hosted-pilot-gate.cjs'
+      - 'tests/apdb-institutional-package-browser.spec.cjs'
+      - 'tests/demo-circuit-browser.spec.cjs'
+      - 'tools/demo-server.cjs'
+      - 'index_online.html'
+      - 'app_online.js'
       - 'docs/apdb-2027/PACK_C_D_ACEPTACION.md'
       - '.github/workflows/apdb-pack-cd-gates.yml'
 permissions:
@@ -40,6 +45,7 @@ jobs:
           node --check tools/check-apdb-hosted-release.cjs
           node --check tests/apdb-cpanel-auth-http-contract.cjs
           node --check tests/apdb-hosted-pilot-gate.cjs
+          node --check tests/apdb-institutional-package-browser.spec.cjs
           node --check app_online.js
       - name: Build, tamper test, and validate source separation
         run: |
@@ -54,3 +60,12 @@ jobs:
         run: node tests/apdb-package-rollback-rehearsal.cjs
       - name: Protected hosted pilot preflight (localhost synthetic scenarios only)
         run: node tests/apdb-hosted-pilot-gate.cjs
+      - name: Install Chromium for institutional browser checks
+        run: npx playwright install --with-deps chromium
+      - name: Institutional package browser shell (desktop and mobile)
+        run: |
+          npx playwright test tests/apdb-institutional-package-browser.spec.cjs --workers=1
+          node tools/demo-server.cjs >/tmp/apdb-demo-server.log 2>&1 &
+          DEMO_PID=$!
+          trap 'kill $DEMO_PID' EXIT
+          npx playwright test tests/demo-circuit-browser.spec.cjs --workers=1
