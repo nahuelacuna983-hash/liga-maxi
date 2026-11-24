@@ -31,6 +31,18 @@ La evidencia de CI debe contener `APDB_POSTGRES_BACKUP_RESTORE_OK` y `APDB_DOCUM
 
 La intervención humana imprescindible es proporcionar credenciales autorizadas, un destino de restauración separado y autorización para leer objetos/configuración de staging. Esta rama no ejecuta operaciones reales sobre staging.
 
+## Evidencia del PR #25
+
+El staging consultado es `APdB 2027 Staging` (`wffvmthdmmjwspnozyrv`), PostgreSQL 17, en `sa-east-1`. La conexión disponible permitió consultar el estado del proyecto, migraciones, tablas y RLS, pero no expone una credencial PostgreSQL para `pg_dump` ni un destino de restauración.
+
+En el commit `a627940bdccb5d347d5cb2a8d9796bb093a51147` aprobaron:
+
+- [respaldo/restauración sintética PostgreSQL](https://github.com/nahuelacuna983-hash/liga-maxi/actions/runs/45298764435): `APDB_POSTGRES_BACKUP_RESTORE_OK`, `APDB_DOCUMENT_RPC_POSTGRES_ISOLATION_OK`, dump de 22046 bytes, SHA-256 `d54827bd1b46c2fb848a91a9680d1d30c5eb8094b344283d6a33d9883e4b268b`;
+- [ensayo diferencial aislado](https://github.com/nahuelacuna983-hash/liga-maxi/actions/runs/45298764436): preflight, políticas de Storage y RPC nuevas aprobados en Supabase Docker descartable;
+- contratos estáticos y guardrails del mismo commit: aprobados.
+
+Estas ejecuciones no son un respaldo de staging ni una certificación de Auth/Storage hospedado. El resultado para instalar en staging permanente es **NO-GO condicionado** hasta obtener una credencial PostgreSQL autorizada, un segundo destino aislado y un inventario/backup separado de objetos Storage y configuración Auth. No se modificaron staging, producción 2026, `main` ni hosting.
+
 ## Pack B
 
 **Implementado:** `tests/security/apdb_packs_ab_preflight.sql` realiza una comprobación de cierre fallido para impedir aplicar una diferencial cuando faltan tablas base, cuando Storage perdió su alcance o cuando las vistas documentales quedaron expuestas.
