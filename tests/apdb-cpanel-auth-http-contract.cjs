@@ -9,7 +9,7 @@ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),"apdb-cpanel-test-"));
 const site=path.join(tmp,"release");
 const config=path.join(tmp,"config.json");
 const creds="Basic "+Buffer.from("apdb_test:synthetic_password").toString("base64");
-const served=new Set(["index_online.html","app_online.js","apdb-administrative-adapter.js","sw.js",
+const served=new Set(["index.html","index_online.html","app_online.js","apdb-administrative-adapter.js","sw.js",
 "manifest.json","icon-192.png","icon-512.png","release-integrity.json"]);
 const mime=f=>f.endsWith(".js")?"application/javascript":f.endsWith(".json")?"application/json":
 f.endsWith(".png")?"image/png":"text/html";
@@ -23,7 +23,7 @@ async function checkRelease(base,corrupt) {
   child.stderr.on("data",chunk=>stderr+=chunk);
   const code=await new Promise((resolve,reject)=>{child.on("error",reject);child.on("exit",resolve);});
   assert.equal(code,corrupt?1:0,stderr||stdout);
-  if(!corrupt)assert.match(stdout,/APDB_CPANEL_AUTHENTICATED_RELEASE_OK files=8/);
+  if(!corrupt)assert.match(stdout,/APDB_CPANEL_AUTHENTICATED_RELEASE_OK files=9/);
 }
 (async()=>{
  try {
