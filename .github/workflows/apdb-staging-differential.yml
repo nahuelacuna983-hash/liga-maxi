@@ -108,6 +108,8 @@ jobs:
           sed -i 's/^major_version = 15$/major_version = 17/' supabase/config.toml
           mkdir -p /tmp/apdb-disabled-migrations
           find supabase/migrations -maxdepth 1 -name '*.sql' -exec mv -t /tmp/apdb-disabled-migrations {} +
+          # Seed requires the APdB application tables removed above; disable only for this synthetic PG17 preflight.
+          if test -f supabase/seed.sql; then mv supabase/seed.sql /tmp/apdb-seed-disabled.sql; fi
       - uses: supabase/setup-cli@v1
         with:
           version: 3.4.0
