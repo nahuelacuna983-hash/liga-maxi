@@ -8,13 +8,13 @@ on:
       - 'tests/apdb-delivery-readiness.cjs'
       - 'tools/apdb-package-receipt.cjs'
       - 'tests/apdb-package-receipt.cjs'
-      - 'tools/apdb-package-receipt.cjs'
-      - 'tests/apdb-package-receipt.cjs'
       - '.github/workflows/apdb-delivery-readiness.yml'
   pull_request:
     paths:
       - 'tools/apdb-delivery-readiness.cjs'
       - 'tests/apdb-delivery-readiness.cjs'
+      - 'tools/apdb-package-receipt.cjs'
+      - 'tests/apdb-package-receipt.cjs'
       - '.github/workflows/apdb-delivery-readiness.yml'
 permissions:
   contents: read
