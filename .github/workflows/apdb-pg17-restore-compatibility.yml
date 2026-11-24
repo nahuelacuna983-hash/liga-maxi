@@ -1,0 +1,52 @@
+name: APdB 2027 PG17 Supabase recovery compatibility (disposable)
+on:
+  push:
+    branches:
+      - codex/apdb-2027-supabase-restore-preflight
+    paths:
+      - '.github/workflows/apdb-pg17-restore-compatibility.yml'
+      - 'tests/security/apdb_supabase_restore_environment_readonly.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres17-supabase-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard isolated Supabase project
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -qx 'project_id = "apdb-2027-isolated"' supabase/config.toml
+          ! grep -R -q 'wffvmthdmmjwspnozyrv\|eshbydpsmypflfxpmhyk' supabase/config.toml
+          # Working-tree changes affect only the disposable GitHub Actions runner.
+          sed -i 's/^major_version = 15$/major_version = 17/' supabase/config.toml
+          grep -qx 'major_version = 17' supabase/config.toml
+          mkdir -p /tmp/apdb-migrations-disabled
+          find supabase/migrations -maxdepth 1 -name '*.sql' -exec mv -t /tmp/apdb-migrations-disabled {} +
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.4.0
+      - name: Start a fresh disposable PostgreSQL 17 Supabase stack
+        run: supabase start
+      - name: Check PG17, vault extension and managed schemas
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "$(supabase status -o env)"
+          case "$DB_URL" in
+            postgresql://*localhost*|postgresql://*127.0.0.1*) ;;
+            *) echo 'REFUSED: non-local database'; exit 1;;
+          esac
+          command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -At -f tests/security/apdb_supabase_restore_environment_readonly.sql | tee /tmp/apdb-pg17-compatibility.log
+          test "$(grep -c '|PASS' /tmp/apdb-pg17-compatibility.log)" -eq 4
+          ! grep -q '|STOP' /tmp/apdb-pg17-compatibility.log
+          echo 'APDB_SUPABASE_PG17_ENV_READY_SYNTHETIC_ONLY'
+      - name: Stop disposable Supabase without persisting data
+        if: always()
+        run: supabase stop --no-backup
