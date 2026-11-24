@@ -7,7 +7,7 @@ const os = require("node:os");
 const path = require("node:path");
 const http = require("node:http");
 const {spawnSync} = require("node:child_process");
-const base = "/apdb-2027-staging/";
+const base = "/apdb-2027-prueba/";
 const temp = fs.mkdtempSync(path.join(os.tmpdir(),"apdb-http-smoke-"));
 const config = path.join(temp,"config.json"), site = path.join(temp,"site");
 const allowed = new Map([
