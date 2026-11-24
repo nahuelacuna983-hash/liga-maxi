@@ -60,6 +60,8 @@ jobs:
         run: node tests/apdb-package-rollback-rehearsal.cjs
       - name: Protected hosted pilot preflight (localhost synthetic scenarios only)
         run: node tests/apdb-hosted-pilot-gate.cjs
+      - name: Install locked test dependencies
+        run: npm ci --ignore-scripts
       - name: Install Chromium for institutional browser checks
         run: npx playwright install --with-deps chromium
       - name: Institutional package browser shell (desktop and mobile)
