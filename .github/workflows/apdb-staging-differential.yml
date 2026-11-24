@@ -2,6 +2,7 @@ name: APdB staging differential isolated rehearsal
 on:
   push:
     branches:
+      - codex/apdb-2027-backup-differential-integration
       - codex/apdb-2027-staging-differential
   pull_request:
     paths:
