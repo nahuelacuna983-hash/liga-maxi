@@ -9,7 +9,7 @@ assert.ok(process.argv[2], "Usage: node tools/verify-apdb-release.cjs <package-d
 // A package must contain only the expected release files: no dotfiles, dumps,
  // extra scripts, nested folders or symlinks, even if the seven hashes match.
 const expectedRootFiles = [
-  "index_online.html", "app_online.js", "apdb-administrative-adapter.js",
+  "index.html", "index_online.html", "app_online.js", "apdb-administrative-adapter.js",
   "sw.js", "manifest.json", "icon-192.png", "icon-512.png", "release-integrity.json"
 ];
 assert.ok(fs.lstatSync(root).isDirectory(), "package root must be a directory");
@@ -24,7 +24,7 @@ assert.equal(metadata.format, "apdb-institutional-package-integrity-v1");
 assert.equal(metadata.environment, "staging");
 assert.match(metadata.publicBasePath, /^\/(?:[A-Za-z0-9_-]+\/)+$/);
 const allowed = new Set([
-  "index_online.html", "app_online.js", "apdb-administrative-adapter.js",
+  "index.html", "index_online.html", "app_online.js", "apdb-administrative-adapter.js",
   "sw.js", "manifest.json", "icon-192.png", "icon-512.png"
 ]);
 assert.deepEqual(metadata.files.map((f) => f.file).sort(), [...allowed].sort());
@@ -42,6 +42,7 @@ assert.equal(manifest.scope, metadata.publicBasePath);
 assert.equal(manifest.start_url, metadata.publicBasePath);
 const html = fs.readFileSync(path.join(root, "index_online.html"), "utf8");
 const js = fs.readFileSync(path.join(root, "app_online.js"), "utf8");
+assert.equal(fs.readFileSync(path.join(root, "index.html"), "utf8"), html, "Apache default index differs from official online HTML");
 assert.ok(html.includes("window.APDB_STAGING=true"));
 assert.ok(html.includes("window.APDB_SECURE_RESULT_RPC=true"));
 assert.ok(html.includes("https://wffvmthdmmjwspnozyrv.supabase.co"));
