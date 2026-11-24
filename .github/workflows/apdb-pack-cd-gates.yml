@@ -7,6 +7,10 @@ on:
       - codex/apdb-2027-hosting-release-finalization
   pull_request:
     paths:
+      - 'tools/apdb-recovery-run.ps1'
+      - 'tools/apdb-compare-snapshots.cjs'
+      - 'tools/apdb-delivery-readiness.cjs'
+      - 'tools/apdb-package-receipt.cjs'
       - 'tools/build-apdb-staging.cjs'
       - 'tools/verify-apdb-release.cjs'
       - 'tests/apdb-staging-build.cjs'

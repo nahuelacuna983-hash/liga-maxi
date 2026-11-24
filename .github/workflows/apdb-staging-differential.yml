@@ -6,6 +6,10 @@ on:
       - codex/apdb-2027-staging-differential
   pull_request:
     paths:
+      - 'tools/apdb-recovery-run.ps1'
+      - 'tools/apdb-compare-snapshots.cjs'
+      - 'tools/apdb-delivery-readiness.cjs'
+      - 'tools/apdb-package-receipt.cjs'
       - 'staging-candidate/**'
       - 'tests/security/apdb_staging_20261123_disposable_fixture.sql'
       - 'tests/security/apdb_staging_differential_gate_readonly.sql'
