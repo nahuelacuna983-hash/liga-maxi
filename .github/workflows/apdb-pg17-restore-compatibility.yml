@@ -4,6 +4,7 @@ on:
     branches:
       - codex/apdb-2027-supabase-restore-preflight
       - codex/apdb-2027-restore-close
+      - codex/apdb-2027-restore-windows-integration
     paths:
       - '.github/workflows/apdb-pg17-restore-compatibility.yml'
       - 'tests/security/apdb_supabase_restore_environment_readonly.sql'
