@@ -91,6 +91,26 @@ jobs:
           test -f /tmp/apdb-restore-report/apdb-pg17-synthetic.restore-manifest.json
           grep -q '"verificationPending": true' /tmp/apdb-restore-report/apdb-pg17-synthetic.restore-manifest.json
           psql -d apdb_pg17_restore -v ON_ERROR_STOP=1 -f tests/security/apdb_pg17_restore_verify.sql
+          # Fail-closed negative tests: none is permitted to claim a preflight/restore success.
+          if pwsh -NoProfile -File tools/apdb-supabase-restore-local.ps1 -Mode preflight -DumpPath /tmp/apdb-pg17-synthetic.dump -TargetDatabase apdb_pg17_restore -TargetPort 54322 -OutputDirectory /tmp/apdb-restore-report > /tmp/apdb-must-reject-used.log 2>&1; then
+            echo 'FAIL: script accepted an already restored database'; exit 1
+          fi
+          grep -q 'Target database is not empty' /tmp/apdb-must-reject-used.log
+          if pwsh -NoProfile -File tools/apdb-supabase-restore-local.ps1 -Mode preflight -DumpPath /tmp/apdb-pg17-synthetic.dump -TargetDatabase postgres -TargetPort 54322 -OutputDirectory /tmp/apdb-restore-report > /tmp/apdb-must-reject-name.log 2>&1; then
+            echo 'FAIL: script accepted protected database name'; exit 1
+          fi
+          grep -q 'Target database name must start apdb_' /tmp/apdb-must-reject-name.log
+          if pwsh -NoProfile -File tools/apdb-supabase-restore-local.ps1 -Mode restore -DumpPath /tmp/apdb-pg17-synthetic.dump -TargetDatabase apdb_other_restore -TargetHost example.com -TargetPort 54322 -OutputDirectory /tmp/apdb-restore-report > /tmp/apdb-must-reject-remote.log 2>&1; then
+            echo 'FAIL: script accepted remote host'; exit 1
+          fi
+          grep -q 'Target must be localhost' /tmp/apdb-must-reject-remote.log
+          printf 'This is not a valid PostgreSQL archive.%01024d' 0 > /tmp/apdb-invalid-archive.dump
+          psql -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE apdb_bad_restore'
+          if pwsh -NoProfile -File tools/apdb-supabase-restore-local.ps1 -Mode preflight -DumpPath /tmp/apdb-invalid-archive.dump -TargetDatabase apdb_bad_restore -TargetPort 54322 -OutputDirectory /tmp/apdb-restore-report > /tmp/apdb-must-reject-corrupt.log 2>&1; then
+            echo 'FAIL: script accepted a corrupt dump'; exit 1
+          fi
+          grep -q 'pg_restore could not read the dump catalog' /tmp/apdb-must-reject-corrupt.log
+          echo 'APDB_PG17_RESTORE_NEGATIVE_GATES_OK'
           sha256sum /tmp/apdb-pg17-synthetic.dump
           echo 'APDB_SUPABASE_PG17_ACL_LIMITATION_NO_ACL'
           echo 'APDB_SUPABASE_PG17_RESTORE_OK'
