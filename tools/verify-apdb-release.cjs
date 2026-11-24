@@ -19,6 +19,9 @@ for (const name of expectedRootFiles) {
   assert.ok(fs.lstatSync(path.join(root, name)).isFile(),
     "release entries must be regular files, not links or directories: " + name);
 }
+const forbiddenNames = /(?:\.map$|\.sql$|\.dump$|\.bak$|\.backup$|^\.env(?:\.|$)|service[_-]?role|sb_secret_)/i;
+assert.ok(fs.readdirSync(root).every((name) => !forbiddenNames.test(name)),
+  "release contains a forbidden source, backup, environment or secret file");
 const metadata = JSON.parse(fs.readFileSync(path.join(root, "release-integrity.json"), "utf8"));
 assert.equal(metadata.format, "apdb-institutional-package-integrity-v1");
 assert.equal(metadata.environment, "staging");
@@ -36,6 +39,11 @@ for (const entry of metadata.files) {
   const data = fs.readFileSync(path.join(root, entry.file));
   assert.equal(entry.bytes, data.length, "Size changed: " + entry.file);
   assert.equal(entry.sha256, crypto.createHash("sha256").update(data).digest("hex"), "Hash changed: " + entry.file);
+  if (/\.(html|js|json)$/.test(entry.file)) {
+    const text = data.toString("utf8");
+    assert.doesNotMatch(text, /(?:[#/]sourceMappingURL=|sb_secret_[A-Za-z0-9_-]+|postgres(?:ql)?:\/\/)/i,
+      "private source, SQL, privileged credential or database URL exposed: " + entry.file);
+  }
 }
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
 assert.equal(manifest.scope, metadata.publicBasePath);
