@@ -32,7 +32,7 @@ fs.mkdirSync(outputPath, { recursive: true });
 for (const file of files) {
   const destination = path.join(outputPath, file);
   if (file === "index_online.html" || file === "index.html") {
-    const html = fs.readFileSync(file, "utf8");
+    const html = fs.readFileSync("index_online.html", "utf8");
     assert.ok(html.includes('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'), "Supabase client script not found");
     fs.writeFileSync(destination, html.replace('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>', `${bootstrap}\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`));
   } else if (file === "app_online.js") {
