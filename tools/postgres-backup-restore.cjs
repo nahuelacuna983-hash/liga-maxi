@@ -24,6 +24,7 @@ function requireUrl(name, value) {
 function identity(url) { return `${url.hostname}:${url.port || '5432'}/${url.pathname.slice(1)}`; }
 function command(name) {
   const root = process.env.PG_BIN || (process.platform === 'win32' ? 'C:\\Program Files\\PostgreSQL\\16\\bin' : '');
+  if (!root) return name;
   const file = path.join(root, process.platform === 'win32' ? `${name}.exe` : name);
   if (!fs.existsSync(file)) fail(`Missing PostgreSQL tool: ${file}`);
   return file;
@@ -40,25 +41,26 @@ function pgpass(url) {
   fs.writeFileSync(file, `${url.hostname}:${url.port || 5432}:${url.pathname.slice(1)}:${decodeURIComponent(url.username)}:${password}\n`, { mode: 0o600 });
   return { env: { PGPASSFILE: file }, cleanup() { fs.rmSync(path.dirname(file), { recursive: true, force: true }); } };
 }
-function dumpArgs(url, file) { return ['--format=custom', '--no-owner', '--no-privileges', '--file', file, '--host', url.hostname, '--port', url.port || '5432', '--username', decodeURIComponent(url.username), '--dbname', decodeURIComponent(url.pathname.slice(1))]; }
-function restoreArgs(url, file) { return ['--clean', '--if-exists', '--no-owner', '--no-privileges', '--exit-on-error', '--host', url.hostname, '--port', url.port || '5432', '--username', decodeURIComponent(url.username), '--dbname', decodeURIComponent(url.pathname.slice(1)), file]; }
+function dumpArgs(url, file) { return ['--format=custom', '--no-owner', '--file', file, '--host', url.hostname, '--port', url.port || '5432', '--username', decodeURIComponent(url.username), '--dbname', decodeURIComponent(url.pathname.slice(1))]; }
+function restoreArgs(url, file) { return ['--clean', '--if-exists', '--no-owner', '--exit-on-error', '--host', url.hostname, '--port', url.port || '5432', '--username', decodeURIComponent(url.username), '--dbname', decodeURIComponent(url.pathname.slice(1)), file]; }
 async function snapshot(url) {
   const client = new Client({ connectionString: url.toString() });
   await client.connect();
-  const tables = await client.query("select n.nspname as schema, c.relname as table from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind='r' and n.nspname not in ('pg_catalog','information_schema') order by 1,2");
+  const tables = await client.query("select n.nspname as schema, c.relname as table, c.relrowsecurity as rls_enabled, c.relforcerowsecurity as rls_forced from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind='r' and n.nspname not in ('pg_catalog','information_schema') order by 1,2");
   const rows = await client.query("select table_schema, table_name, (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from %I.%I', table_schema, table_name), true, false, '')))[1]::text::bigint as count from information_schema.tables where table_type='BASE TABLE' and table_schema not in ('pg_catalog','information_schema') order by 1,2");
   const columns = await client.query("select table_schema, table_name, column_name, data_type, ordinal_position from information_schema.columns where table_schema not in ('pg_catalog','information_schema') order by 1,2,5");
   const constraints = await client.query("select n.nspname as schema, c.relname as table, con.conname as name, con.contype as type, pg_get_constraintdef(con.oid) as definition from pg_constraint con join pg_class c on c.oid=con.conrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname not in ('pg_catalog','information_schema') order by 1,2,3");
   const indexes = await client.query("select schemaname as schema, tablename as table, indexname as name, indexdef as definition from pg_indexes where schemaname not in ('pg_catalog','information_schema') order by 1,2,3");
   const policies = await client.query("select schemaname as schema, tablename as table, policyname as name, permissive, roles, cmd, qual, with_check from pg_policies where schemaname not in ('pg_catalog','information_schema') order by 1,2,3");
   const functions = await client.query("select n.nspname as schema, p.proname as name, pg_get_function_identity_arguments(p.oid) as arguments, pg_get_functiondef(p.oid) as definition from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname not in ('pg_catalog','information_schema') order by 1,2,3");
+  const privileges = await client.query("select table_schema, table_name, grantee, privilege_type from information_schema.role_table_grants where table_schema not in ('pg_catalog','information_schema') order by 1,2,3,4");
   const content = [];
   for (const table of tables.rows) {
     const result = await client.query(`select * from \"${table.schema.replace(/\"/g, '\"\"')}\".\"${table.table.replace(/\"/g, '\"\"')}\"`);
     content.push({ ...table, rows: result.rows.map(row => JSON.stringify(row)).sort() });
   }
   await client.end();
-  return { tables: tables.rows, rows: rows.rows, columns: columns.rows, constraints: constraints.rows, indexes: indexes.rows, policies: policies.rows, functions: functions.rows, content };
+  return { tables: tables.rows, rows: rows.rows, columns: columns.rows, constraints: constraints.rows, indexes: indexes.rows, policies: policies.rows, functions: functions.rows, privileges: privileges.rows, content };
 }
 async function main() {
   const source = requireUrl('APDB_BACKUP_SOURCE_URL', sourceUrl);
@@ -73,12 +75,13 @@ async function main() {
   const targetAuth = pgpass(target);
   try {
     run(command('pg_dump'), dumpArgs(source, dump), sourceAuth.env);
+    run(command('pg_restore'), ['--list', dump], sourceAuth.env);
     run(command('pg_restore'), restoreArgs(target, dump), targetAuth.env);
   } finally { sourceAuth.cleanup(); targetAuth.cleanup(); }
   const after = await snapshot(target.toString());
   assert.deepEqual(after, before, 'restored structure or row counts differ from source');
   const sha256 = crypto.createHash('sha256').update(fs.readFileSync(dump)).digest('hex');
-  const manifest = { generatedAt: new Date().toISOString(), source: { host: source.hostname, port: source.port || '5432', database: source.pathname.slice(1) }, target: { host: target.hostname, port: target.port || '5432', database: target.pathname.slice(1) }, dump: path.basename(dump), bytes: fs.statSync(dump).size, sha256, comparison: 'equal: table content, schema columns, constraints, indexes, RLS policies, functions and row counts' };
+  const manifest = { generatedAt: new Date().toISOString(), source: { host: source.hostname, port: source.port || '5432', database: source.pathname.slice(1) }, target: { host: target.hostname, port: target.port || '5432', database: target.pathname.slice(1) }, dump: path.basename(dump), bytes: fs.statSync(dump).size, sha256, restoreVerified: true, comparison: 'equal: table content, schema columns, constraints, indexes, RLS flags/policies, functions and effective table grants' };
   const manifestPath = `${dump}.manifest.json`;
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(JSON.stringify({ marker: 'APDB_POSTGRES_BACKUP_RESTORE_OK', manifest: manifestPath, dumpBytes: manifest.bytes, sha256: manifest.sha256 }));

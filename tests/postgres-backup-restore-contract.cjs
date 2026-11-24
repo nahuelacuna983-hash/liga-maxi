@@ -12,5 +12,8 @@ assert.match(source, /APDB_BACKUP_DIR must be outside the repository/);
 assert.match(source, /cannot target a hosted Supabase endpoint/);
 assert.match(source, /APDB_POSTGRES_BACKUP_RESTORE_OK/);
 assert.match(source, /table content, schema columns, constraints, indexes/);
+assert.match(source, /--list/);
+assert.match(source, /restoreVerified: true/);
+assert.doesNotMatch(source, /--no-privileges/);
 assert.doesNotMatch(source, /service_role|supabase_key|BEGIN PRIVATE KEY/i);
 console.log('APDB_POSTGRES_BACKUP_RESTORE_CONTRACT_OK');

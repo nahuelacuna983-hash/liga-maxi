@@ -4,6 +4,7 @@ on:
     branches:
       - codex/apdb-2027-document-review-guardrails
       - codex/apdb-2027-full-release-verification
+      - codex/apdb-2027-final-integrated-candidate
   pull_request:
     paths:
       - 'app_online.js'
@@ -40,6 +41,7 @@ jobs:
           node tests/apdb-2027-player-document-expiry-contract.cjs
           node tests/app-online-administrative-onboarding-contract.cjs
           node tests/apdb-document-rpc-contract.cjs
+          node tests/apdb-packs-ab-contract.cjs
 
   eligibility-auth-http:
     runs-on: ubuntu-latest

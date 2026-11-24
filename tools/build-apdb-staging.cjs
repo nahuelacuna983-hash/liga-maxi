@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 
 const configPath = path.resolve(process.argv[2] || "tools/apdb-staging-config.example.json");
 const outputPath = path.resolve(process.argv[3] || "dist/apdb-2027-staging");
@@ -14,7 +15,8 @@ assert.match(config.supabaseUrl, /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i, "ex
 assert.match(config.supabaseUrl, /^https:\/\/wffvmthdmmjwspnozyrv\.supabase\.co\/?$/i, "only APdB staging can be packaged");
 assert.match(config.supabaseAnonKey, /^sb_publishable_[A-Za-z0-9_-]+$/i, "a real publishable key is required");
 assert.doesNotMatch(config.supabaseAnonKey, /service_role|secret|eyJ/i, "privileged credential is forbidden");
-assert.match(config.publicBasePath, /^\/[A-Za-z0-9._/-]+\/$/, "staging must have an isolated base path");
+assert.match(config.publicBasePath, /^\/(?:[A-Za-z0-9_-]+\/)+$/, "staging base path must use safe segments, never dots or traversal");
+assert.notEqual(config.publicBasePath, "/", "pilot must not overwrite the site root");
 assert.ok(!fs.existsSync(outputPath), `output already exists; refusing to overwrite: ${outputPath}`);
 
 const files = ["index_online.html", "app_online.js", "apdb-administrative-adapter.js", "sw.js", "manifest.json", "icon-192.png", "icon-512.png"];
@@ -54,3 +56,19 @@ for (const file of files) {
   }
 }
 console.log(`APDB_STAGING_BUILD_OK output=${outputPath} base=${config.publicBasePath}`);
+
+
+// Manifest describes the complete public package without embedding credentials.
+// Publishable frontend keys are expected in HTML; never include private tokens.
+const entries = files.map((file) => ({
+  file,
+  bytes: fs.statSync(path.join(outputPath, file)).size,
+  sha256: crypto.createHash("sha256").update(fs.readFileSync(path.join(outputPath, file))).digest("hex")
+})).sort((a,b) => a.file.localeCompare(b.file));
+fs.writeFileSync(path.join(outputPath, "release-integrity.json"), JSON.stringify({
+  format: "apdb-institutional-package-integrity-v1",
+  environment: "staging",
+  publicBasePath: config.publicBasePath,
+  files: entries
+}, null, 2) + "\n");
+console.log("APDB_INTEGRITY_MANIFEST_OK files=" + entries.length);
