@@ -6,6 +6,10 @@ on:
     paths:
       - 'tools/apdb-delivery-readiness.cjs'
       - 'tests/apdb-delivery-readiness.cjs'
+      - 'tools/apdb-package-receipt.cjs'
+      - 'tests/apdb-package-receipt.cjs'
+      - 'tools/apdb-package-receipt.cjs'
+      - 'tests/apdb-package-receipt.cjs'
       - '.github/workflows/apdb-delivery-readiness.yml'
   pull_request:
     paths:
@@ -25,3 +29,5 @@ jobs:
           node-version: '22'
       - run: node --check tools/apdb-delivery-readiness.cjs
       - run: node tests/apdb-delivery-readiness.cjs
+      - run: node --check tools/apdb-package-receipt.cjs
+      - run: node tests/apdb-package-receipt.cjs
