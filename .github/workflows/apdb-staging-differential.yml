@@ -9,6 +9,7 @@ on:
       - 'staging-candidate/**'
       - 'tests/security/apdb_staging_20261123_disposable_fixture.sql'
       - 'tests/security/apdb_staging_differential_gate_readonly.sql'
+      - 'tests/security/apdb_supabase_restore_environment_readonly.sql'
       - 'tests/apdb-staging-differential-contract.cjs'
       - '.github/workflows/apdb-staging-differential.yml'
 permissions:
@@ -50,6 +51,22 @@ jobs:
         run: supabase start
       - name: Reset synthetic baseline
         run: supabase db reset --local
+      - name: Verify isolated Supabase recovery prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "$(supabase status -o env)"
+          case "$DB_URL" in postgresql://*localhost*|postgresql://*127.0.0.1*) ;; *) echo 'REMOTE DATABASE REFUSED'; exit 1;; esac
+          command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -At -f tests/security/apdb_supabase_restore_environment_readonly.sql | tee /tmp/apdb-supabase-restore-env.log
+          # Diagnostic only: do not mark a real PG17 backup as recoverable in an older local Supabase.
+          if grep -q '|STOP' /tmp/apdb-supabase-restore-env.log; then
+            echo 'APDB_REAL_STAGING_RESTORE_NOT_READY: local Supabase prerequisites incomplete'
+            echo 'The existing synthetic differential tests continue; this is NOT evidence of restore compatibility.'
+          else
+            test "$(grep -c '|PASS' /tmp/apdb-supabase-restore-env.log)" -eq 4
+            echo 'APDB_RESTORE_ENV_PREFLIGHT_OK_ONLY: prerequisites met, actual dump not restored.'
+          fi
       - name: Load read-only connection details for local PG
         run: |
           eval "$(supabase status -o env)"
@@ -74,5 +91,41 @@ jobs:
           cmp /tmp/apdb-policy-baseline /tmp/apdb-policy-after
           psql "$DB_URL" -v ON_ERROR_STOP=1 -At -c "select case when to_regclass('public.apdb_player_eligibility_events') is not null and to_regprocedure('public.apdb_list_team_documents(uuid)') is not null and to_regprocedure('public.apdb_list_player_documents(uuid)') is not null then 'APDB_DIFFERENTIAL_ISOLATED_OK' else 'FAIL' end;" | grep -qx APDB_DIFFERENTIAL_ISOLATED_OK
       - name: Stop disposable Supabase
+        if: always()
+        run: supabase stop --no-backup
+
+  pg17-restore-prerequisites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare disposable PG17 without migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -qx 'project_id = "apdb-2027-isolated"' supabase/config.toml
+          grep -qx 'major_version = 15' supabase/config.toml
+          sed -i 's/^major_version = 15$/major_version = 17/' supabase/config.toml
+          mkdir -p /tmp/apdb-disabled-migrations
+          find supabase/migrations -maxdepth 1 -name '*.sql' -exec mv -t /tmp/apdb-disabled-migrations {} +
+          # Seed requires the APdB application tables removed above; disable only for this synthetic PG17 preflight.
+          if test -f supabase/seed.sql; then mv supabase/seed.sql /tmp/apdb-seed-disabled.sql; fi
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.4.0
+      - name: Start isolated Supabase PostgreSQL 17
+        run: supabase start
+      - name: Require compatible PG17 and vault
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "$(supabase status -o env)"
+          case "$DB_URL" in postgresql://*localhost*|postgresql://*127.0.0.1*) ;; *) echo 'REMOTE REFUSED'; exit 1;; esac
+          command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -At -f tests/security/apdb_supabase_restore_environment_readonly.sql | tee /tmp/apdb-pg17-gate.log
+          test "$(grep -c '|PASS' /tmp/apdb-pg17-gate.log)" -eq 4
+          ! grep -q '|STOP' /tmp/apdb-pg17-gate.log
+          echo APDB_PG17_SUPABASE_ENV_READY_NO_REAL_DUMP
+      - name: Destroy isolated Supabase
         if: always()
         run: supabase stop --no-backup
