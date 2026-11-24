@@ -16,6 +16,33 @@ Las cuatro migraciones candidatas no deben concatenarse ni ejecutarse sobre stag
 
 **Pendiente:** generar el dump autorizado y restaurarlo en otro destino descartable. Los bytes de Storage requieren exportación separada. Los dos registros con rutas documentales sin objeto siguen siendo una incidencia de integridad no modificada.
 
+### Validación sintética en CI
+
+El workflow `apdb-document-rpc-static.yml` ejecuta `tools/postgres-backup-restore.cjs` sobre PostgreSQL 16 descartable con dos bases locales distintas: `apdb_synthetic_test` y `apdb_2027_restored`. La herramienta genera el dump fuera del repositorio, valida su catálogo con `pg_restore --list`, restaura también ACLs, y compara contenido completo, columnas, restricciones, índices, políticas, funciones, estado RLS y grants. El manifiesto incluye bytes, SHA-256 y `restoreVerified: true` sólo después de la comparación; luego se ejecuta nuevamente el aislamiento documental sobre la base restaurada.
+
+La evidencia de CI debe contener `APDB_POSTGRES_BACKUP_RESTORE_OK` y `APDB_DOCUMENT_RPC_POSTGRES_ISOLATION_OK`. La ausencia de Docker y `pg_dump` en esta computadora impide ejecutar esa restauración localmente; no se presenta como prueba realizada aquí.
+
+### Procedimiento autorizado para staging
+
+1. Obtener del operador una cadena PostgreSQL de staging y un destino separado. Mantener credenciales fuera de comandos visibles, logs, Git y GitHub.
+2. Ejecutar la herramienta con `APDB_BACKUP_SOURCE_URL`, `APDB_BACKUP_TARGET_URL` y `APDB_BACKUP_DIR` fuera del repositorio. Verificar el manifiesto y el SHA antes de aplicar cualquier cambio.
+3. Tratar Auth por separado: un `pg_dump` no garantiza la restauración de configuración de proveedores, plantillas, secretos ni contraseñas administradas. Su exportación requiere procedimiento autorizado y nunca debe incluir secretos.
+4. Tratar Storage por separado: PostgreSQL no contiene los bytes de los objetos. Exportar por API un inventario de rutas, tamaños y SHA-256, y restaurar objetos y permisos en un bucket descartable antes de cualquier uso.
+
+La intervención humana imprescindible es proporcionar credenciales autorizadas, un destino de restauración separado y autorización para leer objetos/configuración de staging. Esta rama no ejecuta operaciones reales sobre staging.
+
+## Evidencia del PR #25
+
+El staging consultado es `APdB 2027 Staging` (`wffvmthdmmjwspnozyrv`), PostgreSQL 17, en `sa-east-1`. La conexión disponible permitió consultar el estado del proyecto, migraciones, tablas y RLS, pero no expone una credencial PostgreSQL para `pg_dump` ni un destino de restauración.
+
+En el commit `a627940bdccb5d347d5cb2a8d9796bb093a51147` aprobaron:
+
+- [respaldo/restauración sintética PostgreSQL](https://github.com/nahuelacuna983-hash/liga-maxi/actions/runs/45298764435): `APDB_POSTGRES_BACKUP_RESTORE_OK`, `APDB_DOCUMENT_RPC_POSTGRES_ISOLATION_OK`, dump de 22046 bytes, SHA-256 `d54827bd1b46c2fb848a91a9680d1d30c5eb8094b344283d6a33d9883e4b268b`;
+- [ensayo diferencial aislado](https://github.com/nahuelacuna983-hash/liga-maxi/actions/runs/45298764436): preflight, políticas de Storage y RPC nuevas aprobados en Supabase Docker descartable;
+- contratos estáticos y guardrails del mismo commit: aprobados.
+
+Estas ejecuciones no son un respaldo de staging ni una certificación de Auth/Storage hospedado. El resultado para instalar en staging permanente es **NO-GO condicionado** hasta obtener una credencial PostgreSQL autorizada, un segundo destino aislado y un inventario/backup separado de objetos Storage y configuración Auth. No se modificaron staging, producción 2026, `main` ni hosting.
+
 ## Pack B
 
 **Implementado:** `tests/security/apdb_packs_ab_preflight.sql` realiza una comprobación de cierre fallido para impedir aplicar una diferencial cuando faltan tablas base, cuando Storage perdió su alcance o cuando las vistas documentales quedaron expuestas.

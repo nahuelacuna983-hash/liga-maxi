@@ -24,6 +24,7 @@ function requireUrl(name, value) {
 function identity(url) { return `${url.hostname}:${url.port || '5432'}/${url.pathname.slice(1)}`; }
 function command(name) {
   const root = process.env.PG_BIN || (process.platform === 'win32' ? 'C:\\Program Files\\PostgreSQL\\16\\bin' : '');
+  if (!root) return name;
   const file = path.join(root, process.platform === 'win32' ? `${name}.exe` : name);
   if (!fs.existsSync(file)) fail(`Missing PostgreSQL tool: ${file}`);
   return file;
@@ -40,8 +41,8 @@ function pgpass(url) {
   fs.writeFileSync(file, `${url.hostname}:${url.port || 5432}:${url.pathname.slice(1)}:${decodeURIComponent(url.username)}:${password}\n`, { mode: 0o600 });
   return { env: { PGPASSFILE: file }, cleanup() { fs.rmSync(path.dirname(file), { recursive: true, force: true }); } };
 }
-function dumpArgs(url, file) { return ['--format=custom', '--no-owner', '--no-privileges', '--file', file, '--host', url.hostname, '--port', url.port || '5432', '--username', decodeURIComponent(url.username), '--dbname', decodeURIComponent(url.pathname.slice(1))]; }
-function restoreArgs(url, file) { return ['--clean', '--if-exists', '--no-owner', '--no-privileges', '--exit-on-error', '--host', url.hostname, '--port', url.port || '5432', '--username', decodeURIComponent(url.username), '--dbname', decodeURIComponent(url.pathname.slice(1)), file]; }
+function dumpArgs(url, file) { return ['--format=custom', '--no-owner', '--file', file, '--host', url.hostname, '--port', url.port || '5432', '--username', decodeURIComponent(url.username), '--dbname', decodeURIComponent(url.pathname.slice(1))]; }
+function restoreArgs(url, file) { return ['--clean', '--if-exists', '--no-owner', '--exit-on-error', '--host', url.hostname, '--port', url.port || '5432', '--username', decodeURIComponent(url.username), '--dbname', decodeURIComponent(url.pathname.slice(1)), file]; }
 async function snapshot(url) {
   const client = new Client({ connectionString: url.toString() });
   await client.connect();
@@ -74,12 +75,13 @@ async function main() {
   const targetAuth = pgpass(target);
   try {
     run(command('pg_dump'), dumpArgs(source, dump), sourceAuth.env);
+    run(command('pg_restore'), ['--list', dump], sourceAuth.env);
     run(command('pg_restore'), restoreArgs(target, dump), targetAuth.env);
   } finally { sourceAuth.cleanup(); targetAuth.cleanup(); }
   const after = await snapshot(target.toString());
   assert.deepEqual(after, before, 'restored structure or row counts differ from source');
   const sha256 = crypto.createHash('sha256').update(fs.readFileSync(dump)).digest('hex');
-  const manifest = { generatedAt: new Date().toISOString(), source: { host: source.hostname, port: source.port || '5432', database: source.pathname.slice(1) }, target: { host: target.hostname, port: target.port || '5432', database: target.pathname.slice(1) }, dump: path.basename(dump), bytes: fs.statSync(dump).size, sha256, comparison: 'equal: table content, schema columns, constraints, indexes, RLS flags/policies, functions and effective table grants' };
+  const manifest = { generatedAt: new Date().toISOString(), source: { host: source.hostname, port: source.port || '5432', database: source.pathname.slice(1) }, target: { host: target.hostname, port: target.port || '5432', database: target.pathname.slice(1) }, dump: path.basename(dump), bytes: fs.statSync(dump).size, sha256, restoreVerified: true, comparison: 'equal: table content, schema columns, constraints, indexes, RLS flags/policies, functions and effective table grants' };
   const manifestPath = `${dump}.manifest.json`;
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(JSON.stringify({ marker: 'APDB_POSTGRES_BACKUP_RESTORE_OK', manifest: manifestPath, dumpBytes: manifest.bytes, sha256: manifest.sha256 }));

@@ -2,6 +2,7 @@ name: APdB 2027 document RPC contract (isolated)
 on:
   push:
     branches:
+      - codex/apdb-2027-backup-differential-integration
       - codex/apdb-2027-document-view-security-preflight
       - codex/apdb-2027-institutional-security-candidate
       - codex/apdb-2027-full-release-verification
@@ -11,6 +12,8 @@ on:
       - tests/apdb-document-rpc-contract.cjs
       - supabase/patches/apdb_2027_team_documents_secure_rpc_draft.sql
       - .github/workflows/apdb-document-rpc-static.yml
+      - tools/postgres-backup-restore.cjs
+      - tests/postgres-backup-restore-contract.cjs
 
 permissions:
   contents: read
@@ -53,10 +56,19 @@ jobs:
       PGDATABASE: apdb_synthetic_test
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install backup verifier dependency
+        run: npm ci --ignore-scripts --omit=optional
       - name: Install PostgreSQL client if unavailable
         run: |
-          if ! command -v psql >/dev/null; then
-            sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+          if ! command -v pg_dump >/dev/null || ! pg_dump --version | grep -q '16\.'; then
+            sudo install -d /usr/share/postgresql-common/pgdg
+            curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc >/dev/null
+            echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client-16
           fi
       - name: Compile patch and exercise role isolation on synthetic schema
         run: |
@@ -66,18 +78,14 @@ jobs:
 
       - name: Prove synthetic PostgreSQL backup and restore
         run: |
-          # Use the same pg_dump/pg_restore major version as the PostgreSQL 16 server.
-          # A newer Ubuntu client can emit unsupported transaction_timeout settings.
-          PG_CONTAINER="$(docker ps --filter ancestor=postgres:16 --format '{{.ID}}' | head -n 1)"
-          test -n "$PG_CONTAINER"
-          docker exec -e PGPASSWORD="$PGPASSWORD" "$PG_CONTAINER" pg_dump -U postgres -d apdb_synthetic_test --format=custom --file=/tmp/apdb-2027-synthetic.dump
-          docker cp "$PG_CONTAINER":/tmp/apdb-2027-synthetic.dump /tmp/apdb-2027-synthetic.dump
-          test -s /tmp/apdb-2027-synthetic.dump
-          sha256sum /tmp/apdb-2027-synthetic.dump
-          docker exec -e PGPASSWORD="$PGPASSWORD" "$PG_CONTAINER" createdb -U postgres apdb_2027_restored
-          docker exec -e PGPASSWORD="$PGPASSWORD" "$PG_CONTAINER" pg_restore -U postgres --exit-on-error --dbname=apdb_2027_restored /tmp/apdb-2027-synthetic.dump
+          createdb -h localhost -U postgres apdb_2027_restored
+          mkdir -p /tmp/apdb-backup
+          APDB_BACKUP_SOURCE_URL='postgresql://postgres:apdb_synthetic_only@127.0.0.1:5432/apdb_synthetic_test' \
+          APDB_BACKUP_TARGET_URL='postgresql://postgres:apdb_synthetic_only@127.0.0.1:5432/apdb_2027_restored' \
+          APDB_BACKUP_DIR=/tmp/apdb-backup \
+          PG_BIN=/usr/lib/postgresql/16/bin \
+          node tools/postgres-backup-restore.cjs
           PGDATABASE=apdb_2027_restored psql -X -v ON_ERROR_STOP=1 -f tests/security/apdb_document_rpc_isolation.sql
-          echo 'APDB_SYNTHETIC_BACKUP_RESTORE_OK'
 
   institutional-package-contract:
     runs-on: ubuntu-latest
