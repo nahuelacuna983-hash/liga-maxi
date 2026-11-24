@@ -27,6 +27,7 @@ try {
   assert.ok(html.includes("https://wffvmthdmmjwspnozyrv.supabase.co"));
   assert.ok(!html.includes("eshbydpsmypflfxpmhyk.supabase.co"));
   assert.ok(!html.includes("YOUR_STAGING_PUBLISHABLE_OR_ANON_KEY"));
+  assert.equal(fs.readFileSync(path.join(outputPath, "index.html"), "utf8"), html);
   const app = fs.readFileSync(path.join(outputPath, "app_online.js"), "utf8");
   assert.ok(app.includes("window.APDB_STAGING === true"), "staging guard must remain enabled");
   for (const forbidden of [
