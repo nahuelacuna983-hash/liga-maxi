@@ -12,6 +12,10 @@ on:
       - 'tests/security/apdb_pg17_restore_verify.sql'
       - 'tools/apdb-supabase-restore-local.ps1'
       - 'tests/apdb-supabase-restore-local-contract.cjs'
+      - 'tools/apdb-recovery-run.ps1'
+      - 'tools/apdb-compare-snapshots.cjs'
+      - 'tests/apdb-compare-snapshots.cjs'
+      - 'tests/security/apdb_auth_storage_inventory_readonly.sql'
   pull_request:
     paths:
       - '.github/workflows/apdb-pg17-restore-compatibility.yml'
@@ -19,6 +23,10 @@ on:
       - 'tests/apdb-supabase-restore-local-contract.cjs'
       - 'tests/security/apdb_pg17_restore_fixture.sql'
       - 'tests/security/apdb_pg17_restore_verify.sql'
+      - 'tools/apdb-recovery-run.ps1'
+      - 'tools/apdb-compare-snapshots.cjs'
+      - 'tests/apdb-compare-snapshots.cjs'
+      - 'tests/security/apdb_auth_storage_inventory_readonly.sql'
   workflow_dispatch:
 
 permissions:
@@ -30,6 +38,12 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - name: Validate offline comparison and operator guardrails
+        run: |
+          node --check tools/apdb-compare-snapshots.cjs
+          node --check tests/apdb-compare-snapshots.cjs
+          node tests/apdb-compare-snapshots.cjs
+          pwsh -NoProfile -Command "if ((Get-Content tools/apdb-recovery-run.ps1 -Raw) -notmatch '-ApproveRestore') { exit 1 }"
       - name: Guard isolated Supabase project
         shell: bash
         run: |

@@ -1,0 +1,17 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), "apdb-compare-"));
+const base = { tables: [{ name: "players", rows: 2 }], relations: [{ from: "teams", to: "categories" }], indexes: ["players_pkey"], constraints: ["players_team_fk"], policies: ["players_select"], functions: ["save_result"], extensions: ["supabase_vault"], auth: { users: 2, roles: ["asociacion", "delegado"] }, storage: { objects: 3, hashes: ["a", "b", "c"] } };
+const write = (name, value) => { const file = path.join(dir, name); fs.writeFileSync(file, JSON.stringify(value)); return file; };
+const original = write("original.json", base);
+const same = write("same.json", structuredClone(base));
+const altered = write("altered.json", { ...structuredClone(base), tables: [{ name: "players", rows: 1 }] });
+const run = (a, b) => spawnSync(process.execPath, ["tools/apdb-compare-snapshots.cjs", a, b], { encoding: "utf8" });
+const ok = run(original, same); assert.equal(ok.status, 0); assert.match(ok.stdout, /"decision":"GO"/);
+const no = run(original, altered); assert.equal(no.status, 2); assert.match(no.stdout, /"differences":\["tables"\]/);
+fs.rmSync(dir, { recursive: true, force: true });
+console.log("APDB_COMPARE_SNAPSHOTS_GO_NO_GO_OK");
