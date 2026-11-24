@@ -9,6 +9,7 @@ on:
       - 'staging-candidate/**'
       - 'tests/security/apdb_staging_20261123_disposable_fixture.sql'
       - 'tests/security/apdb_staging_differential_gate_readonly.sql'
+      - 'tests/security/apdb_supabase_restore_environment_readonly.sql'
       - 'tests/apdb-staging-differential-contract.cjs'
       - '.github/workflows/apdb-staging-differential.yml'
 permissions:
@@ -50,6 +51,22 @@ jobs:
         run: supabase start
       - name: Reset synthetic baseline
         run: supabase db reset --local
+      - name: Verify isolated Supabase recovery prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "$(supabase status -o env)"
+          case "$DB_URL" in postgresql://*localhost*|postgresql://*127.0.0.1*) ;; *) echo 'REMOTE DATABASE REFUSED'; exit 1;; esac
+          command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -At -f tests/security/apdb_supabase_restore_environment_readonly.sql | tee /tmp/apdb-supabase-restore-env.log
+          # Diagnostic only: do not mark a real PG17 backup as recoverable in an older local Supabase.
+          if grep -q '|STOP' /tmp/apdb-supabase-restore-env.log; then
+            echo 'APDB_REAL_STAGING_RESTORE_NOT_READY: local Supabase prerequisites incomplete'
+            echo 'The existing synthetic differential tests continue; this is NOT evidence of restore compatibility.'
+          else
+            test "$(grep -c '|PASS' /tmp/apdb-supabase-restore-env.log)" -eq 4
+            echo 'APDB_RESTORE_ENV_PREFLIGHT_OK_ONLY: prerequisites met, actual dump not restored.'
+          fi
       - name: Load read-only connection details for local PG
         run: |
           eval "$(supabase status -o env)"
