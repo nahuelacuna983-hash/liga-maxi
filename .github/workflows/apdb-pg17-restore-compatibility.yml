@@ -1,0 +1,85 @@
+name: APdB 2027 PG17 Supabase recovery compatibility (disposable)
+on:
+  push:
+    branches:
+      - codex/apdb-2027-supabase-restore-preflight
+      - codex/apdb-2027-restore-close
+    paths:
+      - '.github/workflows/apdb-pg17-restore-compatibility.yml'
+      - 'tests/security/apdb_supabase_restore_environment_readonly.sql'
+      - 'tests/security/apdb_pg17_restore_fixture.sql'
+      - 'tests/security/apdb_pg17_restore_verify.sql'
+      - 'tools/apdb-supabase-restore-local.ps1'
+      - 'tests/apdb-supabase-restore-local-contract.cjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres17-supabase-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard isolated Supabase project
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -qx 'project_id = "apdb-2027-isolated"' supabase/config.toml
+          ! grep -R -q 'wffvmthdmmjwspnozyrv\|eshbydpsmypflfxpmhyk' supabase/config.toml
+          # Working-tree changes affect only the disposable GitHub Actions runner.
+          sed -i 's/^major_version = 15$/major_version = 17/' supabase/config.toml
+          grep -qx 'major_version = 17' supabase/config.toml
+          mkdir -p /tmp/apdb-migrations-disabled
+          find supabase/migrations -maxdepth 1 -name '*.sql' -exec mv -t /tmp/apdb-migrations-disabled {} +
+          if test -f supabase/seed.sql; then mv supabase/seed.sql /tmp/apdb-seed-disabled.sql; fi
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.4.0
+      - name: Start a fresh disposable PostgreSQL 17 Supabase stack
+        run: supabase start
+      - name: Check PG17, vault extension and managed schemas
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "$(supabase status -o env)"
+          case "$DB_URL" in
+            postgresql://*localhost*|postgresql://*127.0.0.1*) ;;
+            *) echo 'REFUSED: non-local database'; exit 1;;
+          esac
+          command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -At -f tests/security/apdb_supabase_restore_environment_readonly.sql | tee /tmp/apdb-pg17-compatibility.log
+          test "$(grep -c '|PASS' /tmp/apdb-pg17-compatibility.log)" -eq 4
+          ! grep -q '|STOP' /tmp/apdb-pg17-compatibility.log
+          echo 'APDB_SUPABASE_PG17_ENV_READY_SYNTHETIC_ONLY'
+      - name: Install PostgreSQL 17 client tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc >/dev/null
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump --version | grep -q '17\.'
+      - name: Restore synthetic Supabase PG17 dump into a second empty database
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PGHOST=127.0.0.1 PGPORT=54322 PGUSER=postgres PGPASSWORD=postgres
+          psql -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE apdb_pg17_source'
+          psql -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE apdb_pg17_restore'
+          psql -d apdb_pg17_source -v ON_ERROR_STOP=1 -f tests/security/apdb_pg17_restore_fixture.sql
+          # The vault extension itself is retained; its managed secret rows are intentionally not exported.
+          /usr/lib/postgresql/17/bin/pg_dump -d apdb_pg17_source --format=custom --no-owner --no-acl --exclude-table-data=vault.secrets --file=/tmp/apdb-pg17-synthetic.dump
+          test -s /tmp/apdb-pg17-synthetic.dump
+          /usr/lib/postgresql/17/bin/pg_restore --list /tmp/apdb-pg17-synthetic.dump >/tmp/apdb-pg17-synthetic.catalog
+          /usr/lib/postgresql/17/bin/pg_restore --single-transaction --exit-on-error --no-owner --no-acl --dbname=apdb_pg17_restore /tmp/apdb-pg17-synthetic.dump
+          psql -d apdb_pg17_restore -v ON_ERROR_STOP=1 -f tests/security/apdb_pg17_restore_verify.sql
+          sha256sum /tmp/apdb-pg17-synthetic.dump
+          echo 'APDB_SUPABASE_PG17_ACL_LIMITATION_NO_ACL'
+          echo 'APDB_SUPABASE_PG17_RESTORE_OK'
+      - name: Stop disposable Supabase without persisting data
+        if: always()
+        run: supabase stop --no-backup
