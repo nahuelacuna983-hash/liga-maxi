@@ -1,0 +1,17 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const tool = fs.readFileSync(path.resolve("tools/apdb-supabase-restore-local.ps1"), "utf8");
+const workflow = fs.readFileSync(path.resolve(".github/workflows/apdb-pg17-restore-compatibility.yml"), "utf8");
+const fixture = fs.readFileSync(path.resolve("tests/security/apdb_pg17_restore_fixture.sql"), "utf8");
+assert.match(tool, /Target must be localhost/);
+assert.match(tool, /Target database is not empty/);
+assert.match(tool, /Read-Host 'PostgreSQL password \(hidden\)' -AsSecureString/);
+assert.match(tool, /pg_restore --list/);
+assert.match(tool, /restoreVerified=\$true/);
+assert.doesNotMatch(tool, /service_role|supabase\.co|wffvmthdmmjwspnozyrv/i);
+assert.match(workflow, /postgresql-client-17/);
+assert.match(fixture, /supabase_vault/);
+assert.match(workflow, /APDB_SUPABASE_PG17_RESTORE_OK/);
+console.log("APDB_SUPABASE_RESTORE_LOCAL_CONTRACT_OK");
