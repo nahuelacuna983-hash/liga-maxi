@@ -67,7 +67,5 @@ jobs:
       - name: Institutional package browser shell (desktop and mobile)
         run: |
           npx playwright test tests/apdb-institutional-package-browser.spec.cjs --workers=1
-          node tools/demo-server.cjs >/tmp/apdb-demo-server.log 2>&1 &
-          DEMO_PID=$!
-          trap 'kill $DEMO_PID' EXIT
+          # playwright.config.cjs starts and stops the demo server itself.
           npx playwright test tests/demo-circuit-browser.spec.cjs --workers=1
