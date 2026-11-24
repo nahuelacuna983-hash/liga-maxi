@@ -12,6 +12,13 @@ on:
       - 'tests/security/apdb_pg17_restore_verify.sql'
       - 'tools/apdb-supabase-restore-local.ps1'
       - 'tests/apdb-supabase-restore-local-contract.cjs'
+  pull_request:
+    paths:
+      - '.github/workflows/apdb-pg17-restore-compatibility.yml'
+      - 'tools/apdb-supabase-restore-local.ps1'
+      - 'tests/apdb-supabase-restore-local-contract.cjs'
+      - 'tests/security/apdb_pg17_restore_fixture.sql'
+      - 'tests/security/apdb_pg17_restore_verify.sql'
   workflow_dispatch:
 
 permissions:
