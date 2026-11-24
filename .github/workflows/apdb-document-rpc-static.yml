@@ -2,6 +2,7 @@ name: APdB 2027 document RPC contract (isolated)
 on:
   push:
     branches:
+      - codex/apdb-2027-backup-differential-integration
       - codex/apdb-2027-document-view-security-preflight
       - codex/apdb-2027-institutional-security-candidate
       - codex/apdb-2027-full-release-verification
@@ -11,6 +12,8 @@ on:
       - tests/apdb-document-rpc-contract.cjs
       - supabase/patches/apdb_2027_team_documents_secure_rpc_draft.sql
       - .github/workflows/apdb-document-rpc-static.yml
+      - tools/postgres-backup-restore.cjs
+      - tests/postgres-backup-restore-contract.cjs
 
 permissions:
   contents: read
