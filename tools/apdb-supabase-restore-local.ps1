@@ -54,7 +54,9 @@ try {
     Write-Output "APDB_SUPABASE_RESTORE_PREFLIGHT_OK target=$TargetHost database=$TargetDatabase capabilities=$($capabilities.Trim())"
     return
   }
-  & pg_restore --single-transaction --exit-on-error --no-owner --no-acl @('--host='+$TargetHost,'--port='+$TargetPort,'--username='+$TargetUser,'--dbname='+$TargetDatabase) $dump
+  # Construct explicit argv; PowerShell array expression with inline '+' can collapse pg_restore options.
+  $restoreArgs = @("--host=$TargetHost", "--port=$TargetPort", "--username=$TargetUser", "--dbname=$TargetDatabase")
+  & pg_restore --single-transaction --exit-on-error --no-owner --no-acl @restoreArgs $dump
   if ($LASTEXITCODE -ne 0) { Fail 'pg_restore failed; no successful restore is reported.' }
   $checks = (& psql @common -X -v ON_ERROR_STOP=1 -At -F '|' -c "select current_setting('server_version_num')::integer >= 170000, exists(select 1 from pg_extension where extname='supabase_vault'), to_regnamespace('auth') is not null, to_regnamespace('storage') is not null, (select count(*) from pg_class where relnamespace='public'::regnamespace and relkind='r') > 0")
   if ($LASTEXITCODE -ne 0 -or $checks.Trim() -notmatch '^t\|t\|t\|t\|t$') { Fail "Restored database failed compatibility checks: $checks" }
