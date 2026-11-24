@@ -33,6 +33,7 @@ jobs:
           grep -qx 'major_version = 17' supabase/config.toml
           mkdir -p /tmp/apdb-migrations-disabled
           find supabase/migrations -maxdepth 1 -name '*.sql' -exec mv -t /tmp/apdb-migrations-disabled {} +
+          if test -f supabase/seed.sql; then mv supabase/seed.sql /tmp/apdb-seed-disabled.sql; fi
       - uses: supabase/setup-cli@v1
         with:
           version: 3.4.0
