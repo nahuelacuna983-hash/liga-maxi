@@ -1,0 +1,27 @@
+name: APdB pre-delivery readiness gate (offline)
+on:
+  push:
+    branches:
+      - codex/apdb-2027-handoff-acceptance-gates
+    paths:
+      - 'tools/apdb-delivery-readiness.cjs'
+      - 'tests/apdb-delivery-readiness.cjs'
+      - '.github/workflows/apdb-delivery-readiness.yml'
+  pull_request:
+    paths:
+      - 'tools/apdb-delivery-readiness.cjs'
+      - 'tests/apdb-delivery-readiness.cjs'
+      - '.github/workflows/apdb-delivery-readiness.yml'
+permissions:
+  contents: read
+jobs:
+  offline-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check tools/apdb-delivery-readiness.cjs
+      - run: node tests/apdb-delivery-readiness.cjs
