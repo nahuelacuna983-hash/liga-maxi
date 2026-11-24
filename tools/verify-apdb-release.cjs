@@ -6,6 +6,19 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const root = path.resolve(process.argv[2] || "");
 assert.ok(process.argv[2], "Usage: node tools/verify-apdb-release.cjs <package-directory>");
+// A package must contain only the expected release files: no dotfiles, dumps,
+ // extra scripts, nested folders or symlinks, even if the seven hashes match.
+const expectedRootFiles = [
+  "index_online.html", "app_online.js", "apdb-administrative-adapter.js",
+  "sw.js", "manifest.json", "icon-192.png", "icon-512.png", "release-integrity.json"
+];
+assert.ok(fs.lstatSync(root).isDirectory(), "package root must be a directory");
+assert.deepEqual(fs.readdirSync(root).sort(), expectedRootFiles.slice().sort(),
+  "unexpected or missing files in release package");
+for (const name of expectedRootFiles) {
+  assert.ok(fs.lstatSync(path.join(root, name)).isFile(),
+    "release entries must be regular files, not links or directories: " + name);
+}
 const metadata = JSON.parse(fs.readFileSync(path.join(root, "release-integrity.json"), "utf8"));
 assert.equal(metadata.format, "apdb-institutional-package-integrity-v1");
 assert.equal(metadata.environment, "staging");
@@ -18,6 +31,8 @@ assert.deepEqual(metadata.files.map((f) => f.file).sort(), [...allowed].sort());
 for (const entry of metadata.files) {
   assert.ok(allowed.has(entry.file));
   assert.ok(!entry.file.includes(".."));
+  assert.match(entry.sha256, /^[a-f0-9]{64}$/);
+  assert.ok(Number.isSafeInteger(entry.bytes) && entry.bytes > 0, "invalid size");
   const data = fs.readFileSync(path.join(root, entry.file));
   assert.equal(entry.bytes, data.length, "Size changed: " + entry.file);
   assert.equal(entry.sha256, crypto.createHash("sha256").update(data).digest("hex"), "Hash changed: " + entry.file);
