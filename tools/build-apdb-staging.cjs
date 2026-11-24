@@ -19,7 +19,7 @@ assert.match(config.publicBasePath, /^\/(?:[A-Za-z0-9_-]+\/)+$/, "staging base p
 assert.notEqual(config.publicBasePath, "/", "pilot must not overwrite the site root");
 assert.ok(!fs.existsSync(outputPath), `output already exists; refusing to overwrite: ${outputPath}`);
 
-const files = ["index_online.html", "app_online.js", "apdb-administrative-adapter.js", "sw.js", "manifest.json", "icon-192.png", "icon-512.png"];
+const files = ["index.html", "index_online.html", "app_online.js", "apdb-administrative-adapter.js", "sw.js", "manifest.json", "icon-192.png", "icon-512.png"];
 const productionUrl = "https://eshbydpsmypflfxpmhyk.supabase.co";
 const productionTournament = "7d0971e3-66ee-4791-bcbf-bace1d2fefb9";
 const productionPublishableKey = "sb_publishable_HtooEUIqEorzX3ODPOwLXQ_iulhXEdL";
@@ -31,7 +31,7 @@ manifest.scope = config.publicBasePath;
 fs.mkdirSync(outputPath, { recursive: true });
 for (const file of files) {
   const destination = path.join(outputPath, file);
-  if (file === "index_online.html") {
+  if (file === "index_online.html" || file === "index.html") {
     const html = fs.readFileSync(file, "utf8");
     assert.ok(html.includes('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'), "Supabase client script not found");
     fs.writeFileSync(destination, html.replace('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>', `${bootstrap}\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`));
