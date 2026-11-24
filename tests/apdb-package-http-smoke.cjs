@@ -11,7 +11,7 @@ const base = "/apdb-2027-prueba/";
 const temp = fs.mkdtempSync(path.join(os.tmpdir(),"apdb-http-smoke-"));
 const config = path.join(temp,"config.json"), site = path.join(temp,"site");
 const allowed = new Map([
-  ["", "index_online.html"],
+  ["", "index.html"],
   ["index_online.html", "index_online.html"],
   ["index.html", "index.html"],
   ["app_online.js", "app_online.js"],
