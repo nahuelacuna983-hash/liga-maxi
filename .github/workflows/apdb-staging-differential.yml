@@ -93,3 +93,37 @@ jobs:
       - name: Stop disposable Supabase
         if: always()
         run: supabase stop --no-backup
+
+  pg17-restore-prerequisites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare disposable PG17 without migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -qx 'project_id = "apdb-2027-isolated"' supabase/config.toml
+          grep -qx 'major_version = 15' supabase/config.toml
+          sed -i 's/^major_version = 15$/major_version = 17/' supabase/config.toml
+          mkdir -p /tmp/apdb-disabled-migrations
+          find supabase/migrations -maxdepth 1 -name '*.sql' -exec mv -t /tmp/apdb-disabled-migrations {} +
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.4.0
+      - name: Start isolated Supabase PostgreSQL 17
+        run: supabase start
+      - name: Require compatible PG17 and vault
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "$(supabase status -o env)"
+          case "$DB_URL" in postgresql://*localhost*|postgresql://*127.0.0.1*) ;; *) echo 'REMOTE REFUSED'; exit 1;; esac
+          command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -At -f tests/security/apdb_supabase_restore_environment_readonly.sql | tee /tmp/apdb-pg17-gate.log
+          test "$(grep -c '|PASS' /tmp/apdb-pg17-gate.log)" -eq 4
+          ! grep -q '|STOP' /tmp/apdb-pg17-gate.log
+          echo APDB_PG17_SUPABASE_ENV_READY_NO_REAL_DUMP
+      - name: Destroy isolated Supabase
+        if: always()
+        run: supabase stop --no-backup
