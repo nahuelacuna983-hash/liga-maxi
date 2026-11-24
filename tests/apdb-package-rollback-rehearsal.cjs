@@ -28,7 +28,7 @@ try{
     environment:"staging",
     supabaseUrl:"https://wffvmthdmmjwspnozyrv.supabase.co",
     supabaseAnonKey:"sb_publishable_test_only_0123456789",
-    publicBasePath:"/apdb-2027-staging/",
+    publicBasePath:"/apdb-2027-prueba/",
     resetDatabaseOnStart:false
   }));
   const built=spawnSync(process.execPath,["tools/build-apdb-staging.cjs",config,packageDir],{encoding:"utf8"});
