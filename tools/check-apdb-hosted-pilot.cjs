@@ -1,4 +1,9 @@
 "use strict";
+// Invalid URL/preflight assertions must never echo credentials or query values.
+process.setUncaughtExceptionCaptureCallback(() => {
+  console.error("APDB_HTTP_PREFLIGHT_FAILED: invalid URL, credentials or local package; inputs redacted");
+  process.exitCode = 1;
+});
 // Passive anonymous HTTP release gate for an explicitly specified APdB pilot URL.
 // No login, no state changes, no document reads, no redirects, no cookies or secrets.
 // A protected pilot should not serve the app or static assets anonymously.
@@ -14,14 +19,20 @@ try { base = new URL(raw); } catch { console.error("Invalid pilot URL"); process
 const loopbackTest = process.env.APDB_TEST_LOOPBACK === "1" && base.protocol === "http:" &&
   (base.hostname === "127.0.0.1" || base.hostname === "localhost");
 assert.ok(base.protocol === "https:" || loopbackTest, "HTTPS is mandatory outside localhost test");
-assert.equal(base.username, "", "Credentials in URLs forbidden");
-assert.equal(base.password, "", "Credentials in URLs forbidden");
+assert.ok(!base.username && !base.password, "URL credentials forbidden");
+
 assert.equal(base.search, "", "Query strings forbidden");
 assert.equal(base.hash, "", "Fragments forbidden");
 assert.match(base.pathname, /^\/(?:[A-Za-z0-9_-]+\/)+$/, "Dedicated pilot subpath required");
 assert.notEqual(base.pathname, "/", "Site root forbidden");
 assert.ok(!base.pathname.toLowerCase().includes("2026/"), "2026 production path forbidden");
+if (!loopbackTest) {
+  assert.equal(base.hostname, "maxibasquetlaplata.com.ar", "Institutional host required");
+  assert.equal(base.port, "");
+  assert.equal(base.pathname, "/apdb-2027-prueba/", "Only approved pilot path allowed");
+}
 const paths = [
+  ...["index.html", "index_online.html", "apdb-administrative-adapter.js", "sw.js", "icon-192.png", "icon-512.png"].map(file => [file,file,true]),
   ["pilot", "", true],
   ["frontend", "app_online.js", true],
   ["manifest", "manifest.json", true],

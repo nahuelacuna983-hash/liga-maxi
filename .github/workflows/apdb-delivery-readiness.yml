@@ -11,6 +11,7 @@ on:
       - '.github/workflows/apdb-delivery-readiness.yml'
   pull_request:
     paths:
+      - '.github/workflows/apdb-cpanel-preparation.yml'
       - 'tools/apdb-delivery-readiness.cjs'
       - 'tests/apdb-delivery-readiness.cjs'
       - 'tools/apdb-package-receipt.cjs'
