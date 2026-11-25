@@ -18,6 +18,7 @@ on:
       - 'tests/security/apdb_auth_storage_inventory_readonly.sql'
   pull_request:
     paths:
+      - '.github/workflows/apdb-cpanel-preparation.yml'
       - '.github/workflows/apdb-pg17-restore-compatibility.yml'
       - 'tools/apdb-supabase-restore-local.ps1'
       - 'tests/apdb-supabase-restore-local-contract.cjs'

@@ -6,6 +6,7 @@ on:
       - codex/apdb-2027-staging-differential
   pull_request:
     paths:
+      - '.github/workflows/apdb-cpanel-preparation.yml'
       - 'tools/apdb-recovery-run.ps1'
       - 'tools/apdb-compare-snapshots.cjs'
       - 'tools/apdb-delivery-readiness.cjs'

@@ -1,0 +1,54 @@
+name: APdB cPanel preparation (offline only)
+on:
+  pull_request:
+    paths:
+      - 'tools/*apdb*'
+      - 'tests/*apdb*'
+      - 'docs/apdb-2027/**'
+      - '.github/workflows/apdb-cpanel-preparation.yml'
+permissions:
+  contents: read
+jobs:
+  preparation:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Offline package and HTTP contracts (synthetic)
+        shell: pwsh
+        run: |
+          $tests = @('apdb-cpanel-preparation','apdb-staging-build','apdb-package-receipt','apdb-hosted-pilot-gate','apdb-cpanel-auth-http-contract','apdb-package-http-smoke','apdb-package-rollback-rehearsal','apdb-delivery-readiness')
+          if ($IsWindows) { $tests = $tests | Where-Object { $_ -ne 'apdb-staging-build' } } # symlink negative runs on Linux
+          foreach ($test in $tests) {
+            node "tests/$test.cjs"
+            if ($LASTEXITCODE -ne 0) { throw "Contract failed: $test" }
+          }
+      - name: Windows operator flow and independent ZIP extraction (synthetic)
+        shell: pwsh
+        run: |
+          $private = Join-Path $env:RUNNER_TEMP 'apdb-cpanel-synthetic'
+          New-Item -ItemType Directory -Path $private | Out-Null
+          $config = Join-Path $private 'config.json'
+          # Random-format fixture passes syntax only; never a real authorized key.
+          @{environment='staging';resetDatabaseOnStart=$false;publicBasePath='/apdb-2027-prueba/';supabaseUrl='https://wffvmthdmmjwspnozyrv.supabase.co';supabaseAnonKey='sb_publishable_0123456789abcdef0123456789abcdef'} | ConvertTo-Json | Set-Content -LiteralPath $config
+          $sha = git rev-parse HEAD
+          $configSha = (Get-FileHash -LiteralPath $config -Algorithm SHA256).Hash.ToLowerInvariant()
+          foreach ($name in @('one','two')) {
+            ./tools/prepare-apdb-cpanel.ps1 -ConfigPath $config -OutputDirectory (Join-Path $private $name) -ExpectedCommit $sha -ApprovedConfigSha256 $configSha -ApprovePublishableConfiguration
+          }
+          $one = Join-Path $private 'one/apdb-2027-prueba.zip'
+          $two = Join-Path $private 'two/apdb-2027-prueba.zip'
+          if ((Get-FileHash $one).Hash -ne (Get-FileHash $two).Hash) { throw 'ZIP is not deterministic' }
+          $extract = Join-Path $private 'extracted'
+          Expand-Archive -LiteralPath $one -DestinationPath $extract
+          node tools/verify-apdb-release.cjs $extract
+          if ($LASTEXITCODE -ne 0) { throw 'Independent ZIP extraction failed' }
+          Write-Output 'SYNTHETIC_OPERATOR_ZIP_ROUNDTRIP_OK; NOT A DEPLOYABLE CONFIGURATION'

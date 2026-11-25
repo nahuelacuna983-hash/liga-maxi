@@ -7,6 +7,7 @@ on:
       - codex/apdb-2027-full-release-verification
   pull_request:
     paths:
+      - '.github/workflows/apdb-cpanel-preparation.yml'
       - 'tools/build-apdb-staging.cjs'
       - 'tests/apdb-staging-build.cjs'
       - '.github/workflows/apdb-institutional-package-contract.yml'

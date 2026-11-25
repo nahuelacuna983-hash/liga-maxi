@@ -33,16 +33,20 @@ async function checkRelease(base,corrupt) {
      publicBasePath:"/apdb-2027-prueba/",resetDatabaseOnStart:false}));
    const build=spawnSync(process.execPath,["tools/build-apdb-staging.cjs",config,site],{encoding:"utf8"});
    assert.equal(build.status,0,build.stderr||build.stdout);
-   let corrupt=false;
+   let corrupt=false; let mode="ok";
    server=http.createServer((req,res)=>{
      const u=new URL(req.url,"http://localhost");
      if(!u.pathname.startsWith("/apdb-2027-prueba/")){res.writeHead(404);res.end();return;}
      if(req.headers.authorization!==creds){res.writeHead(401,{"cache-control":"no-store","www-authenticate":"Basic realm=APdB"});res.end();return;}
-     const file=u.pathname.slice("/apdb-2027-prueba/".length);
+     const file=u.pathname.slice("/apdb-2027-prueba/".length) || "index.html";
      if(!served.has(file)){res.writeHead(404);res.end();return;}
+     if(mode==="redirect"){res.writeHead(302,{location:"https://example.invalid/"});res.end();return;}
+     if(mode==="wrong-password"){res.writeHead(401);res.end();return;}
      let data=fs.readFileSync(path.join(site,file));
      if(corrupt && file==="app_online.js")data=Buffer.concat([data,Buffer.from("// altered")]);
-     res.writeHead(200,{"content-type":mime(file),"cache-control":"private, no-store"});
+     res.writeHead(200,{"content-type":mode==="wrong-mime"?"text/plain":mime(file),
+       "cache-control":mode==="cacheable"?"public, max-age=3600":"private, no-store",
+       ...(mode==="broad-sw" && file==="sw.js"?{"service-worker-allowed":"/"}:{})});
      res.end(data);
    });
    await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
@@ -50,7 +54,9 @@ async function checkRelease(base,corrupt) {
    await checkRelease(base,false);
    corrupt=true;
    await checkRelease(base,true);
-   console.log("APDB_CPANEL_AUTH_HTTP_CONTRACT_OK matching_bytes=true altered_bytes_denied=true");
+   corrupt=false;
+   for(mode of ["redirect","wrong-password","wrong-mime","cacheable","broad-sw"]) await checkRelease(base,true);
+   console.log("APDB_CPANEL_AUTH_HTTP_CONTRACT_OK synthetic=true negative_cases=6 matching_bytes=true altered_bytes_denied=true");
  }finally{
    if(server)await new Promise(resolve=>server.close(resolve));
    fs.rmSync(tmp,{recursive:true,force:true});
