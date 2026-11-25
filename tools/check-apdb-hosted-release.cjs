@@ -1,4 +1,9 @@
 "use strict";
+// Invalid URL/preflight assertions must never echo credentials or query values.
+process.setUncaughtExceptionCaptureCallback(() => {
+  console.error("APDB_HTTP_PREFLIGHT_FAILED: invalid URL, credentials or local package; inputs redacted");
+  process.exitCode = 1;
+});
 // Passive authenticated GET verification for APdB cPanel release. No upload or mutations.
 // Credentials supplied via environment only; never printed or included in the URL.
 const assert = require("node:assert/strict");

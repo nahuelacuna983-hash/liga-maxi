@@ -29,4 +29,10 @@ try {
   assert.equal(a.readUInt16LE(a.length-12),2);
   assert.equal(a.readUInt32LE(a.length-22),0x06054b50);
 } finally { fs.rmSync(dir,{recursive:true,force:true}); }
+for (const tool of ['check-apdb-hosted-release','check-apdb-hosted-pilot']) {
+  for (const url of ['not-a-url-SENSITIVE_SENTINEL','https://user:SENSITIVE_SENTINEL@maxibasquetlaplata.com.ar/apdb-2027-prueba/','https://maxibasquetlaplata.com.ar/apdb-2027-prueba/?SENSITIVE_SENTINEL']) {
+    const r=require('node:child_process').spawnSync(process.execPath,['tools/'+tool+'.cjs',url,'unused'],{encoding:'utf8'});
+    assert.notEqual(r.status,0); assert.ok(!(r.stdout+r.stderr).includes('SENSITIVE_SENTINEL'),'Invalid URL leaked input');
+  }
+}
 console.log('APDB_CPANEL_PREPARATION_SYNTHETIC_OK negatives='+negatives+' deterministic_zip=true');

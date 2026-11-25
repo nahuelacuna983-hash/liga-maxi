@@ -1,4 +1,9 @@
 "use strict";
+// Invalid URL/preflight assertions must never echo credentials or query values.
+process.setUncaughtExceptionCaptureCallback(() => {
+  console.error("APDB_HTTP_PREFLIGHT_FAILED: invalid URL, credentials or local package; inputs redacted");
+  process.exitCode = 1;
+});
 // Passive anonymous HTTP release gate for an explicitly specified APdB pilot URL.
 // No login, no state changes, no document reads, no redirects, no cookies or secrets.
 // A protected pilot should not serve the app or static assets anonymously.
