@@ -21,6 +21,7 @@ on:
       - 'tests/apdb-cpanel-auth-http-contract.cjs'
       - 'tests/apdb-hosted-pilot-gate.cjs'
       - 'tests/apdb-institutional-package-browser.spec.cjs'
+      - 'tests/apdb-institutional-js-enabled.spec.cjs'
       - 'tests/demo-circuit-browser.spec.cjs'
       - 'tools/demo-server.cjs'
       - 'index_online.html'
@@ -50,6 +51,7 @@ jobs:
           node --check tests/apdb-cpanel-auth-http-contract.cjs
           node --check tests/apdb-hosted-pilot-gate.cjs
           node --check tests/apdb-institutional-package-browser.spec.cjs
+          node --check tests/apdb-institutional-js-enabled.spec.cjs
           node --check app_online.js
       - name: Build, tamper test, and validate source separation
         run: |
@@ -71,5 +73,6 @@ jobs:
       - name: Institutional package browser shell (desktop and mobile)
         run: |
           npx playwright test tests/apdb-institutional-package-browser.spec.cjs --workers=1
+          npx playwright test tests/apdb-institutional-js-enabled.spec.cjs --workers=1
           # playwright.config.cjs starts and stops the demo server itself.
           npx playwright test tests/demo-circuit-browser.spec.cjs --workers=1
