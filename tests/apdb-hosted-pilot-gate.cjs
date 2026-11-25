@@ -4,7 +4,7 @@ const assert=require("node:assert/strict");
 const http=require("node:http");
 const {spawn}=require("node:child_process");
 const path=require("node:path");
-const allowed=["","app_online.js","manifest.json","release-integrity.json"];
+const allowed=["index.html","index_online.html","apdb-administrative-adapter.js","sw.js","icon-192.png","icon-512.png","","app_online.js","manifest.json","release-integrity.json"];
 const blocked=[".env","config.json","backup.dump"];
 const base="/apdb-2027-staging/";
 async function scenario(mode,shouldPass){

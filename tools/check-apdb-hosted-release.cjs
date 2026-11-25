@@ -14,8 +14,8 @@ const base = new URL(rawBase);
 const loopbackTest = process.env.APDB_TEST_LOOPBACK === "1" &&
   base.protocol === "http:" && ["localhost", "127.0.0.1"].includes(base.hostname);
 assert.ok(base.protocol === "https:" || loopbackTest, "HTTPS required outside local test");
-assert.equal(base.username, "", "URL credentials forbidden");
-assert.equal(base.password, "", "URL credentials forbidden");
+assert.ok(!base.username && !base.password, "URL credentials forbidden");
+
 assert.equal(base.search, "");
 assert.equal(base.hash, "");
 assert.equal(base.pathname, "/apdb-2027-prueba/", "APdB pilot path mismatch");
@@ -33,7 +33,7 @@ assert.equal(verification.status, 0, verification.stderr || verification.stdout)
 const integrity = JSON.parse(fs.readFileSync(path.join(root, "release-integrity.json"), "utf8"));
 assert.equal(integrity.publicBasePath, base.pathname, "Build path does not match the hosting path");
 const auth = "Basic " + Buffer.from(user + ":" + password).toString("base64");
-const expectedFiles = ["release-integrity.json", ...integrity.files.map(f => f.file)];
+const expectedFiles = ["", "release-integrity.json", ...integrity.files.map(f => f.file)];
 const fileHash = data => crypto.createHash("sha256").update(data).digest("hex");
 (async () => {
   for (const file of expectedFiles) {
@@ -46,11 +46,22 @@ const fileHash = data => crypto.createHash("sha256").update(data).digest("hex");
     });
     assert.equal(response.status, 200, "Restricted asset not served correctly: " + file + " (" + response.status + ")");
     assert.equal(response.url, target.href, "Unexpected redirect URL for " + file);
+    const cache = response.headers.get("cache-control") || "";
+    assert.match(cache, /(?:^|,)\s*no-store\s*(?:,|$)/i, "Authenticated response must not be stored");
+    assert.doesNotMatch(cache, /(?:^|,)\s*public\s*(?:,|$)/i, "Public caching forbidden");
+    if (file === "sw.js") {
+      const scope = response.headers.get("service-worker-allowed");
+      assert.ok(!scope || new URL(scope,target).href === base.href, "SW scope must remain inside pilot");
+    }
     const remote = Buffer.from(await response.arrayBuffer());
-    const local = fs.readFileSync(path.join(root, file));
+    const local = fs.readFileSync(path.join(root, file || "index.html"));
     assert.equal(remote.length, local.length, "Remote file length differs: " + file);
     assert.equal(fileHash(remote), fileHash(local), "Remote SHA-256 differs: " + file);
-    if (file.endsWith(".js")) {
+    if (!file || file.endsWith(".html")) {
+      assert.match(response.headers.get("content-type") || "", /text\/html/i, "Unexpected HTML MIME type");
+    } else if (file.endsWith(".png")) {
+      assert.match(response.headers.get("content-type") || "", /image\/png/i, "Unexpected PNG MIME type");
+    } else if (file.endsWith(".js")) {
       assert.match(response.headers.get("content-type") || "", /javascript|ecmascript/i, "Unexpected JS MIME type");
     } else if (file.endsWith(".json")) {
       assert.match(response.headers.get("content-type") || "", /json/i, "Unexpected JSON MIME type");
@@ -66,6 +77,6 @@ const fileHash = data => crypto.createHash("sha256").update(data).digest("hex");
     assert.ok([403, 404].includes(response.status),
       "Forbidden file URL must be 403/404 (not 200 or redirect): " + forbidden);
   }
-  console.log("APDB_CPANEL_AUTHENTICATED_RELEASE_OK files=" + expectedFiles.length +
+  console.log("APDB_CPANEL_AUTHENTICATED_RELEASE_OK files=" + (expectedFiles.length - 1) +
     " sha256_verified=true forbidden_paths=4");
 })().catch(err => { console.error("APDB_CPANEL_AUTHENTICATED_RELEASE_FAILED", err.message); process.exitCode = 1; });

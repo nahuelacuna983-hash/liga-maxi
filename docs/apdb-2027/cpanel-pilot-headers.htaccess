@@ -1,0 +1,15 @@
+# Merge ONLY into the pilot's existing .htaccess, preserving cPanel Basic Auth.
+# Never upload as a replacement .htaccess. Never apply at domain root or /liga/.
+# Provider must confirm Apache 2.4/LiteSpeed compatibility and AllowOverride.
+Options -Indexes
+DirectoryIndex index.html
+Header onsuccess unset Cache-Control
+Header always set Cache-Control "private, no-store, max-age=0"
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-Robots-Tag "noindex, nofollow, noarchive"
+<Files "sw.js">
+  Header always set Service-Worker-Allowed "/apdb-2027-prueba/"
+</Files>
+<FilesMatch "^(\..*|config\.json|backup\.dump|.*\.(sql|map|zip|bak|backup))$">
+  Require all denied
+</FilesMatch>
